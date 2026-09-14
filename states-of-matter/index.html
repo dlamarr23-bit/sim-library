@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>States of Matter — solids, liquids and gases</title>
+
+<!--
+  ============================================================================
+  STATES OF MATTER BASICS  (PhET-style, single file, no dependencies)
+
+  HOW TO EMBED
+       <iframe src="states-of-matter-lab.html"
+               style="width:100%;height:1440px;border:0" loading="lazy"
+               title="States of matter simulation"></iframe>
+  Every CSS rule is scoped under .cvlab.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+.cvlab{
+  --paper:#FFFFFF; --shell:#EEF0F5; --rule:#D8DCE5;
+  --ink:#12161E; --ink-2:#5A6272;
+  --hot:#EE5B24; --cold:#2E8CE0; --brand:#5B3DD1; --brand-d:#4227A8;
+  --steel:#98A0AC;
+  --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--shell);font-family:var(--font-b);color:var(--ink);font-weight:700;
+  padding:16px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+.cvlab *{box-sizing:border-box}
+.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-b);font-weight:700;letter-spacing:-.01em}
+.cvlab p{margin:0}
+.cvlab :focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+
+.cvlab-head{background:linear-gradient(120deg,#141824,#2C2350);color:#fff;
+  border-radius:14px 14px 0 0;padding:16px 20px;
+  display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.cvlab-eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:#B4A0FF;margin-bottom:3px}
+.cvlab-head h1{font-size:clamp(20px,3vw,30px);line-height:1.1}
+.cvlab-readouts{display:flex;flex-wrap:wrap;gap:9px}
+.cvlab-ro{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  border-radius:10px;padding:7px 12px;min-width:98px}
+.cvlab-ro-k{display:block;font-size:9.5px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;color:#A2A8BC}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:17px;font-weight:700;color:#F3F4FA;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.cvlab-ro-t .cvlab-ro-v{color:#FFA07A}
+.cvlab-ro-s .cvlab-ro-v{color:#9DE8C0}
+.cvlab-ro-v small{font-size:11px;opacity:.75;font-weight:700}
+
+.cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
+  border-radius:0 0 14px 14px;padding:12px}
+.cvlab canvas{display:block;width:100%}
+#cvlab-scene{height:clamp(340px,42vw,620px);border-radius:10px}
+.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;padding-top:12px;
+  border-top:1px solid var(--rule)}
+.cvlab-status{flex:1 1 250px;min-width:200px;font-size:14px;color:var(--ink-2);font-weight:700}
+.cvlab-status strong{color:var(--ink);font-weight:700}
+
+.cvlab-btn{font-family:var(--font-b);font-size:14px;font-weight:700;cursor:pointer;
+  background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:9px;
+  padding:9px 16px;line-height:1.1;transition:transform .08s ease,background .14s ease,color .14s ease}
+.cvlab-btn:hover:not(:disabled){background:var(--ink);color:#fff}
+.cvlab-btn:active:not(:disabled){transform:translateY(1px)}
+.cvlab-btn-go{background:var(--brand);border-color:var(--brand-d);color:#fff;min-width:118px}
+.cvlab-btn-go:hover:not(:disabled){background:var(--brand-d);color:#fff}
+.cvlab-btn-sm{font-size:13px;padding:7px 12px;border-width:1.5px;border-radius:8px}
+
+.cvlab-grid{display:grid;gap:14px;margin-top:14px;
+  grid-template-columns:minmax(230px,1fr) minmax(240px,1.1fr) minmax(220px,.95fr)}
+@media (max-width:1020px){.cvlab-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:660px){.cvlab-grid{grid-template-columns:1fr}}
+.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:14px;
+  display:flex;flex-direction:column;gap:12px}
+.cvlab-panel h2{font-size:15.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;
+  color:var(--ink);padding-bottom:9px;border-bottom:2px solid var(--ink)}
+.cvlab-note{font-size:14.5px;color:var(--ink-2);font-weight:700}
+
+.cvlab-subs{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.cvlab-sub{cursor:pointer;border:2px solid var(--rule);border-radius:11px;padding:9px;
+  background:var(--paper);display:flex;align-items:center;gap:9px;text-align:left;
+  font-family:var(--font-b);font-size:15.5px;font-weight:700;color:var(--ink);
+  transition:border-color .14s ease,background .14s ease}
+.cvlab-sub:hover{background:#F6F5FD}
+.cvlab-sub.is-on{border-color:var(--brand);background:#F1EDFE}
+.cvlab-sub u{text-decoration:none;display:block;font-weight:700;font-size:12.5px;color:var(--ink-2)}
+.cvlab-sub svg{display:block;flex:none}
+
+.cvlab-states{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.cvlab-st{cursor:pointer;border:2px solid var(--rule);border-radius:11px;padding:10px 4px;
+  background:var(--paper);font-family:var(--font-b);font-size:16px;font-weight:700;color:var(--ink);
+  transition:border-color .14s ease,background .14s ease}
+.cvlab-st:hover{background:#F6F5FD}
+.cvlab-st.is-on{border-color:var(--brand);background:#F1EDFE;color:var(--brand-d)}
+.cvlab-st span{display:block;font-weight:700;font-size:12px;color:var(--ink-2);margin-top:2px}
+
+.cvlab-field{display:flex;flex-direction:column;gap:6px}
+.cvlab-lab{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.cvlab-lab span{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-2)}
+.cvlab-lab b{font-family:var(--font-m);font-size:17px;font-weight:700;background:#F3F4F8;
+  border:1px solid var(--rule);border-radius:7px;padding:2px 9px}
+.cvlab input[type=range]{width:100%;margin:0}
+#cvlab-heat{accent-color:var(--hot)}
+.cvlab select{font-family:var(--font-b);font-size:15.5px;padding:8px 9px;border:1.5px solid var(--ink);
+  border-radius:9px;background:#fff;color:var(--ink);width:100%;font-weight:700}
+.cvlab-quick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.cvlab-qb{cursor:pointer;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;
+  padding:8px 2px;font-family:var(--font-m);font-size:13.5px;font-weight:700;color:var(--ink)}
+.cvlab-qb:hover{background:#F6F5FD}
+
+.cvlab-facts{display:flex;flex-direction:column;gap:8px}
+.cvlab-fact{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:#F3F4F8;border:1px solid var(--rule);border-radius:9px;padding:8px 11px}
+.cvlab-fact span{font-size:13px;font-weight:700;color:var(--ink-2);text-transform:uppercase;
+  letter-spacing:.05em}
+.cvlab-fact b{font-family:var(--font-m);font-size:18px;font-weight:700;white-space:nowrap}
+.cvlab-badge{border-radius:10px;padding:11px 12px;font-size:17px;font-weight:700;text-align:center}
+.cvlab-space{background:#F1EDFE;border:1px solid #C9BAF6;border-radius:10px;padding:10px 12px;
+  font-size:14.5px;color:#3A2585;font-weight:700}
+.cvlab-space b{font-family:var(--font-m);font-weight:700}
+
+.cvlab-howto{margin-top:14px;background:var(--paper);border:1px solid var(--rule);border-radius:14px;
+  padding:16px 18px}
+.cvlab-howto h2{font-size:15px;margin-bottom:8px}
+.cvlab-howto ol{margin:0;padding-left:22px}
+.cvlab-howto li{font-size:13.5px;color:#282F3A;margin:6px 0}
+.cvlab-howto li b{font-weight:700;color:var(--ink)}
+.cvlab-tipbox{margin-top:12px;background:#F1EDFE;border:1px solid #C9BAF6;border-radius:10px;
+  padding:11px 13px;font-size:13px;color:#3A2585;font-weight:700}
+.cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
+</style>
+</head>
+<body style="margin:0;background:#EEF0F5">
+
+<div class="cvlab" id="cvlab">
+
+  <header class="cvlab-head">
+    <div>
+      <span class="cvlab-eyebrow">States of matter &middot; solid, liquid, gas</span>
+      <h1>Solids, Liquids &amp; Gases</h1>
+    </div>
+    <div class="cvlab-readouts">
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Substance</span><span class="cvlab-ro-v" id="cvlab-ro-sub">Neon</span></div>
+      <div class="cvlab-ro cvlab-ro-t"><span class="cvlab-ro-k">Temperature</span><span class="cvlab-ro-v" id="cvlab-ro-t">15 K</span></div>
+      <div class="cvlab-ro cvlab-ro-s"><span class="cvlab-ro-k">State</span><span class="cvlab-ro-v" id="cvlab-ro-state">Solid</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Particle speed</span><span class="cvlab-ro-v" id="cvlab-ro-speed">slow</span></div>
+    </div>
+  </header>
+
+  <div class="cvlab-bench">
+    <canvas id="cvlab-scene" role="img"
+      aria-label="A sealed container of particles with a thermometer beside it and a heater underneath."></canvas>
+    <div class="cvlab-bar">
+      <button class="cvlab-btn cvlab-btn-go" id="cvlab-pause">Pause</button>
+      <button class="cvlab-btn cvlab-btn-sm" id="cvlab-reset">Reset</button>
+      <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
+        Pick a substance, then press Solid, Liquid or Gas and watch how the particles arrange themselves.
+      </p>
+    </div>
+  </div>
+
+  <div class="cvlab-grid">
+
+    <section class="cvlab-panel">
+      <h2>Substance</h2>
+      <div class="cvlab-subs" id="cvlab-sublist"></div>
+      <div class="cvlab-fact"><span>Made of</span><b id="cvlab-madeof">single atoms</b></div>
+      <p class="cvlab-note" id="cvlab-subnote">&nbsp;</p>
+    </section>
+
+    <section class="cvlab-panel">
+      <h2>Temperature</h2>
+      <div class="cvlab-field">
+        <span class="cvlab-lab"><span>Jump to a state</span></span>
+        <div class="cvlab-states" id="cvlab-statebtns"></div>
+      </div>
+      <label class="cvlab-field" for="cvlab-heat">
+        <span class="cvlab-lab"><span>Heat and cool</span><b id="cvlab-heatv">off</b></span>
+        <input type="range" id="cvlab-heat" min="-1" max="1" step="0.02" value="0">
+      </label>
+      <div class="cvlab-quick" id="cvlab-tquick"></div>
+      <label class="cvlab-field" for="cvlab-rate">
+        <span class="cvlab-lab"><span>How fast it heats</span></span>
+        <select id="cvlab-rate">
+          <option value="60">Fast</option>
+          <option value="180" selected>Very fast</option>
+          <option value="99999">Instant</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="cvlab-panel">
+      <h2>What you are seeing</h2>
+      <div class="cvlab-badge" id="cvlab-badge">Solid</div>
+      <p class="cvlab-note" id="cvlab-facthint">Pick a state, move the slider, or choose a substance to reveal these numbers.</p>
+      <div class="cvlab-facts">
+        <div class="cvlab-fact"><span>Melts at</span><b id="cvlab-mp">—</b></div>
+        <div class="cvlab-fact"><span>Boils at</span><b id="cvlab-bp">—</b></div>
+        <div class="cvlab-fact"><span>Average speed</span><b id="cvlab-spd">—</b></div>
+      </div>
+      <p class="cvlab-space" id="cvlab-spacebox">&nbsp;</p>
+    </section>
+
+  </div>
+
+  <section class="cvlab-howto">
+    <h2>How to use this sim</h2>
+    <ol>
+      <li><b>Choose a substance</b> on the left. Neon and Argon are single atoms; oxygen and water are
+        molecules made of more than one atom joined together.</li>
+      <li><b>Press Solid, Liquid or Gas.</b> The sim jumps straight to a temperature where that
+        substance is in that state, so you do not have to wait.</li>
+      <li><b>Watch the spacing between the particles</b> in each state, and how fast they move.</li>
+      <li><b>Use Heat and cool</b> to change the temperature gradually instead. Drag it right to heat,
+        left to cool. It springs back to off when you let go.</li>
+      <li><b>Press Pause</b> to stop everything so you can look carefully or take a screenshot, then
+        press Play to carry on.</li>
+      <li><b>Compare how much space the particles take up.</b> In the solid and liquid states a dashed
+        line marks the top of the material and the panel on the right tells you how much of the
+        container is filled. Switch between Solid and Liquid and see which one needs more room. Try
+        water, then try the others.</li>
+      <li><b>Cool as far as the sim will go</b> and watch the speed readout. See whether you can stop
+        the particles moving altogether, and note the temperature when you do.</li>
+    </ol>
+    <p class="cvlab-tipbox"><b>Tip:</b> the temperature is shown in both kelvin and degrees Celsius, so
+      you can answer questions in either unit.</p>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------ substances
+     lat is the lattice spacing as a multiple of particle contact distance.
+     Neon, argon and oxygen pack tight, so their solid is denser than their
+     disordered liquid. Water's lattice is an open cage, which is why ice takes
+     up MORE room than liquid water. That is the anomaly the worksheet asks
+     about, and it is the one substance here with lat well above 1.            */
+  var SUBS = [
+    { key:"neon", name:"Neon", sym:"Ne", atoms:1, n:88, melt:24.6, boil:27.1,
+      lat:0.92, r:0.62, col:"#F0813C", col2:"#A9491A",
+      solidT:15, liquidT:26, gasT:48 },
+    { key:"argon", name:"Argon", sym:"Ar", atoms:1, n:76, melt:83.8, boil:87.3,
+      lat:0.92, r:0.70, col:"#A85FD8", col2:"#6A2C99",
+      solidT:50, liquidT:85.5, gasT:140 },
+    { key:"oxygen", name:"Oxygen", sym:"O\u2082", atoms:2, n:56, melt:54.4, boil:90.2,
+      lat:0.92, r:0.54, col:"#E8483F", col2:"#9C1D18",
+      solidT:35, liquidT:72, gasT:150 },
+    { key:"water", name:"Water", sym:"H\u2082O", atoms:3, n:52, melt:273.15, boil:373.15,
+      lat:1.14, r:0.52, col:"#E8483F", col2:"#9C1D18",
+      solidT:200, liquidT:320, gasT:560 }
+  ];
+  var T_MAX = 700, T_MIN = 0;
+
+  /* container, world units */
+  var VIEW_X0 = 0, VIEW_X1 = 58, VIEW_Y0 = -1, VIEW_Y1 = 31;
+  var BX0 = 13, BX1 = 42, BY0 = 3, BY1 = 26, WALL = 0.7;
+  var IX0 = BX0+WALL, IX1 = BX1-WALL, IY0 = BY0+WALL, IY1 = BY1-WALL;
+
+  /* ------------------------------------------------ state */
+  var si = 0, T = SUBS[0].solidT;
+  var heatCmd = 0, rate = 180, paused = false, targetT = null;
+  var parts = [], lattice = [], latSpacing = 1;
+  var occFrac = 0, lastFrame = null;
+  /* hide the melting/boiling points and average speed until the student has
+     actually done something, so they read the sim instead of the readouts */
+  var interacted = false;
+  function markInteracted(){ interacted = true; }
+
+  var reduceMotion = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+
+  /* ------------------------------------------------ dom */
+  function $(id){ return document.getElementById(id); }
+  var sceneC = $("cvlab-scene"), sctx = sceneC.getContext("2d");
+  var elSubs = $("cvlab-sublist"), elStateBtns = $("cvlab-statebtns");
+  var elHeat = $("cvlab-heat"), elHeatV = $("cvlab-heatv"), elTQuick = $("cvlab-tquick");
+  var elRate = $("cvlab-rate"), elPause = $("cvlab-pause"), elReset = $("cvlab-reset");
+  var elStatus = $("cvlab-status"), elMadeOf = $("cvlab-madeof"), elSubNote = $("cvlab-subnote");
+  var elBadge = $("cvlab-badge"), elMp = $("cvlab-mp"), elBp = $("cvlab-bp"), elSpd = $("cvlab-spd");
+  var elSpaceBox = $("cvlab-spacebox"), elFactHint = $("cvlab-facthint");
+  var roSub = $("cvlab-ro-sub"), roT = $("cvlab-ro-t"), roState = $("cvlab-ro-state"),
+      roSpeed = $("cvlab-ro-speed");
+
+  /* ------------------------------------------------ helpers */
+  function S(){ return SUBS[si]; }
+  function fmt(x,p){ return x.toFixed(p===undefined?1:p); }
+  function clamp(x,a,b){ return x<a?a:(x>b?b:x); }
+  function now(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function say(m){ elStatus.innerHTML = m; }
+  function celsius(){ return T - 273.15; }
+  function stateName(){
+    var s = S();
+    if(T < s.melt) return "Solid";
+    if(T < s.boil) return "Liquid";
+    return "Gas";
+  }
+  /* the mean speed of a real particle of this substance at this temperature */
+  var MOLAR = { neon:0.0202, argon:0.0399, oxygen:0.0320, water:0.0180 };
+  function meanSpeed(){
+    if(T <= 0) return 0;
+    return Math.sqrt(8*8.314*T/(Math.PI*MOLAR[S().key]));
+  }
+  function speedWord(){
+    if(T <= 0.05) return "stopped";
+    var f = T/S().boil;
+    if(f < 0.5) return "slow";
+    if(f < 1.1) return "medium";
+    if(f < 2.5) return "fast";
+    return "very fast";
+  }
+
+  function fit(canvas, ctx){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(260, Math.round(r.width)), h = Math.max(200, Math.round(r.height));
+    if(canvas.width !== w*dpr || canvas.height !== h*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { w:w, h:h };
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+
+  /* ------------------------------------------------ particles */
+  function contactDist(){ return S().r*2.0; }            /* particles just touching */
+  function repDist(){ return S().r*1.68; }               /* where repulsion starts to bite */
+  function buildLattice(){
+    var s = S();
+    latSpacing = contactDist()*s.lat;
+    var cols = Math.max(4, Math.floor((IX1-IX0-0.8)/latSpacing));
+    var rows = Math.ceil(s.n/cols);
+    var w = (cols-0.5)*latSpacing;
+    var x0 = (IX0+IX1)/2 - w/2;
+    lattice = [];
+    for(var i=0;i<s.n;i++){
+      var c = i % cols, rw = Math.floor(i/cols);
+      lattice.push({ x: x0 + c*latSpacing + (rw%2 ? latSpacing*0.5 : 0),
+                     y: IY0 + s.r + 0.4 + rw*latSpacing*0.88 });
+    }
+  }
+  function seed(){
+    buildLattice();
+    parts = [];
+    for(var i=0;i<S().n;i++){
+      parts.push({ x: lattice[i].x, y: lattice[i].y,
+                   vx:(Math.random()-0.5)*0.4, vy:(Math.random()-0.5)*0.4,
+                   a: Math.random()*6.28, w:(Math.random()-0.5)*2 });
+    }
+  }
+  function stepParts(dt){
+    var s = S(), r = s.r;
+    var solid = clamp((s.melt - T)/(0.14*s.melt), 0, 1);
+    var cond  = clamp((s.boil - T)/(0.035*s.boil) + 0.80, 0, 1);   /* sharp, at the boiling point */
+    /* at absolute zero the lattice sits at rest at its own spacing, with nothing
+       left pulling on it, so every force that could keep it twitching is switched off */
+    if(T <= 0.01) cond = 0;
+    var speed = T <= 0 ? 0 : clamp(Math.sqrt(T/s.boil)*4.6, 0, 22);
+    /* at absolute zero there is no thermal motion at all, so nothing drives it */
+    var grav  = 30*cond;
+    var d0 = repDist();
+    var i, j;
+    for(i=0;i<parts.length;i++){
+      var p = parts[i];
+      p.vy -= grav*dt;
+      if(solid > 0.02){
+        var L = lattice[i];
+        p.vx += (L.x - p.x)*130*solid*dt;
+        p.vy += (L.y - p.y)*130*solid*dt;
+        p.vx *= (1 - 6*solid*dt); p.vy *= (1 - 6*solid*dt);
+      }
+      p.a += p.w*dt;
+    }
+    for(i=0;i<parts.length;i++){
+      for(j=i+1;j<parts.length;j++){
+        var pa = parts[i], pb = parts[j];
+        var dx = pb.x-pa.x, dy = pb.y-pa.y;
+        var d2 = dx*dx+dy*dy;
+        var cut = d0*2.3;
+        if(d2 > cut*cut) continue;
+        var d = Math.sqrt(d2) || 1e-4;
+        var ux = dx/d, uy = dy/d, f = 0;
+        if(d < d0) f = -(d0 - d)*1600;
+        else if(cond > 0.02) f = (d - d0)*9*cond;
+        pa.vx += ux*f*dt; pa.vy += uy*f*dt;
+        pb.vx -= ux*f*dt; pb.vy -= uy*f*dt;
+      }
+    }
+    var sum = 0;
+    for(i=0;i<parts.length;i++){
+      var q = parts[i];
+      q.x += q.vx*dt; q.y += q.vy*dt;
+      var rest = 1 - 0.92*solid;              /* a gas bounces, a solid does not */
+      if(q.x < IX0+r){ q.x = IX0+r; q.vx = Math.abs(q.vx)*rest; }
+      if(q.x > IX1-r){ q.x = IX1-r; q.vx = -Math.abs(q.vx)*rest; }
+      if(q.y < IY0+r){ q.y = IY0+r; q.vy = Math.abs(q.vy)*rest; }
+      if(q.y > IY1-r){ q.y = IY1-r; q.vy = -Math.abs(q.vy)*rest; }
+      sum += q.vx*q.vx + q.vy*q.vy;
+    }
+    /* hold the motion at whatever the temperature says, so 0 K really is still */
+    var rms = Math.sqrt(sum/parts.length) || 1e-6;
+    var want = speed*(1 - 0.84*Math.min(1,solid));
+    if(want < 1e-4){
+      for(i=0;i<parts.length;i++){
+        var z = parts[i];
+        z.vx *= 0.55; z.vy *= 0.55; z.w *= 0.55;
+        if(Math.abs(z.vx) < 0.05) z.vx = 0;
+        if(Math.abs(z.vy) < 0.05) z.vy = 0;
+        if(Math.abs(z.w) < 0.05) z.w = 0;
+      }
+    } else {
+      var f2 = 1 + clamp(want/rms - 1, -0.5, 0.5)*Math.min(1, dt*10);
+      for(i=0;i<parts.length;i++){ parts[i].vx *= f2; parts[i].vy *= f2; }
+    }
+    measureFootprint();
+  }
+
+  /* how much room the material takes up, gaps included. Height alone will not do,
+     because a solid block and a liquid pool can be different widths. */
+  var GW = 0, GH = 0, grid = null, occTopY = 0;
+  function measureFootprint(){
+    var d0 = repDist();
+    var cell = d0/2.2;
+    var gw = Math.ceil((IX1-IX0)/cell), gh = Math.ceil((IY1-IY0)/cell);
+    if(gw !== GW || gh !== GH || !grid){ GW = gw; GH = gh; grid = new Uint8Array(gw*gh); }
+    else grid.fill(0);
+    var R = d0*0.72, rc = Math.ceil(R/cell);
+    var top = IY0;
+    for(var i=0;i<parts.length;i++){
+      var p = parts[i];
+      if(p.y > top) top = p.y;
+      var cx = Math.floor((p.x - IX0)/cell), cy = Math.floor((p.y - IY0)/cell);
+      for(var a=-rc;a<=rc;a++){
+        for(var b=-rc;b<=rc;b++){
+          var gx = cx+a, gy = cy+b;
+          if(gx < 0 || gy < 0 || gx >= gw || gy >= gh) continue;
+          if((a*a + b*b)*cell*cell > R*R) continue;
+          grid[gy*gw + gx] = 1;
+        }
+      }
+    }
+    var count = 0;
+    for(var q=0;q<grid.length;q++) if(grid[q]) count++;
+    occFrac = clamp(count/(gw*gh), 0, 1);
+    occTopY = top + S().r;
+  }
+
+  /* ------------------------------------------------ drawing the particles */
+  function drawParticle(ctx, p, k){
+    var s = S(), r = s.r*k;
+    var ca = Math.cos(p.a), sa = Math.sin(p.a);
+    function ball(dx, dy, rr, c1, c2){
+      var g = ctx.createRadialGradient(dx - rr*0.34, dy - rr*0.34, rr*0.08, dx, dy, rr*1.06);
+      g.addColorStop(0,"#FFFFFF"); g.addColorStop(.40, c1); g.addColorStop(1, c2);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(dx, dy, rr, 0, Math.PI*2); ctx.fill();
+    }
+    var px = PX(p.x), py = PY(p.y);
+    if(s.atoms === 1){ ball(px, py, r, s.col, s.col2); return; }
+    if(s.atoms === 2){
+      var off = r*0.78;
+      ball(px - off*ca, py - off*sa*-1, r*0.92, s.col, s.col2);
+      ball(px + off*ca, py + off*sa*-1, r*0.92, s.col, s.col2);
+      return;
+    }
+    /* water: one oxygen with two smaller hydrogens */
+    var hs = [[-0.98,-0.66],[0.98,-0.66]];
+    for(var i=0;i<2;i++){
+      var dx = (hs[i][0]*ca - hs[i][1]*sa)*r, dy = (hs[i][0]*sa + hs[i][1]*ca)*r;
+      ball(px + dx, py - dy, r*0.60, "#F2F5F8", "#B4BEC8");
+    }
+    ball(px, py, r, s.col, s.col2);
+  }
+
+  /* ------------------------------------------------ scene */
+  var V = {};
+  function geometry(w,h){
+    V.w = w; V.h = h; V.compact = w < 520;
+    V.k = Math.min((w-14)/(VIEW_X1-VIEW_X0), (h-14)/(VIEW_Y1-VIEW_Y0));
+    V.ox = (w - (VIEW_X1-VIEW_X0)*V.k)/2 - VIEW_X0*V.k;
+    V.oy = h - (h - (VIEW_Y1-VIEW_Y0)*V.k)/2 + VIEW_Y0*V.k;
+  }
+  function PX(u){ return V.ox + u*V.k; }
+  function PY(u){ return V.oy - u*V.k; }
+
+  function drawScene(){
+    var sz = fit(sceneC, sctx), w = sz.w, h = sz.h;
+    geometry(w,h);
+    var ctx = sctx;
+    ctx.clearRect(0,0,w,h);
+    var bg = ctx.createLinearGradient(0,0,0,h);
+    bg.addColorStop(0,"#F7F8FC"); bg.addColorStop(1,"#E4E7F0");
+    ctx.fillStyle = bg; ctx.fillRect(0,0,w,h);
+    drawHeater(ctx);
+    drawContainer(ctx);
+    drawParticles(ctx);
+    drawLevel(ctx);
+    drawThermo(ctx);
+  }
+
+  function drawHeater(ctx){
+    var k = V.k, x0 = PX(18), x1 = PX(37), y = PY(0.2);
+    var hh = 2.2*k;
+    var g = ctx.createLinearGradient(0,y-hh,0,y);
+    g.addColorStop(0,"#727C89"); g.addColorStop(1,"#454E5B");
+    ctx.fillStyle = g;
+    roundRect(ctx, x0, y-hh, x1-x0, hh, 0.45*k); ctx.fill();
+    ctx.strokeStyle = "#3B434F"; ctx.lineWidth = 1; ctx.stroke();
+    var amt = heatCmd !== 0 ? heatCmd : (targetT !== null ? (targetT > T ? 1 : -1) : 0);
+    if(Math.abs(amt) < 0.05) return;
+    var n = 6;
+    for(var i=0;i<n;i++){
+      var fx = x0 + (x1-x0)*(i+0.5)/n;
+      var ph = reduceMotion ? .5 : (Math.sin(now()/110 + i*1.2)*0.5+0.5);
+      var fh = (1.4 + ph*1.5)*k*Math.abs(amt);
+      if(amt > 0){
+        var fg = ctx.createLinearGradient(0, y-hh, 0, y-hh-fh);
+        fg.addColorStop(0,"#F8CE55"); fg.addColorStop(.55,"#EE5B24");
+        fg.addColorStop(1,"rgba(226,80,25,0)");
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.moveTo(fx-0.5*k, y-hh);
+        ctx.quadraticCurveTo(fx-0.62*k, y-hh-fh*0.6, fx, y-hh-fh);
+        ctx.quadraticCurveTo(fx+0.62*k, y-hh-fh*0.6, fx+0.5*k, y-hh);
+        ctx.closePath(); ctx.fill();
+      } else {
+        ctx.strokeStyle = "rgba(120,195,250,.9)"; ctx.lineWidth = Math.max(1.3, 0.17*k);
+        ctx.beginPath();
+        ctx.moveTo(fx, y-hh); ctx.lineTo(fx, y-hh-fh);
+        ctx.moveTo(fx-0.45*k, y-hh-fh*0.55); ctx.lineTo(fx+0.45*k, y-hh-fh*0.55);
+        ctx.stroke();
+      }
+    }
+  }
+
+  function drawContainer(ctx){
+    var k = V.k;
+    ctx.fillStyle = "rgba(18,22,30,.10)";
+    roundRect(ctx, PX(BX0)+4, PY(BY1)+5, (BX1-BX0)*k, (BY1-BY0)*k, 0.6*k); ctx.fill();
+    var g = ctx.createLinearGradient(PX(BX0),0,PX(BX1),0);
+    g.addColorStop(0,"#5C6674"); g.addColorStop(.07,"#8E99A7");
+    g.addColorStop(.93,"#8E99A7"); g.addColorStop(1,"#5C6674");
+    ctx.fillStyle = g;
+    roundRect(ctx, PX(BX0), PY(BY1), (BX1-BX0)*k, (BY1-BY0)*k, 0.6*k); ctx.fill();
+    var ig = ctx.createLinearGradient(0, PY(IY1), 0, PY(IY0));
+    ig.addColorStop(0,"#FBFCFE"); ig.addColorStop(1,"#E9EEF5");
+    ctx.fillStyle = ig;
+    ctx.fillRect(PX(IX0), PY(IY1), (IX1-IX0)*k, (IY1-IY0)*k);
+    ctx.strokeStyle = "rgba(70,80,94,.5)"; ctx.lineWidth = 1;
+    ctx.strokeRect(PX(IX0), PY(IY1), (IX1-IX0)*k, (IY1-IY0)*k);
+  }
+
+  function drawParticles(ctx){
+    var k = V.k;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PX(IX0), PY(IY1), (IX1-IX0)*k, (IY1-IY0)*k);
+    ctx.clip();
+    for(var i=0;i<parts.length;i++) drawParticle(ctx, parts[i], k);
+    ctx.restore();
+  }
+
+  /* the dashed line marking how much room the material needs */
+  function drawLevel(ctx){
+    if(stateName() === "Gas") return;
+    var k = V.k;
+    var y = PY(clamp(occTopY, IY0, IY1));
+    ctx.save();
+    ctx.setLineDash([7,5]); ctx.strokeStyle = "#5B3DD1"; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(PX(IX0), y); ctx.lineTo(PX(IX1), y); ctx.stroke();
+    ctx.restore();
+    if(V.compact) return;
+    var txt = "takes up " + Math.round(occFrac*100) + "% of the container";
+    ctx.font = '700 12px "Poppins", sans-serif';
+    var tw = ctx.measureText(txt).width;
+    var bx = PX(IX1) - tw - 20, by = y - 26;
+    if(by < PY(IY1) + 4) by = y + 6;
+    ctx.fillStyle = "rgba(91,61,209,.94)";
+    roundRect(ctx, bx, by, tw + 16, 21, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(txt, bx + 8, by + 11);
+  }
+
+  function drawThermo(ctx){
+    var k = V.k, x = PX(48.5), yb = PY(4), yt = PY(27);
+    var wd = 2.3*k;
+    ctx.fillStyle = "rgba(18,22,30,.10)";
+    roundRect(ctx, x-wd/2+3, yt+3, wd, yb-yt, wd/2); ctx.fill();
+    ctx.fillStyle = "#F8FAFD";
+    roundRect(ctx, x-wd/2, yt, wd, yb-yt, wd/2); ctx.fill();
+    ctx.strokeStyle = "#98A0AC"; ctx.lineWidth = 1.3;
+    roundRect(ctx, x-wd/2, yt, wd, yb-yt, wd/2); ctx.stroke();
+    function ty(t){ return yb - (yb-yt)*clamp(t/T_MAX, 0, 1); }
+    var labels = [0,100,200,300,400,500,600,700];
+    ctx.font = '700 ' + Math.max(7,0.78*k).toFixed(1) + 'px "Poppins", "IBM Plex Mono", monospace';
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    for(var i=0;i<labels.length;i++){
+      var y = ty(labels[i]);
+      ctx.strokeStyle = "#BCC4D0"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x+wd/2, y); ctx.lineTo(x+wd/2+0.85*k, y); ctx.stroke();
+      ctx.fillStyle = "#5A6272";
+      if(!V.compact) ctx.fillText(String(labels[i]), x+wd/2+1.2*k, y);
+    }
+    /* the melting and boiling points of this substance, marked on the scale */
+    var s = S();
+    var ym = ty(s.melt), yb2 = ty(s.boil);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#2E8CE0";
+    ctx.beginPath(); ctx.moveTo(x-wd/2-1.6*k, ym); ctx.lineTo(x-wd/2, ym); ctx.stroke();
+    ctx.strokeStyle = "#EE5B24";
+    ctx.beginPath(); ctx.moveTo(x-wd/2-1.6*k, yb2); ctx.lineTo(x-wd/2, yb2); ctx.stroke();
+    if(!V.compact){
+      ctx.font = '700 ' + Math.max(7,0.72*k).toFixed(1) + 'px "Poppins", sans-serif';
+      ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      if(Math.abs(ym - yb2) < 15){
+        /* the two are so close together that one combined tag is the only readable option */
+        ctx.fillStyle = "#3A4250";
+        ctx.fillText("melts " + Math.round(s.melt) + " K, boils " + Math.round(s.boil) + " K",
+                     x-wd/2-2.1*k, (ym+yb2)/2);
+      } else {
+        ctx.fillStyle = "#2E8CE0"; ctx.fillText("melts " + Math.round(s.melt) + " K", x-wd/2-2.1*k, ym);
+        ctx.fillStyle = "#EE5B24"; ctx.fillText("boils " + Math.round(s.boil) + " K", x-wd/2-2.1*k, yb2);
+      }
+      ctx.textAlign = "left";
+    }
+    var yv = ty(T);
+    var cg = ctx.createLinearGradient(0, yb, 0, yt);
+    cg.addColorStop(0,"#EE5B24"); cg.addColorStop(1,"#F8A03A");
+    ctx.fillStyle = cg;
+    roundRect(ctx, x-wd*0.27, yv, wd*0.54, yb-yv, wd*0.27); ctx.fill();
+    ctx.fillStyle = "#EE5B24";
+    ctx.beginPath(); ctx.arc(x, yb, wd*0.72, 0, Math.PI*2); ctx.fill();
+    if(V.compact) return;
+    var t1 = Math.round(T) + " K";
+    var t2 = fmt(celsius(),0) + " \u00B0C";
+    ctx.font = '700 ' + Math.max(12, 1.5*k).toFixed(1) + 'px "Poppins", "IBM Plex Mono", monospace';
+    var w1 = ctx.measureText(t1).width;
+    ctx.font = '700 ' + Math.max(9, 1.05*k).toFixed(1) + 'px "Poppins", "IBM Plex Mono", monospace';
+    var w2 = ctx.measureText(t2).width;
+    var bw = Math.max(w1,w2) + 22, bh = 3.4*k, bx = clamp(x - bw/2, 4, V.w - bw - 4);
+    var by = yt - bh - 0.9*k;
+    ctx.fillStyle = "#12161E";
+    roundRect(ctx, bx, by, bw, bh, 8); ctx.fill();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#FFA07A";
+    ctx.font = '700 ' + Math.max(12, 1.5*k).toFixed(1) + 'px "Poppins", "IBM Plex Mono", monospace';
+    ctx.fillText(t1, bx + bw/2, by + bh*0.36);
+    ctx.fillStyle = "#9AA2B4";
+    ctx.font = '700 ' + Math.max(9, 1.05*k).toFixed(1) + 'px "Poppins", "IBM Plex Mono", monospace';
+    ctx.fillText(t2, bx + bw/2, by + bh*0.74);
+  }
+
+  /* ------------------------------------------------ panels */
+  function subIcon(s){
+    var W = 34, H = 22, cx = W/2, cy = H/2, r = 6.4;
+    function b(x,y,rr,c1,c2){
+      return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+rr.toFixed(1)
+           + '" fill="'+c1+'" stroke="'+c2+'" stroke-width="1"/>';
+    }
+    if(s.atoms === 1) return '<svg width="'+W+'" height="'+H+'">'+b(cx,cy,r,s.col,s.col2)+'</svg>';
+    if(s.atoms === 2) return '<svg width="'+W+'" height="'+H+'">'
+      + b(cx-5,cy,r*0.9,s.col,s.col2) + b(cx+5,cy,r*0.9,s.col,s.col2) + '</svg>';
+    return '<svg width="'+W+'" height="'+H+'">'
+      + b(cx-6.4,cy-4.2,r*0.58,"#F2F5F8","#AEB8C4")
+      + b(cx+6.4,cy-4.2,r*0.58,"#F2F5F8","#AEB8C4")
+      + b(cx,cy+1.4,r,s.col,s.col2) + '</svg>';
+  }
+  function buildSubs(){
+    var html = "";
+    for(var i=0;i<SUBS.length;i++){
+      var s = SUBS[i];
+      html += '<button class="cvlab-sub" data-i="'+i+'">' + subIcon(s)
+        + '<span>' + s.name + '<u>' + s.sym + '</u></span></button>';
+    }
+    elSubs.innerHTML = html;
+    elSubs.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-sub") : null;
+      if(!b) return;
+      setSub(parseInt(b.getAttribute("data-i"),10));
+    });
+    var st = [["solid","Solid","packed"],["liquid","Liquid","close but moving"],["gas","Gas","far apart"]];
+    var h2 = "";
+    for(var j=0;j<st.length;j++){
+      h2 += '<button class="cvlab-st" data-s="'+st[j][0]+'">'+st[j][1]
+          + '<span>'+st[j][2]+'</span></button>';
+    }
+    elStateBtns.innerHTML = h2;
+    elStateBtns.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-st") : null;
+      if(!b) return;
+      var key = b.getAttribute("data-s");
+      var s = S();
+      T = key === "solid" ? s.solidT : (key === "liquid" ? s.liquidT : s.gasT);
+      targetT = null; heatCmd = 0; elHeat.value = "0";
+      markInteracted();
+      say("Jumped to <strong>" + Math.round(T) + " K</strong>, where " + s.name.toLowerCase()
+          + " is a " + key + ".");
+      refresh();
+    });
+    var tq = [["Absolute zero","0"],["Room temp","293"],["Hot","500"]];
+    var h3 = "";
+    for(var q=0;q<tq.length;q++) h3 += '<button class="cvlab-qb" data-t="'+tq[q][1]+'">'+tq[q][0]+'</button>';
+    elTQuick.innerHTML = h3;
+    elTQuick.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-qb") : null;
+      if(!b) return;
+      targetT = parseFloat(b.getAttribute("data-t"));
+      heatCmd = 0; elHeat.value = "0";
+      markInteracted();
+      say("Heading for <strong>" + Math.round(targetT) + " K</strong>.");
+    });
+  }
+  function setSub(i){
+    si = i; T = SUBS[i].solidT; targetT = null; heatCmd = 0; elHeat.value = "0";
+    markInteracted();
+    seed(); refresh();
+    say("Now showing <strong>" + S().name + "</strong> (" + S().sym + ").");
+  }
+
+  function renderPanels(){
+    var s = S(), st = stateName();
+    roSub.innerHTML = s.name + " <small>" + s.sym + "</small>";
+    roT.innerHTML = Math.round(T) + " K <small>" + fmt(celsius(),0) + " \u00B0C</small>";
+    roState.textContent = st;
+    roSpeed.textContent = speedWord();
+    if(interacted){
+      elMp.textContent = fmt(s.melt,1) + " K";
+      elBp.textContent = fmt(s.boil,1) + " K";
+      elSpd.textContent = Math.round(meanSpeed()) + " m/s";
+      elFactHint.style.display = "none";
+    } else {
+      elMp.textContent = "—";
+      elBp.textContent = "—";
+      elSpd.textContent = "—";
+      elFactHint.style.display = "";
+    }
+    elHeatV.textContent = heatCmd === 0 ? "off" : (heatCmd > 0 ? "heating" : "cooling");
+    elPause.textContent = paused ? "Play" : "Pause";
+
+    var bs = elSubs.querySelectorAll(".cvlab-sub");
+    for(var i=0;i<bs.length;i++){
+      bs[i].className = "cvlab-sub" + (parseInt(bs[i].getAttribute("data-i"),10) === si ? " is-on" : "");
+    }
+    var ss = elStateBtns.querySelectorAll(".cvlab-st");
+    for(var j=0;j<ss.length;j++){
+      var key = ss[j].getAttribute("data-s");
+      var on = (key === "solid" && st === "Solid") || (key === "liquid" && st === "Liquid")
+            || (key === "gas" && st === "Gas");
+      ss[j].className = "cvlab-st" + (on ? " is-on" : "");
+    }
+
+    elMadeOf.textContent = s.atoms === 1 ? "single atoms"
+      : (s.atoms === 2 ? "2 atoms joined" : "3 atoms joined");
+    elSubNote.innerHTML = s.atoms === 1
+      ? "<b>" + s.name + "</b> particles are single atoms, so they are simple round balls."
+      : "<b>" + s.name + "</b> particles are molecules: " + (s.atoms === 2
+          ? "two oxygen atoms bonded together."
+          : "one oxygen with two smaller hydrogens attached.");
+
+    var bg, fg;
+    if(st === "Solid"){ bg = "#E7F0FD"; fg = "#1A5C9E"; }
+    else if(st === "Liquid"){ bg = "#E6F6F3"; fg = "#0B6152"; }
+    else { bg = "#FDEEE6"; fg = "#A9430F"; }
+    elBadge.textContent = st;
+    elBadge.style.background = bg; elBadge.style.color = fg;
+
+    if(st === "Gas"){
+      elSpaceBox.innerHTML = "As a gas the particles spread out to fill the whole container, so there "
+        + "is no level to measure.";
+    } else {
+      elSpaceBox.innerHTML = "The material fills <b>" + Math.round(occFrac*100)
+        + "%</b> of the container as a <b>" + st.toLowerCase() + "</b>. Switch between Solid and "
+        + "Liquid and compare.";
+    }
+  }
+  function refresh(){ renderPanels(); }
+
+  /* ------------------------------------------------ loop */
+  function frame(){
+    var n = now();
+    if(lastFrame === null) lastFrame = n;
+    var dt = (n - lastFrame)/1000; lastFrame = n;
+    if(dt > 0.05) dt = 0.05;
+    if(!paused){
+      if(heatCmd !== 0){
+        T = clamp(T + heatCmd*rate*dt, T_MIN, T_MAX);
+        targetT = null;
+      } else if(targetT !== null){
+        var gap = targetT - T, step = rate*dt;
+        if(Math.abs(gap) <= step){ T = targetT; targetT = null; }
+        else T += (gap > 0 ? 1 : -1)*step;
+      }
+      stepParts(Math.min(dt, 0.033));
+      renderPanels();
+    }
+    drawScene();
+    requestAnimationFrame(frame);
+  }
+
+  /* ------------------------------------------------ wiring */
+  elHeat.addEventListener("input", function(){
+    heatCmd = parseFloat(elHeat.value) || 0;
+    if(heatCmd !== 0){ targetT = null; markInteracted(); }
+  });
+  function release(){ heatCmd = 0; elHeat.value = "0"; refresh(); }
+  elHeat.addEventListener("pointerup", release);
+  elHeat.addEventListener("pointercancel", release);
+  elHeat.addEventListener("mouseup", release);
+  elHeat.addEventListener("touchend", release);
+  elHeat.addEventListener("blur", release);
+  elRate.addEventListener("change", function(){ rate = parseFloat(elRate.value) || 180; });
+  elPause.addEventListener("click", function(){
+    paused = !paused;
+    say(paused ? "Paused. Look closely, then press Play." : "Running again.");
+    refresh();
+  });
+  elReset.addEventListener("click", function(){ setSub(si); });
+
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(drawScene);
+
+  buildSubs(); seed(); refresh();
+  requestAnimationFrame(frame);
+
+  if(window.__somHook) window.__somHook({
+    SUBS: SUBS, setSub: setSub,
+    setT: function(x){ T = clamp(x, T_MIN, T_MAX); targetT = null; heatCmd = 0; },
+    step: function(dt, n){ for(var i=0;i<n;i++) stepParts(dt); renderPanels(); },
+    setPaused: function(b){ paused = b; },
+    state: function(){ return { T:T, si:si, occFrac:occFrac, stateName:stateName(),
+                                meanSpeed:meanSpeed(), parts:parts, latSpacing:latSpacing }; }
+  });
+})();
+</script>
+</body>
+</html>

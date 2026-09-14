@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Density lab — mass, volume and density of eight materials</title>
+
+<!--
+  ============================================================================
+  DENSITY BLOCK LAB  (PhET-style, single file, no dependencies)
+
+  HOW TO EMBED
+  1) Easiest: upload this file and drop it in an iframe:
+       <iframe src="density-blocks-lab.html"
+               style="width:100%;height:1450px;border:0" loading="lazy"
+               title="Density block simulation"></iframe>
+  2) Or paste the style block, the cvlab div, and the script block into a page.
+     Every CSS rule is scoped under .cvlab.
+
+  THE MODEL
+     Every cube is 2.5 cm on an edge, so one cube is 15.625 cm^3 and n cubes
+     stacked measure 2.5 x 2.5 x 2.5n. Mass is exactly proportional to n, so
+       density = m / V
+     comes out the same for 1, 2, 3 or 4 blocks. Single block masses are the
+     measured values supplied by the teacher.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+.cvlab{
+  --bench:#DDE0D6; --paper:#FBFBF7; --rule:#C9CFC2;
+  --ink:#1B1D1C; --ink-2:#5A5F58;
+  --blue:#1552B8; --blue-d:#0E3B87;
+  --case:#1B63C4; --case-d:#0F4694;
+  --steel:#C9CDD1; --lcd:#7FB6D8;
+  --wood:#E3C48D; --wood-d:#B08F4D;
+  --epoxy:#22251F; --tape:#E8B93C;
+  --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
+  padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
+}
+.cvlab *{box-sizing:border-box}
+.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
+.cvlab p{margin:0}
+.cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+  display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--tape);margin-bottom:2px}
+.cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
+.cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
+.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:92px}
+.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:#8C9284}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
+
+.cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
+  border-radius:0 0 5px 5px;padding:10px 10px 12px}
+.cvlab canvas{display:block;width:100%}
+.cvlab-stage{display:grid;grid-template-columns:minmax(196px,.42fr) 1fr;gap:10px}
+#cvlab-scene,#cvlab-mv{height:clamp(300px,30vw,352px);border-radius:3px}
+@media (max-width:760px){
+  .cvlab-stage{grid-template-columns:1fr}
+  #cvlab-scene{height:clamp(260px,48vw,320px)}#cvlab-mv{height:clamp(220px,38vw,270px)}
+}
+.cvlab-hint{font-family:var(--font-m);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2);margin-top:6px}
+.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;
+  border-top:1px dashed var(--rule)}
+.cvlab-status{flex:1 1 220px;min-width:190px;font-size:16px;color:var(--ink-2)}
+.cvlab-status strong{color:var(--ink);font-weight:700}
+
+.cvlab-btn{font-family:var(--font-d);font-size:17px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;cursor:pointer;background:var(--paper);color:var(--ink);
+  border:1.5px solid var(--ink);border-radius:3px;padding:7px 14px;line-height:1.1;
+  transition:transform .08s ease,background .12s ease,color .12s ease}
+.cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.cvlab-btn:active:not(:disabled){transform:translateY(1px)}
+.cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
+.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:#fff;min-width:150px}
+.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:#fff}
+.cvlab-btn-sm{font-size:15px;padding:5px 10px;border-width:1px}
+
+.cvlab-grid{display:grid;gap:12px;margin-top:12px;
+  grid-template-columns:minmax(200px,.8fr) minmax(280px,1.25fr) minmax(270px,1.1fr)}
+@media (max-width:1000px){.cvlab-grid{grid-template-columns:1fr 1fr}
+  .cvlab-panel-graph{grid-column:1/-1}}
+@media (max-width:640px){.cvlab-grid{grid-template-columns:1fr}}
+.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:5px;padding:12px;
+  display:flex;flex-direction:column;gap:10px}
+.cvlab-panel h2{font-size:15px;letter-spacing:.16em;text-transform:uppercase;font-family:var(--font-m);
+  font-weight:700;color:var(--ink);padding-bottom:7px;border-bottom:2px solid var(--ink)}
+.cvlab-note{font-size:14.5px;color:var(--ink-2)}
+.cvlab-row{display:flex;flex-wrap:wrap;gap:6px}
+
+.cvlab-mats{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.cvlab-mat{cursor:pointer;border:1.5px solid var(--ink);border-radius:3px;padding:6px 6px;
+  display:flex;align-items:center;gap:6px;background:var(--paper);color:var(--ink);
+  font-family:var(--font-m);font-size:13px;font-weight:700;text-align:left;
+  transition:background .12s ease,color .12s ease}
+.cvlab-mat:hover{background:#EFF1E9}
+.cvlab-mat.is-on{color:#fff;border-color:var(--ink)}
+.cvlab-mat i{display:block;width:11px;height:11px;border-radius:2px;flex:none;
+  border:1px solid rgba(0,0,0,.35)}
+.cvlab-mat b{margin-left:auto;font-weight:700;font-size:11.5px;opacity:.75}
+
+.cvlab-counts{display:flex;gap:5px}
+.cvlab-cbtn{flex:1;cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:3px;
+  padding:9px 2px;font-family:var(--font-m);font-size:15px;font-weight:700;color:var(--ink);
+  transition:background .12s ease,color .12s ease}
+.cvlab-cbtn:hover{background:#EFF1E9}
+.cvlab-cbtn.is-on{background:var(--ink);color:#F4F5F0}
+
+.cvlab-live{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:#EFF1E9;
+  border-radius:3px;padding:7px 9px;line-height:1.7}
+.cvlab-live b{color:var(--ink)}
+
+.cvlab-field{display:flex;flex-direction:column;gap:4px}
+.cvlab-field span{font-family:var(--font-m);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-2)}
+.cvlab select{font-family:var(--font-b);font-size:15.5px;padding:6px 8px;border:1px solid var(--ink);
+  border-radius:3px;background:#fff;color:var(--ink);width:100%}
+.cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
+.cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
+.cvlab-opts input{margin:3px 0 0;accent-color:var(--blue);flex:none}
+
+.cvlab-stationhead{font-family:var(--font-m);font-size:13px;font-weight:700;color:#fff;
+  text-align:center;padding:5px;border-radius:3px 3px 0 0;letter-spacing:.06em}
+.cvlab-tablewrap{overflow:auto;border:1px solid var(--rule);border-top:0;border-radius:0 0 3px 3px}
+.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13px}
+.cvlab thead th{background:#EFF1E9;font-size:10.5px;letter-spacing:.02em;font-weight:700;
+  padding:5px 3px;text-align:right;border-bottom:1px solid var(--rule);color:var(--ink-2);
+  white-space:nowrap}
+.cvlab thead th:first-child{text-align:left}
+.cvlab tbody td{padding:4px 3px;text-align:right;font-variant-numeric:tabular-nums;
+  border-bottom:1px solid #EDEFE7;white-space:nowrap}
+.cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
+.cvlab tbody tr:last-child td{border-bottom:0}
+.cvlab tbody tr.is-new td{background:#FCF3D9}
+.cvlab tbody td.blank{color:#B8BDB2}
+.cvlab-mean{font-family:var(--font-m);font-size:14px;color:var(--ink-2)}
+.cvlab-mean b{color:var(--ink);font-size:16px}
+
+#cvlab-db{height:clamp(220px,26vw,280px)}
+.cvlab-key{display:flex;flex-wrap:wrap;gap:5px}
+.cvlab-chip{font-family:var(--font-m);font-size:12px;border:1px solid var(--rule);border-radius:3px;
+  padding:3px 5px;display:flex;align-items:center;gap:4px;background:#fff}
+.cvlab-chip i{display:block;width:8px;height:8px;border-radius:50%;flex:none}
+.cvlab-chip b{font-weight:700}
+
+.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
+  padding:10px 14px}
+.cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
+.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
+.cvlab-notes li{margin:3px 0}
+.cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
+</style>
+</head>
+<body style="margin:0;background:#DDE0D6">
+
+<div class="cvlab" id="cvlab">
+
+  <header class="cvlab-head">
+    <div>
+      <span class="cvlab-eyebrow">Matter lab &middot; density</span>
+      <h1>Density blocks &mdash; mass, volume, density</h1>
+    </div>
+    <div class="cvlab-readouts">
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Material</span><span class="cvlab-ro-v" id="cvlab-ro-mat">Brass</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Blocks</span><span class="cvlab-ro-v" id="cvlab-ro-n">1</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Balance</span><span class="cvlab-ro-v" id="cvlab-ro-mass">138.00 g</span></div>
+      <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Density</span><span class="cvlab-ro-v" id="cvlab-ro-den">8.83</span></div>
+    </div>
+  </header>
+
+  <div class="cvlab-bench">
+    <div class="cvlab-stage">
+      <canvas id="cvlab-scene" role="img"
+        aria-label="A stack of density blocks on a digital balance with a ruler standing beside them, and the block set case on the bench."></canvas>
+      <canvas id="cvlab-mv" role="img"
+        aria-label="Graph of mass against volume for each material, one straight line through the origin per material."></canvas>
+    </div>
+    <p class="cvlab-hint">Every cube is 2.5 cm on an edge &middot; stack them and the height grows, the width and length do not</p>
+    <div class="cvlab-bar">
+      <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Record this measurement</button>
+      <button class="cvlab-btn cvlab-btn-sm" id="cvlab-all4">Record all four</button>
+      <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
+        Pick a material, put blocks on the balance, then record what the instruments say.
+      </p>
+    </div>
+  </div>
+
+  <div class="cvlab-grid">
+
+    <section class="cvlab-panel">
+      <h2>Station</h2>
+      <div class="cvlab-mats" id="cvlab-mats"></div>
+      <div class="cvlab-field">
+        <span>Blocks on the balance</span>
+        <div class="cvlab-counts" id="cvlab-counts"></div>
+      </div>
+      <p class="cvlab-live" id="cvlab-live">&nbsp;</p>
+      <label class="cvlab-field" for="cvlab-err">
+        <span>How carefully it is measured</span>
+        <select id="cvlab-err">
+          <option value="0">Perfect readings, no error</option>
+          <option value="1" selected>Careful work, slight error</option>
+          <option value="2">Rushed ruler work</option>
+        </select>
+      </label>
+      <div class="cvlab-opts">
+        <label><input type="checkbox" id="cvlab-hide">
+          <span>Blank the volume and density columns so students work them out</span></label>
+      </div>
+    </section>
+
+    <section class="cvlab-panel">
+      <h2>Data table</h2>
+      <div>
+        <div class="cvlab-stationhead" id="cvlab-sthead">Station #1 Brass</div>
+        <div class="cvlab-tablewrap">
+          <table>
+            <caption class="cvlab-sr">Mass, dimensions, volume and density for one to four blocks</caption>
+            <thead><tr>
+              <th scope="col"># blocks</th><th scope="col">mass g</th>
+              <th scope="col">L cm</th><th scope="col">W cm</th><th scope="col">H cm</th>
+              <th scope="col">V cm&sup3;</th><th scope="col">g/cm&sup3;</th>
+            </tr></thead>
+            <tbody id="cvlab-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <p class="cvlab-mean" id="cvlab-mean">&nbsp;</p>
+      <div class="cvlab-row">
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clearmat">Clear this station</button>
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clearall">Clear all</button>
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-copy">Copy data</button>
+      </div>
+      <p class="cvlab-note" id="cvlab-copynote">&nbsp;</p>
+    </section>
+
+    <section class="cvlab-panel cvlab-panel-graph">
+      <h2>Density stays the same</h2>
+      <canvas id="cvlab-db" role="img"
+        aria-label="Graph of calculated density against the number of blocks, one flat line per material."></canvas>
+      <div class="cvlab-key" id="cvlab-key"></div>
+    </section>
+
+  </div>
+
+  <section class="cvlab-notes">
+    <h3>How to use this simulation</h3>
+    <ol>
+      <li>Pick a <strong>material</strong> in the Station panel, then choose how many <strong>blocks</strong> to stack on the balance.</li>
+      <li>Read the balance and ruler in the scene, and use the <strong>How carefully it is measured</strong> dropdown to add realistic measurement error if you like.</li>
+      <li>Press <strong>Record this measurement</strong> to add a row to the data table, or <strong>Record all four</strong> to fill in all four block counts at once.</li>
+      <li>Check the <strong>Mass against volume</strong> graph &mdash; each material forms a straight line through the origin, and the slope of that line is its density.</li>
+      <li>Check the <strong>Density stays the same</strong> graph to see that density does not change no matter how many blocks you stack.</li>
+      <li>Turn on <strong>Blank the volume and density columns</strong> to calculate those yourself from the measurements instead of having the sim fill them in.</li>
+      <li>Use <strong>Clear this station</strong>, <strong>Clear all</strong>, or <strong>Copy data</strong> to reset or export your results.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------ constants */
+  var EDGE     = 2.5;                 // cm, as specified
+  var V1       = EDGE*EDGE*EDGE;      // 15.625 cm^3
+  var COUNTS   = [1,2,3,4];
+  var ERRLEV   = [ {m:0,    d:0},     // perfect
+                   {m:0.03, d:0.02},  // careful
+                   {m:0.15, d:0.06} ];// rushed
+  var MATS = [
+    { key:"brass",    name:"Brass",     m1:138.0, head:"#3A5BC7", face:"#C0A950", edge:"#8A7830" },
+    { key:"aluminum", name:"Aluminum",  m1:45.0,  head:"#E03127", face:"#CBD0D4", edge:"#9AA0A5" },
+    { key:"wood",     name:"Wood",      m1:11.7,  head:"#F08A1E", face:"#CFA36A", edge:"#9E7844" },
+    { key:"iron",     name:"Iron",      m1:130.0, head:"#1E8A3C", face:"#70767A", edge:"#4A4F53" },
+    { key:"nylon",    name:"Nylon",     m1:14.2,  head:"#7B2D8E", face:"#EFEADB", edge:"#C3BCA6" },
+    { key:"copper",   name:"Copper",    m1:147.2, head:"#2AA3D4", face:"#BE7642", edge:"#8B5228" },
+    { key:"pvc",      name:"PVC",       m1:23.1,  head:"#D94070", face:"#43494D", edge:"#2A2F32" },
+    { key:"acrylic",  name:"Acrylic",   m1:19.4,  head:"#7BB026", face:"#DCE9EF", edge:"#A9BFC8" }
+  ];
+
+  /* ------------------------------------------------ state */
+  var mi = 0;            // index into MATS
+  var n = 1;             // blocks on the balance
+  var reading = null;    // {mass, L, W, H}
+  var data = {};         // data[key][n] = row
+  var newest = null;     // {key, n}
+  var dirty = true;
+
+  var reduceMotion = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+
+  /* ------------------------------------------------ dom */
+  function $(id){ return document.getElementById(id); }
+  var sceneC = $("cvlab-scene"), mvC = $("cvlab-mv"), dbC = $("cvlab-db");
+  var sctx = sceneC.getContext("2d"), mctx = mvC.getContext("2d"), dctx = dbC.getContext("2d");
+  var elGo = $("cvlab-go"), elAll4 = $("cvlab-all4"), elStatus = $("cvlab-status");
+  var elMats = $("cvlab-mats"), elCounts = $("cvlab-counts"), elLive = $("cvlab-live");
+  var elErr = $("cvlab-err"), elHide = $("cvlab-hide");
+  var elStHead = $("cvlab-sthead"), elBody = $("cvlab-tbody"), elMean = $("cvlab-mean");
+  var elClearMat = $("cvlab-clearmat"), elClearAll = $("cvlab-clearall");
+  var elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote"), elKey = $("cvlab-key");
+  var roMat = $("cvlab-ro-mat"), roN = $("cvlab-ro-n"),
+      roMass = $("cvlab-ro-mass"), roDen = $("cvlab-ro-den");
+
+  /* ------------------------------------------------ helpers */
+  function mat(){ return MATS[mi]; }
+  function fmt(v,p){ return v.toFixed(p===undefined?2:p); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function say(m){ elStatus.innerHTML = m; }
+  function monoStack(){ return '"Poppins", ui-monospace, Menlo, Consolas, monospace'; }
+  function gauss(){
+    var u=0,w=0;
+    while(u===0) u=Math.random();
+    while(w===0) w=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w);
+  }
+  function errLev(){ return ERRLEV[parseInt(elErr.value,10) || 0]; }
+  function trueDensity(m){ return m.m1/V1; }
+
+  /* one fresh set of instrument readings for n blocks of the current material */
+  function measure(material, nb){
+    var e = errLev();
+    var mass = material.m1*nb + (e.m ? gauss()*e.m : 0);
+    var L = EDGE + (e.d ? gauss()*e.d : 0);
+    var W = EDGE + (e.d ? gauss()*e.d : 0);
+    var H = EDGE*nb + (e.d ? gauss()*e.d : 0);
+    return {
+      n: nb,
+      mass: Math.round(mass*100)/100,          /* balance reads to 0.01 g */
+      L: Math.round(L*10)/10,                  /* ruler read to the nearest mm */
+      W: Math.round(W*10)/10,
+      H: Math.round(H*10)/10
+    };
+  }
+  function volOf(r){ return r.L*r.W*r.H; }
+  function denOf(r){ return r.mass/volOf(r); }
+  function rowsOf(key){
+    var out = [], d = data[key];
+    if(!d) return out;
+    for(var i=0;i<COUNTS.length;i++) if(d[COUNTS[i]]) out.push(d[COUNTS[i]]);
+    return out;
+  }
+  function meanDensity(key){
+    var rs = rowsOf(key);
+    if(!rs.length) return null;
+    var s = 0;
+    for(var i=0;i<rs.length;i++) s += denOf(rs[i]);
+    return s/rs.length;
+  }
+  function anyData(){
+    for(var i=0;i<MATS.length;i++) if(rowsOf(MATS[i].key).length) return true;
+    return false;
+  }
+
+  function fit(canvas, ctx){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(150, Math.round(r.width)), h = Math.max(130, Math.round(r.height));
+    if(canvas.width !== w*dpr || canvas.height !== h*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { w:w, h:h };
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+  /* a tidy axis step so labels land on round numbers */
+  function axisStep(maxv){
+    var raw = Math.max(maxv,1e-6)/5;
+    var e = Math.pow(10, Math.floor(Math.log10(raw)));
+    var m = raw/e;
+    var s = m<=1 ? 1 : (m<=2 ? 2 : (m<=5 ? 5 : 10));
+    return s*e;
+  }
+
+  /* ------------------------------------------------ controls */
+  function buildMats(){
+    var html = "";
+    for(var i=0;i<MATS.length;i++){
+      html += '<button class="cvlab-mat" data-i="' + i + '">'
+            + '<i style="background:' + MATS[i].face + '"></i>' + MATS[i].name
+            + '<b data-done="' + i + '"></b></button>';
+    }
+    elMats.innerHTML = html;
+    elMats.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-mat") : null;
+      if(!b) return;
+      mi = parseInt(b.getAttribute("data-i"),10);
+      reading = measure(mat(), n);
+      say("Station <strong>" + (mi+1) + "</strong>, " + mat().name
+          + ". Blocks are out of the case and on the balance.");
+      refreshAll();
+    });
+  }
+  function buildCounts(){
+    var html = "";
+    for(var i=0;i<COUNTS.length;i++){
+      html += '<button class="cvlab-cbtn" data-n="' + COUNTS[i] + '">' + COUNTS[i] + '</button>';
+    }
+    elCounts.innerHTML = html;
+    elCounts.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-cbtn") : null;
+      if(!b) return;
+      n = parseInt(b.getAttribute("data-n"),10);
+      reading = measure(mat(), n);
+      say("<strong>" + n + "</strong> block" + (n>1?"s":"") + " of " + mat().name
+          + " on the balance. Read the ruler for the height.");
+      refreshAll();
+    });
+  }
+
+  /* ------------------------------------------------ recording */
+  function record(nb){
+    var key = mat().key;
+    if(!data[key]) data[key] = {};
+    var r = (nb === n && reading) ? reading : measure(mat(), nb);
+    data[key][nb] = r;
+    newest = { key: key, n: nb };
+    return r;
+  }
+  function recordOne(){
+    var r = record(n);
+    say("Recorded " + n + " block" + (n>1?"s":"") + " of " + mat().name + ": <strong>"
+        + fmt(r.mass) + " g</strong> in <strong>" + fmt(volOf(r),2) + " cm\u00B3</strong>"
+        + (elHide.checked ? "." : ", so " + fmt(denOf(r)) + " g/cm\u00B3."));
+    refreshAll();
+  }
+  function recordAll(){
+    for(var i=0;i<COUNTS.length;i++) record(COUNTS[i]);
+    var md = meanDensity(mat().key);
+    say("All four rows recorded for <strong>" + mat().name + "</strong>"
+        + (elHide.checked ? "." : ", averaging <strong>" + fmt(md) + " g/cm\u00B3</strong>."));
+    refreshAll();
+  }
+
+  /* ------------------------------------------------ readouts */
+  function refreshAll(){
+    syncUI(); renderTable(); renderKey();
+    dirty = true; drawScene(); drawMV(); drawDB();
+  }
+  function syncUI(){
+    var m = mat();
+    roMat.textContent = m.name;
+    roN.textContent = String(n);
+    roMass.textContent = reading ? fmt(reading.mass) + " g" : "0.00 g";
+    roDen.textContent = elHide.checked ? "\u2014"
+      : (reading ? fmt(denOf(reading)) : "\u2014");
+
+    var bs = elMats.querySelectorAll(".cvlab-mat");
+    for(var i=0;i<bs.length;i++){
+      var idx = parseInt(bs[i].getAttribute("data-i"),10);
+      bs[i].className = "cvlab-mat" + (idx === mi ? " is-on" : "");
+      bs[i].style.background = idx === mi ? MATS[idx].head : "";
+    }
+    var ds = elMats.querySelectorAll("[data-done]");
+    for(var j=0;j<ds.length;j++){
+      var k = parseInt(ds[j].getAttribute("data-done"),10);
+      var cnt = rowsOf(MATS[k].key).length;
+      ds[j].textContent = cnt ? cnt + "/4" : "";
+    }
+    var cs = elCounts.querySelectorAll(".cvlab-cbtn");
+    for(var c=0;c<cs.length;c++){
+      var nv = parseInt(cs[c].getAttribute("data-n"),10);
+      cs[c].className = "cvlab-cbtn" + (nv === n ? " is-on" : "");
+    }
+
+    if(reading){
+      elLive.innerHTML = "Balance <b>" + fmt(reading.mass) + " g</b><br>"
+        + "Ruler <b>" + fmt(reading.L,1) + "</b> &times; <b>" + fmt(reading.W,1)
+        + "</b> &times; <b>" + fmt(reading.H,1) + "</b> cm"
+        + (elHide.checked ? "" : "<br>Volume <b>" + fmt(volOf(reading),2) + " cm\u00B3</b>"
+            + " &middot; density <b>" + fmt(denOf(reading)) + "</b>");
+    } else elLive.innerHTML = "&nbsp;";
+
+    elStHead.textContent = "Station #" + (mi+1) + " " + mat().name;
+    elStHead.style.background = mat().head;
+    elClearMat.disabled = rowsOf(mat().key).length === 0;
+    elClearAll.disabled = !anyData();
+    elCopy.disabled = !anyData();
+  }
+
+  function renderTable(){
+    var key = mat().key, hide = elHide.checked;
+    var html = "";
+    for(var i=0;i<COUNTS.length;i++){
+      var nb = COUNTS[i];
+      var r = data[key] ? data[key][nb] : null;
+      var isNew = newest && newest.key === key && newest.n === nb;
+      html += '<tr' + (isNew ? ' class="is-new"' : '') + '><td>' + nb
+            + (nb === 1 ? " block" : " blocks") + '</td>';
+      if(!r){
+        html += '<td class="blank">&mdash;</td><td class="blank">&mdash;</td>'
+              + '<td class="blank">&mdash;</td><td class="blank">&mdash;</td>'
+              + '<td class="blank">&mdash;</td><td class="blank">&mdash;</td>';
+      } else {
+        html += '<td>' + fmt(r.mass) + '</td><td>' + fmt(r.L,1) + '</td><td>'
+              + fmt(r.W,1) + '</td><td>' + fmt(r.H,1) + '</td>';
+        html += hide ? '<td class="blank">?</td><td class="blank">?</td>'
+                     : '<td>' + fmt(volOf(r),2) + '</td><td>' + fmt(denOf(r)) + '</td>';
+      }
+      html += '</tr>';
+    }
+    elBody.innerHTML = html;
+
+    var md = meanDensity(key);
+    if(md === null) elMean.innerHTML = "&nbsp;";
+    else if(hide) elMean.innerHTML = rowsOf(key).length + " of 4 rows measured.";
+    else elMean.innerHTML = "Average density: <b>" + fmt(md) + " g/cm\u00B3</b>";
+  }
+
+  function renderKey(){
+    var html = "";
+    for(var i=0;i<MATS.length;i++){
+      var md = meanDensity(MATS[i].key);
+      if(md === null) continue;
+      html += '<span class="cvlab-chip"><i style="background:' + MATS[i].head + '"></i>'
+            + MATS[i].name + (elHide.checked ? "" : " <b>" + fmt(md) + "</b>") + '</span>';
+    }
+    elKey.innerHTML = html;
+  }
+
+  /* ------------------------------------------------ scene */
+  var VIEW_W = 22, VIEW_H = 22;
+  var G = {};
+  function geometry(w,h){
+    G.w = w; G.h = h; G.compact = w < 250;
+    G.baseY = h - Math.max(9, h*0.05);
+    G.k = Math.min((w-8)/VIEW_W, (G.baseY - 6)/VIEW_H);
+    G.left = (w - VIEW_W*G.k)/2;
+    G.panY = 2.3;                 /* cm, top of the balance pan */
+  }
+  function X(cm){ return G.left + cm*G.k; }
+  function Y(cm){ return G.baseY - cm*G.k; }
+
+  function drawScene(){
+    var s = fit(sceneC, sctx), w = s.w, h = s.h;
+    geometry(w,h);
+    var ctx = sctx;
+    ctx.clearRect(0,0,w,h);
+    var wall = ctx.createLinearGradient(0,0,0,G.baseY);
+    wall.addColorStop(0,"#F1F2EC"); wall.addColorStop(1,"#E4E7DD");
+    ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.baseY);
+    var top = ctx.createLinearGradient(0,G.baseY,0,h);
+    top.addColorStop(0,"#33372F"); top.addColorStop(1,"#1D201B");
+    ctx.fillStyle = top; ctx.fillRect(0,G.baseY,w,h-G.baseY);
+    ctx.fillStyle = "#575C51"; ctx.fillRect(0,G.baseY,w,1.1);
+
+    drawCase(ctx);
+    drawBalance(ctx);
+    drawRuler(ctx);
+    drawStack(ctx);
+    drawHeightArrow(ctx);
+  }
+
+  /* the blue block set case, with the chosen compartment emptied */
+  function drawCase(ctx){
+    var k = G.k, x0 = X(0.3), x1 = X(7.3), y0 = Y(3.6), y1 = Y(0);
+    var g = ctx.createLinearGradient(0,y0,0,y1);
+    g.addColorStop(0,"#2E77D8"); g.addColorStop(.5,"#1B63C4"); g.addColorStop(1,"#0F4694");
+    ctx.fillStyle = g;
+    roundRect(ctx, x0, y0, x1-x0, y1-y0, 0.35*k); ctx.fill();
+    ctx.strokeStyle = "#0C3A7D"; ctx.lineWidth = 1; ctx.stroke();
+    /* compartments, 4 across and 2 down */
+    var padX = 0.55*k, padY = 0.5*k;
+    var cw = (x1-x0-padX*2)/4, ch = (y1-y0-padY*2)/2;
+    for(var r=0;r<2;r++){
+      for(var c=0;c<4;c++){
+        var idx = r*4+c;
+        var cx = x0+padX+c*cw, cy = y0+padY+r*ch;
+        ctx.fillStyle = "rgba(9,45,100,.55)";
+        roundRect(ctx, cx+1, cy+1, cw-2, ch-2, 2); ctx.fill();
+        if(idx === mi) continue;                       /* those blocks are on the balance */
+        var M = MATS[idx];
+        ctx.fillStyle = M.face;
+        roundRect(ctx, cx+cw*0.16, cy+ch*0.18, cw*0.68, ch*0.64, 1.5); ctx.fill();
+        ctx.strokeStyle = M.edge; ctx.lineWidth = 1;
+        roundRect(ctx, cx+cw*0.16, cy+ch*0.18, cw*0.68, ch*0.64, 1.5); ctx.stroke();
+      }
+    }
+    if(!G.compact){
+      ctx.fillStyle = "#DCE8F8";
+      ctx.font = "700 " + Math.max(6, 0.7*k).toFixed(1) + "px " + monoStack();
+      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillText("DENSITY BLOCK SET", (x0+x1)/2, y0 - 3);
+    }
+  }
+
+  /* the digital balance */
+  function drawBalance(ctx){
+    var k = G.k;
+    var bx0 = X(8.0), bx1 = X(18.0), by0 = Y(1.8), by1 = Y(0);
+    var g = ctx.createLinearGradient(0,by0,0,by1);
+    g.addColorStop(0,"#E4E7E9"); g.addColorStop(.45,"#C6CBCF"); g.addColorStop(1,"#9EA4A9");
+    ctx.fillStyle = g;
+    roundRect(ctx, bx0, by0, bx1-bx0, by1-by0, 0.25*k); ctx.fill();
+    ctx.strokeStyle = "#8A9095"; ctx.lineWidth = 1; ctx.stroke();
+    /* the pan, a touch wider than the body */
+    var px0 = X(7.7), px1 = X(18.3), py0 = Y(G.panY), py1 = Y(1.8);
+    var pg = ctx.createLinearGradient(px0,0,px1,0);
+    pg.addColorStop(0,"#B9BEC2"); pg.addColorStop(.4,"#DDE1E4"); pg.addColorStop(1,"#AEB4B8");
+    ctx.fillStyle = pg;
+    roundRect(ctx, px0, py0, px1-px0, py1-py0, 0.12*k); ctx.fill();
+    ctx.strokeStyle = "#8A9095"; ctx.lineWidth = 1; ctx.stroke();
+    /* LCD on the front face */
+    var lx = X(8.7), ly = Y(1.42), lw = 5.4*k, lh = 0.95*k;
+    ctx.fillStyle = "#7FB6D8";
+    roundRect(ctx, lx, ly, lw, lh, 2); ctx.fill();
+    ctx.strokeStyle = "#5E8CA8"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = "#16303F";
+    ctx.font = "700 " + Math.max(7, 0.95*k).toFixed(1) + "px " + monoStack();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    var txt = reading ? fmt(reading.mass) : "0.00";
+    ctx.fillText(txt, lx+lw-0.5*k, ly+lh/2);
+    ctx.font = "700 " + Math.max(5.5, 0.6*k).toFixed(1) + "px " + monoStack();
+    ctx.textAlign = "left";
+    ctx.fillText("g", lx+lw-0.42*k, ly+lh*0.72);
+    /* buttons */
+    ctx.fillStyle = "#AFB5B9";
+    for(var b=0;b<4;b++){
+      ctx.beginPath();
+      ctx.arc(X(14.9 + b*0.82), Y(0.88), 0.30*k, 0, Math.PI*2); ctx.fill();
+    }
+    if(!G.compact){
+      ctx.fillStyle = "#7E8489";
+      ctx.font = "700 " + Math.max(5.5, 0.62*k).toFixed(1) + "px " + monoStack();
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText("0.01 g", X(8.7), Y(0.42));
+    }
+  }
+
+  /* the wooden ruler, standing with 0 on the pan */
+  function drawRuler(ctx){
+    var k = G.k, x0 = X(19.0), x1 = X(21.3);
+    var y0 = Y(0), y1 = Y(20);
+    var g = ctx.createLinearGradient(x0,0,x1,0);
+    g.addColorStop(0,"#CDA765"); g.addColorStop(.4,"#E9CE97"); g.addColorStop(1,"#F3E4BE");
+    ctx.fillStyle = g;
+    roundRect(ctx, x0, y1, x1-x0, y0-y1, 2); ctx.fill();
+    ctx.strokeStyle = "#AE8B49"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = "#4A3A1E"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var cm=0; cm<=20; cm++){
+      var yy = Math.round(Y(cm)) + 0.5;
+      var len = (cm%5===0) ? (x1-x0)*0.62 : (x1-x0)*0.32;
+      ctx.moveTo(x0, yy); ctx.lineTo(x0+len, yy);
+    }
+    ctx.stroke();
+    ctx.fillStyle = "#3A2E17";
+    ctx.font = "700 " + Math.max(5.5, 0.62*k).toFixed(1) + "px " + monoStack();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var c2=0; c2<=20; c2+=5) ctx.fillText(String(c2), x1-1.5, Y(c2));
+    if(!G.compact){
+      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillText("cm", (x0+x1)/2, Y(20) - 2);
+    }
+  }
+
+  /* the stack of cubes on the pan */
+  function drawStack(ctx){
+    var k = G.k, M = mat();
+    var cx = X(11.4), half = EDGE*k/2;
+    for(var i=0;i<n;i++){
+      var yb = Y(G.panY + EDGE*i), yt = Y(G.panY + EDGE*(i+1));
+      var x0 = cx-half, hgt = yb-yt;
+      var g = ctx.createLinearGradient(x0,0,x0+2*half,0);
+      g.addColorStop(0, M.edge); g.addColorStop(.35, M.face); g.addColorStop(1, M.edge);
+      ctx.fillStyle = g;
+      ctx.fillRect(x0, yt, 2*half, hgt);
+      /* a hint of the top face so it reads as a cube */
+      ctx.fillStyle = "rgba(255,255,255,.30)";
+      ctx.fillRect(x0, yt, 2*half, Math.max(1.2, hgt*0.12));
+      ctx.strokeStyle = M.edge; ctx.lineWidth = 1;
+      ctx.strokeRect(x0+0.5, yt+0.5, 2*half-1, hgt-1);
+      /* wood gets grain, metals get a sheen */
+      if(M.key === "wood"){
+        ctx.strokeStyle = "rgba(120,86,44,.45)"; ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(var g2=1;g2<4;g2++){
+          var gy = yt + hgt*g2/4;
+          ctx.moveTo(x0+2, gy); ctx.lineTo(x0+2*half-2, gy);
+        }
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = "rgba(255,255,255,.18)";
+        ctx.fillRect(x0+2*half*0.62, yt+2, 2*half*0.12, hgt-4);
+      }
+    }
+    /* the label on the front of the stack */
+    if(!G.compact && n >= 1){
+      ctx.fillStyle = "#1B1D1C";
+      ctx.font = "700 " + Math.max(6.5, 0.72*k).toFixed(1) + "px " + monoStack();
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText(M.name.toUpperCase(), cx, Y(G.panY + EDGE*n) - 1.6*k);
+    }
+  }
+
+  /* the height being read off the ruler */
+  function drawHeightArrow(ctx){
+    if(!reading) return;
+    var k = G.k, ax = X(14.0);
+    var yb = Y(G.panY), yt = Y(G.panY + EDGE*n);
+    /* carry the base and the top across to the ruler, so the height is a difference */
+    ctx.save();
+    ctx.setLineDash([3,3]); ctx.strokeStyle = "rgba(21,82,184,.55)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(X(12.8), yb); ctx.lineTo(X(19.0), yb);
+    ctx.moveTo(X(12.8), yt); ctx.lineTo(X(19.0), yt);
+    ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(ax, yb); ctx.lineTo(ax, yt);
+    ctx.moveTo(ax-3, yb-5); ctx.lineTo(ax, yb); ctx.lineTo(ax+3, yb-5);
+    ctx.moveTo(ax-3, yt+5); ctx.lineTo(ax, yt); ctx.lineTo(ax+3, yt+5);
+    ctx.stroke();
+    if(G.compact) return;
+    /* the label goes between the arrow and the ruler, clear of the blocks */
+    var txt = fmt(reading.H,1) + " cm";
+    ctx.font = "700 " + Math.max(7, 0.8*k).toFixed(1) + "px " + monoStack();
+    var tw = ctx.measureText(txt).width;
+    var ly = (yb+yt)/2;
+    ctx.fillStyle = "rgba(251,251,247,.93)";
+    roundRect(ctx, ax+5, ly-7.5, tw+7, 15, 2); ctx.fill();
+    ctx.fillStyle = "#1552B8"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(txt, ax+8.5, ly);
+  }
+
+  /* ------------------------------------------------ graph: mass vs volume */
+  function drawMV(){
+    var s = fit(mvC, mctx), w = s.w, h = s.h;
+    var ctx = mctx;
+    var mL = 52, mR = 14, mT = 14, mB = 34;
+    var pw = w-mL-mR, ph = h-mT-mB;
+    var xMax = 70, hide = elHide.checked;
+    var maxM = 0;
+    for(var i=0;i<MATS.length;i++){
+      var rs = rowsOf(MATS[i].key);
+      for(var j=0;j<rs.length;j++) if(rs[j].mass > maxM) maxM = rs[j].mass;
+    }
+    var yStep = axisStep(Math.max(maxM*1.12, 50));
+    var yMax = Math.ceil(Math.max(maxM*1.12, 50)/yStep)*yStep;
+    var PX = function(v){ return mL + (v/xMax)*pw; };
+    var PY = function(m){ return mT + ph - (m/yMax)*ph; };
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var m1=0; m1<=yMax+1e-9; m1+=yStep/2){ var y=Math.round(PY(m1))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
+    for(var v1=0; v1<=xMax; v1+=5){ var x=Math.round(PX(v1))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
+    ctx.stroke();
+    /* the four volumes a stack can actually have */
+    ctx.strokeStyle = "rgba(21,82,184,.22)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var c=1;c<=4;c++){ var xv=Math.round(PX(V1*c))+0.5; ctx.moveTo(xv,mT); ctx.lineTo(xv,mT+ph); }
+    ctx.stroke();
+    ctx.strokeStyle = "#CCD2C4";
+    ctx.beginPath();
+    for(var m2=0; m2<=yMax+1e-9; m2+=yStep){ var y2=Math.round(PY(m2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
+    for(var v2=0; v2<=xMax; v2+=10){ var x2=Math.round(PX(v2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
+    ctx.stroke();
+
+    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
+    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var m3=0; m3<=yMax+1e-9; m3+=yStep) ctx.fillText(String(Math.round(m3)), mL-6, PY(m3));
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for(var v3=0; v3<=xMax; v3+=10) ctx.fillText(String(v3), PX(v3), mT+ph+6);
+    ctx.save();
+    ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("MASS (g)", 0, 0);
+    ctx.restore();
+    ctx.fillStyle = "#1B1D1C";
+    ctx.fillText("VOLUME (cm\u00B3)", mL+pw/2, mT+ph+19);
+
+    if(!anyData()){
+      ctx.fillStyle = "#8A9082";
+      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Record a measurement and its point lands here.", mL+pw/2, mT+ph/2);
+      return;
+    }
+
+    for(var q=0;q<MATS.length;q++){
+      var M = MATS[q], rs = rowsOf(M.key);
+      if(!rs.length) continue;
+      var sel = (q === mi);
+      ctx.globalAlpha = sel ? 1 : 0.34;
+      /* the line through the origin whose slope is the density */
+      if(!hide){
+        var sxy=0, sxx=0;
+        for(var a=0;a<rs.length;a++){ var vv=volOf(rs[a]); sxy += vv*rs[a].mass; sxx += vv*vv; }
+        var slope = sxx>0 ? sxy/sxx : 0;
+        var vEnd = Math.min(xMax, yMax/Math.max(slope,1e-9));
+        ctx.strokeStyle = M.head; ctx.lineWidth = sel ? 2.2 : 1.4;
+        ctx.beginPath(); ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(vEnd), PY(slope*vEnd)); ctx.stroke();
+      }
+      for(var b=0;b<rs.length;b++){
+        var cx = PX(volOf(rs[b])), cy = PY(Math.min(yMax, rs[b].mass));
+        ctx.fillStyle = M.head;
+        ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.6 : 3.4, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.6 : 3.4, 0, Math.PI*2); ctx.stroke();
+      }
+      if(sel){
+        var last = rs[rs.length-1];
+        ctx.fillStyle = M.head;
+        ctx.font = "700 10.5px " + monoStack();
+        ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+        ctx.fillText(M.name, Math.min(PX(volOf(last)), mL+pw-4),
+                     PY(Math.min(yMax, last.mass)) - 8);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* ------------------------------------------------ graph: density vs blocks */
+  function drawDB(){
+    var s = fit(dbC, dctx), w = s.w, h = s.h;
+    var ctx = dctx;
+    var mL = 44, mR = 14, mT = 12, mB = 32;
+    var pw = w-mL-mR, ph = h-mT-mB;
+    var hide = elHide.checked;
+    var maxD = 0;
+    for(var i=0;i<MATS.length;i++){
+      var rs = rowsOf(MATS[i].key);
+      for(var j=0;j<rs.length;j++){ var d = denOf(rs[j]); if(d > maxD) maxD = d; }
+    }
+    var yStep = axisStep(Math.max(maxD*1.15, 1));
+    var yMax = Math.ceil(Math.max(maxD*1.15, 1)/yStep)*yStep;
+    var PX = function(nb){ return mL + (nb/5)*pw; };
+    var PY = function(d){ return mT + ph - (d/yMax)*ph; };
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var d1=0; d1<=yMax+1e-9; d1+=yStep/2){ var y=Math.round(PY(d1))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
+    ctx.stroke();
+    ctx.strokeStyle = "#CCD2C4";
+    ctx.beginPath();
+    for(var d2=0; d2<=yMax+1e-9; d2+=yStep){ var y2=Math.round(PY(d2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
+    for(var c=1;c<=4;c++){ var x2=Math.round(PX(c))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
+    ctx.stroke();
+
+    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
+    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var d3=0; d3<=yMax+1e-9; d3+=yStep){
+      ctx.fillText(yMax >= 4 ? String(Math.round(d3)) : d3.toFixed(1), mL-6, PY(d3));
+    }
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for(var c2=1;c2<=4;c2++) ctx.fillText(String(c2), PX(c2), mT+ph+6);
+    ctx.save();
+    ctx.translate(11, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("DENSITY (g/cm\u00B3)", 0, 0);
+    ctx.restore();
+    ctx.fillStyle = "#1B1D1C";
+    ctx.fillText("NUMBER OF BLOCKS", mL+pw/2, mT+ph+19);
+
+    if(hide){
+      ctx.fillStyle = "#8A9082";
+      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Work the densities out first, then untick the box.", mL+pw/2, mT+ph/2);
+      return;
+    }
+    if(!anyData()){
+      ctx.fillStyle = "#8A9082";
+      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Flat lines will appear here.", mL+pw/2, mT+ph/2);
+      return;
+    }
+
+    for(var q=0;q<MATS.length;q++){
+      var M = MATS[q], rs = rowsOf(M.key);
+      if(!rs.length) continue;
+      var sel = (q === mi);
+      ctx.globalAlpha = sel ? 1 : 0.34;
+      ctx.strokeStyle = M.head; ctx.lineWidth = sel ? 2.2 : 1.4;
+      ctx.beginPath();
+      for(var a=0;a<rs.length;a++){
+        var qx = PX(rs[a].n), qy = PY(Math.min(yMax, denOf(rs[a])));
+        if(a===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
+      }
+      ctx.stroke();
+      for(var b=0;b<rs.length;b++){
+        var cx = PX(rs[b].n), cy = PY(Math.min(yMax, denOf(rs[b])));
+        ctx.fillStyle = M.head;
+        ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.4 : 3.2, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.4 : 3.2, 0, Math.PI*2); ctx.stroke();
+      }
+      if(sel){
+        var lastR = rs[rs.length-1];
+        ctx.fillStyle = M.head;
+        ctx.font = "700 10px " + monoStack();
+        ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.fillText(M.name, Math.min(PX(lastR.n)+8, w-52), PY(Math.min(yMax, denOf(lastR))));
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* ------------------------------------------------ wiring */
+  elGo.addEventListener("click", recordOne);
+  elAll4.addEventListener("click", recordAll);
+  elClearMat.addEventListener("click", function(){
+    delete data[mat().key];
+    newest = null;
+    say("Cleared the <strong>" + mat().name + "</strong> station.");
+    refreshAll();
+  });
+  elClearAll.addEventListener("click", function(){
+    data = {}; newest = null;
+    say("All stations cleared.");
+    refreshAll();
+  });
+  elCopy.addEventListener("click", function(){
+    var rows = ["material\tblocks\tmass_g\tL_cm\tW_cm\tH_cm\tvolume_cm3\tdensity_g_cm3"];
+    for(var i=0;i<MATS.length;i++){
+      var rs = rowsOf(MATS[i].key);
+      for(var j=0;j<rs.length;j++){
+        var r = rs[j];
+        rows.push(MATS[i].name + "\t" + r.n + "\t" + fmt(r.mass) + "\t" + fmt(r.L,1)
+          + "\t" + fmt(r.W,1) + "\t" + fmt(r.H,1) + "\t" + fmt(volOf(r),3)
+          + "\t" + fmt(denOf(r),3));
+      }
+    }
+    var txt = rows.join("\n");
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = txt; ta.setAttribute("readonly","");
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); }catch(err){}
+      document.body.removeChild(ta);
+    }
+    function ok(){ elCopyNote.innerHTML = "Copied <strong>" + (rows.length-1) + "</strong> rows."; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok, function(){ fallback(); ok(); });
+    } else { fallback(); ok(); }
+  });
+  elErr.addEventListener("change", function(){
+    reading = measure(mat(), n);
+    say(parseInt(elErr.value,10) === 0
+      ? "Perfect readings. Every row will give exactly the same density."
+      : "Readings will now scatter a little. The ruler is where most of it comes from.");
+    refreshAll();
+  });
+  elHide.addEventListener("change", function(){
+    say(elHide.checked
+      ? "Volume and density blanked out. Students calculate them from the measurements."
+      : "Volume and density filled in again.");
+    refreshAll();
+  });
+
+  var rt;
+  window.addEventListener("resize", function(){
+    clearTimeout(rt);
+    rt = setTimeout(function(){ dirty = true; drawScene(); drawMV(); drawDB(); }, 120);
+  });
+  if(window.ResizeObserver){
+    var ro = new ResizeObserver(function(){ dirty = true; drawScene(); drawMV(); drawDB(); });
+    ro.observe(sceneC.parentNode); ro.observe(dbC.parentNode);
+  }
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){ dirty = true; drawScene(); drawMV(); drawDB(); });
+  }
+
+  buildMats();
+  buildCounts();
+  reading = measure(mat(), n);
+  refreshAll();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Net Force Lab — Forces and Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky-top:#8ecbef; --sky-bot:#d3edf5;
+  --mountain:#93a68c; --mountain-snow:#f3f6f2;
+  --ground-a:#8a5a34; --ground-b:#6e4527; --ground-base:#a9713f;
+  --panel-green:#e7f0ae; --panel-green-2:#d7e28f; --panel-green-ink:#3c4a1a;
+  --ink:#17202a; --ink-2:#4d5c68; --muted:#7c8a95;
+  --paper:#ffffff; --plane:#f2f4ef; --border:rgba(20,30,40,.12);
+  --accent:#2f6fed; --accent-2:#1c53c4;
+  --good:#1f9d55; --warn:#d9534f; --orange:#f0921e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--ink);font-weight:700;
+  font:700 17px/1.5 "Poppins",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:min(1900px, 97vw);margin:0 auto;padding:16px 14px 48px}
+
+header.top{margin-bottom:14px}
+header.top h1{font-size:clamp(24px,2.6vw,32px);margin:0;letter-spacing:-.01em;font-weight:800}
+header.top p{margin:4px 0 0;color:var(--ink-2);font-size:16px;max-width:76ch}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:16px;
+  padding:14px;margin-bottom:16px}
+.card h2{font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  margin:2px 4px 12px;font-weight:800}
+
+/* -------- scene -------- */
+.scene{position:relative;width:100%;aspect-ratio:1200/580;border-radius:14px;overflow:hidden;
+  border:1px solid var(--border);background:linear-gradient(var(--sky-top),var(--sky-bot))}
+
+.cloud{position:absolute;filter:drop-shadow(0 3px 3px rgba(0,0,0,.06));opacity:.95}
+.cloud svg{width:100%;height:100%;display:block}
+.cloud.c1{width:22%;top:4%;left:12%;animation:drift1 26s ease-in-out infinite alternate}
+.cloud.c2{width:16%;top:2%;left:58%;animation:drift2 22s ease-in-out infinite alternate}
+.cloud.c3{width:12%;top:12%;left:82%;animation:drift1 19s ease-in-out infinite alternate}
+@keyframes drift1{from{transform:translateX(0)}to{transform:translateX(3%)}}
+@keyframes drift2{from{transform:translateX(0)}to{transform:translateX(-4%)}}
+
+.mountains{position:absolute;left:0;right:0;bottom:20%;height:26%}
+.mountains svg{width:100%;height:100%;display:block}
+
+.ground{position:absolute;left:0;right:0;bottom:0;height:20%;
+  background-image:repeating-linear-gradient(90deg,var(--ground-a) 0 52px, var(--ground-b) 52px 58px),
+    linear-gradient(var(--ground-base),#6b4526);
+  background-size:58px 100%, 100% 100%;
+  border-top:4px solid #5c3a20}
+
+.sumforces{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:20px;
+  padding:6px 16px;font-size:16px;font-weight:800;color:var(--ink);white-space:nowrap}
+
+/* gauge + stopwatch widgets */
+.widget{position:absolute;background:rgba(255,255,255,.92);border:1px solid var(--border);
+  border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.08);text-align:center}
+.gauge-widget{top:3%;left:3%;width:26%;max-width:230px;padding:8px 6px 10px}
+.gauge-widget svg{width:100%;display:block}
+.gauge-label{font-size:14px;font-weight:800;color:var(--ink-2);letter-spacing:.02em}
+.gauge-read{margin-top:2px;display:inline-block;background:var(--plane);border:1px solid var(--border);
+  border-radius:8px;padding:3px 10px;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+
+.stopwatch-widget{top:3%;right:26%;width:19%;max-width:170px;padding:8px 8px 10px}
+.sw-display{background:#dfe6ee;border:1px solid var(--border);border-radius:8px;
+  padding:5px 4px;font-size:clamp(15px,1.4vw,19px);font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink)}
+.sw-buttons{display:flex;gap:6px;justify-content:center;margin-top:6px}
+.sw-buttons button{width:30px;height:26px;border-radius:7px;border:1px solid var(--border);
+  background:var(--accent);color:#fff;font-size:13px;cursor:pointer;font-weight:800}
+.sw-buttons button.ghost{background:var(--paper);color:var(--ink)}
+
+/* checklist + friction panel, and the transport row right under it —
+   grouped in one flow wrapper so the buttons can never overlap the panel
+   regardless of how tall the checklist renders at a given width/font size */
+.panel-wrap{position:absolute;top:3%;right:3%;width:24%;max-width:210px;z-index:10;
+  display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.panel{width:100%;
+  background:linear-gradient(var(--panel-green),var(--panel-green-2));
+  border:1px solid var(--border);border-radius:14px;padding:10px 12px;
+  box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.panel .chk{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13.5px;color:var(--panel-green-ink)}
+.panel .chk input{width:16px;height:16px;accent-color:var(--accent-2);flex:0 0 auto}
+.panel .chk .ic{width:18px;height:18px;flex:0 0 auto}
+.panel .frtitle{margin:8px 0 2px;font-size:13.5px;font-weight:800;color:var(--panel-green-ink);text-align:center}
+.panel .frends{display:flex;justify-content:space-between;font-size:11px;color:var(--panel-green-ink);margin-top:2px}
+.panel input[type=range]{width:100%;accent-color:var(--accent-2)}
+
+.transport{display:flex;align-items:center;gap:10px}
+.tbtn{border-radius:50%;border:none;cursor:pointer;display:grid;place-items:center;color:#fff;
+  box-shadow:0 3px 8px rgba(0,0,0,.18)}
+.tbtn.play{width:52px;height:52px;background:var(--accent);font-size:20px}
+.tbtn.step{width:36px;height:36px;background:#9aa6b0;font-size:14px}
+.tbtn.reset{width:44px;height:44px;background:var(--orange);font-size:18px}
+
+/* pusher + stack */
+.rig{position:absolute;left:15%;bottom:20%;display:flex;align-items:flex-end;gap:6px}
+.pusher{width:70px}
+.pusher svg{width:100%;display:block;overflow:visible}
+#pusherLean{transform-origin:40px 78px;transition:transform .28s ease}
+#pusherFrontArm{transform-origin:63px 40px;transition:transform .28s ease}
+.pusher.pushing #pusherLean{transform:rotate(14deg)}
+.pusher.pushing #pusherFrontArm{transform:rotate(-82deg)}
+.pusher.pulling #pusherLean{transform:rotate(-14deg)}
+.pusher.pulling #pusherFrontArm{transform:rotate(-54deg)}
+.stackslot{display:flex;flex-direction:column;align-items:center}
+.blockstack{display:flex;flex-direction:column-reverse;align-items:center;gap:3px;margin-bottom:2px}
+.stackitem{position:relative;cursor:pointer;transition:transform .12s}
+.stackitem:hover{transform:translateY(-4px)}
+.stackitem .icon{display:block}
+.stackitem .masslab{position:absolute;left:50%;bottom:-4px;transform:translate(-50%,100%);
+  background:#fff;border:1px solid var(--border);border-radius:9px;padding:1px 7px;
+  font-size:12px;font-weight:800;white-space:nowrap}
+.stackitem .removeflag{position:absolute;top:-8px;right:-8px;background:var(--warn);color:#fff;
+  border-radius:50%;width:18px;height:18px;font-size:12px;display:none;place-items:center;line-height:1}
+.stackitem:hover .removeflag{display:grid}
+
+/* stacked mass blocks sit flush against each other, so their labels move to the
+   side instead of underneath — a label placed below would collide with the
+   block (or base item) directly beneath it in the tower */
+.stackitem.massblock .masslab{left:100%;bottom:auto;top:50%;transform:translate(8px,-50%)}
+
+.forcerow{position:absolute;left:15%;bottom:36%;display:flex;flex-direction:column;gap:4px;pointer-events:none}
+.farrow{display:flex;align-items:center;gap:6px;height:22px}
+.farrow .vec{width:170px;height:22px;flex:none;overflow:visible}
+.farrow .shaft{stroke-width:6;stroke-linecap:round;transition:all .06s linear}
+.farrow .head{transition:all .06s linear}
+.farrow.applied .shaft, .farrow.applied .head{stroke:var(--accent);fill:var(--accent)}
+.farrow.friction .shaft, .farrow.friction .head{stroke:var(--warn);fill:var(--warn)}
+.farrow.net .shaft, .farrow.net .head{stroke:var(--ink);fill:var(--ink)}
+.farrow .val{font-size:13px;font-weight:800;color:var(--ink);background:rgba(255,255,255,.85);
+  border-radius:6px;padding:0 5px;white-space:nowrap}
+
+.hint{position:absolute;bottom:2%;left:50%;transform:translateX(-50%);font-size:13px;
+  color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);font-weight:700;white-space:nowrap}
+
+.edge-message{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(15,20,25,.45);z-index:6;text-align:center}
+.edge-message .box{max-width:min(520px,86%);background:#fff;border-radius:16px;
+  padding:22px 26px;box-shadow:0 12px 30px rgba(0,0,0,.3)}
+.edge-message .box h3{margin:0 0 8px;font-size:19px;font-weight:800;color:var(--warn)}
+.edge-message .box p{margin:0;font-size:15px;font-weight:700;color:var(--ink);line-height:1.45}
+
+button:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+input[type=range]:disabled{opacity:.4;cursor:not-allowed}
+
+/* -------- applied force control -------- */
+.force-control{display:flex;flex-direction:column;align-items:center;gap:8px}
+.force-buttons{display:flex;align-items:center;gap:10px}
+.force-buttons button{width:40px;height:36px;border-radius:9px;border:1px solid var(--border);
+  background:var(--paper);cursor:pointer;font-size:15px;font-weight:800}
+.force-readout{min-width:150px;text-align:center;border:1px solid var(--border);border-radius:9px;
+  padding:8px 14px;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;background:var(--plane)}
+.force-sliderwrap{width:min(760px,92%)}
+.force-sliderends{display:flex;justify-content:space-between;font-size:14px;color:var(--ink-2);margin-bottom:2px}
+.force-sliderwrap input[type=range]{width:100%;accent-color:var(--accent)}
+.force-ticks{display:flex;justify-content:space-between;padding:0 2px;margin-top:2px}
+.force-ticks span{width:1px;height:8px;background:var(--border)}
+
+/* -------- trays -------- */
+.trays{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:800px){.trays{grid-template-columns:1fr}}
+.tray{background:var(--plane);border:1px solid var(--border);border-radius:14px;
+  padding:14px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;min-height:110px}
+.trayitem{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:grab;touch-action:none;user-select:none}
+.trayitem .icon{width:56px;display:block}
+.trayitem .masslab{background:#fff;border:1px solid var(--border);border-radius:9px;
+  padding:1px 8px;font-size:13px;font-weight:800}
+
+/* -------- how-to -------- */
+.howto{margin:0;padding-left:22px;color:var(--ink-2);font-size:15px}
+.howto li{margin:6px 0}
+.howto b{color:var(--ink)}
+
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Net Force Lab — Forces and Motion</h1>
+    <p>Push on a stack of objects with an applied force, add friction, and watch the net force decide what happens to the speed. Load the platform, predict what will move, then check the gauge.</p>
+  </header>
+
+  <section class="card">
+    <h2>The lab</h2>
+    <div class="scene" id="scene">
+      <div class="cloud c1"><svg viewBox="0 0 200 90"><ellipse cx="60" cy="55" rx="55" ry="30" fill="#fff"/><ellipse cx="110" cy="40" rx="45" ry="34" fill="#fff"/><ellipse cx="150" cy="58" rx="40" ry="26" fill="#fff"/></svg></div>
+      <div class="cloud c2"><svg viewBox="0 0 200 90"><ellipse cx="60" cy="55" rx="55" ry="30" fill="#fff"/><ellipse cx="110" cy="40" rx="45" ry="34" fill="#fff"/><ellipse cx="150" cy="58" rx="40" ry="26" fill="#fff"/></svg></div>
+      <div class="cloud c3"><svg viewBox="0 0 200 90"><ellipse cx="60" cy="55" rx="55" ry="30" fill="#fff"/><ellipse cx="110" cy="40" rx="45" ry="34" fill="#fff"/><ellipse cx="150" cy="58" rx="40" ry="26" fill="#fff"/></svg></div>
+
+      <div class="mountains">
+        <svg viewBox="0 0 1200 220" preserveAspectRatio="none">
+          <path d="M0,220 L110,70 L180,140 L260,40 L340,150 L430,90 L520,220 Z" fill="var(--mountain)" opacity=".8"/>
+          <path d="M420,220 L560,60 L650,150 L740,30 L840,160 L930,80 L1030,220 Z" fill="var(--mountain)" opacity=".65"/>
+          <path d="M950,220 L1040,110 L1110,170 L1200,90 L1200,220 Z" fill="var(--mountain)" opacity=".8"/>
+          <path d="M260,40 l14,16 l-28,0 Z M740,30 l14,16 l-28,0 Z M1110,170 l10,11 l-20,0 Z" fill="var(--mountain-snow)"/>
+        </svg>
+      </div>
+
+      <div class="ground" id="ground"></div>
+
+      <div class="sumforces" id="sumForces">Sum of Forces = 0 N</div>
+
+      <div class="widget gauge-widget" id="gaugeWidget">
+        <div class="gauge-label">Speed</div>
+        <svg viewBox="0 0 200 120" id="gaugeSvg">
+          <path d="M20,105 A80,80 0 0 1 180,105" fill="none" stroke="#cfd6db" stroke-width="8"/>
+          <g id="gaugeTicks"></g>
+          <line id="needle" x1="100" y1="105" x2="100" y2="35" stroke="#d9534f" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="100" cy="105" r="7" fill="#43505b"/>
+        </svg>
+        <div class="gauge-read" id="speedRead">0.0 m/s</div>
+      </div>
+
+      <div class="widget stopwatch-widget" id="stopwatchWidget">
+        <div class="sw-display" id="swDisplay">00:00.00</div>
+        <div class="sw-buttons">
+          <button class="ghost" id="swReset" title="Reset stopwatch">↺</button>
+          <button id="swPlay" title="Start/stop stopwatch">▶</button>
+        </div>
+      </div>
+
+      <div class="panel-wrap">
+        <div class="panel" id="panel">
+          <label class="chk"><input type="checkbox" id="chkForces" checked> Forces</label>
+          <label class="chk"><input type="checkbox" id="chkSum" checked> Sum of Forces</label>
+          <label class="chk"><input type="checkbox" id="chkValues" checked> Values</label>
+          <label class="chk"><input type="checkbox" id="chkMasses" checked> Masses</label>
+          <label class="chk"><input type="checkbox" id="chkSpeed" checked>
+            <span>Speed</span>
+            <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#3c4a1a" stroke-width="2"/><line x1="12" y1="12" x2="17" y2="8" stroke="#d9534f" stroke-width="2"/></svg>
+          </label>
+          <label class="chk"><input type="checkbox" id="chkStopwatch" checked>
+            <span>Stopwatch</span>
+            <svg class="ic" viewBox="0 0 24 24"><rect x="5" y="6" width="14" height="14" rx="3" fill="none" stroke="#3c4a1a" stroke-width="2"/><line x1="9" y1="3" x2="15" y2="3" stroke="#3c4a1a" stroke-width="2"/></svg>
+          </label>
+          <div class="frtitle">Friction</div>
+          <input type="range" id="frictionSlider" min="0" max="1" step="0.01" value="0.3">
+          <div class="frends"><span>None</span><span>Lots</span></div>
+        </div>
+
+        <div class="transport">
+          <button class="tbtn step" id="stepBtn" title="Step forward">▶I</button>
+          <button class="tbtn play" id="playBtn" title="Play / pause">▶</button>
+          <button class="tbtn reset" id="resetBtn" title="Reset everything">⟲</button>
+        </div>
+      </div>
+
+      <div class="forcerow" id="forceRow">
+        <div class="farrow applied">
+          <svg class="vec" viewBox="0 0 200 22"><line id="appliedShaft" class="shaft" x1="100" y1="11" x2="100" y2="11"/><polygon id="appliedHead" class="head" points=""/></svg>
+          <span class="val" id="appliedVal">0 N</span>
+        </div>
+        <div class="farrow friction">
+          <svg class="vec" viewBox="0 0 200 22"><line id="frictionShaft" class="shaft" x1="100" y1="11" x2="100" y2="11"/><polygon id="frictionHead" class="head" points=""/></svg>
+          <span class="val" id="frictionVal">0 N</span>
+        </div>
+        <div class="farrow net">
+          <svg class="vec" viewBox="0 0 200 22"><line id="netShaft" class="shaft" x1="100" y1="11" x2="100" y2="11"/><polygon id="netHead" class="head" points=""/></svg>
+          <span class="val" id="netVal">0 N</span>
+        </div>
+      </div>
+
+      <div class="rig" id="rig">
+        <div class="pusher" id="pusher">
+          <svg viewBox="0 0 80 110">
+            <rect x="24" y="78" width="14" height="28" rx="6" fill="#c96a1d"/>
+            <rect x="42" y="78" width="14" height="28" rx="6" fill="#c96a1d"/>
+            <g id="pusherLean">
+              <rect x="10" y="40" width="14" height="34" rx="7" fill="#f2a03d"/>
+              <rect x="22" y="36" width="36" height="42" rx="10" fill="#e8862a"/>
+              <circle cx="40" cy="20" r="16" fill="#f2a03d"/>
+              <g id="pusherFrontArm"><rect x="56" y="40" width="14" height="34" rx="7" fill="#f2a03d"/></g>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="hint" id="hint"></div>
+
+      <div class="edge-message" id="edgeMsg">
+        <div class="box">
+          <h3>Reached the edge of the screen</h3>
+          <p>The size of the force and speed will remain the same until a new force is applied. Click the reset button to continue.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="force-control">
+      <h2 style="margin:0">Applied Force</h2>
+      <div class="force-buttons">
+        <button id="fMM" title="-100 N">◀◀</button>
+        <button id="fM" title="-10 N">◀</button>
+        <div class="force-readout" id="forceReadout">0 newtons</div>
+        <button id="fP" title="+10 N">▶</button>
+        <button id="fPP" title="+100 N">▶▶</button>
+      </div>
+      <div class="force-sliderwrap">
+        <div class="force-sliderends"><span>-500</span><span>0</span><span>500</span></div>
+        <input type="range" id="forceSlider" min="-500" max="500" step="10" value="0">
+        <div class="force-ticks" id="forceTicks"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Add objects to the platform</h2>
+    <div class="trays">
+      <div class="tray" id="trayLeft"></div>
+      <div class="tray" id="trayRight"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>How to use this simulation</h2>
+    <ol class="howto">
+      <li>Drag a <strong>crate or fridge</strong> from the left tray onto the platform, then drag black <strong>mass blocks</strong> from the right tray to stack them on top and add mass — the <strong>crate (50 kg)</strong> is already loaded to start.</li>
+      <li>Set the <strong>Applied Force</strong> with the slider or the ◀◀ ◀ ▶ ▶▶ buttons. Positive pushes right, negative pushes left.</li>
+      <li>Drag the <strong>Friction</strong> slider between None and Lots, then press the blue <strong>▶</strong> button to run the simulation.</li>
+      <li>Watch the three force vectors above the stack: a <strong>blue</strong> arrow for the applied force, a <strong>red</strong> arrow for friction, and a <strong>black</strong> arrow for the net (sum) force — each points right or left and grows longer as that force gets stronger. Watch the <strong>Speed</strong> gauge too, to see how the net force changes the motion.</li>
+      <li>Notice the pusher figure lean into a push or lean back to pull, matching the direction of the applied force.</li>
+      <li>Use the checkboxes to show or hide the force vectors, values, mass labels, speed gauge, or stopwatch — and start the stopwatch separately with its own ▶ button.</li>
+      <li>Try the mystery gift box: with friction set to <strong>None</strong>, apply a known force, measure the acceleration from the speed gauge, and work out its hidden mass from F = ma.</li>
+      <li>Press the small step button to advance one instant at a time, or the orange <strong>⟲</strong> button to clear the platform and put everything back to the start.</li>
+    </ol>
+  </section>
+
+</div>
+
+<script>
+(() => {
+"use strict";
+
+const G = 9.8;
+const MU_MAX = 0.5;
+const MAX_SPEED = 16;
+const MAX_ITEMS = 6;
+
+const el = (id) => document.getElementById(id);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const fmt = (v, n) => Number(v).toFixed(n);
+
+/* ---------------- object catalogue ---------------- */
+const ICONS = {
+  fridge: `<svg viewBox="0 0 60 60"><rect x="10" y="4" width="40" height="52" rx="6" fill="#dff1f7" stroke="#7fb3c6" stroke-width="3"/><line x1="10" y1="22" x2="50" y2="22" stroke="#7fb3c6" stroke-width="3"/><rect x="16" y="10" width="4" height="8" rx="2" fill="#7fb3c6"/><rect x="16" y="27" width="4" height="8" rx="2" fill="#7fb3c6"/></svg>`,
+  crate: `<svg viewBox="0 0 60 60"><rect x="4" y="10" width="52" height="42" rx="4" fill="#8a5a34" stroke="#5c3a20" stroke-width="3"/><path d="M4 10 L56 52 M56 10 L4 52" stroke="#5c3a20" stroke-width="3"/></svg>`,
+  girl: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
+  man: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
+  trash: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
+  gift: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
+};
+const CATALOGUE = [
+  { key:"fridge", label:"Fridge", mass:200, tray:"left" },
+  { key:"crate",  label:"Crate",  mass:50,  tray:"left" },
+  { key:"girl",   label:"Mass block (small)",  mass:40,  tray:"right", isMass:true },
+  { key:"man",    label:"Mass block (medium)", mass:80,  tray:"right", isMass:true },
+  { key:"trash",  label:"Mass block (large)",  mass:100, tray:"right", isMass:true },
+  { key:"gift",   label:"Mystery mass", mass:null, tray:"right", isMass:true },
+];
+
+function randomMysteryMass(){ return Math.round((20 + Math.random()*160) / 5) * 5; }
+
+/* ---------------- state ---------------- */
+const S = {
+  applied: 0,
+  frictionLevel: 0.3,
+  objects: [],
+  mysteryMass: randomMysteryMass(),
+  v: 0,
+  pos: 0,
+  playing: false,
+  swRunning: false,
+  swTime: 0,
+  edgeStopped: false,
+  activeSlotId: null,
+  show: { forces:true, sum:true, values:true, masses:true, speed:true, stopwatch:true },
+};
+
+function massOf(obj){ return obj.key === "gift" ? S.mysteryMass : obj.mass; }
+function totalMass(){ return S.objects.reduce((a,o) => a + massOf(o), 0); }
+function frictionMax(){ return S.frictionLevel * MU_MAX * totalMass() * G; }
+
+/* ---------------- scene setup ---------------- */
+const scene = el("scene");
+const rig = el("rig");
+
+function addStackItem(spec){
+  if (S.objects.length >= MAX_ITEMS){
+    el("hint").textContent = "The platform is full — remove something first.";
+    setTimeout(() => { el("hint").textContent = ""; }, 1800);
+    return;
+  }
+  if (spec.isMass && (!S.activeSlotId || !S.objects.some(o => o.id === S.activeSlotId))){
+    el("hint").textContent = "Add a crate or fridge first — mass blocks stack on top of it.";
+    setTimeout(() => { el("hint").textContent = ""; }, 2400);
+    return;
+  }
+
+  const obj = { ...spec, id: Math.random().toString(36).slice(2) };
+  if (spec.isMass) obj.onSlot = S.activeSlotId;
+  S.objects.push(obj);
+
+  const size = 40 + Math.min(40, massOf(obj) / 6);
+  const itemHTML = `<div class="icon" style="width:${size.toFixed(0)}px">${ICONS[obj.key]}</div>
+    <div class="masslab">${obj.key === "gift" ? "?" : fmt(massOf(obj),0) + " kg"}</div>
+    <div class="removeflag">×</div>`;
+
+  if (spec.isMass){
+    const blockEl = document.createElement("div");
+    blockEl.className = "stackitem massblock";
+    blockEl.dataset.id = obj.id;
+    blockEl.innerHTML = itemHTML;
+    blockEl.title = "Click to remove";
+    blockEl.addEventListener("click", () => removeStackItem(obj.id));
+    const blockstack = rig.querySelector(`.stackslot[data-id="${S.activeSlotId}"] .blockstack`);
+    blockstack.appendChild(blockEl);
+  } else {
+    const slot = document.createElement("div");
+    slot.className = "stackslot";
+    slot.dataset.id = obj.id;
+    const blockstack = document.createElement("div");
+    blockstack.className = "blockstack";
+    const baseEl = document.createElement("div");
+    baseEl.className = "stackitem base";
+    baseEl.dataset.id = obj.id;
+    baseEl.innerHTML = itemHTML;
+    baseEl.title = "Click to remove";
+    baseEl.addEventListener("click", () => removeStackItem(obj.id));
+    slot.appendChild(blockstack);
+    slot.appendChild(baseEl);
+    rig.appendChild(slot);
+    S.activeSlotId = obj.id;
+  }
+
+  syncMassVisibility();
+  updateSumLabel();
+  render();
+}
+
+function removeStackItem(id){
+  const idx = S.objects.findIndex(o => o.id === id);
+  if (idx < 0) return;
+  const obj = S.objects[idx];
+  if (obj.onSlot){
+    S.objects.splice(idx, 1);
+    const node = rig.querySelector(`.massblock[data-id="${id}"]`);
+    if (node) node.remove();
+  } else {
+    S.objects = S.objects.filter(o => o.id !== id && o.onSlot !== id);
+    const slot = rig.querySelector(`.stackslot[data-id="${id}"]`);
+    if (slot) slot.remove();
+    if (S.activeSlotId === id){
+      const remainingBase = S.objects.find(o => !o.onSlot);
+      S.activeSlotId = remainingBase ? remainingBase.id : null;
+    }
+  }
+  updateSumLabel();
+  render();
+}
+
+function clearStack(){
+  S.objects = [];
+  S.activeSlotId = null;
+  rig.querySelectorAll(".stackslot").forEach(n => n.remove());
+}
+
+function seedDefaultStack(){
+  clearStack();
+  addStackItem({ key:"crate", label:"Crate", mass:50 });
+}
+
+/* ---------------- drag from trays ---------------- */
+function makeDraggable(itemEl, spec){
+  itemEl.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    const ghost = itemEl.cloneNode(true);
+    ghost.style.position = "fixed";
+    ghost.style.pointerEvents = "none";
+    ghost.style.zIndex = 999;
+    ghost.style.width = itemEl.offsetWidth + "px";
+    ghost.style.opacity = ".85";
+    document.body.appendChild(ghost);
+    const move = (ev) => {
+      ghost.style.left = (ev.clientX - itemEl.offsetWidth/2) + "px";
+      ghost.style.top  = (ev.clientY - itemEl.offsetHeight/2) + "px";
+    };
+    move(e);
+    const up = (ev) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      const box = scene.getBoundingClientRect();
+      const within = ev.clientX >= box.left && ev.clientX <= box.right &&
+                     ev.clientY >= box.top && ev.clientY <= box.bottom;
+      ghost.remove();
+      if (within) addStackItem({ key:spec.key, label:spec.label, mass:spec.mass, isMass: !!spec.isMass });
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  });
+}
+
+function buildTrays(){
+  const left = el("trayLeft"), right = el("trayRight");
+  left.textContent = ""; right.textContent = "";
+  CATALOGUE.forEach(spec => {
+    const d = document.createElement("div");
+    d.className = "trayitem";
+    d.innerHTML = `<div class="icon">${ICONS[spec.key]}</div>
+      <div class="masslab">${spec.key === "gift" ? "?" : spec.mass + " kg"}</div>`;
+    (spec.tray === "left" ? left : right).appendChild(d);
+    makeDraggable(d, spec);
+  });
+}
+
+/* ---------------- gauge ---------------- */
+function buildGaugeTicks(){
+  const g = el("gaugeTicks");
+  g.textContent = "";
+  const N = 8;
+  for (let i = 0; i <= N; i++){
+    const t = i / N;
+    const ang = Math.PI * (1 - t);
+    const r1 = 80, r2 = 70;
+    const x1 = 100 + r1*Math.cos(ang), y1 = 105 - r1*Math.sin(ang);
+    const x2 = 100 + r2*Math.cos(ang), y2 = 105 - r2*Math.sin(ang);
+    const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+    line.setAttribute("x1",x1); line.setAttribute("y1",y1);
+    line.setAttribute("x2",x2); line.setAttribute("y2",y2);
+    line.setAttribute("stroke","#8a97a1"); line.setAttribute("stroke-width","2.5");
+    g.appendChild(line);
+  }
+}
+
+function updateGauge(speed){
+  const t = clamp(Math.abs(speed) / MAX_SPEED, 0, 1);
+  const ang = Math.PI * (1 - t);
+  const len = 70;
+  const x2 = 100 + len*Math.cos(ang), y2 = 105 - len*Math.sin(ang);
+  const needle = el("needle");
+  needle.setAttribute("x2", x2.toFixed(1));
+  needle.setAttribute("y2", y2.toFixed(1));
+  el("speedRead").textContent = fmt(Math.abs(speed), 1) + " m/s";
+}
+
+/* ---------------- displays ---------------- */
+function updateSumLabel(){
+  el("sumForces").style.display = S.show.sum ? "" : "none";
+}
+
+function syncMassVisibility(){
+  document.querySelectorAll(".stackitem .masslab").forEach(n => {
+    n.style.display = S.show.masses ? "" : "none";
+  });
+  document.querySelectorAll(".trayitem .masslab").forEach(n => {
+    n.style.display = S.show.masses ? "" : "none";
+  });
+}
+
+function updateForceReadout(){
+  el("forceReadout").textContent = `${S.applied} newtons`;
+  el("forceSlider").value = String(S.applied);
+}
+
+/* ---------------- force vectors ---------------- */
+function drawVector(prefix, value, maxVal){
+  const shaft = el(prefix + "Shaft");
+  const head = el(prefix + "Head");
+  const cx = 100, cy = 11, maxLen = 82, headLen = 10, headHalf = 6;
+  const frac = clamp(Math.abs(value) / maxVal, 0, 1);
+  const len = frac * maxLen;
+  if (len < headLen){
+    shaft.setAttribute("x1", cx); shaft.setAttribute("x2", cx);
+    shaft.setAttribute("y1", cy); shaft.setAttribute("y2", cy);
+    head.setAttribute("points", "");
+    return;
+  }
+  const dir = value >= 0 ? 1 : -1;
+  const tipX = cx + dir * len;
+  const shaftEndX = tipX - dir * headLen;
+  shaft.setAttribute("x1", cx); shaft.setAttribute("y1", cy);
+  shaft.setAttribute("x2", shaftEndX); shaft.setAttribute("y2", cy);
+  head.setAttribute("points",
+    `${tipX},${cy} ${shaftEndX},${cy - headHalf} ${shaftEndX},${cy + headHalf}`);
+}
+
+function updatePusherPose(){
+  const p = el("pusher");
+  p.classList.remove("pushing", "pulling");
+  if (S.applied > 15) p.classList.add("pushing");
+  else if (S.applied < -15) p.classList.add("pulling");
+}
+
+function buildForceTicks(){
+  const wrap = el("forceTicks");
+  wrap.textContent = "";
+  for (let i = 0; i <= 20; i++){
+    const s = document.createElement("span");
+    wrap.appendChild(s);
+  }
+}
+
+/* ---------------- physics step ---------------- */
+let lastNet = 0, lastFriction = 0;
+
+function physicsStep(dt){
+  const m = Math.max(1, totalMass());
+  const fMax = frictionMax();
+  let net;
+  if (Math.abs(S.v) < 1e-3){
+    if (Math.abs(S.applied) <= fMax){ net = 0; S.v = 0; }
+    else { net = S.applied - Math.sign(S.applied) * fMax; }
+  } else {
+    net = S.applied - Math.sign(S.v) * fMax;
+  }
+  const a = net / m;
+  const vNew = clamp(S.v + a * dt, -MAX_SPEED, MAX_SPEED);
+  if (S.v !== 0 && Math.sign(vNew) !== Math.sign(S.v) && Math.abs(S.applied) <= fMax){
+    S.v = 0;
+  } else {
+    S.v = vNew;
+  }
+  S.pos += S.v * dt;
+  lastNet = net;
+  lastFriction = Math.min(fMax, Math.abs(S.applied)) || (Math.abs(S.v) > 1e-3 ? fMax : 0);
+}
+
+function positionForceRow(){
+  /* the force vectors float just above whatever is currently stacked on the
+     platform — since mass blocks now stack vertically on top of the crate or
+     fridge (rather than sitting in a row beside it), a tall stack can reach
+     much higher than before, so a fixed position would risk colliding with it */
+  const rigBox = rig.getBoundingClientRect();
+  const sceneBox = scene.getBoundingClientRect();
+  if (sceneBox.height <= 0) return;
+  const gapPx = 16;
+  const bottomPx = (sceneBox.bottom - rigBox.top) + gapPx;
+  el("forceRow").style.bottom = bottomPx + "px";
+}
+
+function render(){
+  el("sumForces").textContent = `Sum of Forces = ${fmt(lastNet,0)} N`;
+  updateGauge(S.v);
+  positionForceRow();
+
+  const frictionSigned = Math.abs(S.v) > 1e-3
+    ? -Math.sign(S.v) * lastFriction
+    : (S.applied >= 0 ? -lastFriction : lastFriction);
+
+  drawVector("applied", S.applied, 500);
+  drawVector("friction", frictionSigned, 500);
+  drawVector("net", lastNet, 500);
+  el("appliedVal").textContent = (S.show.values ? `Applied: ${S.applied} N` : "");
+  el("frictionVal").textContent = (S.show.values ? `Friction: ${Math.round(frictionSigned)} N` : "");
+  el("netVal").textContent = (S.show.values ? `Net: ${fmt(lastNet,0)} N` : "");
+  document.querySelector(".farrow.applied").style.display = S.show.forces ? "" : "none";
+  document.querySelector(".farrow.friction").style.display = S.show.forces ? "" : "none";
+  document.querySelector(".farrow.net").style.display = S.show.sum ? "" : "none";
+
+  updatePusherPose();
+
+  el("gaugeWidget").style.display = S.show.speed ? "" : "none";
+  el("stopwatchWidget").style.display = S.show.stopwatch ? "" : "none";
+
+  const groundOffset = (-S.pos * 40) % 58;
+  el("ground").style.backgroundPosition = `${groundOffset}px 0, 0 0`;
+
+  /* the pushed stack itself visibly slides across the platform (not just the
+     scrolling ground) so motion is unmistakable — if it reaches either edge
+     of the screen the sim freezes there instead of running off or wrapping */
+  const scenePx = scene.clientWidth || 1200;
+  const PXPERM = 26;
+  const leftLimit = -(scenePx * 0.12), rightLimit = scenePx * 0.55;
+  let dx = S.pos * PXPERM;
+  if (dx <= leftLimit || dx >= rightLimit){
+    dx = clamp(dx, leftLimit, rightLimit);
+    if (!S.edgeStopped) triggerEdgeStop();
+  }
+  const tf = `translateX(${dx.toFixed(1)}px)`;
+  el("rig").style.transform = tf;
+  el("forceRow").style.transform = tf;
+}
+
+function triggerEdgeStop(){
+  S.edgeStopped = true;
+  setPlaying(false);
+  el("edgeMsg").style.display = "flex";
+  ["forceSlider","fMM","fM","fP","fPP","frictionSlider","playBtn","stepBtn"].forEach(id => {
+    el(id).disabled = true;
+  });
+}
+
+let raf = null, lastT = 0;
+function tick(now){
+  if (!S.playing) return;
+  const dt = Math.min(0.05, (now - lastT) / 1000);
+  lastT = now;
+  physicsStep(dt);
+  render();
+  raf = requestAnimationFrame(tick);
+}
+function setPlaying(on){
+  S.playing = on;
+  el("playBtn").textContent = on ? "❚❚" : "▶";
+  if (on){ lastT = performance.now(); raf = requestAnimationFrame(tick); }
+  else if (raf){ cancelAnimationFrame(raf); raf = null; }
+}
+
+/* ---------------- stopwatch ---------------- */
+let swRaf = null, swLast = 0;
+function swTick(now){
+  if (!S.swRunning) return;
+  S.swTime += (now - swLast) / 1000;
+  swLast = now;
+  const mm = Math.floor(S.swTime / 60);
+  const ss = S.swTime % 60;
+  el("swDisplay").textContent = `${String(mm).padStart(2,"0")}:${ss.toFixed(2).padStart(5,"0")}`;
+  swRaf = requestAnimationFrame(swTick);
+}
+function setSwRunning(on){
+  S.swRunning = on;
+  el("swPlay").textContent = on ? "❚❚" : "▶";
+  if (on){ swLast = performance.now(); swRaf = requestAnimationFrame(swTick); }
+  else if (swRaf){ cancelAnimationFrame(swRaf); swRaf = null; }
+}
+
+/* ---------------- wiring ---------------- */
+function setApplied(v){
+  S.applied = clamp(Math.round(v/10)*10, -500, 500);
+  updateForceReadout();
+  if (!S.playing) render();
+}
+
+el("forceSlider").addEventListener("input", (e) => setApplied(parseFloat(e.target.value)));
+el("fMM").onclick = () => setApplied(S.applied - 100);
+el("fM").onclick  = () => setApplied(S.applied - 10);
+el("fP").onclick  = () => setApplied(S.applied + 10);
+el("fPP").onclick = () => setApplied(S.applied + 100);
+
+el("frictionSlider").addEventListener("input", (e) => {
+  S.frictionLevel = parseFloat(e.target.value);
+  if (!S.playing) render();
+});
+
+el("playBtn").onclick = () => setPlaying(!S.playing);
+el("stepBtn").onclick = () => { physicsStep(0.05); render(); };
+el("resetBtn").onclick = fullReset;
+
+el("swPlay").onclick = () => setSwRunning(!S.swRunning);
+el("swReset").onclick = () => {
+  setSwRunning(false);
+  S.swTime = 0;
+  el("swDisplay").textContent = "00:00.00";
+};
+
+["forces","sum","values","masses","speed","stopwatch"].forEach(key => {
+  const idMap = { forces:"chkForces", sum:"chkSum", values:"chkValues", masses:"chkMasses", speed:"chkSpeed", stopwatch:"chkStopwatch" };
+  el(idMap[key]).addEventListener("change", (e) => {
+    S.show[key] = e.target.checked;
+    syncMassVisibility();
+    updateSumLabel();
+    render();
+  });
+});
+
+function fullReset(){
+  setPlaying(false);
+  setSwRunning(false);
+  S.applied = 0;
+  S.frictionLevel = 0.3;
+  S.v = 0; S.pos = 0;
+  S.swTime = 0;
+  lastNet = 0; lastFriction = 0;
+  S.edgeStopped = false;
+  el("edgeMsg").style.display = "none";
+  ["forceSlider","fMM","fM","fP","fPP","frictionSlider","playBtn","stepBtn"].forEach(id => {
+    el(id).disabled = false;
+  });
+  S.mysteryMass = randomMysteryMass();
+  el("swDisplay").textContent = "00:00.00";
+  el("frictionSlider").value = "0.3";
+  updateForceReadout();
+  seedDefaultStack();
+
+  S.show = { forces:true, sum:true, values:true, masses:true, speed:true, stopwatch:true };
+  ["chkForces","chkSum","chkValues","chkMasses","chkSpeed","chkStopwatch"].forEach(id => { el(id).checked = true; });
+  syncMassVisibility();
+  updateSumLabel();
+  render();
+}
+
+/* ---------------- boot ---------------- */
+buildTrays();
+buildGaugeTicks();
+buildForceTicks();
+seedDefaultStack();
+updateForceReadout();
+render();
+})();
+</script>
+</body>
+</html>

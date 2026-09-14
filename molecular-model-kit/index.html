@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular model kit — build the molecule</title>
+
+<!--
+  ============================================================================
+  MOLECULAR MODEL KIT  (PhET-style, single file, no dependencies)
+
+  HOW TO EMBED
+  1) Easiest: upload this file and drop it in an iframe:
+       <iframe src="molecule-builder-lab.html"
+               style="width:100%;height:1500px;border:0" loading="lazy"
+               title="Molecular model kit simulation"></iframe>
+  2) Or paste the style block, the cvlab div, and the script block into a page.
+     Every CSS rule is scoped under .cvlab.
+
+  THE RULES, same as the wooden kit on the bench
+     Hydrogen yellow 1 hole, Chlorine green 1 hole, Oxygen red 2 holes,
+     Nitrogen blue 3 holes, Carbon black 4 holes.
+     A wooden stick is a single bond and fills one hole on each atom.
+     A pair of springs is a double bond and fills two holes on each atom.
+     A molecule is finished when every hole is full, everything is in one
+     piece, and the atoms are joined the way the real molecule is joined.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+.cvlab{
+  --bench:#DDE0D6; --paper:#FBFBF7; --rule:#C9CFC2;
+  --ink:#1B1D1C; --ink-2:#5A5F58;
+  --blue:#1552B8; --blue-d:#0E3B87;
+  --ok:#2E7D46; --bad:#C0392B; --warn:#B0742A;
+  --wood:#D8B274; --spring:#A8AEB2;
+  --tray:#1E2124; --felt:#EEF0EA;
+  --tape:#E8B93C;
+  --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
+  padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
+}
+.cvlab *{box-sizing:border-box}
+.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
+.cvlab p{margin:0}
+.cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+  display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--tape);margin-bottom:2px}
+.cvlab-head h1{font-size:clamp(19px,2.9vw,29px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
+.cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
+.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:96px}
+.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:#8C9284}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
+.cvlab-ro-ok .cvlab-ro-v{color:#7ED08F}
+
+.cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
+  border-radius:0 0 5px 5px;padding:10px 10px 12px}
+.cvlab canvas{display:block;width:100%}
+#cvlab-work{height:clamp(340px,34vw,466px);border-radius:3px;border:1px solid var(--rule);touch-action:none;cursor:pointer}
+@media (max-width:760px){#cvlab-work{height:clamp(280px,52vw,380px)}}
+.cvlab-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center}
+.cvlab-tool{cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:3px;
+  padding:6px 10px;font-family:var(--font-m);font-size:13.5px;font-weight:700;color:var(--ink);
+  display:flex;align-items:center;gap:6px;transition:background .12s ease,color .12s ease}
+.cvlab-tool:hover{background:#EFF1E9}
+.cvlab-tool.is-on{background:var(--ink);color:#F4F5F0}
+.cvlab-tool svg{display:block}
+.cvlab-toolgap{flex:1}
+.cvlab-hint{font-family:var(--font-m);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2);margin-top:6px}
+.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;
+  border-top:1px dashed var(--rule)}
+.cvlab-status{flex:1 1 240px;min-width:200px;font-size:16px;color:var(--ink-2)}
+.cvlab-status strong{color:var(--ink);font-weight:700}
+.cvlab-status.is-ok strong{color:var(--ok)}
+.cvlab-status.is-bad strong{color:var(--bad)}
+
+.cvlab-btn{font-family:var(--font-d);font-size:17px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;cursor:pointer;background:var(--paper);color:var(--ink);
+  border:1.5px solid var(--ink);border-radius:3px;padding:7px 14px;line-height:1.1;
+  transition:transform .08s ease,background .12s ease,color .12s ease}
+.cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.cvlab-btn:active:not(:disabled){transform:translateY(1px)}
+.cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
+.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:#fff;min-width:140px}
+.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:#fff}
+.cvlab-btn-sm{font-size:15px;padding:5px 10px;border-width:1px}
+
+.cvlab-grid{display:grid;gap:12px;margin-top:12px;
+  grid-template-columns:minmax(210px,.95fr) minmax(200px,.8fr) minmax(250px,1.1fr)}
+@media (max-width:1000px){.cvlab-grid{grid-template-columns:1fr 1fr}
+  .cvlab-panel-check{grid-column:1/-1}}
+@media (max-width:640px){.cvlab-grid{grid-template-columns:1fr}}
+.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:5px;padding:12px;
+  display:flex;flex-direction:column;gap:10px}
+.cvlab-panel h2{font-size:15px;letter-spacing:.16em;text-transform:uppercase;font-family:var(--font-m);
+  font-weight:700;color:var(--ink);padding-bottom:7px;border-bottom:2px solid var(--ink)}
+.cvlab-note{font-size:14.5px;color:var(--ink-2)}
+.cvlab-row{display:flex;flex-wrap:wrap;gap:6px}
+
+.cvlab-targets{max-height:330px;overflow:auto;border:1px solid var(--rule);border-radius:3px;
+  display:flex;flex-direction:column}
+.cvlab-tgroup{font-family:var(--font-m);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-2);background:#EFF1E9;padding:4px 8px;position:sticky;top:0}
+.cvlab-tgt{display:flex;align-items:center;gap:7px;padding:6px 8px;cursor:pointer;background:none;
+  border:0;border-bottom:1px solid #EDEFE7;text-align:left;font-family:var(--font-b);font-size:15px;
+  color:var(--ink);width:100%}
+.cvlab-tgt:hover{background:#F3F5EE}
+.cvlab-tgt.is-on{background:#FCF3D9}
+.cvlab-tgt b{font-family:var(--font-m);font-size:14px;min-width:64px}
+.cvlab-tgt span{color:var(--ink-2);font-size:14px}
+.cvlab-tgt i{margin-left:auto;font-style:normal;color:var(--ok);font-weight:700;font-size:15px}
+
+.cvlab-parts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cvlab-part{cursor:pointer;border:1.5px solid var(--ink);border-radius:3px;padding:6px;background:var(--paper);
+  display:flex;align-items:center;gap:7px;font-family:var(--font-m);font-size:13px;font-weight:700;
+  color:var(--ink);transition:background .12s ease}
+.cvlab-part:hover:not(:disabled){background:#EFF1E9}
+.cvlab-part:disabled{opacity:.4;cursor:not-allowed}
+.cvlab-ball{width:22px;height:22px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.4)}
+.cvlab-part u{text-decoration:none;font-weight:700;font-size:11.5px;color:var(--ink-2);display:block}
+.cvlab-part em{margin-left:auto;font-style:normal;font-size:13px;color:var(--ink-2)}
+.cvlab-partsline{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:#EFF1E9;
+  border-radius:3px;padding:7px 9px;line-height:1.7}
+.cvlab-partsline b{color:var(--ink)}
+
+.cvlab-checks{display:flex;flex-direction:column;gap:6px}
+.cvlab-check{display:flex;gap:8px;align-items:flex-start;font-size:15px;
+  border:1px solid var(--rule);border-left-width:4px;border-radius:3px;padding:7px 9px;background:#fff}
+.cvlab-check.ok{border-left-color:var(--ok)}
+.cvlab-check.bad{border-left-color:var(--bad)}
+.cvlab-check.wait{border-left-color:#C7CDC0;opacity:.7}
+.cvlab-check i{font-style:normal;font-weight:700;flex:none;width:14px;text-align:center}
+.cvlab-check.ok i{color:var(--ok)}
+.cvlab-check.bad i{color:var(--bad)}
+.cvlab-check.wait i{color:#9AA093}
+.cvlab-check b{font-weight:700}
+.cvlab-check span{display:block;color:var(--ink-2);font-size:14px}
+.cvlab-clue{font-size:15px;background:#FCF3D9;border:1px solid #E3CF8E;border-radius:3px;padding:8px 10px;
+  color:#4A3A17}
+.cvlab-clue b{color:#2F2510}
+
+.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
+  padding:10px 14px}
+.cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
+.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
+.cvlab-notes li{margin:3px 0}
+.cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
+</style>
+</head>
+<body style="margin:0;background:#DDE0D6">
+
+<div class="cvlab" id="cvlab">
+
+  <header class="cvlab-head">
+    <div>
+      <span class="cvlab-eyebrow">Chemistry lab &middot; bonding</span>
+      <h1>Molecular model kit</h1>
+    </div>
+    <div class="cvlab-readouts">
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Building</span><span class="cvlab-ro-v" id="cvlab-ro-tgt">H2</span></div>
+      <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">You have</span><span class="cvlab-ro-v" id="cvlab-ro-f">nothing</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Open holes</span><span class="cvlab-ro-v" id="cvlab-ro-holes">0</span></div>
+      <div class="cvlab-ro cvlab-ro-ok"><span class="cvlab-ro-k">Built</span><span class="cvlab-ro-v" id="cvlab-ro-done">0 / 20</span></div>
+    </div>
+  </header>
+
+  <div class="cvlab-bench">
+    <div class="cvlab-tools" id="cvlab-tools"></div>
+    <canvas id="cvlab-work" role="application" tabindex="0"
+      aria-label="Model building area. Tap an atom then another atom to join them with the selected connector. Drag atoms to move them."></canvas>
+    <p class="cvlab-hint">Tap one atom then another to join them &middot; tap a stick or spring to take it out &middot; drag atoms to move them</p>
+    <div class="cvlab-bar">
+      <button class="cvlab-btn cvlab-btn-go" id="cvlab-check">Check my model</button>
+      <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clue">Give me a clue</button>
+      <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
+        Pick a molecule to build, then take atoms out of the kit.
+      </p>
+    </div>
+  </div>
+
+  <div class="cvlab-grid">
+
+    <section class="cvlab-panel">
+      <h2>Build this</h2>
+      <div class="cvlab-targets" id="cvlab-tlist"></div>
+      <div class="cvlab-row">
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clear">Back in the box</button>
+      </div>
+    </section>
+
+    <section class="cvlab-panel">
+      <h2>The kit</h2>
+      <div class="cvlab-parts" id="cvlab-partlist"></div>
+      <p class="cvlab-partsline" id="cvlab-connectors">&nbsp;</p>
+      <p class="cvlab-note">Tap a ball to take one out of the box. The number of holes is what limits how many bonds it can make.</p>
+    </section>
+
+    <section class="cvlab-panel cvlab-panel-check">
+      <h2>How is it going</h2>
+      <div class="cvlab-checks" id="cvlab-checklist"></div>
+      <p class="cvlab-clue" id="cvlab-cluebox" style="display:none"></p>
+    </section>
+
+  </div>
+
+  <section class="cvlab-notes">
+    <h3>How to use this simulation</h3>
+    <ol>
+      <li>Pick a molecule to build from the <strong>Build this</strong> list. It shows the formula and how many atoms you'll need.</li>
+      <li>Tap a ball in <strong>The kit</strong> to take an atom out onto the workspace. Each atom has a fixed number of holes &mdash; that limits how many bonds it can make.</li>
+      <li>Choose <strong>stick</strong> (single bond) or <strong>spring</strong> (double bond) from the tools, then tap one atom and then another to join them. Tap a connector to remove it, and drag atoms to move them.</li>
+      <li>Watch the readouts at the top: <strong>Building</strong>, <strong>You have</strong>, <strong>Open holes</strong>, and <strong>Built</strong> update as you work.</li>
+      <li>Press <strong>Check my model</strong> to see whether your formula, connectivity, and open holes all match &mdash; the <strong>How is it going</strong> panel tracks all three live.</li>
+      <li>Press <strong>Give me a clue</strong> if you're stuck, or <strong>Back in the box</strong> to clear the workspace and start over.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------ the kit */
+  var EL = {
+    H:  { name:"Hydrogen", holes:1, r:12.5, fill:"#F0CE22", light:"#FBEB93", dark:"#B2930A", ink:"#3A2E05" },
+    Cl: { name:"Chlorine", holes:1, r:19.5, fill:"#2E8B4E", light:"#69BE84", dark:"#175C31", ink:"#EAF6EE" },
+    O:  { name:"Oxygen",   holes:2, r:17.5, fill:"#C0392B", light:"#E27C6E", dark:"#822116", ink:"#FDEDEB" },
+    N:  { name:"Nitrogen", holes:3, r:17.5, fill:"#2C6BC0", light:"#6D9FDD", dark:"#1A4482", ink:"#EBF2FC" },
+    C:  { name:"Carbon",   holes:4, r:19.5, fill:"#2A2D2E", light:"#61666A", dark:"#0B0D0E", ink:"#EDEFEE" }
+  };
+  var EL_KEYS = ["C","H","O","N","Cl"];
+  var STOCK   = { H:14, C:8, O:8, N:4, Cl:6 };
+  var STICKS  = 28, SPRINGS = 8;
+
+  function H(k){ var a=[]; while(k-->0) a.push("H"); return a; }
+  var TARGETS = [
+    { f:"H\u2082", n:"Hydrogen gas", g:"Two atoms", a:["H","H"], b:[[0,1,1]],
+      h:"Two yellow balls, one hole each, one wooden stick between them." },
+    { f:"Cl\u2082", n:"Chlorine gas", g:"Two atoms", a:["Cl","Cl"], b:[[0,1,1]],
+      h:"The same shape as hydrogen gas, built from the green one-hole balls." },
+    { f:"O\u2082", n:"Oxygen gas", g:"Two atoms", a:["O","O"], b:[[0,1,2]],
+      h:"Each oxygen has two holes and both must end up full. One stick leaves a hole open on each, so this one needs springs." },
+    { f:"HCl", n:"Hydrochloric acid", g:"Two atoms", a:["H","Cl"], b:[[0,1,1]],
+      h:"One yellow, one green, one stick." },
+    { f:"H\u2082O", n:"Water", g:"Small molecules", a:["O","H","H"], b:[[0,1,1],[0,2,1]],
+      h:"The oxygen goes in the middle. Its two holes take one hydrogen each, and a hydrogen cannot sit in the middle because it only has one hole." },
+    { f:"H\u2082O\u2082", n:"Hydrogen peroxide", g:"Small molecules", a:["O","O","H","H"], b:[[0,1,1],[0,2,1],[1,3,1]],
+      h:"Join the two oxygens to each other first. That uses one hole on each, leaving one each for a hydrogen." },
+    { f:"NH\u2083", n:"Ammonia", g:"Small molecules", a:["N","H","H","H"], b:[[0,1,1],[0,2,1],[0,3,1]],
+      h:"Nitrogen has three holes, so three hydrogens fill it exactly with nothing left over." },
+    { f:"CO\u2082", n:"Carbon dioxide", g:"Small molecules", a:["C","O","O"], b:[[0,1,2],[0,2,2]],
+      h:"Carbon sits in the middle with four holes to share between two oxygens, so each oxygen takes two of them. Both bonds are double." },
+    { f:"CH\u2084", n:"Methane", g:"Carbon compounds", a:["C"].concat(H(4)), b:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]],
+      h:"Carbon in the middle with a hydrogen in each of its four holes." },
+    { f:"CH\u2083Cl", n:"Chloromethane", g:"Carbon compounds", a:["C","Cl"].concat(H(3)),
+      b:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]],
+      h:"Methane with one hydrogen swapped for a green chlorine." },
+    { f:"CCl\u2084", n:"Carbon tetrachloride", g:"Carbon compounds", a:["C","Cl","Cl","Cl","Cl"],
+      b:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]],
+      h:"Methane with every hydrogen swapped for a chlorine." },
+    { f:"CH\u2082O", n:"Formaldehyde", g:"Carbon compounds", a:["C","O","H","H"], b:[[0,1,2],[0,2,1],[0,3,1]],
+      h:"The oxygen takes two of carbon's holes, so that bond is a spring pair. The two remaining holes take a hydrogen each." },
+    { f:"CH\u2083OH", n:"Methanol", g:"Carbon compounds", a:["C","O"].concat(H(4)),
+      b:[[0,1,1],[0,2,1],[0,3,1],[0,4,1],[1,5,1]],
+      h:"Carbon takes three hydrogens and the oxygen. The fourth hydrogen goes on the oxygen, not on the carbon, because carbon is already full." },
+    { f:"C\u2082H\u2084", n:"Ethene", g:"Carbon compounds", a:["C","C"].concat(H(4)),
+      b:[[0,1,2],[0,2,1],[0,3,1],[1,4,1],[1,5,1]],
+      h:"The two carbons are joined by a double bond, which uses two holes on each and leaves two each for hydrogens." },
+    { f:"C\u2082H\u2086", n:"Ethane", g:"Carbon compounds", a:["C","C"].concat(H(6)),
+      b:[[0,1,1],[0,2,1],[0,3,1],[0,4,1],[1,5,1],[1,6,1],[1,7,1]],
+      h:"Two carbons joined by one stick, then three hydrogens on each of them." },
+    { f:"C\u2083H\u2088", n:"Propane", g:"Carbon compounds", a:["C","C","C"].concat(H(8)),
+      b:[[0,1,1],[1,2,1],[0,3,1],[0,4,1],[0,5,1],[1,6,1],[1,7,1],[2,8,1],[2,9,1],[2,10,1]],
+      h:"A chain of three carbons. The middle one uses two holes on its neighbours, so it only has room for two hydrogens while the end ones take three." },
+    { f:"HCOOH", n:"Formic acid", g:"Carbon compounds", a:["C","O","O","H","H"],
+      b:[[0,1,2],[0,2,1],[0,3,1],[2,4,1]],
+      h:"Carbon holds a double bonded oxygen, a single bonded oxygen and one hydrogen. The last hydrogen goes on the single bonded oxygen." },
+    { f:"C\u2082H\u2085OH", n:"Ethanol (ethyl alcohol)", g:"Same formula, different molecule",
+      a:["C","C","O"].concat(H(6)),
+      b:[[0,1,1],[1,2,1],[0,3,1],[0,4,1],[0,5,1],[1,6,1],[1,7,1],[2,8,1]],
+      h:"A chain of carbon, carbon, oxygen, with the last hydrogen on the end oxygen. The oxygen is on the end, not between the carbons." },
+    { f:"C\u2082H\u2086O", n:"Dimethyl ether", g:"Same formula, different molecule",
+      a:["C","O","C"].concat(H(6)),
+      b:[[0,1,1],[1,2,1],[0,3,1],[0,4,1],[0,5,1],[2,6,1],[2,7,1],[2,8,1]],
+      h:"The oxygen sits between the two carbons, and each carbon carries three hydrogens. Same parts as ethanol, joined differently." },
+    { f:"C\u2086H\u2081\u2082O\u2086", n:"Glucose, open chain", g:"Challenge",
+      a:["C","C","C","C","C","C","O","O","O","O","O","O"].concat(H(12)),
+      b:[[0,1,1],[1,2,1],[2,3,1],[3,4,1],[4,5,1],[0,6,2],[0,17,1],
+         [1,7,1],[7,12,1],[1,18,1],[2,8,1],[8,13,1],[2,19,1],
+         [3,9,1],[9,14,1],[3,20,1],[4,10,1],[10,15,1],[4,21,1],
+         [5,11,1],[11,16,1],[5,22,1],[5,23,1]],
+      h:"Build the chain of six carbons first. The top carbon carries a double bonded oxygen and one hydrogen. The next four each carry one hydrogen and one OH. The bottom carbon carries two hydrogens and one OH." }
+  ];
+
+  /* ------------------------------------------------ state */
+  var atoms = [];            // {el,x,y,vx,vy}
+  var bonds = [];            // {a,b,order}
+  var tool = 1;              // 1 stick, 2 spring, 0 remove
+  var selected = -1;
+  var tgt = 0;
+  var doneSet = {};
+  var clueShown = false;
+  var lastVerdict = null, lastSuccess = false;
+  var dragIdx = -1, dragMoved = false, dragDX = 0, dragDY = 0;
+  var settle = 1;            // how much relaxation is still needed
+
+  var reduceMotion = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+
+  /* ------------------------------------------------ dom */
+  function $(id){ return document.getElementById(id); }
+  var workC = $("cvlab-work"), wctx = workC.getContext("2d");
+  var elTools = $("cvlab-tools"), elTList = $("cvlab-tlist"), elParts = $("cvlab-partlist");
+  var elConn = $("cvlab-connectors"), elChecks = $("cvlab-checklist"), elClueBox = $("cvlab-cluebox");
+  var elCheck = $("cvlab-check"), elClue = $("cvlab-clue"), elClear = $("cvlab-clear");
+  var elStatus = $("cvlab-status");
+  var roTgt = $("cvlab-ro-tgt"), roF = $("cvlab-ro-f"),
+      roHoles = $("cvlab-ro-holes"), roDone = $("cvlab-ro-done");
+
+  function say(m, kind){
+    elStatus.innerHTML = m;
+    elStatus.className = "cvlab-status" + (kind ? " is-" + kind : "");
+  }
+  function now(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+  function fit(canvas, ctx){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(200, Math.round(r.width)), h = Math.max(200, Math.round(r.height));
+    if(canvas.width !== w*dpr || canvas.height !== h*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { w:w, h:h };
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+
+  /* ------------------------------------------------ molecule bookkeeping */
+  function usedHoles(i){
+    var s = 0;
+    for(var k=0;k<bonds.length;k++){
+      if(bonds[k].a === i || bonds[k].b === i) s += bonds[k].order;
+    }
+    return s;
+  }
+  function freeHoles(i){ return EL[atoms[i].el].holes - usedHoles(i); }
+  function openHolesTotal(){
+    var s = 0;
+    for(var i=0;i<atoms.length;i++) s += freeHoles(i);
+    return s;
+  }
+  function bondBetween(i,j){
+    for(var k=0;k<bonds.length;k++){
+      var b = bonds[k];
+      if((b.a===i && b.b===j) || (b.a===j && b.b===i)) return k;
+    }
+    return -1;
+  }
+  function usedStock(){
+    var u = { H:0, C:0, O:0, N:0, Cl:0 };
+    for(var i=0;i<atoms.length;i++) u[atoms[i].el]++;
+    return u;
+  }
+  function usedSticks(){
+    var s = 0;
+    for(var k=0;k<bonds.length;k++) if(bonds[k].order === 1) s++;
+    return s;
+  }
+  function usedSprings(){
+    var s = 0;
+    for(var k=0;k<bonds.length;k++) if(bonds[k].order === 2) s += 2;
+    return s;
+  }
+  function countsOf(list){
+    var c = {};
+    for(var i=0;i<list.length;i++) c[list[i]] = (c[list[i]]||0) + 1;
+    return c;
+  }
+  function myCounts(){
+    var l = [];
+    for(var i=0;i<atoms.length;i++) l.push(atoms[i].el);
+    return countsOf(l);
+  }
+  function sub(n){
+    var d = "\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087\u2088\u2089", out = "";
+    var s = String(n);
+    for(var i=0;i<s.length;i++) out += d.charAt(parseInt(s.charAt(i),10));
+    return out;
+  }
+  /* written the way a chemist would write it, not strict Hill order */
+  function formulaOf(c){
+    var order = c.C ? ["C","H","N","O","Cl"] : ["N","H","O","Cl"];
+    var out = "";
+    for(var i=0;i<order.length;i++){
+      var e = order[i];
+      if(!c[e]) continue;
+      out += e + (c[e] > 1 ? sub(c[e]) : "");
+    }
+    return out || "nothing";
+  }
+  function pieces(){
+    if(!atoms.length) return 0;
+    var seen = {}, n = 0;
+    var adj = [];
+    for(var i=0;i<atoms.length;i++) adj.push([]);
+    for(var k=0;k<bonds.length;k++){ adj[bonds[k].a].push(bonds[k].b); adj[bonds[k].b].push(bonds[k].a); }
+    for(var s=0;s<atoms.length;s++){
+      if(seen[s]) continue;
+      n++; var st = [s]; seen[s] = 1;
+      while(st.length){
+        var v = st.pop();
+        for(var q=0;q<adj[v].length;q++) if(!seen[adj[v][q]]){ seen[adj[v][q]] = 1; st.push(adj[v][q]); }
+      }
+    }
+    return n;
+  }
+
+  /* a canonical fingerprint, so two models with the same formula can still be told apart */
+  function hashStr(s){
+    var h = 5381;
+    for(var i=0;i<s.length;i++) h = ((h<<5) + h + s.charCodeAt(i)) | 0;
+    return (h>>>0).toString(36);
+  }
+  function canonOf(els, bl){
+    var n = els.length;
+    if(!n) return "";
+    var adj = [];
+    for(var i=0;i<n;i++) adj.push([]);
+    for(var k=0;k<bl.length;k++){
+      adj[bl[k][0]].push([bl[k][1], bl[k][2]]);
+      adj[bl[k][1]].push([bl[k][0], bl[k][2]]);
+    }
+    var lab = els.slice();
+    for(var r=0;r<4;r++){
+      var nl = [];
+      for(var i2=0;i2<n;i2++){
+        var parts = [];
+        for(var q=0;q<adj[i2].length;q++) parts.push(adj[i2][q][1] + ":" + lab[adj[i2][q][0]]);
+        parts.sort();
+        nl.push(hashStr(lab[i2] + "|" + parts.join(",")));
+      }
+      lab = nl;
+    }
+    return lab.slice().sort().join(";");
+  }
+  function myCanon(){
+    var els = [], bl = [];
+    for(var i=0;i<atoms.length;i++) els.push(atoms[i].el);
+    for(var k=0;k<bonds.length;k++) bl.push([bonds[k].a, bonds[k].b, bonds[k].order]);
+    return canonOf(els, bl);
+  }
+  var TCANON = [];
+  for(var ti=0; ti<TARGETS.length; ti++) TCANON.push(canonOf(TARGETS[ti].a, TARGETS[ti].b));
+
+  /* ------------------------------------------------ verdict */
+  function verdict(){
+    var T = TARGETS[tgt];
+    var mine = myCounts(), want = countsOf(T.a);
+    var v = { empty: atoms.length === 0, formula:true, wrong:[], parts: pieces(),
+              open: openHolesTotal(), struct:null, other:-1, success:false };
+    var keys = {};
+    for(var k in mine) keys[k] = 1;
+    for(var k2 in want) keys[k2] = 1;
+    for(var e in keys){
+      var got = mine[e] || 0, need = want[e] || 0;
+      if(got !== need){ v.formula = false; v.wrong.push({ el:e, got:got, need:need }); }
+    }
+    if(!v.empty && v.formula && v.parts === 1 && v.open === 0){
+      var c = myCanon();
+      v.struct = (c === TCANON[tgt]);
+      if(!v.struct){
+        for(var i=0;i<TARGETS.length;i++){
+          if(i !== tgt && TCANON[i] === c){ v.other = i; break; }
+        }
+      }
+    }
+    v.success = (!v.empty && v.formula && v.parts === 1 && v.open === 0 && v.struct === true);
+    return v;
+  }
+
+  /* ------------------------------------------------ actions */
+  function addAtom(el){
+    var u = usedStock();
+    if(u[el] >= STOCK[el]){ say("The box is out of <strong>" + EL[el].name.toLowerCase() + "</strong> balls.", "bad"); return -1; }
+    var s = fit(workC, wctx);
+    var cx = s.w/2, cy = s.h/2;
+    var a = Math.random()*Math.PI*2, d = atoms.length ? 40 + Math.random()*70 : 0;
+    atoms.push({ el:el, x: clamp(cx + Math.cos(a)*d, 30, s.w-30),
+                 y: clamp(cy + Math.sin(a)*d, 30, s.h-30), vx:0, vy:0 });
+    settle = 1;
+    refresh();
+    return atoms.length - 1;
+  }
+  function removeAtom(i){
+    var keep = [];
+    for(var k=0;k<bonds.length;k++){
+      var b = bonds[k];
+      if(b.a === i || b.b === i) continue;
+      keep.push({ a: b.a > i ? b.a-1 : b.a, b: b.b > i ? b.b-1 : b.b, order: b.order });
+    }
+    bonds = keep;
+    atoms.splice(i,1);
+    if(selected === i) selected = -1;
+    else if(selected > i) selected--;
+    settle = 1;
+    refresh();
+  }
+  function tryBond(i,j){
+    if(i === j) return;
+    var ex = bondBetween(i,j);
+    var elI = EL[atoms[i].el], elJ = EL[atoms[j].el];
+    if(ex >= 0){
+      var b = bonds[ex];
+      var to = b.order === 1 ? 2 : 1;
+      if(to === 2){
+        if(freeHoles(i) < 1 || freeHoles(j) < 1){
+          say("To make that a double bond each atom needs a spare hole, and "
+              + (freeHoles(i) < 1 ? elI.name.toLowerCase() : elJ.name.toLowerCase())
+              + " has none left.", "bad");
+          return;
+        }
+        if(usedSprings() + 2 > SPRINGS){ say("No springs left in the box.", "bad"); return; }
+      }
+      b.order = to;
+      say(to === 2 ? "Swapped the stick for a pair of springs, so that is a double bond now."
+                   : "Took the springs out and put a single stick in instead.");
+      settle = 1; refresh(); return;
+    }
+    if(freeHoles(i) < tool || freeHoles(j) < tool){
+      var full = freeHoles(i) < tool ? atoms[i].el : atoms[j].el;
+      var need = tool === 2 ? "two spare holes" : "a spare hole";
+      say("That will not go in. A " + (tool===2 ? "double bond" : "single bond") + " needs " + need
+          + " at each end, and the " + EL[full].name.toLowerCase() + " has "
+          + freeHoles(freeHoles(i) < tool ? i : j) + " left of its " + EL[full].holes + ".", "bad");
+      return;
+    }
+    if(tool === 1 && usedSticks() + 1 > STICKS){ say("No wooden sticks left in the box.", "bad"); return; }
+    if(tool === 2 && usedSprings() + 2 > SPRINGS){ say("No springs left in the box.", "bad"); return; }
+    bonds.push({ a:i, b:j, order:tool });
+    say(tool === 2 ? "Springs in. That is a double bond, and it fills two holes at each end."
+                   : "Stick in. That is a single bond.");
+    settle = 1; refresh();
+  }
+  function clearAll(){
+    atoms = []; bonds = []; selected = -1; clueShown = false; lastVerdict = null;
+    elClueBox.style.display = "none";
+    settle = 1;
+    refresh();
+    say("Everything back in the box.");
+  }
+  function setTarget(i){
+    tgt = i; clueShown = false; elClueBox.style.display = "none";
+    say("Now building <strong>" + TARGETS[i].n + "</strong>, " + TARGETS[i].f
+        + ". Take the balls you need out of the box.");
+    refresh();
+  }
+
+  /* ------------------------------------------------ panels */
+  function buildTools(){
+    var stick = '<svg width="26" height="10" viewBox="0 0 26 10" aria-hidden="true">'
+      + '<rect x="1" y="3" width="24" height="4" rx="2" fill="#D8B274" stroke="#A5813F"/></svg>';
+    var spring = '<svg width="26" height="12" viewBox="0 0 26 12" aria-hidden="true">'
+      + '<path d="M1 3 q2 -2 4 0 t4 0 t4 0 t4 0 t4 0 t4 0" fill="none" stroke="#8E959A" stroke-width="1.6"/>'
+      + '<path d="M1 9 q2 -2 4 0 t4 0 t4 0 t4 0 t4 0 t4 0" fill="none" stroke="#8E959A" stroke-width="1.6"/></svg>';
+    elTools.innerHTML =
+        '<button class="cvlab-tool" data-t="1">' + stick + 'Wooden stick, single</button>'
+      + '<button class="cvlab-tool" data-t="2">' + spring + 'Springs, double</button>'
+      + '<button class="cvlab-tool" data-t="0">Take an atom out</button>'
+      + '<span class="cvlab-toolgap"></span>'
+      + '<button class="cvlab-tool" data-t="shake">Shake to tidy</button>';
+    elTools.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-tool") : null;
+      if(!b) return;
+      var v = b.getAttribute("data-t");
+      if(v === "shake"){
+        for(var i=0;i<atoms.length;i++){
+          atoms[i].vx += (Math.random()-0.5)*7; atoms[i].vy += (Math.random()-0.5)*7;
+        }
+        settle = 1;
+        say("Shaken. The model will settle into a tidier shape.");
+        return;
+      }
+      tool = parseInt(v,10); selected = -1;
+      say(tool === 0 ? "Tap an atom to put it back in the box."
+        : (tool === 2 ? "Tap two atoms to join them with a pair of springs."
+                      : "Tap two atoms to join them with a wooden stick."));
+      refresh();
+    });
+  }
+  function renderTools(){
+    var bs = elTools.querySelectorAll(".cvlab-tool");
+    for(var i=0;i<bs.length;i++){
+      var v = bs[i].getAttribute("data-t");
+      bs[i].className = "cvlab-tool" + (v !== "shake" && parseInt(v,10) === tool ? " is-on" : "");
+    }
+  }
+  function buildTargets(){
+    var html = "", grp = "";
+    for(var i=0;i<TARGETS.length;i++){
+      if(TARGETS[i].g !== grp){ grp = TARGETS[i].g; html += '<div class="cvlab-tgroup">' + grp + '</div>'; }
+      html += '<button class="cvlab-tgt" data-i="' + i + '"><b>' + TARGETS[i].f + '</b>'
+            + '<span>' + TARGETS[i].n + '</span><i data-tick="' + i + '"></i></button>';
+    }
+    elTList.innerHTML = html;
+    elTList.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-tgt") : null;
+      if(!b) return;
+      setTarget(parseInt(b.getAttribute("data-i"),10));
+    });
+  }
+  function renderTargets(){
+    var bs = elTList.querySelectorAll(".cvlab-tgt");
+    for(var i=0;i<bs.length;i++){
+      var idx = parseInt(bs[i].getAttribute("data-i"),10);
+      bs[i].className = "cvlab-tgt" + (idx === tgt ? " is-on" : "");
+    }
+    var ts = elTList.querySelectorAll("[data-tick]");
+    for(var j=0;j<ts.length;j++){
+      var k = parseInt(ts[j].getAttribute("data-tick"),10);
+      ts[j].textContent = doneSet[k] ? "\u2713" : "";
+    }
+  }
+  function buildParts(){
+    var html = "";
+    for(var i=0;i<EL_KEYS.length;i++){
+      var e = EL_KEYS[i], d = EL[e];
+      html += '<button class="cvlab-part" data-e="' + e + '">'
+        + '<span class="cvlab-ball" style="background:radial-gradient(circle at 32% 30%,'
+        + d.light + ',' + d.fill + ' 62%,' + d.dark + ')"></span>'
+        + '<span>' + e + '<u>' + d.holes + (d.holes>1?" holes":" hole") + '</u></span>'
+        + '<em data-left="' + e + '"></em></button>';
+    }
+    elParts.innerHTML = html;
+    elParts.addEventListener("click", function(ev){
+      var b = ev.target.closest ? ev.target.closest(".cvlab-part") : null;
+      if(!b || b.disabled) return;
+      addAtom(b.getAttribute("data-e"));
+    });
+  }
+  function renderParts(){
+    var u = usedStock();
+    var bs = elParts.querySelectorAll(".cvlab-part");
+    for(var i=0;i<bs.length;i++){
+      var e = bs[i].getAttribute("data-e");
+      bs[i].disabled = u[e] >= STOCK[e];
+    }
+    var ls = elParts.querySelectorAll("[data-left]");
+    for(var j=0;j<ls.length;j++){
+      var e2 = ls[j].getAttribute("data-left");
+      ls[j].textContent = (STOCK[e2] - u[e2]) + " left";
+    }
+    elConn.innerHTML = "Wooden sticks <b>" + (STICKS - usedSticks()) + "</b> left of " + STICKS
+      + "<br>Springs <b>" + (SPRINGS - usedSprings()) + "</b> left of " + SPRINGS
+      + " &middot; a double bond uses two";
+  }
+
+  function renderChecks(){
+    var T = TARGETS[tgt], v = verdict();
+    lastVerdict = v;
+    var rows = [];
+    /* formula */
+    if(v.empty){
+      rows.push({ s:"wait", t:"Right formula", d:"Nothing built yet. Target is " + T.f + "." });
+    } else if(v.formula){
+      rows.push({ s:"ok", t:"Right formula", d:"You have " + formulaOf(myCounts()) + "." });
+    } else {
+      var bits = [];
+      for(var i=0;i<v.wrong.length;i++){
+        var wr = v.wrong[i];
+        bits.push(EL[wr.el].name.toLowerCase() + ": you have " + wr.got + ", you need " + wr.need);
+      }
+      rows.push({ s:"bad", t:"Right formula", d:bits.join("; ") + "." });
+    }
+    /* one piece */
+    if(v.empty) rows.push({ s:"wait", t:"All in one piece", d:"" });
+    else if(v.parts === 1) rows.push({ s:"ok", t:"All in one piece", d:"Everything is joined up." });
+    else rows.push({ s:"bad", t:"All in one piece",
+      d:"There are " + v.parts + " separate pieces on the bench. A molecule has to be one." });
+    /* holes */
+    if(v.empty) rows.push({ s:"wait", t:"No holes left open", d:"" });
+    else if(v.open === 0) rows.push({ s:"ok", t:"No holes left open", d:"Every hole has a connector in it." });
+    else rows.push({ s:"bad", t:"No holes left open",
+      d:v.open + (v.open === 1 ? " hole is" : " holes are") + " still empty. Look for the pits with a white ring round them." });
+    /* structure */
+    if(v.struct === null){
+      rows.push({ s:"wait", t:"Joined the right way",
+        d:"Sort the three above out first, then this one gets checked." });
+    } else if(v.struct){
+      rows.push({ s:"ok", t:"Joined the right way", d:"This is " + T.n + "." });
+    } else if(v.other >= 0){
+      rows.push({ s:"bad", t:"Joined the right way",
+        d:"Same formula, but this arrangement is " + TARGETS[v.other].n + ", not " + T.n + "." });
+    } else {
+      rows.push({ s:"bad", t:"Joined the right way",
+        d:"Right parts, all holes full, but the atoms are joined differently from " + T.n + "." });
+    }
+    var html = "";
+    for(var r=0;r<rows.length;r++){
+      var mark = rows[r].s === "ok" ? "\u2713" : (rows[r].s === "bad" ? "\u2717" : "\u2022");
+      html += '<div class="cvlab-check ' + rows[r].s + '"><i>' + mark + '</i><div><b>'
+            + rows[r].t + '</b>' + (rows[r].d ? '<span>' + rows[r].d + '</span>' : '') + '</div></div>';
+    }
+    elChecks.innerHTML = html;
+
+    if(v.success && !lastSuccess){
+      var fresh = !doneSet[tgt];
+      doneSet[tgt] = 1;
+      say("That is <strong>" + T.n + "</strong>, built correctly."
+          + (fresh ? " Ticked off the list." : ""), "ok");
+    }
+    lastSuccess = v.success;
+    roTgt.textContent = T.f;
+    roF.textContent = v.empty ? "nothing" : formulaOf(myCounts());
+    roHoles.textContent = String(v.open);
+    var d = 0;
+    for(var k in doneSet) if(doneSet[k]) d++;
+    roDone.textContent = d + " / " + TARGETS.length;
+  }
+
+  function refresh(){ renderTools(); renderTargets(); renderParts(); renderChecks(); }
+
+  /* ------------------------------------------------ relaxation, so the model hangs together */
+  function relax(dt){
+    var s = { w: workC.getBoundingClientRect().width, h: workC.getBoundingClientRect().height };
+    var n = atoms.length;
+    if(!n) return;
+    var moved = 0;
+    for(var i=0;i<n;i++){
+      var A = atoms[i];
+      var fx = 0, fy = 0;
+      for(var j=0;j<n;j++){
+        if(i === j) continue;
+        var B = atoms[j];
+        var dx = A.x-B.x, dy = A.y-B.y;
+        var d2 = dx*dx + dy*dy;
+        var d = Math.sqrt(d2) || 0.01;
+        var rr = EL[A.el].r + EL[B.el].r;
+        var bk = bondBetween(i,j);
+        if(bk >= 0){
+          var want = rr + 24;
+          var f = (d - want)*0.045;
+          fx -= dx/d*f; fy -= dy/d*f;
+        } else {
+          var minD = rr + 12;
+          if(d < minD){
+            var push = (minD - d)*0.10;
+            fx += dx/d*push; fy += dy/d*push;
+          } else if(d < 260){
+            var soft = Math.min(1.6, 4200/d2);
+            fx += dx/d*soft; fy += dy/d*soft;
+          }
+        }
+      }
+      /* a gentle pull to the middle so the model does not crawl into a corner */
+      fx += (s.w/2 - A.x)*0.0016;
+      fy += (s.h/2 - A.y)*0.0016;
+      if(i !== dragIdx){
+        A.vx = (A.vx + fx)*0.80;
+        A.vy = (A.vy + fy)*0.80;
+        A.x += A.vx; A.y += A.vy;
+        var r = EL[A.el].r + 3;
+        A.x = clamp(A.x, r, s.w - r);
+        A.y = clamp(A.y, r, s.h - r);
+        moved += Math.abs(A.vx) + Math.abs(A.vy);
+      } else { A.vx = 0; A.vy = 0; }
+    }
+    settle = moved > 0.6*n ? 1 : Math.max(0, settle - 0.02);
+  }
+
+  /* ------------------------------------------------ drawing */
+  function bondAngles(i){
+    var out = [];
+    for(var k=0;k<bonds.length;k++){
+      var b = bonds[k];
+      var o = b.a === i ? b.b : (b.b === i ? b.a : -1);
+      if(o < 0) continue;
+      out.push({ ang: Math.atan2(atoms[o].y-atoms[i].y, atoms[o].x-atoms[i].x), order: b.order });
+    }
+    return out;
+  }
+  function drawStick(ctx, ax, ay, bx, by, w){
+    var ang = Math.atan2(by-ay, bx-ax), len = Math.hypot(bx-ax, by-ay);
+    ctx.save();
+    ctx.translate(ax, ay); ctx.rotate(ang);
+    var g = ctx.createLinearGradient(0, -w/2, 0, w/2);
+    g.addColorStop(0,"#EBCF9C"); g.addColorStop(.45,"#D8B274"); g.addColorStop(1,"#AE8B4E");
+    ctx.fillStyle = g;
+    roundRect(ctx, 0, -w/2, len, w, w*0.45); ctx.fill();
+    ctx.strokeStyle = "rgba(140,105,55,.85)"; ctx.lineWidth = 1;
+    roundRect(ctx, 0, -w/2, len, w, w*0.45); ctx.stroke();
+    ctx.strokeStyle = "rgba(150,112,58,.45)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(len*0.12, -w*0.16); ctx.lineTo(len*0.88, -w*0.16);
+    ctx.moveTo(len*0.18, w*0.18); ctx.lineTo(len*0.82, w*0.18);
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawSpringPair(ctx, ax, ay, bx, by){
+    var ang = Math.atan2(by-ay, bx-ax), len = Math.hypot(bx-ax, by-ay);
+    ctx.save();
+    ctx.translate(ax, ay); ctx.rotate(ang);
+    var coils = Math.max(5, Math.round(len/5));
+    for(var s=-1; s<=1; s+=2){
+      var off = s*5.6;
+      ctx.strokeStyle = "#8F969B"; ctx.lineWidth = 1.9; ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(0, off);
+      for(var c=0;c<coils;c++){
+        var x0 = len*c/coils, x1 = len*(c+1)/coils;
+        ctx.quadraticCurveTo((x0+x1)/2, off + ((c%2) ? 2.6 : -2.6), x1, off);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(0, off-0.7);
+      for(var c2=0;c2<coils;c2++){
+        var a0 = len*c2/coils, a1 = len*(c2+1)/coils;
+        ctx.quadraticCurveTo((a0+a1)/2, off-0.7 + ((c2%2) ? 2.6 : -2.6), a1, off-0.7);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function draw(){
+    var s = fit(workC, wctx), w = s.w, h = s.h;
+    var ctx = wctx;
+    ctx.clearRect(0,0,w,h);
+    /* the felt of the bench */
+    var g = ctx.createLinearGradient(0,0,0,h);
+    g.addColorStop(0,"#F3F5EF"); g.addColorStop(1,"#E7EAE2");
+    ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle = "rgba(160,168,152,.30)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var gx=28; gx<w; gx+=28){ ctx.moveTo(gx+0.5, 0); ctx.lineTo(gx+0.5, h); }
+    for(var gy=28; gy<h; gy+=28){ ctx.moveTo(0, gy+0.5); ctx.lineTo(w, gy+0.5); }
+    ctx.stroke();
+
+    if(!atoms.length){
+      ctx.fillStyle = "#9AA093";
+      ctx.font = '700 13.5px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Tap a ball in the kit to take one out of the box.", w/2, h/2);
+      return;
+    }
+
+    /* connectors under the balls */
+    for(var k=0;k<bonds.length;k++){
+      var b = bonds[k], A = atoms[b.a], B = atoms[b.b];
+      if(b.order === 2) drawSpringPair(ctx, A.x, A.y, B.x, B.y);
+      else drawStick(ctx, A.x, A.y, B.x, B.y, 7.5);
+    }
+
+    /* balls */
+    for(var i=0;i<atoms.length;i++){
+      var a = atoms[i], d = EL[a.el], r = d.r;
+      ctx.fillStyle = "rgba(30,34,30,.16)";
+      ctx.beginPath(); ctx.ellipse(a.x+1.5, a.y+r*0.82, r*0.85, r*0.24, 0, 0, Math.PI*2); ctx.fill();
+      var rg = ctx.createRadialGradient(a.x - r*0.35, a.y - r*0.4, r*0.12, a.x, a.y, r*1.08);
+      rg.addColorStop(0, d.light); rg.addColorStop(.58, d.fill); rg.addColorStop(1, d.dark);
+      ctx.fillStyle = rg;
+      ctx.beginPath(); ctx.arc(a.x, a.y, r, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(a.x, a.y, r, 0, Math.PI*2); ctx.stroke();
+
+      /* the empty holes, put where no connector is */
+      var free = freeHoles(i);
+      if(free > 0){
+        var used = bondAngles(i), best = [];
+        for(var c=0;c<24;c++){
+          var ang = c/24*Math.PI*2, worst = 9;
+          for(var q=0;q<used.length;q++){
+            var dd = Math.abs(Math.atan2(Math.sin(ang-used[q].ang), Math.cos(ang-used[q].ang)));
+            if(dd < worst) worst = dd;
+          }
+          best.push({ ang:ang, gap:worst });
+        }
+        best.sort(function(p,q2){ return q2.gap - p.gap; });
+        var picked = [];
+        for(var p2=0; p2<best.length && picked.length<free; p2++){
+          var ok = true;
+          for(var t2=0;t2<picked.length;t2++){
+            var sep = Math.abs(Math.atan2(Math.sin(best[p2].ang-picked[t2]), Math.cos(best[p2].ang-picked[t2])));
+            if(sep < 0.85) ok = false;
+          }
+          if(ok) picked.push(best[p2].ang);
+        }
+        for(var hh=0; hh<picked.length; hh++){
+          var hx = a.x + Math.cos(picked[hh])*r*0.80, hy = a.y + Math.sin(picked[hh])*r*0.80;
+          /* a pit with a bright rim, so it shows on a black carbon as well as a yellow hydrogen */
+          var hr = Math.max(2.6, r*0.21);
+          ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 2.2;
+          ctx.beginPath(); ctx.arc(hx, hy, hr, 0, Math.PI*2); ctx.stroke();
+          ctx.fillStyle = "rgba(8,10,8,.92)";
+          ctx.beginPath(); ctx.arc(hx, hy, hr, 0, Math.PI*2); ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(hx, hy, hr*0.55, Math.PI*1.05, Math.PI*1.95); ctx.stroke();
+        }
+      }
+
+      /* symbol */
+      ctx.fillStyle = d.ink;
+      ctx.font = "700 " + Math.max(9, r*0.82).toFixed(0) + 'px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(a.el, a.x, a.y + 0.5);
+
+      if(i === selected){
+        ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 2.6;
+        ctx.setLineDash([4,3]);
+        ctx.beginPath(); ctx.arc(a.x, a.y, r + 5, 0, Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+  }
+
+  /* ------------------------------------------------ pointer */
+  function pos(e){
+    var r = workC.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  function atomAt(p){
+    for(var i=atoms.length-1;i>=0;i--){
+      var a = atoms[i], r = EL[a.el].r + 3;
+      if((p.x-a.x)*(p.x-a.x) + (p.y-a.y)*(p.y-a.y) <= r*r) return i;
+    }
+    return -1;
+  }
+  function bondAt(p){
+    for(var k=0;k<bonds.length;k++){
+      var A = atoms[bonds[k].a], B = atoms[bonds[k].b];
+      var vx = B.x-A.x, vy = B.y-A.y, L2 = vx*vx + vy*vy;
+      if(L2 < 1) continue;
+      var t = ((p.x-A.x)*vx + (p.y-A.y)*vy)/L2;
+      if(t < 0.18 || t > 0.82) continue;
+      var px = A.x + vx*t, py = A.y + vy*t;
+      var d2 = (p.x-px)*(p.x-px) + (p.y-py)*(p.y-py);
+      if(d2 <= 100) return k;
+    }
+    return -1;
+  }
+  workC.addEventListener("pointerdown", function(e){
+    workC.setPointerCapture && workC.setPointerCapture(e.pointerId);
+    var p = pos(e);
+    var i = atomAt(p);
+    dragMoved = false;
+    if(i >= 0){ dragIdx = i; dragDX = atoms[i].x - p.x; dragDY = atoms[i].y - p.y; }
+    else dragIdx = -1;
+    e.preventDefault();
+  });
+  workC.addEventListener("pointermove", function(e){
+    if(dragIdx < 0) return;
+    var p = pos(e);
+    var nx = p.x + dragDX, ny = p.y + dragDY;
+    if(Math.abs(nx - atoms[dragIdx].x) + Math.abs(ny - atoms[dragIdx].y) > 4) dragMoved = true;
+    atoms[dragIdx].x = nx; atoms[dragIdx].y = ny;
+    atoms[dragIdx].vx = 0; atoms[dragIdx].vy = 0;
+    settle = 1;
+  });
+  function endPointer(e){
+    var wasDrag = dragMoved, i = dragIdx;
+    dragIdx = -1;
+    if(i >= 0 && !wasDrag) tapAtom(i);
+    else if(i < 0 && e){
+      var p = pos(e), k = bondAt(p);
+      if(k >= 0){
+        var dbl = bonds[k].order === 2;
+        bonds.splice(k,1);
+        selected = -1; settle = 1;
+        say("Pulled the " + (dbl ? "springs" : "stick") + " out. "
+            + (dbl ? "Four" : "Two") + " holes just opened up.");
+        refresh();
+      } else if(selected >= 0){ selected = -1; }
+    }
+    dragMoved = false;
+  }
+  workC.addEventListener("pointerup", endPointer);
+  workC.addEventListener("pointercancel", function(){ dragIdx = -1; dragMoved = false; });
+
+  function tapAtom(i){
+    if(tool === 0){
+      var nm = EL[atoms[i].el].name.toLowerCase();
+      removeAtom(i);
+      say("Put the " + nm + " back in the box.");
+      return;
+    }
+    if(selected < 0){
+      if(freeHoles(i) === 0){
+        say("That " + EL[atoms[i].el].name.toLowerCase() + "'s "
+            + EL[atoms[i].el].holes + " holes are all full, so nothing else can attach to it.", "bad");
+        return;
+      }
+      selected = i;
+      say("Picked the " + EL[atoms[i].el].name.toLowerCase() + ", "
+          + freeHoles(i) + " hole" + (freeHoles(i)===1?"":"s") + " free. Now tap what it joins to.");
+    } else if(selected === i){
+      selected = -1; say("Let go of that one.");
+    } else {
+      var j = selected; selected = -1;
+      tryBond(j, i);
+    }
+    refresh();
+  }
+
+  /* ------------------------------------------------ loop */
+  function frame(){
+    if(settle > 0 || dragIdx >= 0) relax();
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  /* ------------------------------------------------ wiring */
+  elCheck.addEventListener("click", function(){
+    var v = verdict();
+    if(v.empty){ say("Nothing on the bench yet. Take some balls out of the box first.", "bad"); return; }
+    if(!v.formula){
+      var wr = v.wrong[0];
+      say("Not the right parts yet. " + EL[wr.el].name + ": you have <strong>" + wr.got
+          + "</strong>, " + TARGETS[tgt].n + " needs <strong>" + wr.need + "</strong>.", "bad");
+    } else if(v.parts > 1){
+      say("Right parts, but they are in <strong>" + v.parts
+          + " separate pieces</strong>. Join them into one.", "bad");
+    } else if(v.open > 0){
+      say("Right parts and all in one piece, but <strong>" + v.open + " hole"
+          + (v.open===1?" is":"s are") + "</strong> still open. Every hole needs a connector.", "bad");
+    } else if(v.struct === false){
+      if(v.other >= 0){
+        say("Careful. Those are the right parts with every hole filled, but you have built "
+            + "<strong>" + TARGETS[v.other].n + "</strong>, not " + TARGETS[tgt].n + ".", "bad");
+      } else {
+        say("Right parts, every hole filled, but joined differently from "
+            + TARGETS[tgt].n + ". Try the clue.", "bad");
+      }
+    } else {
+      say("That is <strong>" + TARGETS[tgt].n + "</strong>, built correctly.", "ok");
+    }
+    refresh();
+  });
+  elClue.addEventListener("click", function(){
+    clueShown = true;
+    elClueBox.style.display = "";
+    elClueBox.innerHTML = "<b>Clue for " + TARGETS[tgt].f + ":</b> " + TARGETS[tgt].h;
+  });
+  elClear.addEventListener("click", clearAll);
+
+  var rt;
+  window.addEventListener("resize", function(){
+    clearTimeout(rt);
+    rt = setTimeout(function(){ settle = 1; }, 120);
+  });
+  if(window.ResizeObserver){
+    new ResizeObserver(function(){ settle = 1; }).observe(workC.parentNode);
+  }
+
+  buildTools(); buildTargets(); buildParts();
+  refresh();
+  requestAnimationFrame(frame);
+
+  /* a seam used only by the automated checks; harmless when nothing sets the hook */
+  if(window.__mkHook) window.__mkHook({
+    TARGETS: TARGETS, EL: EL,
+    addAtom: addAtom, bond: function(i,j,o){ tool = o; tryBond(i,j); },
+    setTarget: setTarget, clear: clearAll, verdict: verdict,
+    canonOf: canonOf, formulaOf: formulaOf, counts: myCounts,
+    state: function(){ return { atoms:atoms, bonds:bonds }; }
+  });
+})();
+</script>
+</body>
+</html>

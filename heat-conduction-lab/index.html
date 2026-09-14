@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<title>Heat Conduction Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF2F6;
+    --surface:#FFFFFF;
+    --surface-alt:#F5F8FA;
+    --border:#D8E0E8;
+    --border-strong:#C2CCD6;
+    --ink:#1B2430;
+    --ink-muted:#5C6B7A;
+    --ink-faint:#8B99A6;
+    --hot:#E4572E;
+    --hot-soft:#FBDCD1;
+    --cold:#1476B0;
+    --cold-soft:#CFE7F3;
+    --accent:#E4572E;
+    --al:#AEB8C2;
+    --cu:#C1723C;
+    --st:#4E5D6C;
+    --gl:#8FD3E8;
+    --shadow: 0 1px 2px rgba(27,36,48,.05), 0 8px 24px rgba(27,36,48,.06);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12161B;
+      --surface:#1B222A;
+      --surface-alt:#212A33;
+      --border:#2E3A46;
+      --border-strong:#3B4A58;
+      --ink:#EAF0F6;
+      --ink-muted:#9FB0BF;
+      --ink-faint:#6F818F;
+      --hot:#E4572E;
+      --hot-soft:#432A20;
+      --cold:#1EA0E0;
+      --cold-soft:#173444;
+      --accent:#E4572E;
+      --al:#8C97A2;
+      --cu:#C1723C;
+      --st:#6A7B8C;
+      --gl:#7FC3D8;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12161B;
+    --surface:#1B222A;
+    --surface-alt:#212A33;
+    --border:#2E3A46;
+    --border-strong:#3B4A58;
+    --ink:#EAF0F6;
+    --ink-muted:#9FB0BF;
+    --ink-faint:#6F818F;
+    --hot:#E4572E;
+    --hot-soft:#432A20;
+    --cold:#1EA0E0;
+    --cold-soft:#173444;
+    --accent:#E4572E;
+    --al:#8C97A2;
+    --cu:#C1723C;
+    --st:#6A7B8C;
+    --gl:#7FC3D8;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35);
+  }
+
+  *{ box-sizing:border-box; }
+  html{ color-scheme: light dark; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Poppins', system-ui, sans-serif;
+    font-weight:600;
+    font-variant-numeric: tabular-nums;
+    padding: 20px 16px 48px;
+  }
+  .wrap{ max-width:min(1900px, 97vw); margin:0 auto; display:flex; flex-direction:column; gap:22px; }
+
+  /* ---------- header ---------- */
+  header.top{ display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:14px; padding: 4px 4px 2px; }
+  header.top .heading{ display:flex; flex-direction:column; gap:2px; }
+  header.top h1{ margin:0; font-size:clamp(24px,3vw,34px); font-weight:800; letter-spacing:-.01em; text-wrap:balance; }
+  header.top p.sub{ margin:0; color:var(--ink-muted); font-weight:600; font-size:clamp(13px,1.4vw,15.5px); }
+  .theme-toggle{
+    flex:none; display:inline-flex; align-items:center; justify-content:center;
+    width:44px; height:44px; border-radius:50%; border:2px solid var(--border);
+    background:var(--surface); color:var(--ink); cursor:pointer; font-size:19px;
+    box-shadow:var(--shadow);
+  }
+  .theme-toggle:hover{ border-color:var(--border-strong); }
+  .theme-toggle:focus-visible{ outline:3px solid var(--cold); outline-offset:2px; }
+
+  /* ---------- generic card ---------- */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:20px 22px;
+  }
+  .card h2{ margin:0 0 4px; font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-muted); font-weight:700; }
+
+  /* ---------- main layout ---------- */
+  .main-grid{ display:grid; grid-template-columns: minmax(340px, 5fr) minmax(400px, 6fr); gap:20px; align-items:start; }
+  @media (max-width:880px){ .main-grid{ grid-template-columns: 1fr; } }
+
+  /* ---------- material picker ---------- */
+  .material-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .mat-btn{
+    flex:1 1 auto; min-width:88px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:10px 12px; border-radius:10px; border:2px solid var(--border);
+    background:var(--surface-alt); color:var(--ink); cursor:pointer;
+    font-family:inherit; font-weight:700; font-size:13.5px; letter-spacing:.02em;
+    transition: border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  .mat-btn .swatch{ width:12px; height:12px; border-radius:50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); flex:none; }
+  .mat-btn:hover{ transform: translateY(-1px); }
+  .mat-btn:focus-visible{ outline:3px solid var(--cold); outline-offset:2px; }
+  .mat-btn.active{ border-color: var(--border-strong); background:var(--surface); }
+  .mat-btn[data-mat="Aluminum"].active{ border-color:var(--al); }
+  .mat-btn[data-mat="Copper"].active{ border-color:var(--cu); }
+  .mat-btn[data-mat="Steel"].active{ border-color:var(--st); }
+  .mat-btn[data-mat="Glass"].active{ border-color:var(--gl); }
+
+  /* ---------- beaker rig (closed system: rod + thermometer both pass through rubber stoppers) ---------- */
+  .rig{ position:relative; margin: 18px 0 6px; max-width:520px; margin-left:auto; margin-right:auto; }
+  .rig-row{ position:relative; height:1px; }
+  .rig-row .side{ position:absolute; top:0; transform:translate(-50%,-100%); text-align:center; white-space:nowrap; }
+  .rig-row.temps .side{ transform:translate(-50%,-4px); }
+  .rig-row.names .side{ transform:translate(-50%,10px); }
+  .side.left{ left:16%; }
+  .side.right{ left:84%; }
+  .temp-readout{ font-size:clamp(20px,2.4vw,26px); font-weight:800; }
+  .beaker-name{ font-size:12.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-muted); }
+  #rigSvg{ width:100%; height:auto; display:block; overflow:visible; }
+  .flow-dot{ fill:#fff; }
+  @media (prefers-reduced-motion: reduce){ .flow-dot{ opacity:.4 !important; } }
+
+  /* ---------- collapsible sections ---------- */
+  details.card{ padding:0; }
+  details.card > summary{
+    list-style:none; cursor:pointer; user-select:none;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:20px 22px; font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-muted); font-weight:700;
+  }
+  details.card > summary::-webkit-details-marker{ display:none; }
+  details.card > summary::marker{ content:""; }
+  .chevron{ flex:none; transition: transform .18s ease; color:var(--ink-faint); font-size:16px; }
+  details.card[open] > summary .chevron{ transform:rotate(180deg); }
+  details.card > summary:focus-visible{ outline:3px solid var(--cold); outline-offset:-2px; border-radius:8px; }
+  .details-body{ padding:2px 22px 22px; border-top:1px solid var(--border); }
+
+  /* ---------- controls ---------- */
+  .controls-row{ display:flex; align-items:center; justify-content:center; gap:14px; margin-top:16px; flex-wrap:wrap; }
+  .timer{ font-size:clamp(30px,3.6vw,38px); font-weight:800; letter-spacing:.02em; min-width:118px; text-align:center; }
+  .timer-label{ font-size:11px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.08em; font-weight:700; text-align:center; margin-top:-4px;}
+  .btn{
+    border:none; cursor:pointer; font-family:inherit; font-weight:700; letter-spacing:.03em;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border-radius:10px; padding:12px 18px; font-size:14px; transition: transform .1s ease, filter .15s ease;
+  }
+  .btn:hover{ filter:brightness(1.06); }
+  .btn:active{ transform: scale(.97); }
+  .btn:focus-visible{ outline:3px solid var(--cold); outline-offset:2px; }
+  .btn-play{ background:var(--hot); color:#fff; }
+  .btn-ghost{ background:var(--surface-alt); color:var(--ink); border:2px solid var(--border); }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .status-line{ text-align:center; font-size:12.5px; font-weight:700; color:var(--ink-muted); min-height:16px; margin-top:10px;}
+  .status-line.eq{ color:var(--hot); }
+
+  /* ---------- legend ---------- */
+  .legend{ display:flex; gap:18px; flex-wrap:wrap; align-items:center; padding-bottom:10px; margin-bottom:10px; border-bottom:1px solid var(--border); }
+  .legend-item{ display:flex; align-items:center; gap:7px; font-size:13px; font-weight:700; color:var(--ink-muted); }
+  .legend-dot{ width:11px; height:11px; border-radius:50%; flex:none; }
+
+  /* ---------- tabs ---------- */
+  .tabs{ display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .tab-btn{
+    font-family:inherit; font-weight:700; font-size:13px; letter-spacing:.04em; text-transform:uppercase;
+    padding:9px 16px; border-radius:8px; border:2px solid transparent; background:var(--surface-alt); color:var(--ink-muted); cursor:pointer;
+  }
+  .tab-btn.active{ background:var(--ink); color:var(--surface); }
+  .tab-btn:focus-visible{ outline:3px solid var(--cold); outline-offset:2px; }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  /* ---------- table ---------- */
+  .table-scroll{ max-height:360px; overflow-y:auto; border:1px solid var(--border); border-radius:10px; }
+  table.data{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.data thead th{
+    position:sticky; top:0; background:var(--surface-alt); color:var(--ink); text-align:right; padding:10px 14px;
+    font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:.03em; border-bottom:2px solid var(--border-strong);
+  }
+  table.data thead th:first-child, table.data td:first-child{ text-align:left; }
+  table.data td{ padding:8px 14px; text-align:right; border-bottom:1px solid var(--border); font-weight:600; }
+  table.data tbody tr:last-child{ background: var(--surface-alt); font-weight:800; }
+  table.data tbody tr:nth-child(even):not(:last-child){ background: color-mix(in srgb, var(--surface-alt) 55%, transparent); }
+  .col-a{ color:var(--hot); }
+  .col-b{ color:var(--cold); }
+  .empty-row td{ text-align:center; color:var(--ink-faint); font-weight:600; padding:24px; }
+
+  /* ---------- charts ---------- */
+  .chart-wrap svg{ width:100%; height:auto; display:block; }
+  .axis-line{ stroke:var(--border-strong); stroke-width:1.5; }
+  .grid-line{ stroke:var(--border); stroke-width:1; }
+  .axis-text{ fill:var(--ink-muted); font-family:'Poppins',sans-serif; font-weight:600; font-size:11px; }
+  .axis-title{ fill:var(--ink-muted); font-family:'Poppins',sans-serif; font-weight:700; font-size:12px; }
+  .bar-label{ fill:var(--ink); font-family:'Poppins',sans-serif; font-weight:800; font-size:15px; }
+  .cat-label{ fill:var(--ink-muted); font-family:'Poppins',sans-serif; font-weight:700; font-size:12.5px; }
+  .curve-a{ fill:none; stroke:var(--hot); stroke-width:3; stroke-linecap:round; }
+  .curve-b{ fill:none; stroke:var(--cold); stroke-width:3; stroke-linecap:round; }
+  .tooltip-box{ fill:var(--surface); stroke:var(--border-strong); stroke-width:1; }
+  .tooltip-text{ fill:var(--ink); font-family:'Poppins',sans-serif; font-weight:700; font-size:12.5px; }
+  .crosshair{ stroke:var(--ink-faint); stroke-width:1; stroke-dasharray:4 4; }
+
+  /* ---------- concepts ---------- */
+  .concepts{ display:grid; grid-template-columns: repeat(2, 1fr); gap:20px; }
+  @media (max-width:760px){ .concepts{ grid-template-columns:1fr; } }
+  .concepts p{ font-size:14.5px; line-height:1.55; color:var(--ink); font-weight:500; margin: 10px 0; }
+  .concepts strong{ font-weight:800; }
+  .k-table{ width:100%; border-collapse:collapse; margin-top:10px; font-size:13.5px; }
+  .k-table th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); padding:6px 8px; border-bottom:2px solid var(--border-strong); font-weight:700;}
+  .k-table td{ padding:7px 8px; border-bottom:1px solid var(--border); font-weight:600; }
+  .k-table td:last-child, .k-table th:last-child{ text-align:right; }
+  .k-swatch{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:7px; vertical-align:middle; }
+
+  /* ---------- how to use ---------- */
+  .howto ol{ margin:14px 0 0; padding-left:22px; display:flex; flex-direction:column; gap:10px; }
+  .howto li{ font-size:14.5px; line-height:1.55; font-weight:500; color:var(--ink); }
+  .howto strong{ font-weight:800; }
+
+  footer.foot{ text-align:center; color:var(--ink-faint); font-size:12px; font-weight:600; padding-top:6px; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="heading">
+      <h1>Heat Conduction Lab</h1>
+      <p class="sub">Two sealed beakers, one connecting rod &mdash; watch heat flow until they reach equilibrium.</p>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Switch to dark mode">&#127769;</button>
+  </header>
+
+  <div class="main-grid">
+    <!-- SIMULATION PANEL -->
+    <section class="card">
+      <h2>Simulation</h2>
+      <div class="material-row" role="group" aria-label="Connecting material">
+        <button class="mat-btn active" data-mat="Aluminum"><span class="swatch" style="background:var(--al)"></span>Aluminum</button>
+        <button class="mat-btn" data-mat="Copper"><span class="swatch" style="background:var(--cu)"></span>Copper</button>
+        <button class="mat-btn" data-mat="Steel"><span class="swatch" style="background:var(--st)"></span>Steel</button>
+        <button class="mat-btn" data-mat="Glass"><span class="swatch" style="background:var(--gl)"></span>Glass</button>
+      </div>
+
+      <div class="rig">
+        <div class="rig-row temps">
+          <div class="side left temp-readout col-a" id="readoutA">95.0 &deg;C</div>
+          <div class="side right temp-readout col-b" id="readoutB">5.0 &deg;C</div>
+        </div>
+        <svg id="rigSvg" viewBox="0 -20 440 250"></svg>
+        <div class="rig-row names">
+          <div class="side left beaker-name">Beaker A</div>
+          <div class="side right beaker-name">Beaker B</div>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <div>
+          <div class="timer" id="timer">0:00</div>
+          <div class="timer-label">min : sec</div>
+        </div>
+        <button class="btn btn-play" id="playBtn">&#9658; Play</button>
+        <button class="btn btn-ghost" id="resetBtn">&#8635; Reset</button>
+      </div>
+      <div class="status-line" id="statusLine">&nbsp;</div>
+    </section>
+
+    <!-- DATA PANEL -->
+    <section class="card">
+      <h2>Data</h2>
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" data-tab="table">Table</button>
+        <button class="tab-btn" data-tab="bar">Bar Chart</button>
+        <button class="tab-btn" data-tab="graph">Graph</button>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--hot)"></span>Beaker A (hot start, 95&deg;C)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--cold)"></span>Beaker B (cold start, 5&deg;C)</span>
+      </div>
+
+      <div class="tab-panel active" id="panel-table">
+        <div class="table-scroll">
+          <table class="data">
+            <thead><tr><th>Time (s)</th><th>T&nbsp;&mdash;&nbsp;A (&deg;C)</th><th>T&nbsp;&mdash;&nbsp;B (&deg;C)</th><th>Difference (&deg;C)</th></tr></thead>
+            <tbody id="tableBody"><tr class="empty-row"><td colspan="4">Click Play to start recording temperatures every 20 seconds.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-bar">
+        <div class="chart-wrap">
+          <svg id="barSvg" viewBox="0 0 420 340"></svg>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-graph">
+        <div class="chart-wrap">
+          <svg id="graphSvg" viewBox="0 0 620 360"></svg>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- CONCEPTS -->
+  <section class="concepts">
+    <details class="card">
+      <summary>Thermal Equilibrium <span class="chevron">&#8964;</span></summary>
+      <div class="details-body">
+        <p>Heat moves from <strong>hot</strong> things to <strong>cold</strong> things. It never moves the other way by itself. The bigger the temperature gap between the beakers, the faster heat moves. As the beakers get closer to the same temperature, heat moves more slowly. That's why each curve is steep at first and flattens out later.</p>
+        <p>Both beakers are sealed and insulated, so no heat can escape into the room. Whatever heat Beaker A loses, Beaker B gains. That means if you add the two temperatures together, you always get <strong>100&deg;C</strong>. Eventually the beakers reach the same temperature, <strong>50&deg;C</strong>. Scientists call this <strong>thermal equilibrium</strong>.</p>
+      </div>
+    </details>
+    <details class="card">
+      <summary>Conductors &amp; Insulators <span class="chevron">&#8964;</span></summary>
+      <div class="details-body">
+        <p>A <strong>thermal conductor</strong> lets heat move through it quickly. A <strong>thermal insulator</strong> slows heat down. Scientists measure this with a number called thermal conductivity, or <em>k</em>, measured in watts per meter-kelvin (W/m&middot;K). A bigger <em>k</em> means heat moves faster through that material.</p>
+        <table class="k-table">
+          <thead><tr><th>Material</th><th><em>k</em> (W/m&middot;K)</th></tr></thead>
+          <tbody>
+            <tr><td><span class="k-swatch" style="background:var(--cu)"></span>Copper</td><td>385</td></tr>
+            <tr><td><span class="k-swatch" style="background:var(--al)"></span>Aluminum</td><td>205</td></tr>
+            <tr><td><span class="k-swatch" style="background:var(--st)"></span>Steel</td><td>50</td></tr>
+            <tr><td><span class="k-swatch" style="background:var(--gl)"></span>Glass</td><td>~1</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <!-- HOW TO USE -->
+  <details class="card howto" open>
+    <summary>How to use this simulation <span class="chevron">&#8964;</span></summary>
+    <div class="details-body">
+      <ol>
+        <li>Pick a material &mdash; <strong>Aluminum</strong>, <strong>Copper</strong>, <strong>Steel</strong>, or <strong>Glass</strong> &mdash; using the buttons above the beakers. This puts both beakers back to their starting temperatures.</li>
+        <li>Press <strong>Play</strong> to start the simulation. Beaker A starts at 95&deg;C and Beaker B starts at 5&deg;C, joined by a sealed rod made of the material you picked.</li>
+        <li>Watch the thermometers and the glowing dots inside the tube. The dots move faster when the temperature difference is big, and slower as the beakers get closer in temperature.</li>
+        <li>Tap <strong>Bar Chart</strong> to see both temperatures side by side right now.</li>
+        <li>Tap <strong>Graph</strong> to see how each temperature changes over time. Move your mouse over the graph to check the exact numbers at any second.</li>
+        <li>Tap <strong>Table</strong> to see every temperature reading, saved automatically every 20 seconds. Use these numbers for your worksheet.</li>
+        <li>Tap <strong>Pause</strong> to freeze the simulation, or <strong>Reset</strong> to start over with a different material.</li>
+      </ol>
+    </div>
+  </details>
+
+  <footer class="foot">Heat Conduction Lab &middot; models conduction between two insulated beakers as an idealized exponential approach to thermal equilibrium</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------------- physics model ----------------
+  // TA(t) = 50 + (D0/2) * exp(-lambda * t)
+  // TB(t) = 50 - (D0/2) * exp(-lambda * t)
+  // lambda calibrated so Aluminum matches: TA(100s)=77.3, TA(500s)=53.7, TA(600s)=52.2
+  var T_AVG = 50, D0 = 90;
+  var LAMBDA_AL = 0.005;
+  var K = { Aluminum: 205, Copper: 385, Steel: 50, Glass: 1 };
+  var LAMBDA = {};
+  Object.keys(K).forEach(function(m){ LAMBDA[m] = LAMBDA_AL * (K[m] / K.Aluminum); });
+
+  var MAT_VAR = { Aluminum:'--al', Copper:'--cu', Steel:'--st', Glass:'--gl' };
+  var SIM_SPEED = 20;        // simulated seconds per real second
+  var LOG_INTERVAL = 20;     // seconds between auto-logged table rows
+  var MAX_SIM_TIME = 2400;   // auto-pause safety cap
+
+  var state = {
+    material: 'Aluminum',
+    simTime: 0,
+    running: false,
+    rows: [],
+    graphXMax: 700
+  };
+
+  function diffAt(t){ return D0 * Math.exp(-LAMBDA[state.material] * t); }
+  function tempsAt(t){
+    var d = diffAt(t);
+    return { a: T_AVG + d/2, b: T_AVG - d/2, d: d };
+  }
+  function fmt1(n){ return (Math.round(n*10)/10).toFixed(1); }
+
+  // ---------------- colors: interpolate cold->hot for a given temp ----------------
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function hexToRgb(h){ h=h.replace('#',''); return [parseInt(h.substr(0,2),16), parseInt(h.substr(2,2),16), parseInt(h.substr(4,2),16)]; }
+  var COLD_RGB = [70,150,190], HOT_RGB=[220,80,50]; // visual liquid endpoints (independent of theme tokens, kept legible on both)
+  function liquidColor(temp){
+    var t = Math.max(0, Math.min(1, temp/100));
+    var r = Math.round(lerp(COLD_RGB[0],HOT_RGB[0],t));
+    var g = Math.round(lerp(COLD_RGB[1],HOT_RGB[1],t));
+    var b = Math.round(lerp(COLD_RGB[2],HOT_RGB[2],t));
+    return 'rgb('+r+','+g+','+b+')';
+  }
+
+  // ---------------- combined rig SVG: two beakers, each sealed with two rubber ----------------
+  // ---------------- stoppers (thermometer + rod), rod is one curved tube dipped into both liquids ----------------
+  var RUBBER = '#2A2018';
+  var RUBBER_DARK = '#0E0B08';
+
+  // beaker local coordinate system: 0-140 wide, drawn then translated by (offsetX, 40)
+  function beakerGroup(letter, offsetX, rodLocalX){
+    var thermoX = 65;
+    return '<g transform="translate('+offsetX+',40)">' +
+      '<defs><pattern id="hatch'+letter+'" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">' +
+        '<rect width="8" height="8" fill="var(--surface-alt)"/><line x1="0" y1="0" x2="0" y2="8" stroke="var(--border)" stroke-width="3"/></pattern></defs>' +
+      '<rect x="6" y="34" width="128" height="168" rx="12" fill="url(#hatch'+letter+')" stroke="var(--border-strong)" stroke-width="1.5"/>' +
+      '<rect x="20" y="50" width="100" height="146" rx="6" fill="var(--surface)" stroke="var(--border-strong)" stroke-width="2"/>' +
+      '<rect id="liquid'+letter+'" x="23" y="70" width="94" height="123" rx="4" fill="'+liquidColor(50)+'"/>' +
+      '<rect x="6" y="16" width="128" height="20" rx="6" fill="var(--ink-faint)" opacity=".3" stroke="var(--border-strong)" stroke-width="1"/>' +
+      // thermometer stopper (rubber grommet), then rod stopper
+      '<rect x="'+(thermoX-11)+'" y="9" width="22" height="23" rx="5" fill="'+RUBBER+'" stroke="'+RUBBER_DARK+'" stroke-width="1"/>' +
+      '<rect x="'+(rodLocalX-11)+'" y="9" width="22" height="23" rx="5" fill="'+RUBBER+'" stroke="'+RUBBER_DARK+'" stroke-width="1"/>' +
+      // rod stub: submerged tube running from under its stopper down into the liquid
+      '<rect id="rodStub'+letter+'" x="'+(rodLocalX-5)+'" y="28" width="10" height="112" rx="4" fill="var('+MAT_VAR[state.material]+')"/>' +
+      // thermometer glass tube (drawn over its stopper) + bulb, submerged in the liquid
+      '<rect x="'+(thermoX-5)+'" y="4" width="10" height="150" rx="5" fill="var(--surface)" stroke="var(--border-strong)" stroke-width="2"/>' +
+      '<circle cx="'+thermoX+'" cy="160" r="15" fill="var(--surface)" stroke="var(--border-strong)" stroke-width="2"/>' +
+      '<rect id="mercury'+letter+'" x="'+(thermoX-2.5)+'" y="60" width="5" height="98" fill="'+liquidColor(50)+'"/>' +
+      '<circle id="bulb'+letter+'" cx="'+thermoX+'" cy="160" r="11" fill="'+liquidColor(50)+'"/>' +
+      '</g>';
+  }
+
+  var ROD_X_A = 109, ROD_X_B = 31;     // local x of the rod stopper, facing each other
+  var OFFSET_B = 300;                  // beaker B translate x
+  var ARC_Y = 49, ARC_TOP = -8;        // global y of stopper tops / arc apex
+  var ARC_X_A = ROD_X_A, ARC_X_B = OFFSET_B + ROD_X_B;
+
+  function rigSVG(){
+    return beakerGroup('A', 0, ROD_X_A) + beakerGroup('B', OFFSET_B, ROD_X_B) +
+      '<path id="rodArc" d="M '+ARC_X_A+',49 C '+ARC_X_A+','+ARC_TOP+' '+ARC_X_B+','+ARC_TOP+' '+ARC_X_B+',49" ' +
+        'fill="none" stroke="var('+MAT_VAR[state.material]+')" stroke-width="9" stroke-linecap="round"/>' +
+      '<g id="flowDots"></g>';
+  }
+  var rigSvg = document.getElementById('rigSvg');
+  rigSvg.innerHTML = rigSVG();
+
+  function updateBeaker(letter, temp){
+    var col = liquidColor(temp);
+    document.getElementById('liquid'+letter).setAttribute('fill', col);
+    document.getElementById('bulb'+letter).setAttribute('fill', col);
+    var merc = document.getElementById('mercury'+letter);
+    var full = 138, minH = 8;
+    var h = Math.max(minH, Math.min(full, (temp/100) * full));
+    merc.setAttribute('height', h);
+    merc.setAttribute('y', 158 - h);
+    merc.setAttribute('fill', col);
+  }
+
+  // ---------------- rod: recolor stubs + arc, animate flow dots along the curved tube ----------------
+  var FLOW_DOT_COUNT = 6;
+  var flowPhase = [];
+  for (var fi=0; fi<FLOW_DOT_COUNT; fi++){ flowPhase.push(fi/FLOW_DOT_COUNT); }
+  var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function cubicPoint(t, x0,y0,x1,y1,x2,y2,x3,y3){
+    var mt = 1-t;
+    var a = mt*mt*mt, b = 3*mt*mt*t, c = 3*mt*t*t, d = t*t*t;
+    return { x: a*x0+b*x1+c*x2+d*x3, y: a*y0+b*y1+c*y2+d*y3 };
+  }
+
+  function rebuildRodColors(){
+    var matVar = 'var(' + MAT_VAR[state.material] + ')';
+    var arc = document.getElementById('rodArc');
+    if (arc) arc.setAttribute('stroke', matVar);
+    var stubA = document.getElementById('rodStubA'), stubB = document.getElementById('rodStubB');
+    if (stubA) stubA.setAttribute('fill', matVar);
+    if (stubB) stubB.setAttribute('fill', matVar);
+  }
+
+  function updateRod(dtReal){
+    rebuildRodColors();
+    var d = diffAt(state.simTime);
+    var norm = Math.max(0, Math.min(1, d / D0));
+    var dur = 3.4 - norm * 2.8;   // seconds to travel the arc once; faster when difference is large
+    var visible = norm > 0.01;
+    var opacity = (0.35 + norm*0.6).toFixed(2);
+
+    var g = document.getElementById('flowDots');
+    if (!g) return;
+    if (g.children.length === 0){
+      for (var i=0;i<FLOW_DOT_COUNT;i++){
+        var c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        c.setAttribute('class','flow-dot');
+        c.setAttribute('r','4.5');
+        g.appendChild(c);
+      }
+    }
+    var dots = g.children;
+    for (var i2=0;i2<dots.length;i2++){
+      if (state.running && !prefersReducedMotion){
+        flowPhase[i2] = (flowPhase[i2] + (dtReal||0)/dur) % 1;
+      }
+      var p = cubicPoint(flowPhase[i2], ARC_X_A,49, ARC_X_A,ARC_TOP, ARC_X_B,ARC_TOP, ARC_X_B,49);
+      dots[i2].setAttribute('cx', p.x.toFixed(1));
+      dots[i2].setAttribute('cy', p.y.toFixed(1));
+      dots[i2].setAttribute('opacity', visible ? opacity : 0);
+    }
+  }
+
+  // ---------------- material buttons ----------------
+  var matButtons = Array.prototype.slice.call(document.querySelectorAll('.mat-btn'));
+  matButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      matButtons.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      state.material = btn.getAttribute('data-mat');
+      resetSim();
+    });
+  });
+
+  // ---------------- controls ----------------
+  var playBtn = document.getElementById('playBtn');
+  var resetBtn = document.getElementById('resetBtn');
+  var statusLine = document.getElementById('statusLine');
+  var timerEl = document.getElementById('timer');
+  var readoutA = document.getElementById('readoutA');
+  var readoutB = document.getElementById('readoutB');
+  var tableBody = document.getElementById('tableBody');
+
+  playBtn.addEventListener('click', function(){
+    if (state.simTime >= MAX_SIM_TIME) return;
+    state.running = !state.running;
+    playBtn.innerHTML = state.running ? '&#10074;&#10074; Pause' : '&#9658; Play';
+    updateRod(0);
+  });
+  resetBtn.addEventListener('click', resetSim);
+
+  function resetSim(){
+    state.simTime = 0;
+    state.running = false;
+    state.rows = [];
+    state.graphXMax = 700;
+    playBtn.innerHTML = '&#9658; Play';
+    playBtn.disabled = false;
+    statusLine.textContent = ' ';
+    statusLine.classList.remove('eq');
+    tableBody.innerHTML = '<tr class="empty-row"><td colspan="4">Click Play to start recording temperatures every 20 seconds.</td></tr>';
+    logRow(0);
+    render(true);
+  }
+
+  function logRow(t){
+    var temps = tempsAt(t);
+    state.rows.push({ t:t, a:temps.a, b:temps.b, d:temps.d });
+    if (state.rows.length === 1){ tableBody.innerHTML = ''; }
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+Math.round(t)+'</td><td class="col-a">'+fmt1(temps.a)+'</td><td class="col-b">'+fmt1(temps.b)+'</td><td>'+fmt1(temps.d)+'</td>';
+    tableBody.appendChild(tr);
+    var scroller = document.querySelector('.table-scroll');
+    scroller.scrollTop = scroller.scrollHeight;
+  }
+
+  // ---------------- bar chart ----------------
+  var barSvg = document.getElementById('barSvg');
+  function drawBar(){
+    var W=420,H=340, padL=42, padR=20, padT=16, padB=42;
+    var plotW = W-padL-padR, plotH = H-padT-padB;
+    var temps = tempsAt(state.simTime);
+    var scale = function(v){ return plotH - (v/100)*plotH; };
+    var barW = plotW*0.22, gap = plotW*0.18;
+    var xA = padL + plotW/2 - gap/2 - barW;
+    var xB = padL + plotW/2 + gap/2;
+    var svg = '';
+    // gridlines
+    for (var v=0; v<=100; v+=20){
+      var y = padT + scale(v);
+      svg += '<line class="grid-line" x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'"/>';
+      svg += '<text class="axis-text" x="'+(padL-8)+'" y="'+(y+4)+'" text-anchor="end">'+v+'</text>';
+    }
+    svg += '<line class="axis-line" x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(H-padB)+'"/>';
+    svg += '<line class="axis-line" x1="'+padL+'" y1="'+(H-padB)+'" x2="'+(W-padR)+'" y2="'+(H-padB)+'"/>';
+    svg += '<text class="axis-title" x="'+padL+'" y="'+(padT-2)+'" text-anchor="start">T (°C)</text>';
+    var hA = plotH - scale(temps.a), hB = plotH - scale(temps.b);
+    var yA = padT + scale(temps.a), yB = padT + scale(temps.b);
+    svg += '<rect x="'+xA+'" y="'+yA+'" width="'+barW+'" height="'+hA+'" rx="4" fill="var(--hot)"/>';
+    svg += '<rect x="'+xB+'" y="'+yB+'" width="'+barW+'" height="'+hB+'" rx="4" fill="var(--cold)"/>';
+    svg += '<text class="bar-label" x="'+(xA+barW/2)+'" y="'+(yA-10)+'" text-anchor="middle">'+fmt1(temps.a)+'°</text>';
+    svg += '<text class="bar-label" x="'+(xB+barW/2)+'" y="'+(yB-10)+'" text-anchor="middle">'+fmt1(temps.b)+'°</text>';
+    svg += '<text class="cat-label" x="'+(xA+barW/2)+'" y="'+(H-padB+20)+'" text-anchor="middle">Beaker A</text>';
+    svg += '<text class="cat-label" x="'+(xB+barW/2)+'" y="'+(H-padB+20)+'" text-anchor="middle">Beaker B</text>';
+    barSvg.innerHTML = svg;
+  }
+
+  // ---------------- graph ----------------
+  var graphSvg = document.getElementById('graphSvg');
+  var GW=620, GH=360, gPadL=46, gPadR=18, gPadT=18, gPadB=42;
+  var gPlotW = GW-gPadL-gPadR, gPlotH = GH-gPadT-gPadB;
+  function gx(t){ return gPadL + (t/state.graphXMax) * gPlotW; }
+  function gy(v){ return gPadT + gPlotH - (v/100) * gPlotH; }
+
+  function curvePath(which){
+    var pts = [];
+    var N = 120;
+    for (var i=0;i<=N;i++){
+      var t = (state.graphXMax * i)/N;
+      var temps = tempsAt(t);
+      var v = which==='a' ? temps.a : temps.b;
+      pts.push((i===0?'M':'L') + gx(t).toFixed(1) + ',' + gy(v).toFixed(1));
+    }
+    return pts.join(' ');
+  }
+
+  function drawGraphStatic(){
+    var svg = '';
+    for (var v=0; v<=100; v+=20){
+      var y = gy(v);
+      svg += '<line class="grid-line" x1="'+gPadL+'" y1="'+y+'" x2="'+(GW-gPadR)+'" y2="'+y+'"/>';
+      svg += '<text class="axis-text" x="'+(gPadL-8)+'" y="'+(y+4)+'" text-anchor="end">'+v+'</text>';
+    }
+    var xStep = state.graphXMax > 1200 ? 200 : 100;
+    for (var t=0; t<=state.graphXMax; t+=xStep){
+      var x = gx(t);
+      svg += '<line class="grid-line" x1="'+x+'" y1="'+gPadT+'" x2="'+x+'" y2="'+(GH-gPadB)+'"/>';
+      svg += '<text class="axis-text" x="'+x+'" y="'+(GH-gPadB+18)+'" text-anchor="middle">'+t+'</text>';
+    }
+    svg += '<line class="axis-line" x1="'+gPadL+'" y1="'+gPadT+'" x2="'+gPadL+'" y2="'+(GH-gPadB)+'"/>';
+    svg += '<line class="axis-line" x1="'+gPadL+'" y1="'+(GH-gPadB)+'" x2="'+(GW-gPadR)+'" y2="'+(GH-gPadB)+'"/>';
+    svg += '<text class="axis-title" x="'+gPadL+'" y="'+(gPadT-4)+'" text-anchor="start">T (°C)</text>';
+    svg += '<text class="axis-title" x="'+(GW-gPadR)+'" y="'+(GH-gPadB+34)+'" text-anchor="end">Time (s)</text>';
+    svg += '<path class="curve-a" d="'+curvePath('a')+'"/>';
+    svg += '<path class="curve-b" d="'+curvePath('b')+'"/>';
+    svg += '<g id="playheadGroup"></g>';
+    svg += '<g id="hoverGroup" style="pointer-events:none"></g>';
+    svg += '<rect id="hoverCatcher" x="'+gPadL+'" y="'+gPadT+'" width="'+gPlotW+'" height="'+gPlotH+'" fill="transparent"/>';
+    graphSvg.innerHTML = svg;
+    graphSvg.querySelector('#hoverCatcher').addEventListener('mousemove', onGraphHover);
+    graphSvg.querySelector('#hoverCatcher').addEventListener('mouseleave', function(){
+      document.getElementById('hoverGroup').innerHTML = '';
+    });
+  }
+
+  function updatePlayhead(){
+    var g = document.getElementById('playheadGroup');
+    if (!g) return;
+    var t = state.simTime;
+    var temps = tempsAt(t);
+    var x = gx(t);
+    var svg = '<line class="crosshair" x1="'+x+'" y1="'+gPadT+'" x2="'+x+'" y2="'+(GH-gPadB)+'"/>';
+    svg += '<circle cx="'+x+'" cy="'+gy(temps.a)+'" r="5" fill="var(--hot)" stroke="var(--surface)" stroke-width="2"/>';
+    svg += '<circle cx="'+x+'" cy="'+gy(temps.b)+'" r="5" fill="var(--cold)" stroke="var(--surface)" stroke-width="2"/>';
+    g.innerHTML = svg;
+  }
+
+  function onGraphHover(evt){
+    var rect = graphSvg.getBoundingClientRect();
+    var scaleX = GW / rect.width;
+    var mx = (evt.clientX - rect.left) * scaleX;
+    var t = Math.max(0, Math.min(state.graphXMax, ((mx - gPadL) / gPlotW) * state.graphXMax));
+    var temps = tempsAt(t);
+    var x = gx(t);
+    var yA = gy(temps.a), yB = gy(temps.b);
+    var boxX = x + 12, boxW = 118, boxH = 54;
+    if (boxX + boxW > GW - 4) boxX = x - boxW - 12;
+    var svg = '<line class="crosshair" x1="'+x+'" y1="'+gPadT+'" x2="'+x+'" y2="'+(GH-gPadB)+'"/>';
+    svg += '<circle cx="'+x+'" cy="'+yA+'" r="4.5" fill="var(--hot)" stroke="var(--surface)" stroke-width="1.5"/>';
+    svg += '<circle cx="'+x+'" cy="'+yB+'" r="4.5" fill="var(--cold)" stroke="var(--surface)" stroke-width="1.5"/>';
+    svg += '<rect class="tooltip-box" x="'+boxX+'" y="'+(gPadT+6)+'" width="'+boxW+'" height="'+boxH+'" rx="8"/>';
+    svg += '<text class="tooltip-text" x="'+(boxX+10)+'" y="'+(gPadT+22)+'">t = '+Math.round(t)+' s</text>';
+    svg += '<text class="tooltip-text" x="'+(boxX+10)+'" y="'+(gPadT+38)+'" fill="var(--hot)">A: '+fmt1(temps.a)+'°</text>';
+    svg += '<text class="tooltip-text" x="'+(boxX+10)+'" y="'+(gPadT+54)+'" fill="var(--cold)">B: '+fmt1(temps.b)+'°</text>';
+    document.getElementById('hoverGroup').innerHTML = svg;
+  }
+
+  // ---------------- tabs ----------------
+  var tabButtons = Array.prototype.slice.call(document.querySelectorAll('.tab-btn'));
+  tabButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabButtons.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      document.getElementById('panel-' + btn.getAttribute('data-tab')).classList.add('active');
+      render(true);
+    });
+  });
+  function activeTab(){ return document.querySelector('.tab-btn.active').getAttribute('data-tab'); }
+
+  // ---------------- main render / loop ----------------
+  function render(fullGraphRedraw, dtReal){
+    var temps = tempsAt(state.simTime);
+    readoutA.innerHTML = fmt1(temps.a) + ' &deg;C';
+    readoutB.innerHTML = fmt1(temps.b) + ' &deg;C';
+    updateBeaker('A', temps.a);
+    updateBeaker('B', temps.b);
+    updateRod(dtReal);
+
+    var mins = Math.floor(state.simTime/60), secs = Math.floor(state.simTime%60);
+    timerEl.textContent = mins + ':' + (secs<10?'0':'') + secs;
+
+    var tab = activeTab();
+    if (tab === 'bar') drawBar();
+    if (tab === 'graph'){
+      if (fullGraphRedraw) drawGraphStatic();
+      updatePlayhead();
+    }
+  }
+
+  var lastFrame = null;
+  function loop(ts){
+    if (lastFrame === null) lastFrame = ts;
+    var dtReal = (ts - lastFrame)/1000;
+    lastFrame = ts;
+    if (state.running){
+      var prevT = state.simTime;
+      state.simTime = Math.min(MAX_SIM_TIME, state.simTime + dtReal*SIM_SPEED);
+
+      var prevBucket = Math.floor(prevT/LOG_INTERVAL);
+      var newBucket = Math.floor(state.simTime/LOG_INTERVAL);
+      for (var bkt=prevBucket+1; bkt<=newBucket; bkt++){
+        logRow(bkt*LOG_INTERVAL);
+      }
+      // extend graph x-axis window if needed, before drawing
+      var needed = Math.ceil((state.simTime+50)/100)*100;
+      var graphNeedsRedraw = false;
+      if (needed > state.graphXMax){ state.graphXMax = needed; graphNeedsRedraw = true; }
+
+      if (state.simTime >= MAX_SIM_TIME){
+        state.running = false;
+        playBtn.innerHTML = '&#9658; Play';
+        playBtn.disabled = true;
+        statusLine.textContent = 'Equilibrium reached — both beakers are at 50°C.';
+        statusLine.classList.add('eq');
+      }
+      render(graphNeedsRedraw, dtReal);
+    } else {
+      updateRod(dtReal);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // ---------------- theme toggle ----------------
+  var themeToggle = document.getElementById('themeToggle');
+  function systemPrefersDark(){
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function getStoredTheme(){
+    try { return localStorage.getItem('heat-conduction-theme'); } catch(e){ return null; }
+  }
+  function storeTheme(mode){
+    try { localStorage.setItem('heat-conduction-theme', mode); } catch(e){ /* ignore */ }
+  }
+  function applyTheme(mode){
+    document.documentElement.setAttribute('data-theme', mode);
+    themeToggle.textContent = mode === 'dark' ? '☀️' : '🌙';
+    themeToggle.setAttribute('aria-label', mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  applyTheme(getStoredTheme() || (systemPrefersDark() ? 'dark' : 'light'));
+  themeToggle.addEventListener('click', function(){
+    var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    storeTheme(next);
+    applyTheme(next);
+  });
+
+  resetSim();
+  requestAnimationFrame(loop);
+})();
+</script>

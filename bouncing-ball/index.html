@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bounce lab — drop height vs bounce height</title>
+
+<!--
+  ============================================================================
+  BOUNCE LAB  (PhET-style, single file, no dependencies)
+
+  HOW TO EMBED
+  1) Easiest: upload this file and drop it in an iframe:
+       <iframe src="bounce-height-lab.html"
+               style="width:100%;height:1400px;border:0" loading="lazy"
+               title="Golf ball bounce height simulation"></iframe>
+  2) Or paste the style block, the cvlab div, and the script block into a page.
+     Every CSS rule is scoped under .cvlab.
+
+  THE MODEL
+     Free fall between impacts, solved exactly rather than integrated, so the
+     animation and the recorded number can never disagree.
+       impact speed  v = sqrt(2 g h_drop)
+       rebound speed = e v            e = 0.83, golf ball on tile
+       bounce height = (e v)^2 / 2g = e^2 h_drop
+     Heights are read to the BOTTOM of the ball, which is what you line up
+     against the meter stick.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+.cvlab{
+  --bench:#DDE0D6; --paper:#FBFBF7; --rule:#C9CFC2;
+  --ink:#1B1D1C; --ink-2:#5A5F58;
+  --blue:#1552B8; --blue-d:#0E3B87;
+  --ball:#F6F7F2; --ball-d:#C7CBBF;
+  --oak:#DDB37C; --epoxy:#22251F;
+  --wood:#E3C48D; --wood-d:#B08F4D;
+  --tile:#D5D8D2; --grout:#B4B8B0;
+  --tape:#E8B93C; --ptape:#7FA8CE;
+  --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
+  padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
+}
+.cvlab *{box-sizing:border-box}
+.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
+.cvlab p{margin:0}
+.cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+  display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--tape);margin-bottom:2px}
+.cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
+.cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
+.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:96px}
+.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:#8C9284}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
+
+.cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
+  border-radius:0 0 5px 5px;padding:10px 10px 12px}
+.cvlab canvas{display:block;width:100%}
+.cvlab-stage{display:grid;grid-template-columns:minmax(184px,.32fr) 1fr;gap:10px}
+#cvlab-scene,#cvlab-trace{height:clamp(320px,32vw,436px);border-radius:3px}
+@media (max-width:760px){
+  .cvlab-stage{grid-template-columns:1fr}
+  #cvlab-scene{height:clamp(260px,50vw,360px)}#cvlab-trace{height:clamp(190px,34vw,230px)}
+}
+.cvlab-hint{font-family:var(--font-m);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2);margin-top:6px}
+.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;
+  border-top:1px dashed var(--rule)}
+.cvlab-status{flex:1 1 240px;min-width:200px;font-size:16px;color:var(--ink-2)}
+.cvlab-status strong{color:var(--ink);font-weight:700}
+
+.cvlab-btn{font-family:var(--font-d);font-size:17px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;cursor:pointer;background:var(--paper);color:var(--ink);
+  border:1.5px solid var(--ink);border-radius:3px;padding:7px 14px;line-height:1.1;
+  transition:transform .08s ease,background .12s ease,color .12s ease}
+.cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.cvlab-btn:active:not(:disabled){transform:translateY(1px)}
+.cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
+.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:#fff;min-width:126px}
+.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:#fff}
+.cvlab-btn-sm{font-size:15px;padding:5px 10px;border-width:1px}
+
+.cvlab-grid{display:grid;gap:12px;margin-top:12px;
+  grid-template-columns:minmax(210px,.85fr) minmax(210px,.85fr) minmax(300px,1.3fr)}
+@media (max-width:1000px){.cvlab-grid{grid-template-columns:1fr 1fr}
+  .cvlab-panel-graph{grid-column:1/-1}}
+@media (max-width:640px){.cvlab-grid{grid-template-columns:1fr}}
+.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:5px;padding:12px;
+  display:flex;flex-direction:column;gap:10px}
+.cvlab-panel h2{font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-family:var(--font-m);
+  font-weight:700;color:var(--ink);padding-bottom:7px;border-bottom:2px solid var(--ink)}
+.cvlab-note{font-size:14.5px;color:var(--ink-2)}
+.cvlab-row{display:flex;flex-wrap:wrap;gap:6px}
+
+.cvlab-heights{display:flex;gap:5px}
+.cvlab-hbtn{flex:1;cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:3px;
+  padding:9px 2px;font-family:var(--font-m);font-size:14px;font-weight:700;color:var(--ink);
+  transition:background .12s ease,color .12s ease}
+.cvlab-hbtn:hover:not(:disabled){background:#EFF1E9}
+.cvlab-hbtn.is-on{background:var(--ink);color:#F4F5F0}
+.cvlab-hbtn:disabled{opacity:.4;cursor:not-allowed}
+
+.cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
+.cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
+.cvlab-opts input{margin:3px 0 0;accent-color:var(--blue);flex:none}
+
+.cvlab-tablewrap{max-height:300px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
+.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:14px}
+.cvlab thead th{position:sticky;top:0;background:#EFF1E9;font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;font-weight:700;padding:6px 5px;text-align:right;
+  border-bottom:1px solid var(--rule);color:var(--ink-2)}
+.cvlab thead th:first-child{text-align:left}
+.cvlab tbody td{padding:4px 5px;text-align:right;font-variant-numeric:tabular-nums;
+  border-bottom:1px solid #E8EAE1}
+.cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
+.cvlab tbody tr:last-child td{border-bottom:0}
+.cvlab tbody tr.is-new td{background:#FCF3D9}
+.cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
+
+#cvlab-graph{height:clamp(260px,30vw,420px)}
+.cvlab-key{display:flex;flex-wrap:wrap;gap:12px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
+.cvlab-key i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--blue);
+  vertical-align:middle;margin-right:4px}
+.cvlab-key s{display:inline-block;width:16px;height:0;border-top:2px dashed #A9AFA2;
+  vertical-align:middle;margin-right:4px;text-decoration:none}
+
+.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
+  padding:10px 14px}
+.cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
+.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
+.cvlab-notes li{margin:3px 0}
+.cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
+</style>
+</head>
+<body style="margin:0;background:#DDE0D6">
+
+<div class="cvlab" id="cvlab">
+
+  <header class="cvlab-head">
+    <div>
+      <span class="cvlab-eyebrow">Energy lab &middot; bouncing</span>
+      <h1>Drop height vs bounce height</h1>
+    </div>
+    <div class="cvlab-readouts">
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Drop height</span><span class="cvlab-ro-v" id="cvlab-ro-drop">60 cm</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Ball height</span><span class="cvlab-ro-v" id="cvlab-ro-h">60.0 cm</span></div>
+      <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">First bounce</span><span class="cvlab-ro-v" id="cvlab-ro-bounce">&mdash;</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Stage</span><span class="cvlab-ro-v" id="cvlab-ro-stage">Ready</span></div>
+    </div>
+  </header>
+
+  <div class="cvlab-bench">
+    <div class="cvlab-stage">
+      <canvas id="cvlab-scene" role="img"
+        aria-label="A meter stick taped upright to the lab station with zero on the tile floor, and a golf ball held at the chosen drop height."></canvas>
+      <canvas id="cvlab-trace" role="img"
+        aria-label="Graph of the ball's height above the floor against time, showing the drop, the impact, and the first bounce."></canvas>
+    </div>
+    <p class="cvlab-hint">0 cm on the floor &middot; heights read to the bottom of the ball &middot; only the first bounce is measured</p>
+    <div class="cvlab-bar">
+      <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Drop the ball</button>
+      <button class="cvlab-btn" id="cvlab-reset">Reset</button>
+      <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
+        Pick a drop height, then let go. Watch for the top of the first bounce &mdash; it goes by fast.
+      </p>
+    </div>
+  </div>
+
+  <div class="cvlab-grid">
+
+    <section class="cvlab-panel">
+      <h2>Drop height</h2>
+      <div class="cvlab-heights" id="cvlab-heights"></div>
+      <p class="cvlab-note">The ball is released from rest, so it starts with no speed of its own. Everything it arrives with came from the height.</p>
+      <div class="cvlab-opts">
+        <label><input type="checkbox" id="cvlab-slow" checked>
+          <span>Slow motion at quarter speed. A real first bounce is over in well under a second.</span></label>
+        <label><input type="checkbox" id="cvlab-fit">
+          <span>Show the best-fit line and the coefficient it gives</span></label>
+        <label><input type="checkbox" id="cvlab-noise">
+          <span>Add measurement error, since catching the peak by eye is the hard part</span></label>
+        <label><input type="checkbox" id="cvlab-speeddep">
+          <span>Let the ball lose a little bounce at higher impact speeds, like real latex-cored balls</span></label>
+      </div>
+    </section>
+
+    <section class="cvlab-panel">
+      <h2>Trials</h2>
+      <div class="cvlab-tablewrap">
+        <table>
+          <caption class="cvlab-sr">First bounce height for each drop height</caption>
+          <thead><tr>
+            <th scope="col">#</th><th scope="col">Drop (cm)</th>
+            <th scope="col">Bounce (cm)</th><th scope="col">Bounce/Drop</th>
+          </tr></thead>
+          <tbody id="cvlab-tbody"></tbody>
+        </table>
+      </div>
+      <div class="cvlab-row">
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-cleartrials">Clear trials</button>
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-copy">Copy data</button>
+      </div>
+      <p class="cvlab-note" id="cvlab-copynote">&nbsp;</p>
+    </section>
+
+    <section class="cvlab-panel cvlab-panel-graph">
+      <h2>Bounce height vs drop height</h2>
+      <canvas id="cvlab-graph" role="img"
+        aria-label="Graph of first bounce height against drop height, both in centimetres."></canvas>
+      <div class="cvlab-key">
+        <span><i></i>Your trials</span>
+        <span><s></s>A perfect bounce, back to the same height</span>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="cvlab-notes">
+    <h3>How to use this simulation</h3>
+    <ol>
+      <li>Pick a <strong>drop height</strong> from the buttons in the Drop height panel. The ball is always released from rest at that height.</li>
+      <li>Press <strong>Drop the ball</strong> and watch it fall, hit the floor, and bounce. Watch closely for the top of the first bounce &mdash; it goes by fast, which is why <strong>Slow motion</strong> is on by default.</li>
+      <li>Heights are read to the <strong>bottom of the ball</strong>, matching where you'd line it up against a real meter stick. A strip of tape is left on the stick marking the top of every first bounce.</li>
+      <li>The height-vs-time chart beside the apparatus traces the drop, the impact, and the bounce so you can see the whole motion at once.</li>
+      <li>Each drop is saved as a row in the <strong>Trials</strong> table and a point on the <strong>Bounce height vs drop height</strong> graph, so you can compare heights.</li>
+      <li>Turn on <strong>Show the best-fit line</strong> to see the line through your data and the slope it gives, <strong>Add measurement error</strong> so repeated drops don't land on the exact same number, or the realism switch to let the ball lose a little bounce at higher speeds.</li>
+      <li>Press <strong>Reset</strong> to get ready for another drop, <strong>Clear trials</strong> to wipe the table and graph, or <strong>Copy data</strong> to copy your results for a spreadsheet.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------ constants */
+  var GRAV      = 980;        // cm/s^2
+  var E_CONST   = 0.83;       // golf ball on tile
+  var E0        = 0.860;      // speed dependent version: e = E0 - EK*v
+  var EK        = 0.000118;
+  var BALL_D    = 4.3;        // cm
+  var DRAW_EX   = 1.25;       // the ball is drawn a touch large to stay visible
+  var HEIGHTS   = [20,40,60,80,100];
+  var STICK_CM  = 100;
+  var VIEW_CM   = 112;        // how much of the stick the view shows
+  var BENCH_CM  = 90;         // lab station worktop height
+  var T_WINDOW  = 3.5;        // s on the height-time chart
+  var MAX_BOUNCE= 5;
+  var NOISE_SD  = 1.2;        // cm
+
+  /* ------------------------------------------------ state */
+  var drop = 60;
+  var stage = "ready";        // ready | falling | done
+  var t = 0, segs = [], peakShown = false, recorded = false;
+  var trials = [], marks = [], newestRow = -1;
+  var lastFrame = null, dirty = true;
+
+  var reduceMotion = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+
+  /* ------------------------------------------------ dom */
+  function $(id){ return document.getElementById(id); }
+  var sceneC = $("cvlab-scene"), traceC = $("cvlab-trace"), graphC = $("cvlab-graph");
+  var sctx = sceneC.getContext("2d"), tctx = traceC.getContext("2d"), gctx = graphC.getContext("2d");
+  var elGo = $("cvlab-go"), elReset = $("cvlab-reset"), elStatus = $("cvlab-status");
+  var elHeights = $("cvlab-heights"), elBody = $("cvlab-tbody");
+  var elClearTrials = $("cvlab-cleartrials"), elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote");
+  var elSlow = $("cvlab-slow"), elFit = $("cvlab-fit"), elNoise = $("cvlab-noise"),
+      elSpeedDep = $("cvlab-speeddep");
+  var roDrop = $("cvlab-ro-drop"), roH = $("cvlab-ro-h"),
+      roBounce = $("cvlab-ro-bounce"), roStage = $("cvlab-ro-stage");
+
+  /* ------------------------------------------------ helpers */
+  function fmt(n,p){ return n.toFixed(p===undefined?1:p); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function now(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function gauss(){
+    var u=0,w=0;
+    while(u===0) u=Math.random();
+    while(w===0) w=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w);
+  }
+  function say(m){ elStatus.innerHTML = m; }
+  function monoStack(){ return '"Poppins", ui-monospace, Menlo, Consolas, monospace'; }
+  function corAt(v){
+    if(!elSpeedDep.checked) return E_CONST;
+    return clamp(E0 - EK*v, 0.4, 0.95);
+  }
+  function predict(h){
+    var e = corAt(Math.sqrt(2*GRAV*h));
+    return e*e*h;
+  }
+
+  function fit(canvas, ctx){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(150, Math.round(r.width)), h = Math.max(150, Math.round(r.height));
+    if(canvas.width !== w*dpr || canvas.height !== h*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { w:w, h:h };
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+
+  /* ------------------------------------------------ exact flight plan */
+  function buildFlight(h0){
+    var out = [];
+    var tFall = Math.sqrt(2*h0/GRAV);
+    out.push({ t0:0, y0:h0, v0:0, t1:tFall, apex:h0, tApex:0 });
+    var tt = tFall, v = Math.sqrt(2*GRAV*h0);
+    for(var i=0;i<MAX_BOUNCE;i++){
+      var vUp = corAt(v)*v;
+      var apex = vUp*vUp/(2*GRAV);
+      var dur = 2*vUp/GRAV;
+      out.push({ t0:tt, y0:0, v0:vUp, t1:tt+dur, apex:apex, tApex:tt+vUp/GRAV, n:i+1 });
+      tt += dur; v = vUp;
+      if(apex < 0.4) break;
+    }
+    return out;
+  }
+  function heightAt(tt){
+    if(!segs.length) return drop;
+    if(tt <= 0) return segs[0].y0;
+    for(var i=0;i<segs.length;i++){
+      if(tt <= segs[i].t1 || i === segs.length-1){
+        var dt = tt - segs[i].t0;
+        return Math.max(0, segs[i].y0 + segs[i].v0*dt - 0.5*GRAV*dt*dt);
+      }
+    }
+    return 0;
+  }
+  function flightEnd(){ return segs.length ? segs[segs.length-1].t1 : 0; }
+  function firstApex(){ return segs.length > 1 ? segs[1].apex : 0; }
+  function firstApexT(){ return segs.length > 1 ? segs[1].tApex : 0; }
+
+  /* ------------------------------------------------ controls */
+  function buildHeights(){
+    var html = "";
+    for(var i=0;i<HEIGHTS.length;i++){
+      html += '<button class="cvlab-hbtn" data-h="' + HEIGHTS[i]
+            + '" aria-label="Drop from ' + HEIGHTS[i] + ' centimetres">' + HEIGHTS[i] + '</button>';
+    }
+    elHeights.innerHTML = html;
+    elHeights.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-hbtn") : null;
+      if(!b || b.disabled) return;
+      drop = parseInt(b.getAttribute("data-h"),10);
+      resetRun("Ball held at <strong>" + drop + " cm</strong>, bottom edge on the mark.");
+    });
+  }
+
+  /* ------------------------------------------------ run control */
+  function resetRun(msg){
+    stage = "ready"; t = 0; segs = []; peakShown = false; recorded = false;
+    lastFrame = null; dirty = true;
+    elGo.textContent = "Drop the ball";
+    syncUI(); drawTrace();
+    if(msg) say(msg);
+  }
+
+  function release(){
+    if(stage === "falling") return;
+    if(stage === "done") resetRun();
+    segs = buildFlight(drop);
+    stage = "falling"; t = 0; peakShown = false; recorded = false;
+    lastFrame = null; dirty = true;
+    elGo.textContent = "Falling\u2026";
+    say("Let go from <strong>" + drop + " cm</strong>. It leaves your fingers at rest.");
+    syncUI();
+  }
+
+  function capture(){
+    peakShown = true; recorded = true;
+    var trueH = firstApex();
+    var shown = elNoise.checked ? Math.max(0, trueH + gauss()*NOISE_SD) : trueH;
+    shown = Math.round(shown*10)/10;
+    trials.push({ n: trials.length+1, drop: drop, h: shown, trueH: trueH });
+    newestRow = trials.length - 1;
+    marks.push({ y: trueH, drop: drop, born: now() });
+    if(marks.length > 8) marks.shift();
+    say("Top of the first bounce: <strong>" + fmt(shown) + " cm</strong> from a "
+        + drop + " cm drop. Taped on the stick.");
+    renderTable(); drawGraph(); syncUI();
+  }
+
+  function settle(){
+    stage = "done";
+    elGo.textContent = "Drop again";
+    syncUI();
+  }
+
+  /* ------------------------------------------------ readouts */
+  function syncUI(){
+    var busy = (stage === "falling");
+    roDrop.textContent = drop + " cm";
+    roH.textContent = fmt(stage === "ready" ? drop : heightAt(t)) + " cm";
+    roBounce.textContent = peakShown ? fmt(firstApex()) + " cm" : "\u2014";
+    roStage.textContent = stage === "ready" ? "Ready" : (stage === "falling"
+      ? (t < flightEnd() ? "Bouncing" : "Settling") : "Done");
+
+    var bs = elHeights.querySelectorAll(".cvlab-hbtn");
+    for(var i=0;i<bs.length;i++){
+      var hv = parseInt(bs[i].getAttribute("data-h"),10);
+      bs[i].disabled = busy;
+      bs[i].className = "cvlab-hbtn" + (hv === drop ? " is-on" : "");
+    }
+    elSpeedDep.disabled = busy;
+    elGo.disabled = busy;
+    elReset.disabled = busy || stage === "ready";
+    elClearTrials.disabled = trials.length === 0;
+    elCopy.disabled = trials.length === 0;
+  }
+
+  function renderTable(){
+    if(trials.length === 0){
+      elBody.innerHTML = '<tr><td colspan="4"><span class="cvlab-empty">'
+        + 'No trials yet. Pick a height and drop the ball.</span></td></tr>';
+      return;
+    }
+    var html = "";
+    for(var i=0;i<trials.length;i++){
+      var r = trials[i];
+      html += '<tr' + (i===newestRow ? ' class="is-new"' : '') + '>'
+        + '<td>' + r.n + '</td><td>' + r.drop + '</td><td>' + fmt(r.h) + '</td>'
+        + '<td>' + fmt(r.h/r.drop, 3) + '</td></tr>';
+    }
+    elBody.innerHTML = html;
+  }
+
+  /* ------------------------------------------------ scene */
+  var G = {};
+  function geometry(w,h){
+    G.w = w; G.h = h; G.compact = w < 244;
+    G.floorY = h - Math.max(15, h*0.075);
+    G.k = (G.floorY - 14)/VIEW_CM;               /* px per cm */
+    G.stationR = w*0.66;
+    G.stickW = clamp(w*0.10, 17, 34);
+    G.stickX = G.stationR - G.stickW - Math.max(4, w*0.03);
+    G.ballX = G.stationR + clamp(w*0.17, 24, 62);
+    G.ballR = BALL_D*DRAW_EX*G.k/2;
+  }
+  function Y(cm){ return G.floorY - cm*G.k; }
+
+  function drawScene(){
+    var s = fit(sceneC, sctx), w = s.w, h = s.h;
+    geometry(w,h);
+    var ctx = sctx;
+    ctx.clearRect(0,0,w,h);
+
+    var wall = ctx.createLinearGradient(0,0,0,G.floorY);
+    wall.addColorStop(0,"#F1F2EC"); wall.addColorStop(1,"#E4E7DD");
+    ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.floorY);
+
+    drawStation(ctx);
+    drawFloor(ctx);
+    drawStick(ctx);
+    drawMarks(ctx);
+    drawGuides(ctx);
+    drawBall(ctx);
+  }
+
+  /* tile floor, with grout lines so it reads as hard */
+  function drawFloor(ctx){
+    var y = G.floorY, h = G.h;
+    var g = ctx.createLinearGradient(0,y,0,h);
+    g.addColorStop(0,"#DEE1DB"); g.addColorStop(1,"#C6CAC3");
+    ctx.fillStyle = g; ctx.fillRect(0,y,G.w,h-y);
+    ctx.strokeStyle = "#ADB2AA"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0,y+0.5); ctx.lineTo(G.w,y+0.5); ctx.stroke();
+    ctx.strokeStyle = "#B7BCB4";
+    var tw = Math.max(26, G.w*0.22);
+    ctx.beginPath();
+    for(var x=tw*0.4; x<G.w; x+=tw){
+      ctx.moveTo(Math.round(x)+0.5, y+2); ctx.lineTo(Math.round(x)+0.5, h);
+    }
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,.35)";
+    ctx.fillRect(0, y+1, G.w, Math.max(1.5, (h-y)*0.10));
+  }
+
+  /* the lab station the stick is taped to */
+  function drawStation(ctx){
+    var top = Y(BENCH_CM), R = G.stationR, floor = G.floorY;
+    var topH = Math.max(6, (floor-top)*0.045);
+    var oak = ctx.createLinearGradient(0,top,0,floor);
+    oak.addColorStop(0,"#E6C08C"); oak.addColorStop(.5,"#D9AC73"); oak.addColorStop(1,"#BC8E53");
+    ctx.fillStyle = oak; ctx.fillRect(0, top+topH, R, floor-top-topH);
+    /* drawer fronts */
+    ctx.strokeStyle = "#A87F45"; ctx.lineWidth = 1;
+    var n = 4, dh = (floor-top-topH-8)/n;
+    for(var i=0;i<n;i++){
+      var dy = top + topH + 4 + i*dh;
+      ctx.strokeRect(Math.round(R*0.10)+0.5, Math.round(dy)+0.5, Math.round(R*0.52), Math.round(dh-5));
+      ctx.fillStyle = "#3A3E39";
+      roundRect(ctx, R*0.22, dy + (dh-5)*0.48, R*0.28, Math.max(2.5, dh*0.10), 2); ctx.fill();
+    }
+    ctx.fillStyle = "#2A2D27";
+    ctx.fillRect(0, floor - Math.max(5,(floor-top)*0.035), R, Math.max(5,(floor-top)*0.035));
+    /* black epoxy worktop, seen edge on */
+    ctx.fillStyle = "#33372F"; ctx.fillRect(0, top, R, topH);
+    ctx.fillStyle = "#22251F"; ctx.fillRect(0, top, R, topH*0.62);
+    ctx.fillStyle = "#4E534A"; ctx.fillRect(0, top, R, 1.2);
+  }
+
+  /* the meter stick, upright, 0 on the floor, taped on */
+  function drawStick(ctx){
+    var x = G.stickX, wd = G.stickW, y0 = Y(0), y1 = Y(STICK_CM);
+    var g = ctx.createLinearGradient(x,0,x+wd,0);
+    g.addColorStop(0,"#CDA765"); g.addColorStop(.35,"#E3C48D"); g.addColorStop(1,"#F2DFB8");
+    ctx.fillStyle = g;
+    roundRect(ctx, x, y1, wd, y0-y1, 2); ctx.fill();
+    ctx.strokeStyle = "#AE8B49"; ctx.lineWidth = 1; ctx.stroke();
+
+    /* ticks pointing right, off the near edge */
+    var minor = G.k >= 3.0 ? 1 : (G.k >= 1.6 ? 5 : 10);
+    ctx.strokeStyle = "#4A3A1E"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var cm=0; cm<=STICK_CM; cm+=minor){
+      var len = (cm%50===0) ? wd*0.72 : ((cm%10===0) ? wd*0.52 : wd*0.26);
+      var yy = Math.round(Y(cm)) + 0.5;
+      ctx.moveTo(x+wd, yy); ctx.lineTo(x+wd-len, yy);
+    }
+    ctx.stroke();
+    var labStep = G.k >= 3.2 ? 10 : 20;
+    ctx.fillStyle = "#3A2E17";
+    ctx.font = "700 " + (G.compact?8:9.5) + "px " + monoStack();
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    for(var c=0; c<=STICK_CM; c+=labStep) ctx.fillText(String(c), x+2, Y(c));
+
+    /* painter's tape holding it to the station */
+    ctx.fillStyle = "rgba(127,168,206,.85)";
+    for(var i=0;i<3;i++){
+      var ty = Y(12 + i*36);
+      roundRect(ctx, x - Math.max(5, wd*0.32), ty-5, wd + Math.max(10, wd*0.6), 10, 1.5); ctx.fill();
+    }
+  }
+
+  /* tape left at the top of each first bounce */
+  function drawMarks(ctx){
+    for(var i=0;i<marks.length;i++){
+      var m = marks[i];
+      var age = reduceMotion ? 1 : clamp((now()-m.born)/240, 0, 1);
+      var e = 1 - Math.pow(1-age,3);
+      var yy = Y(m.y);
+      var x0 = G.stickX + G.stickW;
+      ctx.globalAlpha = (0.45 + 0.55*(i+1)/marks.length)*e;
+      ctx.fillStyle = "#D8A92E";
+      var wq = Math.max(20, G.ballX - x0 - G.ballR - 3);
+      roundRect(ctx, x0, yy-4.5, wq, 9, 1.5); ctx.fill();
+      ctx.fillStyle = "#F0C64A";
+      roundRect(ctx, x0, yy-4.5, wq, 7, 1.5); ctx.fill();
+      if(!G.compact){
+        ctx.fillStyle = "#3A2E17";
+        ctx.font = "700 8px " + monoStack();
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("d=" + m.drop, x0 + wq/2, yy);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* the drop line and, once it is known, the peak line */
+  function drawGuides(ctx){
+    var xa = G.stickX + G.stickW, xb = G.ballX + G.ballR + 4;
+    label(Y(drop), "#1552B8", drop + "cm");
+    if(peakShown) label(Y(firstApex()), "#C0392B", fmt(firstApex()) + "cm");
+
+    /* the label sits clear of the ball, level with its own line */
+    function label(yy, col, txt){
+      ctx.save();
+      ctx.setLineDash([4,3]); ctx.strokeStyle = col; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(xa, yy); ctx.lineTo(Math.min(G.w-3, xb+6), yy); ctx.stroke();
+      ctx.restore();
+      if(G.compact) return;
+      ctx.font = "700 9.5px " + monoStack();
+      var tw = ctx.measureText(txt).width;
+      var lx = clamp(G.ballX + G.ballR + 6, 2, G.w - tw - 6);
+      ctx.fillStyle = "rgba(251,251,247,.93)";
+      roundRect(ctx, lx-4, yy-6.5, tw+8, 13, 2); ctx.fill();
+      ctx.fillStyle = col; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText(txt, lx, yy);
+    }
+  }
+
+  function drawBall(ctx){
+    var yb = stage === "ready" ? drop : heightAt(t);       /* bottom of the ball, cm */
+    var r = G.ballR, cx = G.ballX, cy = Y(yb) - r;
+
+    /* faint trail of where it has just been */
+    if(stage === "falling" && !reduceMotion){
+      for(var i=1;i<=6;i++){
+        var tp = t - i*0.028;
+        if(tp <= 0) continue;
+        ctx.globalAlpha = 0.11*(1 - i/7);
+        ctx.fillStyle = "#5A5F58";
+        ctx.beginPath(); ctx.arc(cx, Y(heightAt(tp)) - r, r*0.85, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    /* contact shadow that tightens as it nears the floor */
+    var near = clamp(1 - yb/30, 0, 1);
+    ctx.fillStyle = "rgba(27,29,28," + (0.10 + 0.16*near).toFixed(3) + ")";
+    ctx.beginPath();
+    ctx.ellipse(cx, G.floorY + 1.5, r*(0.75 + 0.5*near), r*0.20, 0, 0, Math.PI*2); ctx.fill();
+
+    /* the ball */
+    var g = ctx.createRadialGradient(cx - r*0.35, cy - r*0.4, r*0.1, cx, cy, r*1.15);
+    g.addColorStop(0,"#FFFFFF"); g.addColorStop(.6,"#F2F3ED"); g.addColorStop(1,"#C9CDC2");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#6E7369"; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+    /* dimples */
+    if(r > 6){
+      ctx.fillStyle = "rgba(150,156,146,.55)";
+      for(var a=0;a<3;a++){
+        for(var b=0;b<3;b++){
+          var dx = (a-1)*r*0.42, dy = (b-1)*r*0.42;
+          if(dx*dx+dy*dy > r*r*0.55) continue;
+          ctx.beginPath(); ctx.arc(cx+dx, cy+dy, Math.max(0.7, r*0.10), 0, Math.PI*2); ctx.fill();
+        }
+      }
+    }
+
+    /* fingers, before release only */
+    if(stage === "ready"){
+      ctx.fillStyle = "#E8C6A0"; ctx.strokeStyle = "#B8916C"; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(cx + r*1.05, cy - r*1.25, r*0.95, r*0.55, -0.5, 0, Math.PI*2);
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(cx - r*0.30, cy - r*0.85, r*0.34, r*0.52, 0.35, 0, Math.PI*2);
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(cx + r*0.45, cy - r*0.80, r*0.34, r*0.52, -0.35, 0, Math.PI*2);
+      ctx.fill(); ctx.stroke();
+    }
+  }
+
+  /* ------------------------------------------------ height vs time */
+  function drawTrace(){
+    var s = fit(traceC, tctx), w = s.w, h = s.h;
+    var ctx = tctx;
+    var mL = 46, mR = 14, mT = 14, mB = 32;
+    var pw = w-mL-mR, ph = h-mT-mB;
+    var PX = function(tt){ return mL + (tt/T_WINDOW)*pw; };
+    var PY = function(cm){ return mT + ph - (cm/VIEW_CM)*ph; };
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var cm=0; cm<=100; cm+=10){ var y=Math.round(PY(cm))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
+    for(var tt=0; tt<=T_WINDOW; tt+=0.25){ var x=Math.round(PX(tt))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
+    ctx.stroke();
+    ctx.strokeStyle = "#CCD2C4";
+    ctx.beginPath();
+    for(var c2=0; c2<=100; c2+=50){ var y2=Math.round(PY(c2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
+    for(var t2=0; t2<=T_WINDOW; t2+=1){ var x2=Math.round(PX(t2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
+    ctx.stroke();
+
+    /* the floor, and the height it was let go from */
+    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
+    ctx.save();
+    ctx.setLineDash([5,4]); ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(mL, PY(drop)); ctx.lineTo(mL+pw, PY(drop)); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = "#1552B8"; ctx.font = "700 9.5px " + monoStack();
+    ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+    ctx.fillText("let go from " + drop + " cm", mL+5, PY(drop)-3);
+
+    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var c3=0; c3<=100; c3+=50) ctx.fillText(String(c3), mL-6, PY(c3));
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for(var t3=0; t3<=T_WINDOW; t3+=1) ctx.fillText(String(t3), PX(t3), mT+ph+6);
+    ctx.save();
+    ctx.translate(12, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("HEIGHT (cm)", 0, 0);
+    ctx.restore();
+    ctx.fillStyle = "#1B1D1C";
+    ctx.fillText("TIME (s)", mL+pw/2, mT+ph+19);
+
+    if(!segs.length){
+      ctx.fillStyle = "#8A9082";
+      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Drop the ball and its height draws itself here.", mL+pw/2, mT+ph/2);
+      return;
+    }
+
+    /* the path so far, evaluated exactly */
+    var tEnd = Math.min(t, T_WINDOW);
+    ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 2.4; ctx.lineJoin = "round";
+    ctx.beginPath();
+    var steps = Math.max(2, Math.round(pw));
+    for(var i=0;i<=steps;i++){
+      var tv = tEnd*i/steps;
+      var qx = PX(tv), qy = PY(heightAt(tv));
+      if(i===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
+    }
+    ctx.stroke();
+
+    /* the peak we are measuring */
+    if(peakShown){
+      var ax = PX(Math.min(firstApexT(), T_WINDOW)), ay = PY(firstApex());
+      ctx.save();
+      ctx.setLineDash([4,3]); ctx.strokeStyle = "#C0392B"; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(mL, ay); ctx.lineTo(mL+pw, ay); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = "#C0392B";
+      ctx.beginPath(); ctx.arc(ax, ay, 4.4, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(ax, ay, 4.4, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = "#A6323C"; ctx.font = "700 10px " + monoStack();
+      ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      ctx.fillText("first bounce " + fmt(firstApex()) + " cm", ax + 7, ay - 5);
+    }
+  }
+
+  /* ------------------------------------------------ the graph */
+  var AX = 110;
+  function drawGraph(){
+    var s = fit(graphC, gctx), w = s.w, h = s.h;
+    var ctx = gctx;
+    var mL = 44, mR = 14, mT = 12, mB = 32;
+    var pw = w-mL-mR, ph = h-mT-mB;
+    var PX = function(a){ return mL + (a/AX)*pw; };
+    var PY = function(b){ return mT + ph - (b/AX)*ph; };
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var a=0; a<=AX; a+=10){
+      var y=Math.round(PY(a))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y);
+      var x=Math.round(PX(a))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = "#CCD2C4";
+    ctx.beginPath();
+    for(var a2=0; a2<=AX; a2+=50){
+      var y2=Math.round(PY(a2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2);
+      var x2=Math.round(PX(a2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph);
+    }
+    ctx.stroke();
+
+    /* what a perfect bounce would look like */
+    ctx.save();
+    ctx.setLineDash([6,4]); ctx.strokeStyle = "#A9AFA2"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(AX), PY(AX)); ctx.stroke();
+    ctx.restore();
+
+    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
+    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var b3=0; b3<=AX; b3+=25) ctx.fillText(String(b3), mL-6, PY(b3));
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for(var a3=0; a3<=AX; a3+=25) ctx.fillText(String(a3), PX(a3), mT+ph+6);
+    ctx.save();
+    ctx.translate(11, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("BOUNCE HEIGHT (cm)", 0, 0);
+    ctx.restore();
+    ctx.fillStyle = "#1B1D1C";
+    ctx.fillText("DROP HEIGHT (cm)", mL+pw/2, mT+ph+19);
+
+    if(trials.length === 0){
+      ctx.fillStyle = "#8A9082";
+      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Your first point lands here.", mL+pw/2, mT+ph*0.62);
+      return;
+    }
+
+    /* best fit through the origin, on request */
+    if(elFit.checked){
+      var sxy=0, sxx=0;
+      for(var i=0;i<trials.length;i++){ sxy += trials[i].drop*trials[i].h; sxx += trials[i].drop*trials[i].drop; }
+      var slope = sxx>0 ? sxy/sxx : 0;
+      ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(AX), PY(Math.min(AX, slope*AX))); ctx.stroke();
+      var lab = "slope " + slope.toFixed(3) + "   e = \u221Aslope = " + Math.sqrt(Math.max(0,slope)).toFixed(3);
+      ctx.font = "700 10.5px " + monoStack();
+      var lw = ctx.measureText(lab).width + 12;
+      var by = mT+ph-24;
+      ctx.fillStyle = "rgba(251,251,247,.95)";
+      roundRect(ctx, mL+pw-lw-6, by, lw, 18, 3); ctx.fill();
+      ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1;
+      roundRect(ctx, mL+pw-lw-6, by, lw, 18, 3); ctx.stroke();
+      ctx.fillStyle = "#1552B8"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(lab, mL+pw-lw/2-6, by+9);
+    }
+
+    for(var j=0;j<trials.length;j++){
+      var cx = PX(trials[j].drop), cy = PY(Math.min(AX, trials[j].h));
+      ctx.fillStyle = "#1552B8";
+      ctx.beginPath(); ctx.arc(cx, cy, 4.4, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(cx, cy, 4.4, 0, Math.PI*2); ctx.stroke();
+    }
+  }
+
+  /* ------------------------------------------------ loop */
+  function frame(){
+    var n = now();
+    if(lastFrame === null) lastFrame = n;
+    var dt = (n - lastFrame)/1000; lastFrame = n;
+    if(dt > 0.1) dt = 0.1;
+    if(elSlow.checked) dt *= 0.25;
+
+    if(stage === "falling"){
+      t += dt;
+      if(!recorded && t >= firstApexT()) capture();
+      if(t >= Math.min(flightEnd(), T_WINDOW)){ t = Math.min(flightEnd(), T_WINDOW); settle(); }
+      dirty = true; syncUI(); drawTrace();
+    }
+    if(dirty){ drawScene(); dirty = false; }
+    requestAnimationFrame(frame);
+  }
+
+  /* ------------------------------------------------ wiring */
+  elGo.addEventListener("click", release);
+  elReset.addEventListener("click", function(){
+    resetRun("Reset. The ball is back at <strong>" + drop + " cm</strong>.");
+  });
+  elClearTrials.addEventListener("click", function(){
+    trials = []; marks = []; newestRow = -1;
+    renderTable(); drawGraph(); syncUI(); dirty = true;
+    say("Trials cleared and the tape peeled off the stick.");
+  });
+  elCopy.addEventListener("click", function(){
+    var rows = ["trial\tdrop_cm\tbounce_cm\tratio"];
+    for(var i=0;i<trials.length;i++){
+      var r = trials[i];
+      rows.push(r.n + "\t" + r.drop + "\t" + fmt(r.h) + "\t" + fmt(r.h/r.drop,3));
+    }
+    var txt = rows.join("\n");
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = txt; ta.setAttribute("readonly","");
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); }catch(err){}
+      document.body.removeChild(ta);
+    }
+    function ok(){ elCopyNote.innerHTML = "Copied <strong>" + trials.length + "</strong> trials."; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok, function(){ fallback(); ok(); });
+    } else { fallback(); ok(); }
+  });
+  elFit.addEventListener("change", drawGraph);
+  elNoise.addEventListener("change", function(){
+    say(elNoise.checked
+      ? "Measurement error on. Repeat a height and your readings will differ by a centimetre or so."
+      : "Measurement error off. Readings are exact.");
+  });
+  elSpeedDep.addEventListener("change", function(){
+    resetRun(elSpeedDep.checked
+      ? "The ball now loses a little bounce at higher speeds, so the ratio drifts down as you go higher."
+      : "Back to a single coefficient for every speed.");
+  });
+
+  var rt;
+  window.addEventListener("resize", function(){
+    clearTimeout(rt);
+    rt = setTimeout(function(){ dirty = true; drawScene(); drawTrace(); drawGraph(); }, 120);
+  });
+  if(window.ResizeObserver){
+    var ro = new ResizeObserver(function(){ dirty = true; drawScene(); drawTrace(); drawGraph(); });
+    ro.observe(sceneC.parentNode); ro.observe(graphC.parentNode);
+  }
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){ dirty = true; drawScene(); drawTrace(); drawGraph(); });
+  }
+
+  buildHeights();
+  renderTable();
+  resetRun();
+  drawGraph();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

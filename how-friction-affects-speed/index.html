@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ramp &amp; Friction Lab — How far does the car go?</title>
+<style>
+  :root{
+    color-scheme: light;
+    --page:#f9f9f7;
+    --surface-1:#fcfcfb;
+    --text-primary:#0b0b0b;
+    --text-secondary:#52514e;
+    --text-muted:#898781;
+    --grid:#e1e0d9;
+    --axis:#c3c2b7;
+    --border:rgba(11,11,11,0.10);
+    --series-1:#2a78d6;  /* Countertop */
+    --series-2:#eb6834;  /* Sand */
+    --series-3:#1baf7a;  /* Carpet pad */
+    --series-4:#eda100;  /* Ice */
+    --good:#0ca30c;
+    --scene-sky:#eeeeea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --page:#0d0d0d;
+      --surface-1:#1a1a19;
+      --text-primary:#ffffff;
+      --text-secondary:#c3c2b7;
+      --text-muted:#898781;
+      --grid:#2c2c2a;
+      --axis:#383835;
+      --border:rgba(255,255,255,0.10);
+      --series-1:#3987e5;
+      --series-2:#d95926;
+      --series-3:#199e70;
+      --series-4:#c98500;
+      --scene-sky:#232322;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--page);
+    color:var(--text-primary);
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:15px;
+    line-height:1.45;
+    padding:20px 20px 56px;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+  header.top{margin-bottom:16px}
+  header.top h1{font-size:24px;margin:0 0 4px;letter-spacing:-0.01em}
+  header.top p{margin:0;color:var(--text-secondary);max-width:76ch}
+
+  .card{
+    background:var(--surface-1);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:16px;
+  }
+  .card > h2{
+    font-size:13px;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--text-muted);margin:0 0 12px;font-weight:600;
+  }
+
+  /* ---------- scene ---------- */
+  #sceneWrap{position:relative;width:100%}
+  canvas{display:block;width:100%;height:auto;border-radius:8px}
+
+  .readout{
+    position:absolute;top:12px;right:12px;
+    background:var(--surface-1);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 14px;min-width:186px;
+    box-shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  .readout .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);font-weight:600}
+  .readout .clock{
+    font-size:38px;font-weight:600;line-height:1.05;
+    font-variant-numeric:tabular-nums;letter-spacing:-0.02em;
+  }
+  .readout .clock.armed{color:var(--text-muted)}
+  .readout .clock.running{color:var(--good)}
+  .readout .sub{font-size:12px;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+
+  /* ---------- controls ---------- */
+  .controls{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+  .ctlgroup{min-width:200px}
+  .ctlgroup .lbl{
+    font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--text-muted);font-weight:600;display:block;margin-bottom:7px;
+  }
+  .segmented{display:flex;flex-wrap:wrap;gap:6px}
+  .segmented button{
+    font:inherit;font-size:13px;font-weight:500;
+    padding:7px 12px;border-radius:999px;cursor:pointer;
+    background:transparent;color:var(--text-secondary);
+    border:1px solid var(--border);
+    display:inline-flex;align-items:center;gap:7px;
+    transition:background .12s,border-color .12s;
+  }
+  .segmented button:hover{background:rgba(128,128,128,.10)}
+  .segmented button[aria-pressed="true"]{
+    border-color:currentColor;color:var(--text-primary);
+    background:rgba(128,128,128,.12);font-weight:600;
+  }
+  .swatch{width:11px;height:11px;border-radius:3px;flex:none}
+  .btn{
+    font:inherit;font-size:14px;font-weight:600;
+    padding:9px 18px;border-radius:8px;cursor:pointer;
+    border:1px solid var(--border);background:transparent;color:var(--text-primary);
+  }
+  .btn:hover{background:rgba(128,128,128,.10)}
+  .btn.primary{background:var(--series-1);border-color:transparent;color:#fff}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn:disabled{opacity:.42;cursor:default}
+  .btn:disabled:hover{background:transparent;filter:none}
+  input[type=range]{width:190px;accent-color:var(--series-1)}
+  .rangeval{font-size:13px;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+  /* ---------- facts strip ---------- */
+  .facts{display:flex;flex-wrap:wrap;gap:26px;margin-top:14px;padding-top:14px;border-top:1px solid var(--grid)}
+  .fact .k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);font-weight:600}
+  .fact .v{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+  .fact .u{font-size:12px;font-weight:400;color:var(--text-secondary)}
+
+  /* ---------- layout ---------- */
+  .cols{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:16px}
+  @media (max-width:940px){.cols{grid-template-columns:1fr}}
+
+  /* ---------- table ---------- */
+  table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+  caption{text-align:left;font-size:13px;color:var(--text-secondary);margin-bottom:10px}
+  th,td{padding:9px 8px;text-align:center;border-bottom:1px solid var(--grid);font-size:15px}
+  thead th{
+    font-size:12px;font-weight:600;color:var(--text-secondary);
+    border-bottom:1px solid var(--axis);vertical-align:bottom;line-height:1.25;
+  }
+  thead th .hd{display:flex;flex-direction:column;align-items:center;gap:5px}
+  tbody th{text-align:left;font-weight:600;font-size:15px}
+  tbody tr:last-child td,tbody tr:last-child th{border-bottom:none}
+  td.empty{color:var(--text-muted)}
+  td.fresh{animation:pop .6s ease-out}
+  @keyframes pop{0%{background:rgba(12,163,12,.22)}100%{background:transparent}}
+  .unitrow th,.unitrow td{
+    border-bottom:1px solid var(--axis);padding-top:0;padding-bottom:7px;
+    font-size:11px;color:var(--text-muted);font-weight:500;text-transform:none;letter-spacing:.03em;
+  }
+
+  /* ---------- chart ---------- */
+  #chart{width:100%;height:auto;display:block;overflow:visible}
+  .tick text{font-size:11px;fill:var(--text-muted)}
+  .axtitle{font-size:12px;fill:var(--text-secondary);font-weight:600}
+  .endlabel{font-size:11px;fill:var(--text-secondary);font-weight:600}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:6px}
+  .legend .item{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-secondary)}
+  .legend .key{width:16px;height:3px;border-radius:2px;flex:none}
+  #tip{
+    position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;
+    background:var(--surface-1);border:1px solid var(--border);border-radius:8px;
+    padding:8px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.14);
+    min-width:150px;z-index:5;
+  }
+  #tip .th{font-weight:600;margin-bottom:5px;font-size:12px}
+  #tip .row{display:flex;align-items:center;gap:7px;justify-content:space-between;color:var(--text-secondary)}
+  #tip .row .nm{display:flex;align-items:center;gap:6px}
+  #tip .row .vl{font-variant-numeric:tabular-nums;color:var(--text-primary);font-weight:600}
+  .chartwrap{position:relative}
+
+  .note{font-size:12.5px;color:var(--text-secondary);margin:10px 0 0}
+  .hint{font-size:13px;color:var(--text-secondary);margin:0 0 12px}
+  .empty-state{
+    display:flex;align-items:center;justify-content:center;height:250px;
+    color:var(--text-muted);font-size:14px;text-align:center;padding:0 30px;
+  }
+  @media print{
+    body{background:#fff;padding:0}
+    .card{break-inside:avoid;border-color:#ccc}
+    .noprint{display:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>Ramp &amp; Friction Lab</h1>
+  <p>A 60 g car rolls down the ramp. The timer starts the instant it reaches the bottom, then records a split time as the car passes each distance mark. Run all four surfaces and compare.</p>
+</header>
+
+<!-- ================= SCENE ================= -->
+<div class="card">
+  <div id="sceneWrap">
+    <canvas id="scene" width="1160" height="440" role="img"
+            aria-label="Side view of a ramp on a lab counter with distance marks at 15, 30, 45, 60 and 75 centimeters"></canvas>
+    <div class="readout">
+      <div class="lbl">Timer</div>
+      <div class="clock armed" id="clock">0.000</div>
+      <div class="sub" id="clocksub">Ready — car at top of ramp</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CONTROLS ================= -->
+<div class="card noprint">
+  <h2>Controls</h2>
+  <div class="controls">
+
+    <div class="ctlgroup" style="min-width:330px">
+      <span class="lbl">Surface on the counter</span>
+      <div class="segmented" id="surfacePicker" role="group" aria-label="Choose the surface"></div>
+    </div>
+
+    <div class="ctlgroup">
+      <span class="lbl">Ramp height <span class="rangeval" id="hVal"></span></span>
+      <input type="range" id="hSlider" min="34" max="55" step="1" value="38" aria-label="Ramp height in centimeters">
+      <div class="rangeval" id="hSpeed" style="margin-top:4px"></div>
+    </div>
+
+    <div class="ctlgroup">
+      <span class="lbl">Playback <span class="rangeval" id="tsVal"></span></span>
+      <input type="range" id="tsSlider" min="5" max="100" step="5" value="25" aria-label="Playback speed">
+      <div class="rangeval" style="margin-top:4px">Timer always reads real seconds</div>
+    </div>
+
+    <div class="ctlgroup" style="align-self:flex-end">
+      <span class="lbl">Run the trial</span>
+      <div class="btnrow">
+        <button class="btn primary" id="release">Release car</button>
+        <button class="btn" id="runAll">Test all 4 surfaces</button>
+        <button class="btn" id="clearBtn">Clear data</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><div class="k">Car mass</div><div class="v">60 <span class="u">g</span></div></div>
+    <div class="fact"><div class="k">Speed at bottom of ramp</div><div class="v" id="fSpeed">—</div></div>
+    <div class="fact"><div class="k">Energy at bottom of ramp</div><div class="v" id="fKE">—</div></div>
+    <div class="fact"><div class="k">Friction force on this surface</div><div class="v" id="fFric">—</div></div>
+    <div class="fact"><div class="k">Predicted stopping distance</div><div class="v" id="fStop">—</div></div>
+  </div>
+</div>
+
+<!-- ================= DATA + CHART ================= -->
+<div class="cols">
+
+  <div class="card">
+    <h2>Data table</h2>
+    <p class="hint">Copy these numbers onto your data sheet. Times are in seconds.</p>
+    <table id="dataTable">
+      <caption>Time for the 60 g car to travel each distance</caption>
+      <thead>
+        <tr id="headRow"></tr>
+        <tr class="unitrow" id="unitRow"></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <p class="note" id="tableNote">No runs recorded yet.</p>
+  </div>
+
+  <div class="card">
+    <h2>Graph</h2>
+    <p class="hint">Travel time versus distance for each surface.</p>
+    <div class="chartwrap">
+      <svg id="chart" viewBox="0 0 660 400" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="chartEmpty" class="empty-state">Release the car to plot a surface.</div>
+      <div id="tip" role="status"></div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+</div>
+
+<p class="note" style="max-width:88ch">
+  Model: the car leaves the ramp with speed v = &radic;(2gh &times; 0.88) — the 0.88 accounts for friction on the ramp
+  itself. On the flat surface it slows at a = &mu;g, so distance d is covered in
+  t = (v &minus; &radic;(v² &minus; 2ad)) / a. Coefficients &mu; are typical values for a rolling toy car and are listed with each surface.
+</p>
+
+<script>
+/* ============================================================
+   PHYSICS
+   ============================================================ */
+const G = 980;            // cm/s^2
+const RAMP_EFF = 0.88;    // fraction of ramp energy that survives to the bottom
+const RAMP_LEN = 100;     // cm, length of the ramp board
+const MASS_KG = 0.060;    // 60 g
+const GATES = [15, 30, 45, 60, 75];
+
+const SURFACES = [
+  {id:'counter', name:'Countertop',  short:'Countertop',  mu:0.15, css:'--series-1',
+   desc:'bare lab counter'},
+  {id:'sand',    name:'Thin sand',   short:'Sand',        mu:0.38, css:'--series-2',
+   desc:'thin layer of sand'},
+  {id:'carpet',  name:'Carpet pad',  short:'Carpet pad',  mu:0.30, css:'--series-3',
+   desc:'carpet padding'},
+  {id:'ice',     name:'Thin ice',    short:'Ice',         mu:0.04, css:'--series-4',
+   desc:'thin layer of ice'},
+];
+
+let rampH   = 38;    // cm
+let timeScale = 0.25;
+let current = SURFACES[0];
+const data  = {};    // id -> {times:[...], h:rampH}
+
+const launchSpeed = h => Math.sqrt(2 * G * h * RAMP_EFF);        // cm/s
+const decel       = mu => mu * G;                                 // cm/s^2
+const stopDist    = (v, mu) => (v*v) / (2 * decel(mu));           // cm
+function timeToReach(v, mu, d){
+  const a = decel(mu), disc = v*v - 2*a*d;
+  if (disc < 0) return null;                                      // car stops first
+  return (v - Math.sqrt(disc)) / a;
+}
+const posAt = (v, mu, t) => v*t - 0.5*decel(mu)*t*t;
+
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const colorOf = s => cssVar(s.css);
+
+/* ============================================================
+   SCENE
+   ============================================================ */
+const cv = document.getElementById('scene');
+const ctx = cv.getContext('2d');
+const CW = 1160, CH = 440;
+
+function setupHiDPI(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = CW * dpr; cv.height = CH * dpr;
+  cv.style.aspectRatio = CW + ' / ' + CH;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+setupHiDPI();
+
+// world (cm) -> screen (px)
+let SC = 5, OX = 40, OY = 380;
+function fitView(){
+  const run = Math.sqrt(RAMP_LEN*RAMP_LEN - rampH*rampH);
+  const xmin = -run - 18, xmax = 96;
+  const ymin = -8,        ymax = rampH + 10;
+  const pad = 18;
+  SC = Math.min((CW - 2*pad)/(xmax - xmin), (CH - 2*pad)/(ymax - ymin));
+  OX = pad - xmin*SC;
+  OY = CH - pad + ymin*SC;
+}
+const sx = x => OX + x*SC;
+const sy = y => OY - y*SC;
+
+// deterministic speckle positions so the surface doesn't shimmer between frames
+const grains = [];
+for (let i = 0; i < 460; i++){
+  const r = (i*2654435761 % 100000)/100000, r2 = (i*40503 % 100000)/100000, r3 = (i*97 % 1000)/1000;
+  grains.push({x:-8 + r*102, y:0.25 + r2*2.3, s:0.18 + r3*0.30});
+}
+
+function drawSurface(){
+  const yTop = sy(0);
+  const LAYER = 1.6;                 // cm — "a thin layer"
+  const thick = LAYER*SC;
+  const x0 = sx(-6), x1 = sx(98);
+
+  // counter slab, down to the bottom of the frame
+  ctx.fillStyle = '#26262a';
+  ctx.fillRect(0, yTop, CW, CH - yTop);
+  ctx.fillStyle = 'rgba(255,255,255,.07)';
+  ctx.fillRect(0, yTop, CW, 2);
+
+  if (current.id === 'counter') return;
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, yTop - thick, x1-x0, thick + 1); ctx.clip();
+  const gy = g => yTop - Math.min(g.y*0.55, LAYER)*SC;
+
+  if (current.id === 'sand'){
+    ctx.fillStyle = '#cdae7c';
+    ctx.fillRect(x0, yTop - thick, x1-x0, thick + 1);
+    ctx.fillStyle = 'rgba(120,90,50,.5)';
+    for (const g of grains){ ctx.fillRect(sx(g.x), gy(g), g.s*SC, g.s*SC); }
+    ctx.fillStyle = 'rgba(255,246,225,.55)';
+    for (let i=0;i<grains.length;i+=3){ const g=grains[i]; ctx.fillRect(sx(g.x+0.4), gy(g)+2, g.s*SC*0.7, g.s*SC*0.7); }
+  } else if (current.id === 'carpet'){
+    ctx.fillStyle = '#8d7f86';
+    ctx.fillRect(x0, yTop - thick, x1-x0, thick + 1);
+    ctx.strokeStyle = 'rgba(58,50,56,.6)'; ctx.lineWidth = 1.1;
+    for (let x=-6; x<98; x+=0.6){
+      ctx.beginPath(); ctx.moveTo(sx(x), yTop); ctx.lineTo(sx(x+0.35), yTop - thick); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(228,219,224,.45)';
+    for (let x=-5.7; x<98; x+=1.2){
+      ctx.beginPath(); ctx.moveTo(sx(x), yTop); ctx.lineTo(sx(x+0.3), yTop - thick); ctx.stroke();
+    }
+  } else if (current.id === 'ice'){
+    const gg = ctx.createLinearGradient(0, yTop - thick, 0, yTop);
+    gg.addColorStop(0,'#eaf8fd'); gg.addColorStop(1,'#a3d2e6');
+    ctx.fillStyle = gg; ctx.fillRect(x0, yTop - thick, x1-x0, thick + 1);
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.4;
+    for (let i=0;i<grains.length;i+=6){
+      const gr = grains[i];
+      ctx.beginPath(); ctx.moveTo(sx(gr.x), gy(gr)); ctx.lineTo(sx(gr.x+2.2), gy(gr)); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(110,165,192,.5)'; ctx.lineWidth = 1;
+    for (let i=1;i<grains.length;i+=19){
+      const gr = grains[i];
+      ctx.beginPath(); ctx.moveTo(sx(gr.x), yTop); ctx.lineTo(sx(gr.x+1.6), yTop - thick); ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x0, yTop - thick); ctx.lineTo(x1, yTop - thick); ctx.stroke();
+}
+const LAYER_LIFT = () => current.id === 'counter' ? 0 : 0.85;   // cm the car rides above the bare counter
+
+function drawRamp(){
+  const run = Math.sqrt(RAMP_LEN*RAMP_LEN - rampH*rampH);
+  const topX = -run, topY = rampH;
+  const ang = Math.atan2(rampH, run);   // canvas y is down, so rotate by +ang to head downhill-right
+
+  // stand: base plate + pole
+  ctx.fillStyle = '#4e5257';
+  ctx.fillRect(sx(topX - 11), sy(0) - 1.4*SC, 17*SC, 1.4*SC);
+  ctx.strokeStyle = '#83878d'; ctx.lineWidth = Math.max(3, 1.2*SC);
+  ctx.beginPath();
+  ctx.moveTo(sx(topX - 4), sy(0) - 1.4*SC);
+  ctx.lineTo(sx(topX - 4), sy(rampH + 14));
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(sx(topX), sy(topY)); ctx.rotate(ang);
+
+  // board — its TOP edge is the line the car rides on
+  const grd = ctx.createLinearGradient(0, 0, 0, 1.6*SC);
+  grd.addColorStop(0,'#f2dcac'); grd.addColorStop(1,'#d3ad6b');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, RAMP_LEN*SC, 1.5*SC);
+  ctx.strokeStyle = 'rgba(120,90,40,.45)'; ctx.lineWidth = 1;
+  ctx.strokeRect(0, 0, RAMP_LEN*SC, 1.5*SC);
+
+  // clamp gripping the top of the board
+  ctx.fillStyle = '#2a78d6';
+  roundRect(-2.4*SC, -1.4*SC, 13*SC, 4.4*SC, 0.7*SC); ctx.fill();
+  ctx.fillStyle = '#7c7f85';
+  ctx.fillRect(-4.6*SC, -0.5*SC, 2.6*SC, 2.6*SC);
+  ctx.restore();
+}
+
+function drawGates(){
+  const ink = cssVar('--text-secondary'), muted = cssVar('--text-muted');
+  // start line
+  ctx.strokeStyle = cssVar('--good'); ctx.lineWidth = 2;
+  const GH = 11;
+  ctx.beginPath(); ctx.moveTo(sx(0), sy(0)); ctx.lineTo(sx(0), sy(GH + 7)); ctx.stroke();
+  ctx.fillStyle = cssVar('--good');
+  ctx.font = '600 13px system-ui,sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('TIMER STARTS', sx(0) + 6, sy(GH + 7) - 4);
+
+  ctx.textAlign = 'center';
+  for (const d of GATES){
+    const hit = state.splits[GATES.indexOf(d)] != null;
+    ctx.strokeStyle = hit ? cssVar('--good') : muted;
+    ctx.lineWidth = hit ? 2 : 1.5;
+    ctx.setLineDash(hit ? [] : [5,4]);
+    ctx.beginPath(); ctx.moveTo(sx(d), sy(0)); ctx.lineTo(sx(d), sy(GH)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = hit ? cssVar('--good') : ink;
+    ctx.font = (hit ? '600 ' : '500 ') + '13px system-ui,sans-serif';
+    ctx.fillText(d + ' cm', sx(d), sy(GH) - 6);
+    const t = state.splits[GATES.indexOf(d)];
+    if (t != null){
+      ctx.font = '600 12px system-ui,sans-serif';
+      ctx.fillStyle = cssVar('--good');
+      ctx.fillText(t.toFixed(3) + ' s', sx(d), sy(GH) - 21);
+    }
+  }
+  // meter stick lying on the counter
+  const ry = sy(0) + 1.6*SC, rh = 3.4*SC;
+  const wood = ctx.createLinearGradient(0, ry, 0, ry+rh);
+  wood.addColorStop(0,'#f2dcac'); wood.addColorStop(1,'#d9b878');
+  ctx.fillStyle = wood; ctx.fillRect(sx(-2), ry, sx(84)-sx(-2), rh);
+  ctx.strokeStyle = 'rgba(90,66,28,.75)'; ctx.lineWidth = 1;
+  ctx.font = '600 10px system-ui,sans-serif'; ctx.textAlign = 'center';
+  for (let x=0; x<=80; x+=5){
+    const big = x % 15 === 0;
+    ctx.beginPath(); ctx.moveTo(sx(x), ry); ctx.lineTo(sx(x), ry + (big ? rh*0.62 : rh*0.34)); ctx.stroke();
+    if (big){ ctx.fillStyle = '#6b4f22'; ctx.fillText(String(x), sx(x), ry + rh - 3); }
+  }
+}
+
+function drawCar(px, py, angle, tilt){
+  const L = 9, H = 3.4, R = 1.5; // cm
+  ctx.save();
+  ctx.translate(px, py); ctx.rotate(angle);
+  ctx.translate(0, -R*SC);
+  // body
+  ctx.fillStyle = '#d03b3b';
+  roundRect(-L/2*SC, -H*SC, L*SC, H*0.62*SC, 0.6*SC); ctx.fill();
+  ctx.fillStyle = '#b12f2f';
+  roundRect(-L*0.30*SC, -H*1.42*SC, L*0.56*SC, H*0.62*SC, 0.6*SC); ctx.fill();
+  // window
+  ctx.fillStyle = 'rgba(210,235,250,.9)';
+  roundRect(-L*0.24*SC, -H*1.30*SC, L*0.42*SC, H*0.36*SC, 0.3*SC); ctx.fill();
+  // wheels
+  ctx.fillStyle = '#1b1b1d';
+  for (const wx of [-L*0.29, L*0.29]){
+    ctx.beginPath(); ctx.arc(wx*SC, 0, R*SC, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#9aa0a6';
+    ctx.beginPath(); ctx.arc(wx*SC, 0, R*0.42*SC, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#1b1b1d';
+  }
+  ctx.restore();
+  if (tilt) {} // reserved
+}
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+
+function draw(){
+  fitView();
+  ctx.clearRect(0,0,CW,CH);
+  ctx.fillStyle = cssVar('--scene-sky');
+  ctx.fillRect(0,0,CW,CH);
+  drawSurface();
+  drawRamp();
+  drawGates();
+
+  const run = Math.sqrt(RAMP_LEN*RAMP_LEN - rampH*rampH);
+  const ang = Math.atan2(rampH, run);
+  if (state.phase === 'ramp'){
+    const s = state.rampS;
+    const wx = -run + s*Math.cos(ang), wy = rampH - s*Math.sin(ang);
+    drawCar(sx(wx), sy(wy), ang);
+  } else {
+    drawCar(sx(state.x), sy(LAYER_LIFT()), 0);
+  }
+}
+
+/* ============================================================
+   ANIMATION / RUN STATE
+   ============================================================ */
+const state = {
+  phase:'idle',    // idle | ramp | track | done
+  rampS:0, rampV:0,
+  x:0, v:0, t:0,
+  splits:[null,null,null,null,null],
+  nextGate:0,
+  last:0, raf:null,
+};
+
+function resetCar(){
+  cancelAnimationFrame(state.raf);
+  state.phase='idle'; state.rampS=0; state.rampV=0;
+  state.x=0; state.v=0; state.t=0;
+  state.splits=[null,null,null,null,null]; state.nextGate=0;
+  setClock(0,'armed','Ready — car at top of ramp');
+  draw();
+}
+
+function setClock(t, cls, sub){
+  const el = document.getElementById('clock');
+  el.textContent = t.toFixed(3);
+  el.className = 'clock ' + cls;
+  document.getElementById('clocksub').textContent = sub;
+}
+
+function release(done){
+  if (state.phase === 'ramp' || state.phase === 'track') return;
+  state.phase = 'ramp'; state.rampS = 0; state.rampV = 0;
+  state.x = 0; state.v = 0; state.t = 0;
+  state.splits = [null,null,null,null,null]; state.nextGate = 0;
+  state.last = performance.now();
+  setClock(0,'armed','Rolling down the ramp…');
+  setBusy(true);
+  const aRamp = RAMP_EFF * G * (rampH / RAMP_LEN);
+  const vLaunch = launchSpeed(rampH);
+  const mu = current.mu, a = decel(mu);
+
+  function step(now){
+    let dt = Math.min((now - state.last)/1000, 0.05) * timeScale;
+    state.last = now;
+
+    if (state.phase === 'ramp'){
+      state.rampV += aRamp*dt;
+      state.rampS += state.rampV*dt;
+      if (state.rampS >= RAMP_LEN){
+        state.phase = 'track'; state.rampS = RAMP_LEN; state.v = vLaunch; state.t = 0; state.x = 0;
+      }
+    } else if (state.phase === 'track'){
+      state.t += dt;
+      const nx = posAt(vLaunch, mu, state.t);
+      const nv = vLaunch - a*state.t;
+      if (nv <= 0){                                   // car stopped
+        state.x = stopDist(vLaunch, mu); state.v = 0;
+        finish(done); return;
+      }
+      state.x = nx; state.v = nv;
+      while (state.nextGate < GATES.length && state.x >= GATES[state.nextGate]){
+        const exact = timeToReach(vLaunch, mu, GATES[state.nextGate]);
+        state.splits[state.nextGate] = exact;
+        state.nextGate++;
+      }
+      if (state.nextGate >= GATES.length && state.x >= 84){ finish(done); return; }
+      setClock(state.t,'running', current.name + ' — ' + state.x.toFixed(0) + ' cm');
+    }
+    draw();
+    state.raf = requestAnimationFrame(step);
+  }
+  state.raf = requestAnimationFrame(step);
+}
+
+function finish(done){
+  cancelAnimationFrame(state.raf);
+  state.phase = 'done';
+  const vLaunch = launchSpeed(rampH), mu = current.mu;
+  const times = GATES.map(d => timeToReach(vLaunch, mu, d));
+  state.splits = times.slice();
+  data[current.id] = {times, h:rampH};
+  const reached = times.filter(t => t != null).length;
+  const last = times.filter(t => t!=null).pop();
+  setClock(last ?? 0, 'armed',
+    reached === GATES.length
+      ? current.name + ' — all 5 marks recorded'
+      : current.name + ' — car stopped after ' + stopDist(vLaunch,mu).toFixed(0) + ' cm');
+  draw(); renderTable(); renderChart();
+  if (!batchRunning) setBusy(false);
+  if (done) done();
+}
+let batchRunning = false;
+
+function setBusy(b){
+  document.getElementById('release').disabled = b;
+  document.getElementById('runAll').disabled = b;
+  document.querySelectorAll('#surfacePicker button').forEach(x => x.disabled = b);
+  document.getElementById('hSlider').disabled = b;
+}
+
+/* ============================================================
+   CONTROLS
+   ============================================================ */
+const picker = document.getElementById('surfacePicker');
+SURFACES.forEach(s => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.innerHTML = '<span class="swatch" style="background:var(' + s.css + ')"></span>' + s.name;
+  b.setAttribute('aria-pressed', s.id === current.id);
+  b.onclick = () => { current = s; syncPicker(); resetCar(); updateFacts(); };
+  picker.appendChild(b);
+});
+function syncPicker(){
+  [...picker.children].forEach((b,i) => b.setAttribute('aria-pressed', SURFACES[i].id === current.id));
+}
+
+const hSlider = document.getElementById('hSlider');
+hSlider.oninput = () => { rampH = +hSlider.value; updateFacts(); resetCar(); };
+const tsSlider = document.getElementById('tsSlider');
+tsSlider.oninput = () => { timeScale = +tsSlider.value/100; updateFacts(); };
+
+document.getElementById('release').onclick = () => { resetCar(); requestAnimationFrame(()=>release()); };
+document.getElementById('clearBtn').onclick = () => {
+  for (const k of Object.keys(data)) delete data[k];
+  resetCar(); renderTable(); renderChart();
+};
+document.getElementById('runAll').onclick = () => {
+  let i = 0;
+  batchRunning = true; setBusy(true);
+  const next = () => {
+    if (i >= SURFACES.length){ batchRunning = false; setBusy(false); return; }
+    current = SURFACES[i++]; syncPicker(); updateFacts(); resetCar();
+    requestAnimationFrame(() => release(() => setTimeout(next, 700)));
+  };
+  next();
+};
+
+function updateFacts(){
+  const v = launchSpeed(rampH), mu = current.mu;
+  document.getElementById('hVal').textContent = rampH + ' cm';
+  document.getElementById('tsVal').textContent = timeScale >= 1 ? 'real time' : (timeScale*100).toFixed(0) + '% speed';
+  document.getElementById('hSpeed').textContent = 'Launch speed ' + (v/100).toFixed(2) + ' m/s';
+  document.getElementById('fSpeed').innerHTML = (v/100).toFixed(2) + ' <span class="u">m/s</span>';
+  document.getElementById('fKE').innerHTML = (0.5*MASS_KG*Math.pow(v/100,2)).toFixed(3) + ' <span class="u">J</span>';
+  document.getElementById('fFric').innerHTML = (mu*MASS_KG*9.8).toFixed(3) +
+    ' <span class="u">N &nbsp;(&mu; = ' + mu.toFixed(2) + ')</span>';
+  const sd = stopDist(v, mu);
+  document.getElementById('fStop').innerHTML = (sd >= 1000 ? (sd/100).toFixed(1) + ' <span class="u">m</span>'
+                                                          : sd.toFixed(0) + ' <span class="u">cm</span>');
+}
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+function renderTable(){
+  const head = document.getElementById('headRow');
+  const unit = document.getElementById('unitRow');
+  const tb   = document.getElementById('tbody');
+  head.innerHTML = '<th style="text-align:left">Distance</th>' + SURFACES.map(s =>
+    '<th><span class="hd"><span class="swatch" style="background:var(' + s.css + ')"></span>' +
+    s.short + '</span></th>').join('');
+  unit.innerHTML = '<th style="text-align:left">cm</th>' + SURFACES.map(() => '<td>time (s)</td>').join('');
+  tb.innerHTML = GATES.map((d,i) =>
+    '<tr><th>' + d + '</th>' + SURFACES.map(s => {
+      const rec = data[s.id];
+      if (!rec) return '<td class="empty">—</td>';
+      const t = rec.times[i];
+      return t == null ? '<td class="empty">did not reach</td>' : '<td>' + t.toFixed(3) + '</td>';
+    }).join('') + '</tr>').join('');
+
+  const recs = Object.values(data), n = recs.length;
+  const heights = [...new Set(recs.map(r => r.h))];
+  document.getElementById('tableNote').textContent = n === 0
+    ? 'No runs recorded yet.'
+    : n + ' of 4 surfaces recorded · car 60 g · ' + (heights.length === 1
+        ? 'ramp height ' + heights[0] + ' cm'
+        : '⚠ mixed ramp heights (' + heights.sort((a,b)=>a-b).join(', ') + ' cm) — clear the data and keep the ramp at one height');
+}
+
+/* ============================================================
+   CHART  —  time (y) vs distance (x)
+   ============================================================ */
+const svgNS = 'http://www.w3.org/2000/svg';
+const el = (n, a={}) => { const e = document.createElementNS(svgNS,n); for(const k in a) e.setAttribute(k,a[k]); return e; };
+
+const CX0 = 58, CX1 = 534, CY0 = 22, CY1 = 336;   // plot box within 660x400 viewBox
+
+function renderChart(){
+  const svg = document.getElementById('chart');
+  svg.innerHTML = '';
+  const active = SURFACES.filter(s => data[s.id]);
+  document.getElementById('chartEmpty').style.display = active.length ? 'none' : 'flex';
+  renderLegend(active);
+  if (!active.length){ svg.setAttribute('height','0'); return; }
+  svg.removeAttribute('height');
+
+  let maxT = 0;
+  active.forEach(s => data[s.id].times.forEach(t => { if (t!=null && t>maxT) maxT = t; }));
+  const yMax = Math.max(0.1, Math.ceil(maxT*1.18*20)/20);
+  const X = d => CX0 + (d/80)*(CX1-CX0);
+  const Y = t => CY1 - (t/yMax)*(CY1-CY0);
+
+  const gGrid = el('g'); svg.appendChild(gGrid);
+
+  // y gridlines
+  const ySteps = 5, yStep = yMax/ySteps;
+  for (let i=0;i<=ySteps;i++){
+    const t = i*yStep;
+    gGrid.appendChild(el('line',{x1:CX0,x2:CX1,y1:Y(t),y2:Y(t),stroke:cssVar('--grid'),'stroke-width':1}));
+    const g = el('g',{class:'tick'});
+    const tx = el('text',{x:CX0-10,y:Y(t)+4,'text-anchor':'end'});
+    tx.textContent = t.toFixed(2); g.appendChild(tx); gGrid.appendChild(g);
+  }
+  // x ticks
+  [0,15,30,45,60,75].forEach(d => {
+    gGrid.appendChild(el('line',{x1:X(d),x2:X(d),y1:CY1,y2:CY1+6,stroke:cssVar('--axis'),'stroke-width':1}));
+    const g = el('g',{class:'tick'});
+    const tx = el('text',{x:X(d),y:CY1+21,'text-anchor':'middle'});
+    tx.textContent = d; g.appendChild(tx); gGrid.appendChild(g);
+  });
+  gGrid.appendChild(el('line',{x1:CX0,x2:CX1,y1:CY1,y2:CY1,stroke:cssVar('--axis'),'stroke-width':1}));
+  gGrid.appendChild(el('line',{x1:CX0,x2:CX0,y1:CY0,y2:CY1,stroke:cssVar('--axis'),'stroke-width':1}));
+
+  // axis titles
+  const xt = el('text',{x:(CX0+CX1)/2,y:CY1+44,'text-anchor':'middle',class:'axtitle'});
+  xt.textContent = 'Distance travelled (cm)'; svg.appendChild(xt);
+  const yt = el('text',{x:14,y:(CY0+CY1)/2,'text-anchor':'middle',class:'axtitle',
+                        transform:'rotate(-90 14 '+((CY0+CY1)/2)+')'});
+  yt.textContent = 'Time (s)'; svg.appendChild(yt);
+
+  // series
+  const ends = [];
+  active.forEach(s => {
+    const c = colorOf(s);
+    const pts = [[0,0]];
+    data[s.id].times.forEach((t,i) => { if (t!=null) pts.push([GATES[i],t]); });
+    const dstr = pts.map((p,i) => (i?'L':'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
+    svg.appendChild(el('path',{d:dstr,fill:'none',stroke:c,'stroke-width':2,
+                               'stroke-linejoin':'round','stroke-linecap':'round'}));
+    pts.forEach((p,i) => {
+      if (!i) return;
+      svg.appendChild(el('circle',{cx:X(p[0]),cy:Y(p[1]),r:4.5,fill:c,
+                                   stroke:cssVar('--surface-1'),'stroke-width':2}));
+    });
+    const lastp = pts[pts.length-1];
+    ends.push({s, c, px:X(lastp[0]), py:Y(lastp[1]), ly:Y(lastp[1])});
+  });
+
+  // direct end labels — nudge apart when they collide, with a leader line
+  ends.sort((a,b) => a.ly - b.ly);
+  const MINGAP = 14;
+  for (let i=1;i<ends.length;i++){
+    if (ends[i].ly - ends[i-1].ly < MINGAP) ends[i].ly = ends[i-1].ly + MINGAP;
+  }
+  ends.forEach(e => {
+    if (Math.abs(e.ly - e.py) > 1.5){
+      svg.appendChild(el('line',{x1:e.px+5,y1:e.py,x2:e.px+15,y2:e.ly,
+                                 stroke:cssVar('--axis'),'stroke-width':1}));
+    }
+    const lb = el('text',{x:e.px+18,y:e.ly+4,class:'endlabel'});
+    lb.textContent = e.s.short;
+    svg.appendChild(lb);
+  });
+
+  // hover layer
+  const hoverLine = el('line',{x1:0,x2:0,y1:CY0,y2:CY1,stroke:cssVar('--axis'),
+                               'stroke-width':1,opacity:0});
+  svg.appendChild(hoverLine);
+  const hit = el('rect',{x:CX0,y:CY0,width:CX1-CX0,height:CY1-CY0,fill:'transparent'});
+  svg.appendChild(hit);
+
+  const tip = document.getElementById('tip');
+  const wrap = svg.parentElement;
+  hit.addEventListener('pointermove', ev => {
+    const r = svg.getBoundingClientRect();
+    const vx = (ev.clientX - r.left) / r.width * 660;
+    const dCm = (vx - CX0)/(CX1-CX0)*80;
+    let g = GATES[0];
+    GATES.forEach(v => { if (Math.abs(v-dCm) < Math.abs(g-dCm)) g = v; });
+    const gi = GATES.indexOf(g);
+    hoverLine.setAttribute('x1', X(g)); hoverLine.setAttribute('x2', X(g));
+    hoverLine.setAttribute('opacity', 1);
+    tip.innerHTML = '<div class="th">' + g + ' cm</div>' + active.map(s => {
+      const t = data[s.id].times[gi];
+      return '<div class="row"><span class="nm"><span class="key" style="width:12px;height:3px;border-radius:2px;display:inline-block;background:var(' +
+        s.css + ')"></span>' + s.short + '</span><span class="vl">' +
+        (t==null ? '—' : t.toFixed(3)+' s') + '</span></div>';
+    }).join('');
+    tip.style.opacity = 1;
+    const px = X(g)/660 * r.width;
+    tip.style.left = Math.min(Math.max(px + 14, 0), r.width - 168) + 'px';
+    tip.style.top  = (ev.clientY - wrap.getBoundingClientRect().top - 10) + 'px';
+  });
+  hit.addEventListener('pointerleave', () => {
+    tip.style.opacity = 0; hoverLine.setAttribute('opacity', 0);
+  });
+}
+
+function renderLegend(active){
+  const lg = document.getElementById('legend');
+  lg.innerHTML = (active.length ? active : SURFACES).map(s =>
+    '<span class="item"><span class="key" style="background:var(' + s.css + ')"></span>' +
+    s.name + ' <span style="color:var(--text-muted)">&mu; ' + s.mu.toFixed(2) + '</span></span>'
+  ).join('');
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+window.addEventListener('resize', () => { setupHiDPI(); draw(); });
+updateFacts(); renderTable(); renderChart(); resetCar();
+</script>
+</div>
+</body>
+</html>

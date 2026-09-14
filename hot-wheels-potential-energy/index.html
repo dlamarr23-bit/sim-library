@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track energy lab — release height, hill height and potential energy</title>
+
+<!--
+  ============================================================================
+  TRACK ENERGY LAB  (PhET-style, single file, no dependencies)
+
+  HOW TO EMBED
+  1) Easiest: upload this file and drop it in an iframe:
+       <iframe src="track-energy-lab.html"
+               style="width:100%;height:1520px;border:0" loading="lazy"
+               title="Hot Wheels track energy simulation"></iframe>
+  2) Or paste the style block, the cvlab div, and the script block into a page.
+     Every CSS rule is scoped under .cvlab.
+
+  THE MODEL
+     The car runs along the track under gravity with rolling resistance.
+     Because the normal force is m g cos(theta), the friction work over a
+     stretch of track is mu m g dx, with dx the HORIZONTAL distance. So
+       m g h_A  =  m g h_C  +  KE_C  +  mu m g dx
+     and the mass cancels out of the minimum release height entirely:
+       h_A(minimum) = h_C + mu dx        dx = 0.65 m from release to crest
+     Each car has its own mu, deliberately unrelated to its mass.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+.cvlab{
+  --paper:#FFFFFF; --shell:#EDEFF3; --rule:#D9DDE4;
+  --ink:#14181F; --ink-2:#5A6473;
+  --brand:#F4640C; --brand-d:#C64A05; --brand-l:#FF8A3D;
+  --blue:#2563EB; --blue-d:#1D4ED8;
+  --ok:#16A34A; --bad:#DC2626; --warn:#D97706;
+  --track:#F4640C; --tape:#E8C25A; --tape-d:#B8973A;
+  --counter:#22262C; --oak:#C79A62;
+  --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--shell);font-family:var(--font-b);color:var(--ink);font-weight:700;
+  padding:16px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+.cvlab *{box-sizing:border-box}
+.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-b);font-weight:700;letter-spacing:-.01em}
+.cvlab p{margin:0}
+.cvlab :focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+.cvlab-head{background:linear-gradient(120deg,#171C24,#252C36);color:#fff;
+  border-radius:14px 14px 0 0;padding:16px 20px;
+  display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.cvlab-eyebrow{display:block;font-size:13px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--brand-l);margin-bottom:3px}
+.cvlab-head h1{font-size:clamp(20px,3vw,30px);line-height:1.1;font-weight:700}
+.cvlab-readouts{display:flex;flex-wrap:wrap;gap:9px}
+.cvlab-ro{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  border-radius:10px;padding:7px 12px;min-width:104px}
+.cvlab-ro-k{display:block;font-size:11.5px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;color:#9AA6B8}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#F2F5FA;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.cvlab-ro-hi .cvlab-ro-v{color:var(--brand-l)}
+.cvlab-ro-ok .cvlab-ro-v{color:#54D98C}
+.cvlab-ro-bad .cvlab-ro-v{color:#FF8A8A}
+
+.cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
+  border-radius:0 0 14px 14px;padding:12px}
+.cvlab canvas{display:block;width:100%}
+#cvlab-scene{height:clamp(360px,36vw,486px);border-radius:10px}
+@media (max-width:820px){#cvlab-scene{height:clamp(280px,52vw,360px)}}
+.cvlab-hint{font-size:14px;color:var(--ink-2);margin-top:8px;font-weight:700}
+.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;padding-top:12px;
+  border-top:1px solid var(--rule)}
+.cvlab-status{flex:1 1 250px;min-width:200px;font-size:16px;color:var(--ink-2);font-weight:700}
+.cvlab-status strong{color:var(--ink);font-weight:700}
+.cvlab-status.is-ok strong{color:var(--ok)}
+.cvlab-status.is-bad strong{color:var(--bad)}
+
+.cvlab-btn{font-family:var(--font-b);font-size:17px;font-weight:700;cursor:pointer;
+  background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:9px;
+  padding:9px 16px;line-height:1.1;transition:transform .08s ease,background .14s ease,color .14s ease}
+.cvlab-btn:hover:not(:disabled){background:var(--ink);color:#fff}
+.cvlab-btn:active:not(:disabled){transform:translateY(1px)}
+.cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
+.cvlab-btn-go{background:var(--brand);border-color:var(--brand-d);color:#fff;min-width:160px}
+.cvlab-btn-go:hover:not(:disabled){background:var(--brand-d);color:#fff}
+.cvlab-btn-sm{font-size:15px;padding:7px 12px;border-width:1.5px;border-radius:8px}
+
+.cvlab-grid{display:grid;gap:14px;margin-top:14px;
+  grid-template-columns:minmax(230px,1fr) minmax(210px,.85fr) minmax(270px,1.25fr)}
+@media (max-width:1020px){.cvlab-grid{grid-template-columns:1fr 1fr}
+  .cvlab-panel-energy{grid-column:1/-1}}
+@media (max-width:660px){.cvlab-grid{grid-template-columns:1fr}}
+.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:14px;
+  display:flex;flex-direction:column;gap:11px}
+.cvlab-panel h2{font-size:15px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;
+  color:var(--ink);padding-bottom:9px;border-bottom:2px solid var(--ink)}
+.cvlab-note{font-size:14.5px;color:var(--ink-2);font-weight:700}
+.cvlab-row{display:flex;flex-wrap:wrap;gap:7px}
+
+.cvlab-cars{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.cvlab-car{cursor:pointer;border:2px solid var(--rule);border-radius:10px;padding:7px 8px;
+  background:var(--paper);display:flex;align-items:center;gap:8px;text-align:left;
+  font-family:var(--font-b);font-size:13.5px;font-weight:700;color:var(--ink);
+  transition:border-color .14s ease,background .14s ease}
+.cvlab-car:hover{background:#F6F8FB}
+.cvlab-car.is-on{border-color:var(--brand);background:#FFF4EC}
+.cvlab-car svg{display:block;flex:none;overflow:visible}
+.cvlab-car u{text-decoration:none;display:block;font-weight:700;font-size:12px;color:var(--ink-2)}
+
+.cvlab-field{display:flex;flex-direction:column;gap:5px}
+.cvlab-field>span{font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-2)}
+.cvlab input[type=range]{width:100%;accent-color:var(--brand);margin:2px 0}
+.cvlab-stepper{display:flex;align-items:center;gap:8px}
+.cvlab-stepper button{width:34px;height:34px;border-radius:9px;border:2px solid var(--ink);
+  background:var(--paper);font-family:var(--font-b);font-size:17px;font-weight:700;cursor:pointer;
+  line-height:1;color:var(--ink)}
+.cvlab-stepper button:hover:not(:disabled){background:var(--ink);color:#fff}
+.cvlab-stepper button:disabled{opacity:.3;cursor:not-allowed}
+.cvlab-stepper b{font-family:var(--font-m);font-size:17px;font-weight:700;min-width:104px;text-align:center}
+
+.cvlab-calc{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:#F4F6FA;
+  border:1px solid var(--rule);border-radius:9px;padding:9px 11px;line-height:1.85}
+.cvlab-calc b{color:var(--ink);font-weight:700}
+.cvlab-calc em{font-style:normal;color:var(--brand-d);font-weight:700}
+
+.cvlab-tablewrap{max-height:250px;overflow:auto;border:1px solid var(--rule);border-radius:9px}
+.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13.5px}
+.cvlab thead th{position:sticky;top:0;background:#F4F6FA;font-size:11px;letter-spacing:.05em;
+  font-weight:700;padding:6px 5px;text-align:right;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);white-space:nowrap;font-family:var(--font-b);text-transform:uppercase}
+.cvlab thead th:first-child,.cvlab thead th.l{text-align:left}
+.cvlab tbody td{padding:5px;text-align:right;font-variant-numeric:tabular-nums;
+  border-bottom:1px solid #EEF0F4;white-space:nowrap}
+.cvlab tbody td:first-child,.cvlab tbody td.l{text-align:left;color:var(--ink-2)}
+.cvlab tbody tr:last-child td{border-bottom:0}
+.cvlab tbody tr.is-new td{background:#FFF6E8}
+.cvlab .yes{color:var(--ok);font-weight:700}
+.cvlab .no{color:var(--bad);font-weight:700}
+.cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
+.cvlab-best{background:#ECFDF3;border:1px solid #A7E8C0;border-radius:9px;padding:9px 11px;
+  font-size:15px;color:#14532D;font-weight:700}
+.cvlab-best b{font-weight:800}
+.cvlab-best.none{background:#F4F6FA;border-color:var(--rule);color:var(--ink-2)}
+
+.cvlab-pts th,.cvlab-pts td{font-size:13.5px}
+.cvlab-badge{display:inline-flex;width:19px;height:19px;border-radius:5px;align-items:center;
+  justify-content:center;font-weight:700;font-size:11px;color:#fff;font-family:var(--font-b)}
+.cvlab-opts{display:flex;flex-direction:column;gap:8px;font-size:15px;color:var(--ink-2);font-weight:700}
+.cvlab-opts label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.cvlab-opts input{margin:3px 0 0;accent-color:var(--brand);flex:none}
+
+.cvlab-notes{margin-top:14px;background:var(--paper);border:1px solid var(--rule);border-radius:14px;
+  padding:12px 16px}
+.cvlab-notes h3{font-size:17px;margin:0 0 8px}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#2B323C}
+.cvlab-notes ul,.cvlab-notes ol{margin:5px 0 0;padding-left:20px}
+.cvlab-notes li{margin:4px 0}
+.cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
+</style>
+</head>
+<body style="margin:0;background:#EDEFF3">
+
+<div class="cvlab" id="cvlab">
+
+  <header class="cvlab-head">
+    <div>
+      <span class="cvlab-eyebrow">Energy lab &middot; gravitational potential energy</span>
+      <h1>Track energy &mdash; how low can you release it?</h1>
+    </div>
+    <div class="cvlab-readouts">
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Car</span><span class="cvlab-ro-v" id="cvlab-ro-car">34.2 g</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Hill height</span><span class="cvlab-ro-v" id="cvlab-ro-hill">15 cm</span></div>
+      <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Release</span><span class="cvlab-ro-v" id="cvlab-ro-rel">24 cm</span></div>
+      <div class="cvlab-ro" id="cvlab-ro-reswrap"><span class="cvlab-ro-k">Result</span><span class="cvlab-ro-v" id="cvlab-ro-res">ready</span></div>
+    </div>
+  </header>
+
+  <div class="cvlab-bench">
+    <canvas id="cvlab-scene" role="img"
+      aria-label="A track clamped to a stand drops to the counter at point B, rises over a hill of tape rolls at point C, and comes back down to the counter at point D. The car waits at the release height, point A."></canvas>
+    <p class="cvlab-hint">Both ends of the hill are taped flat to the counter, so B and D are both 0&nbsp;cm. A is the release height and C is the top of the hill.</p>
+    <div class="cvlab-bar">
+      <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Release the car</button>
+      <button class="cvlab-btn cvlab-btn-sm" id="cvlab-reset">Put it back</button>
+      <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
+        Pick a car, stack some tape, choose a release height, and let it go.
+      </p>
+    </div>
+  </div>
+
+  <div class="cvlab-grid">
+
+    <section class="cvlab-panel">
+      <h2>Set up the run</h2>
+      <div class="cvlab-field">
+        <span>Choose a car</span>
+        <div class="cvlab-cars" id="cvlab-carlist"></div>
+      </div>
+      <p class="cvlab-calc" id="cvlab-mass">&nbsp;</p>
+      <div class="cvlab-field">
+        <span>Rolls of tape under the hill</span>
+        <div class="cvlab-stepper">
+          <button id="cvlab-tminus" aria-label="One roll fewer">&minus;</button>
+          <b id="cvlab-tcount">6 rolls</b>
+          <button id="cvlab-tplus" aria-label="One roll more">+</button>
+        </div>
+      </div>
+      <label class="cvlab-field" for="cvlab-rel">
+        <span>Release height <b id="cvlab-relval" style="font-family:var(--font-m)">24 cm</b></span>
+        <input type="range" id="cvlab-rel" min="4" max="42" step="1" value="24">
+      </label>
+      <label class="cvlab-field" for="cvlab-speed">
+        <span>Playback speed</span>
+        <select id="cvlab-speed">
+          <option value="0.35" selected>Slowed down, easy to watch</option>
+          <option value="0.15">Slow motion</option>
+          <option value="1">Real speed, about a second</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="cvlab-panel">
+      <h2>Your attempts</h2>
+      <div class="cvlab-tablewrap">
+        <table>
+          <caption class="cvlab-sr">Release heights tried and whether the car cleared the hill</caption>
+          <thead><tr>
+            <th scope="col">#</th><th scope="col">Release</th>
+            <th scope="col" class="l">Over the hill?</th>
+          </tr></thead>
+          <tbody id="cvlab-tbody"></tbody>
+        </table>
+      </div>
+      <p class="cvlab-best none" id="cvlab-best">No attempts yet for this setup.</p>
+      <div class="cvlab-row">
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clear">Clear attempts</button>
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-copy">Copy data</button>
+      </div>
+      <p class="cvlab-note" id="cvlab-copynote">&nbsp;</p>
+    </section>
+
+    <section class="cvlab-panel cvlab-panel-energy">
+      <h2>Potential energy at A, B, C and D</h2>
+      <p class="cvlab-calc" id="cvlab-convert">&nbsp;</p>
+      <div class="cvlab-tablewrap" style="max-height:none">
+        <table class="cvlab-pts">
+          <caption class="cvlab-sr">Height and potential energy at each labelled point</caption>
+          <thead><tr>
+            <th scope="col" class="l">Point</th><th scope="col" class="l">Where</th>
+            <th scope="col">h (cm)</th><th scope="col">h (m)</th><th scope="col">PE (J)</th>
+          </tr></thead>
+          <tbody id="cvlab-ptbody"></tbody>
+        </table>
+      </div>
+      <div class="cvlab-opts">
+        <label><input type="checkbox" id="cvlab-show">
+          <span>Show me the worked out potential energies</span></label>
+      </div>
+      <p class="cvlab-note" id="cvlab-pehint">&nbsp;</p>
+    </section>
+
+  </div>
+
+  <section class="cvlab-notes">
+    <h3>How to use this simulation</h3>
+    <ol>
+      <li>Choose a <strong>car</strong> in the Set up the run panel, then set how many <strong>rolls of tape</strong> are under the hill using the &minus; and + buttons.</li>
+      <li>Pick a <strong>release height</strong> with the slider, and use the <strong>Playback speed</strong> dropdown to slow the run down or watch it at real speed.</li>
+      <li>Press <strong>Release the car</strong> and watch whether it clears the hill, then press <strong>Put it back</strong> to reset it to the release point.</li>
+      <li>Check the <strong>Your attempts</strong> table to see every release height you've tried and whether it made it over &mdash; the panel also tracks your lowest successful height.</li>
+      <li>Turn on <strong>Show me the worked out potential energies</strong> in the Potential energy panel to check your own calculations for points A, B, C, and D.</li>
+      <li>Use <strong>Clear attempts</strong> or <strong>Copy data</strong> to reset or export your results.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------ constants */
+  var G       = 9.8;          // m/s^2
+  var ROLL_CM = 2.5;          // one roll of tape
+  var MIN_ROLLS = 1, MAX_ROLLS = 8;
+  var RAMP_H  = 45;           // the ramp is clamped here and never moves
+  var DROP_X  = 34, HILL_X1 = 48, HILL_X2 = 90, END_X = 126;  // cm along the counter
+  var CREST_X = (HILL_X1 + HILL_X2)/2;                        // 69 cm
+  var VIEW_X0 = -11, VIEW_X1 = 132, VIEW_Y0 = -3, VIEW_Y1 = 52;
+
+  /* every car has its own silhouette. Heights are cm above the track surface,
+     x is cm from the middle of the car. mu is deliberately unrelated to mass. */
+  var CARS = [
+    { n:"Silver Speedster", m:31.5, mu:0.038, body:"#CBD1D8", trim:"#8C949E", glass:"#46506080",
+      len:7.4, nose:0.80, roofX0:-0.5, roofX1:1.5, roof:1.40, tail:0.95,
+      wheelR:0.58, wb:4.7, extra:"duck" },
+    { n:"Black Truck",      m:52.4, mu:0.058, body:"#2A2E34", trim:"#14171B", glass:"#5A667680",
+      len:7.0, nose:1.40, roofX0:-1.7, roofX1:0.2, roof:2.45, tail:1.10,
+      wheelR:0.86, wb:4.4, bed:1.35 },
+    { n:"Orange Van",       m:46.9, mu:0.098, body:"#F07521", trim:"#B4530F", glass:"#4E5A6A80",
+      len:6.8, nose:1.70, roofX0:-1.8, roofX1:2.5, roof:2.80, tail:2.65,
+      wheelR:0.60, wb:4.6, extra:null },
+    { n:"Red Racer",        m:34.2, mu:0.078, body:"#DB2B21", trim:"#9C1712", glass:"#46506080",
+      len:7.0, nose:0.90, roofX0:-0.9, roofX1:1.0, roof:1.70, tail:1.10,
+      wheelR:0.70, wb:4.4, extra:"wing" },
+    { n:"Blue Coupe",       m:41.8, mu:0.118, body:"#2B54B8", trim:"#1B3A8A", glass:"#46506080",
+      len:7.1, nose:1.05, roofX0:-1.3, roofX1:0.8, roof:1.95, tail:1.20,
+      wheelR:0.68, wb:4.5, extra:null },
+    { n:"Green Tuner",      m:28.6, mu:0.138, body:"#2E9B4F", trim:"#1C6733", glass:"#46506080",
+      len:6.6, nose:0.95, roofX0:-1.4, roofX1:1.0, roof:1.90, tail:1.55,
+      wheelR:0.62, wb:4.2, extra:"highwing" }
+  ];
+
+  /* one outline routine, shared by the canvas and the little pictures in the picker */
+  function outline(c){
+    var L = c.len, b = 0.32, p = [];
+    p.push([-L/2, b]);
+    p.push([-L/2, c.nose*0.72]);
+    p.push([-L/2 + 0.5, c.nose]);
+    if(c.bed === undefined){
+      p.push([c.roofX0 - 0.85, c.nose + (c.roof - c.nose)*0.30]);
+      p.push([c.roofX0, c.roof]);
+      p.push([c.roofX1, c.roof]);
+      p.push([c.roofX1 + 0.85, c.tail + (c.roof - c.tail)*0.42]);
+      p.push([L/2 - 0.35, c.tail]);
+      p.push([L/2, c.tail*0.78]);
+    } else {
+      p.push([c.roofX0 - 0.5, c.nose + (c.roof - c.nose)*0.35]);
+      p.push([c.roofX0, c.roof]);
+      p.push([c.roofX1, c.roof]);
+      p.push([c.roofX1 + 0.15, c.bed]);
+      p.push([L/2 - 0.45, c.bed]);
+      p.push([L/2 - 0.45, c.bed + 0.80]);
+      p.push([L/2, c.bed + 0.80]);
+      p.push([L/2, c.tail*0.70]);
+    }
+    p.push([L/2, b]);
+    /* the profile above is drawn nose-left; the car travels right, so flip x
+       here once and everything downstream, canvas and picker alike, agrees */
+    for(var q=0;q<p.length;q++) p[q][0] = -p[q][0];
+    return p;
+  }
+
+
+  /* ------------------------------------------------ state */
+  var car = 3, rolls = 6, relCm = 24;
+  var stage = "ready";        // ready | running | done
+  var s = 0, v = 0, maxX = 0, cleared = false, endReason = "";
+  var spin = 0;          // radians the wheels have turned
+  var speedScale = 0.35; // the run is slowed down so it can be watched
+  var trials = [];            // for the current car + hill
+  var lastFrame = null, dirty = true;
+  var TRK = null;             // the sampled track
+
+  var reduceMotion = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+
+  /* ------------------------------------------------ dom */
+  function $(id){ return document.getElementById(id); }
+  var sceneC = $("cvlab-scene"), sctx = sceneC.getContext("2d");
+  var elGo = $("cvlab-go"), elReset = $("cvlab-reset"), elStatus = $("cvlab-status");
+  var elCarList = $("cvlab-carlist"), elMass = $("cvlab-mass");
+  var elTMinus = $("cvlab-tminus"), elTPlus = $("cvlab-tplus"), elTCount = $("cvlab-tcount");
+  var elRel = $("cvlab-rel"), elRelVal = $("cvlab-relval"), elSpeed = $("cvlab-speed");
+  var elBody = $("cvlab-tbody"), elBest = $("cvlab-best");
+  var elClear = $("cvlab-clear"), elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote");
+  var elConvert = $("cvlab-convert"), elPtBody = $("cvlab-ptbody");
+  var elShow = $("cvlab-show"), elPeHint = $("cvlab-pehint");
+  var roCar = $("cvlab-ro-car"), roHill = $("cvlab-ro-hill"),
+      roRel = $("cvlab-ro-rel"), roRes = $("cvlab-ro-res"), roResWrap = $("cvlab-ro-reswrap");
+
+  /* ------------------------------------------------ helpers */
+  function C(){ return CARS[car]; }
+  function hillCm(){ return rolls*ROLL_CM; }
+  function massKg(){ return C().m/1000; }
+  function fmt(x,p){ return x.toFixed(p===undefined?1:p); }
+  function clamp(x,a,b){ return x<a?a:(x>b?b:x); }
+  function now(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function say(m, kind){
+    elStatus.innerHTML = m;
+    elStatus.className = "cvlab-status" + (kind ? " is-" + kind : "");
+  }
+  /* where a height sits along the fixed ramp, from y = RAMP_H (1 - x/DROP_X)^2 */
+  function xAtHeight(h){ return DROP_X*(1 - Math.sqrt(Math.max(0, h)/RAMP_H)); }
+  /* arc length of that spot, in metres, read off the sampled track */
+  function sAtHeight(h){
+    if(!TRK) return 0;
+    if(h >= RAMP_H) return 0;
+    var pp = TRK.p, SS = TRK.s;
+    for(var i=1;i<pp.length;i++){
+      if(pp[i].y <= h){
+        var y0 = pp[i-1].y, y1 = pp[i].y;
+        var f = (y0 - h)/Math.max(1e-9, y0 - y1);
+        return (SS[i-1] + (SS[i] - SS[i-1])*f)/100;
+      }
+    }
+    return 0;
+  }
+  /* the release point is partway down the ramp now, so the friction distance
+     depends on the release height and the threshold has to be solved for */
+  function minRelease(){
+    var hC = hillCm(), mu = C().mu, lo = 0.05, hi = RAMP_H - 1;
+    for(var i=0;i<60;i++){
+      var m = (lo + hi)/2;
+      if(m - hC - mu*(CREST_X - xAtHeight(m)) < 0) lo = m; else hi = m;
+    }
+    return (lo + hi)/2;
+  }
+
+  function fit(canvas, ctx){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(240, Math.round(r.width)), h = Math.max(200, Math.round(r.height));
+    if(canvas.width !== w*dpr || canvas.height !== h*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { w:w, h:h };
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+
+  /* ------------------------------------------------ the track, sampled once per setup */
+  function buildTrack(){
+    var pts = [], hC = hillCm();
+    var i;
+    /* the drop: steep where it leaves the clamp, flattening to horizontal
+       where it meets the counter. Steeper the higher you clamp it, as a real
+       length of track would be */
+    for(i=0;i<=120;i++){
+      var u = i/120;
+      pts.push({ x: DROP_X*u, y: RAMP_H*(1-u)*(1-u) });
+    }
+    for(i=1;i<=40;i++) pts.push({ x: DROP_X + (HILL_X1-DROP_X)*i/40, y: 0 });
+    for(i=1;i<=160;i++){
+      var u = i/160;
+      pts.push({ x: HILL_X1 + (HILL_X2-HILL_X1)*u, y: hC*0.5*(1 - Math.cos(2*Math.PI*u)) });
+    }
+    for(i=1;i<=60;i++) pts.push({ x: HILL_X2 + (END_X-HILL_X2)*i/60, y: 0 });
+    var S = [0];
+    for(i=1;i<pts.length;i++){
+      var dx = pts[i].x-pts[i-1].x, dy = pts[i].y-pts[i-1].y;
+      S.push(S[i-1] + Math.sqrt(dx*dx + dy*dy));
+    }
+    TRK = { p:pts, s:S, len:S[S.length-1] };
+  }
+  /* everything below works in metres */
+  function atS(sm){
+    var scm = sm*100;
+    var lo = 0, hi = TRK.s.length-1;
+    if(scm <= 0) scm = 0;
+    if(scm >= TRK.len) scm = TRK.len;
+    while(hi - lo > 1){
+      var mid = (lo+hi)>>1;
+      if(TRK.s[mid] <= scm) lo = mid; else hi = mid;
+    }
+    var seg = TRK.s[hi] - TRK.s[lo];
+    var f = seg > 1e-9 ? (scm - TRK.s[lo])/seg : 0;
+    var x = TRK.p[lo].x + (TRK.p[hi].x - TRK.p[lo].x)*f;
+    var y = TRK.p[lo].y + (TRK.p[hi].y - TRK.p[lo].y)*f;
+    var dx = TRK.p[hi].x - TRK.p[lo].x, dy = TRK.p[hi].y - TRK.p[lo].y;
+    var d = Math.sqrt(dx*dx + dy*dy) || 1e-9;
+    return { x:x, y:y, cos:dx/d, sin:dy/d };
+  }
+
+  function resetRun(msg){
+    stage = "ready"; v = 0; maxX = 0; cleared = false; endReason = ""; spin = 0;
+    buildTrack();
+    s = sAtHeight(relCm);
+    lastFrame = null; dirty = true;
+    elGo.textContent = "Release the car";
+    refresh();
+    if(msg) say(msg);
+  }
+  function launch(){
+    if(stage === "running") return;
+    buildTrack();
+    stage = "running"; v = 0; maxX = 0; cleared = false; endReason = ""; spin = 0;
+    s = sAtHeight(relCm);
+    lastFrame = null; dirty = true;
+    elGo.textContent = "Running\u2026";
+    say("Let go from <strong>" + relCm + " cm</strong>. Watch whether it gets over the top.");
+    refresh();
+  }
+  function finish(reason){
+    stage = "done"; endReason = reason;
+    elGo.textContent = "Release again";
+    trials.push({ n: trials.length+1, rel: relCm, ok: cleared });
+    if(cleared) say("It got over. <strong>" + relCm + " cm</strong> works &mdash; now try lower.", "ok");
+    else say("Not enough. It came back down before the top from <strong>" + relCm
+             + " cm</strong>, so you need more height.", "bad");
+    refresh();
+  }
+
+  /* ------------------------------------------------ the run */
+  function stepPhysics(dt){
+    /* fixed COUNT, exact total: n substeps of dt/n, so no rounding wobble */
+    var n = Math.min(200, Math.max(1, Math.ceil(dt/0.0015)));
+    var h = dt/n;
+    for(var i=0;i<n;i++){
+      var p = atS(s);
+      var a = -G*p.sin - (v > 0 ? 1 : (v < 0 ? -1 : 0))*C().mu*G*p.cos;
+      /* a car at rest on a slope shallower than the friction angle just stays put */
+      if(Math.abs(v) < 0.012 && Math.abs(p.sin) <= C().mu*p.cos){
+        v = 0;
+        finish(p.x >= CREST_X ? "stopped past the hill" : "stopped short");
+        return;
+      }
+      v += a*h;
+      var ds = v*h;
+      s += ds;
+      spin += ds/(C().wheelR/100);
+      if(s < 0){ s = 0; v = 0; }
+      if(s*100 >= TRK.len){
+        s = TRK.len/100; v = Math.max(0, v);
+        finish("ran off the end");
+        return;
+      }
+      var q = atS(s);
+      if(q.x > maxX) maxX = q.x;
+      if(!cleared && q.x >= CREST_X && v > 0) cleared = true;
+    }
+  }
+
+  /* ------------------------------------------------ panels */
+  /* the same silhouette, shrunk into the picker button */
+  function carSvg(c){
+    var sc = 4.6, W = 36, Hh = 19;
+    var pts = outline(c), d = "";
+    for(var i=0;i<pts.length;i++){
+      d += (i ? "L" : "M") + (W/2 + pts[i][0]*sc).toFixed(1) + " "
+         + (Hh - 2.6 - pts[i][1]*sc).toFixed(1) + " ";
+    }
+    d += "Z";
+    var r = c.wheelR*sc, y = Hh - 2.6 - r*0.05;
+    return '<svg width="' + W + '" height="' + Hh + '" viewBox="0 0 ' + W + ' ' + Hh
+      + '" aria-hidden="true" style="flex:none">'
+      + '<path d="' + d + '" fill="' + c.body + '" stroke="' + c.trim + '" stroke-width="1"/>'
+      + '<circle cx="' + (W/2 - c.wb/2*sc).toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="#14171B"/>'
+      + '<circle cx="' + (W/2 + c.wb/2*sc).toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="#14171B"/>'
+      + '</svg>';
+  }
+  function buildCars(){
+    var html = "";
+    for(var i=0;i<CARS.length;i++){
+      html += '<button class="cvlab-car" data-i="' + i + '">'
+        + carSvg(CARS[i])
+        + '<span>' + CARS[i].n + '<u>' + fmt(CARS[i].m) + ' g</u></span></button>';
+    }
+    elCarList.innerHTML = html;
+    elCarList.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-car") : null;
+      if(!b || stage === "running") return;
+      car = parseInt(b.getAttribute("data-i"),10);
+      trials = [];
+      resetRun("On the balance: <strong>" + fmt(C().m) + " g</strong>. Attempts cleared, "
+        + "because a different car rolls differently.");
+    });
+  }
+  function renderCars(){
+    var bs = elCarList.querySelectorAll(".cvlab-car");
+    for(var i=0;i<bs.length;i++){
+      var idx = parseInt(bs[i].getAttribute("data-i"),10);
+      bs[i].className = "cvlab-car" + (idx === car ? " is-on" : "");
+    }
+  }
+
+  function renderTable(){
+    if(!trials.length){
+      elBody.innerHTML = '<tr><td colspan="3"><span class="cvlab-empty">'
+        + 'No attempts yet for this car and hill.</span></td></tr>';
+    } else {
+      var html = "";
+      for(var i=0;i<trials.length;i++){
+        var t = trials[i];
+        html += '<tr' + (i === trials.length-1 ? ' class="is-new"' : '') + '>'
+          + '<td>' + t.n + '</td><td>' + t.rel + ' cm</td>'
+          + '<td class="l ' + (t.ok ? "yes" : "no") + '">' + (t.ok ? "yes, cleared it" : "no, rolled back")
+          + '</td></tr>';
+      }
+      elBody.innerHTML = html;
+    }
+    var best = null, worst = null;
+    for(var j=0;j<trials.length;j++){
+      if(trials[j].ok){ if(best === null || trials[j].rel < best) best = trials[j].rel; }
+      else { if(worst === null || trials[j].rel > worst) worst = trials[j].rel; }
+    }
+    if(best === null && worst === null){
+      elBest.className = "cvlab-best none";
+      elBest.innerHTML = "No attempts yet for this setup.";
+    } else if(best === null){
+      elBest.className = "cvlab-best none";
+      elBest.innerHTML = "Nothing has cleared it yet. Highest failure so far <b>" + worst + " cm</b>.";
+    } else if(worst === null || worst < best-1){
+      elBest.className = "cvlab-best";
+      elBest.innerHTML = "Lowest that worked <b>" + best + " cm</b>"
+        + (worst === null ? ". Try lower to close in on it." :
+           ", highest that failed <b>" + worst + " cm</b>. The answer is somewhere between.");
+    } else {
+      elBest.className = "cvlab-best";
+      elBest.innerHTML = "Found it. <b>" + best + " cm</b> gets over and <b>" + worst
+        + " cm</b> does not, so the lowest release height is <b>" + best + " cm</b>.";
+    }
+  }
+
+  function renderEnergy(){
+    var m = C().m, kg = massKg(), hC = hillCm(), show = elShow.checked;
+    elMass.innerHTML = "Balance reads <b>" + fmt(m) + " g</b><br>"
+      + "&divide; 1000 &rarr; <em>" + kg.toFixed(4) + " kg</em>";
+    elConvert.innerHTML =
+        "mass&nbsp;&nbsp; <b>" + fmt(m) + " g</b> &divide; 1000 = <em>" + kg.toFixed(4) + " kg</em><br>"
+      + "hill&nbsp;&nbsp;&nbsp; <b>" + hC + " cm</b> &divide; 100 = <em>" + (hC/100).toFixed(3) + " m</em><br>"
+      + "release <b>" + relCm + " cm</b> &divide; 100 = <em>" + (relCm/100).toFixed(2) + " m</em><br>"
+      + "PE = m &times; g &times; h&nbsp;&nbsp;with g = <b>9.8 m/s\u00B2</b>";
+
+    var pts = [
+      { k:"A", col:"#2563EB", where:"released here", cm:relCm },
+      { k:"B", col:"#0EA5A5", where:"bottom of the drop", cm:0 },
+      { k:"C", col:"#D97706", where:"top of the hill", cm:hC },
+      { k:"D", col:"#7C3AED", where:"after the hill", cm:0 }
+    ];
+    var html = "";
+    for(var i=0;i<pts.length;i++){
+      var p = pts[i], hm = p.cm/100, pe = kg*G*hm;
+      html += '<tr><td class="l"><span class="cvlab-badge" style="background:' + p.col + '">'
+        + p.k + '</span></td><td class="l">' + p.where + '</td>'
+        + '<td>' + p.cm + '</td><td>' + hm.toFixed(2) + '</td>'
+        + '<td>' + (show ? pe.toFixed(4) : "?") + '</td></tr>';
+    }
+    elPtBody.innerHTML = html;
+
+    if(!show){
+      elPeHint.innerHTML = "Work them out first, then tick the box to check.";
+    } else {
+      var diff = kg*G*(relCm/100) - kg*G*(hC/100);
+      var atMin = (relCm === Math.floor(minRelease()) + 1);
+      elPeHint.innerHTML = "A &minus; C = <b>" + diff.toFixed(4) + " J</b>. "
+        + (atMin
+            ? "You are at the lowest release that works, so all of that went to friction on the way up."
+            : "Careful: this is above the lowest release that works, so part of that gap is still "
+              + "kinetic energy at the top, not friction.");
+    }
+  }
+
+  function renderReadouts(){
+    roCar.textContent = fmt(C().m) + " g";
+    roHill.textContent = hillCm() + " cm";
+    roRel.textContent = relCm + " cm";
+    if(stage === "ready"){ roRes.textContent = "ready"; roResWrap.className = "cvlab-ro"; }
+    else if(stage === "running"){ roRes.textContent = "running"; roResWrap.className = "cvlab-ro"; }
+    else if(cleared){ roRes.textContent = "cleared"; roResWrap.className = "cvlab-ro cvlab-ro-ok"; }
+    else { roRes.textContent = "rolled back"; roResWrap.className = "cvlab-ro cvlab-ro-bad"; }
+    elTCount.textContent = rolls + (rolls === 1 ? " roll" : " rolls");
+    elRelVal.textContent = relCm + " cm";
+    elTMinus.disabled = rolls <= MIN_ROLLS || stage === "running";
+    elTPlus.disabled = rolls >= MAX_ROLLS || stage === "running";
+    elRel.disabled = stage === "running";
+    elGo.disabled = stage === "running";
+    elReset.disabled = stage === "running" || stage === "ready";
+    elClear.disabled = trials.length === 0;
+    elCopy.disabled = trials.length === 0;
+  }
+
+  function refresh(){ renderCars(); renderTable(); renderEnergy(); renderReadouts(); dirty = true; }
+
+  /* ------------------------------------------------ scene */
+  var V = {};
+  function geometry(w,h){
+    V.w = w; V.h = h; V.compact = w < 560;
+    V.k = Math.min((w-18)/(VIEW_X1-VIEW_X0), (h-18)/(VIEW_Y1-VIEW_Y0));
+    V.ox = (w - (VIEW_X1-VIEW_X0)*V.k)/2 - VIEW_X0*V.k;
+    V.oy = h - (h - (VIEW_Y1-VIEW_Y0)*V.k)/2 + VIEW_Y0*V.k;
+  }
+  function PX(cm){ return V.ox + cm*V.k; }
+  function PY(cm){ return V.oy - cm*V.k; }
+
+  function drawScene(){
+    var sz = fit(sceneC, sctx), w = sz.w, h = sz.h;
+    geometry(w,h);
+    var ctx = sctx;
+    if(!TRK) buildTrack();
+    ctx.clearRect(0,0,w,h);
+    /* room */
+    var g = ctx.createLinearGradient(0,0,0,PY(0));
+    g.addColorStop(0,"#F7F9FC"); g.addColorStop(1,"#E7ECF3");
+    ctx.fillStyle = g; ctx.fillRect(0,0,w,PY(0));
+    /* the counter */
+    var ct = ctx.createLinearGradient(0,PY(0),0,h);
+    ct.addColorStop(0,"#31363E"); ct.addColorStop(.18,"#22262C"); ct.addColorStop(1,"#181B20");
+    ctx.fillStyle = ct; ctx.fillRect(0,PY(0),w,h-PY(0));
+    ctx.fillStyle = "rgba(255,255,255,.16)"; ctx.fillRect(0,PY(0),w,1.6);
+
+    drawStand(ctx);
+    drawTapeStack(ctx);
+    drawTrack(ctx);
+    drawTapeStrips(ctx);
+    drawGuides(ctx);
+    drawCar(ctx);
+    drawLabels(ctx);
+  }
+
+  function drawStand(ctx){
+    var k = V.k, x = PX(-5.5);
+    var topY = PY(RAMP_H + 5);
+    ctx.fillStyle = "#5A626C";
+    roundRect(ctx, PX(-11), PY(0), 11*k, 1.4*k, 2); ctx.fill();
+    var rg = ctx.createLinearGradient(x-0.7*k,0,x+0.7*k,0);
+    rg.addColorStop(0,"#767E88"); rg.addColorStop(.4,"#B7BEC7"); rg.addColorStop(1,"#697079");
+    ctx.fillStyle = rg;
+    ctx.fillRect(x-0.7*k, topY, 1.4*k, PY(0)-topY);
+    /* the clamp that holds the top of the track, fixed at the ramp height */
+    var cy = PY(RAMP_H);
+    ctx.fillStyle = "#2B2F35";
+    roundRect(ctx, x-1.5*k, cy-1.5*k, 3*k, 3*k, 0.4*k); ctx.fill();
+    ctx.fillStyle = "#3C424A";
+    roundRect(ctx, x+0.9*k, cy-0.7*k, 5.6*k, 1.4*k, 0.3*k); ctx.fill();
+  }
+
+  function drawTapeStack(ctx){
+    var k = V.k, n = rolls;
+    var cx = PX(CREST_X), wRoll = 12*k, hRoll = ROLL_CM*k;
+    for(var i=0;i<n;i++){
+      var y = PY((i+1)*ROLL_CM);
+      var g = ctx.createLinearGradient(cx-wRoll/2, 0, cx+wRoll/2, 0);
+      g.addColorStop(0,"#C9A448"); g.addColorStop(.22,"#F2D57E"); g.addColorStop(.75,"#E3C266");
+      g.addColorStop(1,"#B08F35");
+      ctx.fillStyle = g;
+      roundRect(ctx, cx-wRoll/2, y, wRoll, hRoll, Math.min(3, hRoll*0.28)); ctx.fill();
+      ctx.strokeStyle = "rgba(120,95,25,.55)"; ctx.lineWidth = 1;
+      roundRect(ctx, cx-wRoll/2, y, wRoll, hRoll, Math.min(3, hRoll*0.28)); ctx.stroke();
+      /* the wound edge and the cardboard core */
+      ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx-wRoll/2+2, y+hRoll*0.32); ctx.lineTo(cx+wRoll/2-2, y+hRoll*0.32);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(150,120,60,.45)";
+      roundRect(ctx, cx-wRoll*0.16, y+hRoll*0.18, wRoll*0.32, hRoll*0.64, 2); ctx.fill();
+    }
+  }
+
+  /* an orange track with a raised rail down the near side */
+  function drawTrack(ctx){
+    var k = V.k, p = TRK.p;
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    ctx.strokeStyle = "rgba(20,24,30,.22)"; ctx.lineWidth = Math.max(5, 1.5*k);
+    ctx.beginPath();
+    for(var i=0;i<p.length;i++){
+      var X = PX(p[i].x), Y = PY(p[i].y) + 2.4;
+      if(i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y);
+    }
+    ctx.stroke();
+    /* the channel */
+    ctx.strokeStyle = "#C64A05"; ctx.lineWidth = Math.max(5.5, 1.55*k);
+    ctx.beginPath();
+    for(var j=0;j<p.length;j++){
+      var X2 = PX(p[j].x), Y2 = PY(p[j].y);
+      if(j===0) ctx.moveTo(X2,Y2); else ctx.lineTo(X2,Y2);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = "#F4640C"; ctx.lineWidth = Math.max(3.4, 1.0*k);
+    ctx.beginPath();
+    for(var q=0;q<p.length;q++){
+      var X3 = PX(p[q].x), Y3 = PY(p[q].y) - 0.16*k;
+      if(q===0) ctx.moveTo(X3,Y3); else ctx.lineTo(X3,Y3);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,190,130,.75)"; ctx.lineWidth = Math.max(1, 0.28*k);
+    ctx.beginPath();
+    for(var r=0;r<p.length;r++){
+      var X4 = PX(p[r].x), Y4 = PY(p[r].y) - 0.52*k;
+      if(r===0) ctx.moveTo(X4,Y4); else ctx.lineTo(X4,Y4);
+    }
+    ctx.stroke();
+  }
+
+  /* the two places the track is taped flat to the counter, both at 0 cm */
+  function drawTapeStrips(ctx){
+    var k = V.k;
+    var spots = [DROP_X, HILL_X2];
+    for(var i=0;i<spots.length;i++){
+      var x = PX(spots[i]), y = PY(0);
+      ctx.fillStyle = "rgba(238,240,244,.94)";
+      roundRect(ctx, x-2.6*k, y-1.1*k, 5.2*k, 2.4*k, 2); ctx.fill();
+      ctx.strokeStyle = "rgba(120,130,145,.75)"; ctx.lineWidth = 1;
+      roundRect(ctx, x-2.6*k, y-1.1*k, 5.2*k, 2.4*k, 2); ctx.stroke();
+      ctx.strokeStyle = "rgba(150,160,175,.5)"; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x-1.9*k, y-0.5*k); ctx.lineTo(x+1.9*k, y-0.5*k);
+      ctx.moveTo(x-1.9*k, y+0.5*k); ctx.lineTo(x+1.9*k, y+0.5*k);
+      ctx.stroke();
+    }
+  }
+
+  function drawGuides(ctx){
+    var k = V.k;
+    /* the 0 cm line the whole counter sits on */
+    ctx.save();
+    ctx.setLineDash([5,4]); ctx.strokeStyle = "rgba(90,100,115,.5)"; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(PX(VIEW_X0+1), PY(0)); ctx.lineTo(PX(END_X+3), PY(0)); ctx.stroke();
+    /* the ramp height, which never changes */
+    ctx.strokeStyle = "rgba(120,130,145,.55)";
+    ctx.beginPath(); ctx.moveTo(PX(-9), PY(RAMP_H)); ctx.lineTo(PX(DROP_X+2), PY(RAMP_H)); ctx.stroke();
+    /* release height, wherever the car is being held on the ramp */
+    ctx.strokeStyle = "rgba(37,99,235,.8)";
+    ctx.beginPath(); ctx.moveTo(PX(-9), PY(relCm)); ctx.lineTo(PX(DROP_X+8), PY(relCm)); ctx.stroke();
+    /* hill height */
+    ctx.strokeStyle = "rgba(217,119,6,.85)";
+    ctx.beginPath(); ctx.moveTo(PX(HILL_X1-6), PY(hillCm())); ctx.lineTo(PX(HILL_X2+6), PY(hillCm())); ctx.stroke();
+    ctx.restore();
+    if(V.compact) return;
+    tag(ctx, PX(DROP_X+11), PY(relCm), "release " + relCm + " cm", "#2563EB");
+    tag(ctx, PX(DROP_X+5), PY(RAMP_H), "ramp " + RAMP_H + " cm, fixed", "#7A8595");
+    tag(ctx, PX(HILL_X2+9), PY(hillCm()), "hill " + hillCm() + " cm", "#D97706");
+    tag(ctx, PX(END_X-16), PY(0) - 15, "0 cm, taped down", "#5A6473");
+  }
+  function tag(ctx, x, y, txt, col){
+    ctx.font = '700 12px "Poppins", system-ui, sans-serif';
+    var tw = ctx.measureText(txt).width;
+    var bx = clamp(x, 4, V.w - tw - 16);
+    ctx.fillStyle = "rgba(255,255,255,.93)";
+    roundRect(ctx, bx-6, y-9.5, tw+12, 19, 6); ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = 1.4;
+    roundRect(ctx, bx-6, y-9.5, tw+12, 19, 6); ctx.stroke();
+    ctx.fillStyle = col; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(txt, bx, y+0.5);
+  }
+
+  function drawLabels(ctx){
+    var pts = [
+      { k:"A", col:"#2563EB", x:xAtHeight(relCm), y:relCm, dx:-26, dy:-20 },
+      { k:"B", col:"#0EA5A5", x:DROP_X, y:0, dx:-4, dy:-30 },
+      { k:"C", col:"#D97706", x:CREST_X, y:hillCm(), dx:0, dy:-32 },
+      { k:"D", col:"#7C3AED", x:HILL_X2, y:0, dx:16, dy:-30 }
+    ];
+    for(var i=0;i<pts.length;i++){
+      var p = pts[i], x = PX(p.x) + p.dx, y = PY(p.y) + p.dy;
+      ctx.fillStyle = "#fff";
+      roundRect(ctx, x-13, y-13, 26, 26, 8); ctx.fill();
+      ctx.strokeStyle = p.col; ctx.lineWidth = 2.4;
+      roundRect(ctx, x-13, y-13, 26, 26, 8); ctx.stroke();
+      ctx.fillStyle = p.col;
+      ctx.font = '700 15px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(p.k, x, y+0.5);
+    }
+  }
+
+  /* where the car sits: both wheels on the track, so it leans the way a rigid
+     body would. Near the ends the pair is shifted along the track rather than
+     squashed, which keeps the whole car on the rails. */
+  function carPose(){
+    var c = C(), half = c.wb/200;              /* half wheelbase, metres */
+    var sMax = TRK.len/100;
+    /* the body is longer than the wheelbase, so hold the whole car on the rails */
+    var halfBody = c.len/200;
+    var mid = clamp(s, Math.min(halfBody, sMax/2), Math.max(sMax - halfBody, sMax/2));
+    var sa = mid - half, sb = mid + half;
+    var pa = atS(sa), pb = atS(sb);
+    return {
+      x: (pa.x + pb.x)/2,
+      y: (pa.y + pb.y)/2,
+      /* world y is up but canvas y is down, hence the minus */
+      ang: Math.atan2(-(pb.y - pa.y), (pb.x - pa.x))
+    };
+  }
+
+  function drawCar(ctx){
+    var k = V.k, c = C(), pose = carPose();
+    var R = c.wheelR*k, wb = c.wb*k;
+    var rail = 0.38*k;                         /* the path runs under the rail top */
+    ctx.save();
+    ctx.translate(PX(pose.x), PY(pose.y));
+    ctx.rotate(pose.ang);
+    ctx.translate(0, -rail);                   /* now y = 0 is the surface the tyres sit on */
+
+    ctx.fillStyle = "rgba(15,20,26,.22)";
+    ctx.beginPath();
+    ctx.ellipse(0, 1, c.len*0.42*k, Math.max(1.4, 0.20*k), 0, 0, Math.PI*2); ctx.fill();
+
+    /* body */
+    var pts = outline(c);
+    var bg = ctx.createLinearGradient(0, -c.roof*k, 0, 0);
+    bg.addColorStop(0, "#FFFFFF"); bg.addColorStop(.16, c.body);
+    bg.addColorStop(.78, c.body); bg.addColorStop(1, c.trim);
+    ctx.beginPath();
+    for(var i=0;i<pts.length;i++){
+      var X = pts[i][0]*k, Y = -pts[i][1]*k;
+      if(i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = bg; ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,.34)"; ctx.lineWidth = Math.max(1, 0.09*k); ctx.stroke();
+
+    /* glass over the cabin */
+    var beltY = -(c.nose + (c.roof - c.nose)*0.30)*k;
+    ctx.fillStyle = c.glass;
+    ctx.beginPath();
+    ctx.moveTo(-(c.roofX0 - 0.45)*k, beltY);
+    ctx.lineTo(-(c.roofX0 + 0.22)*k, -(c.roof - 0.14)*k);
+    ctx.lineTo(-(c.roofX1 - 0.22)*k, -(c.roof - 0.14)*k);
+    ctx.lineTo(-(c.roofX1 + 0.40)*k, beltY);
+    ctx.closePath(); ctx.fill();
+
+    /* the bit that makes each one recognisable */
+    if(c.extra === "wing" || c.extra === "highwing"){
+      var wy = -(c.tail + (c.extra === "highwing" ? 1.15 : 0.55))*k;
+      var sw = Math.max(1.2, 0.15*k);
+      ctx.fillStyle = c.trim;
+      ctx.fillRect(-(c.len/2)*k, wy, 1.9*k, Math.max(1.4, 0.20*k));
+      ctx.fillRect(-(c.len/2 - 1.7)*k - sw, wy, sw, -wy - c.tail*k*0.55);
+      ctx.fillRect(-(c.len/2 - 0.45)*k - sw, wy, sw, -wy - c.tail*k*0.55);
+    } else if(c.extra === "duck"){
+      ctx.fillStyle = c.trim;
+      ctx.fillRect(-(c.len/2 + 0.1)*k, -(c.tail + 0.28)*k, 1.4*k, Math.max(1.3, 0.20*k));
+    }
+    if(c.bed !== undefined){
+      ctx.fillStyle = "rgba(0,0,0,.30)";
+      ctx.fillRect(-(c.len/2 - 0.5)*k, -(c.bed - 0.05)*k, (c.len/2 - 0.8 - c.roofX1)*k,
+                   Math.max(1.4, 0.18*k));
+    }
+    /* a side stripe in the trim colour */
+    ctx.fillStyle = "rgba(255,255,255,.42)";
+    ctx.fillRect(-c.len*0.44*k, -(c.nose*0.52)*k, c.len*0.88*k, Math.max(1.2, 0.13*k));
+
+    /* wheels, spinning by how far the car has actually rolled */
+    function wheel(wx){
+      ctx.save();
+      ctx.translate(wx, -R);                    /* centre one radius above the surface */
+      ctx.fillStyle = "#14171B";
+      ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.10)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(0, 0, R*0.98, 0, Math.PI*2); ctx.stroke();
+      ctx.rotate(spin);
+      ctx.fillStyle = "#9AA3AC";
+      ctx.beginPath(); ctx.arc(0, 0, R*0.52, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#5C646D"; ctx.lineWidth = Math.max(1, R*0.14);
+      for(var sp=0; sp<5; sp++){
+        var a2 = sp/5*Math.PI*2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a2)*R*0.16, Math.sin(a2)*R*0.16);
+        ctx.lineTo(Math.cos(a2)*R*0.46, Math.sin(a2)*R*0.46);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#DCE1E6";
+      ctx.beginPath(); ctx.arc(0, 0, R*0.17, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    wheel(-wb/2); wheel(wb/2);
+    ctx.restore();
+  }
+
+  /* ------------------------------------------------ loop */
+  function frame(){
+    var n = now();
+    if(lastFrame === null) lastFrame = n;
+    var dt = (n - lastFrame)/1000; lastFrame = n;
+    if(dt > 0.06) dt = 0.06;
+    if(stage === "running"){ stepPhysics(dt*speedScale); dirty = true; renderReadouts(); }
+    if(dirty || stage === "running"){ drawScene(); dirty = false; }
+    requestAnimationFrame(frame);
+  }
+
+  /* ------------------------------------------------ wiring */
+  elGo.addEventListener("click", launch);
+  elReset.addEventListener("click", function(){ resetRun("Back at the top, ready to go again."); });
+  elTMinus.addEventListener("click", function(){
+    if(rolls <= MIN_ROLLS) return;
+    rolls--; trials = [];
+    resetRun("Hill is now <strong>" + hillCm() + " cm</strong>. Attempts cleared for the new hill.");
+  });
+  elTPlus.addEventListener("click", function(){
+    if(rolls >= MAX_ROLLS) return;
+    rolls++; trials = [];
+    resetRun("Hill is now <strong>" + hillCm() + " cm</strong>. Attempts cleared for the new hill.");
+  });
+  elRel.addEventListener("input", function(){
+    relCm = parseInt(elRel.value,10);
+    if(stage !== "ready") resetRun();
+    else { buildTrack(); refresh(); }
+  });
+  elSpeed.addEventListener("change", function(){
+    speedScale = parseFloat(elSpeed.value) || 0.35;
+  });
+  elShow.addEventListener("change", renderEnergy);
+  elClear.addEventListener("click", function(){
+    trials = []; refresh(); say("Attempts cleared.");
+  });
+  elCopy.addEventListener("click", function(){
+    var rows = ["car\tmass_g\thill_cm\ttrial\trelease_cm\tcleared"];
+    for(var i=0;i<trials.length;i++){
+      rows.push(C().n + "\t" + fmt(C().m) + "\t" + hillCm() + "\t" + trials[i].n
+        + "\t" + trials[i].rel + "\t" + (trials[i].ok ? "yes" : "no"));
+    }
+    var txt = rows.join("\n");
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = txt; ta.setAttribute("readonly","");
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); }catch(err){}
+      document.body.removeChild(ta);
+    }
+    function ok(){ elCopyNote.innerHTML = "Copied <b>" + trials.length + "</b> attempts."; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok, function(){ fallback(); ok(); });
+    } else { fallback(); ok(); }
+  });
+
+  var rt;
+  window.addEventListener("resize", function(){
+    clearTimeout(rt); rt = setTimeout(function(){ dirty = true; }, 120);
+  });
+  if(window.ResizeObserver){
+    new ResizeObserver(function(){ dirty = true; }).observe(sceneC.parentNode);
+  }
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){ dirty = true; });
+  }
+
+  buildCars();
+  buildTrack();
+  refresh();
+  requestAnimationFrame(frame);
+
+  if(window.__trkHook) window.__trkHook({
+    CARS: CARS, setCar: function(i){ car = i; trials = []; resetRun(); },
+    setRolls: function(r){ rolls = r; trials = []; resetRun(); },
+    setRelease: function(v2){ relCm = v2; resetRun(); },
+    launch: launch, state: function(){
+      return { stage:stage, cleared:cleared, s:s, v:v, maxX:maxX, endReason:endReason,
+               rolls:rolls, relCm:relCm, car:car, trials:trials };
+    },
+    minRelease: minRelease, hillCm: hillCm, massKg: massKg,
+    pose: carPose, atS: atS, track: function(){ return TRK; }, C: C
+  });
+})();
+</script>
+</body>
+</html>

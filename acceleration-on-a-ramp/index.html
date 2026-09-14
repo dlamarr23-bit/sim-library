@@ -1,0 +1,1589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ramp Acceleration Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef1e6;
+    --bg-alt:#e3e8d8;
+    --surface:#ffffff;
+    --surface-2:#f6f4ec;
+    --ink:#1c2530;
+    --ink-soft:#5b6675;
+    --wood-1:#e0b477;
+    --wood-2:#a8763c;
+    --wood-edge:#7d5527;
+    --blue-1:#3d7fae;
+    --blue-2:#1f4c70;
+    --gold:#c98b2e;
+    --teal:#1f8f79;
+    --teal-2:#0e6353;
+    --floor-1:#2b3542;
+    --floor-2:#161d26;
+    --danger:#c9483c;
+    --good:#1f8f5f;
+    --lcd-bg:#12261f;
+    --lcd-screen:#0d1f18;
+    --lcd-text:#7dffb4;
+    --lcd-text-dim:#3f8f6c;
+    --border:rgba(28,37,48,0.14);
+    --shadow: 0 10px 30px -14px rgba(28,37,48,0.35);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#141a20;
+      --bg-alt:#191f26;
+      --surface:#1d242c;
+      --surface-2:#232b34;
+      --ink:#eef1e9;
+      --ink-soft:#a7b0bb;
+      --wood-1:#c99a5c;
+      --wood-2:#8f6633;
+      --wood-edge:#6b4a22;
+      --blue-1:#5b9bcf;
+      --blue-2:#3a6f99;
+      --gold:#e0a94a;
+      --teal:#3db69c;
+      --teal-2:#1f8f79;
+      --floor-1:#0d1116;
+      --floor-2:#05070a;
+      --danger:#e2685c;
+      --good:#4bcb8f;
+      --lcd-bg:#0a1712;
+      --lcd-screen:#081712;
+      --lcd-text:#8dffbd;
+      --lcd-text-dim:#3f8f6c;
+      --border:rgba(238,241,233,0.12);
+      --shadow: 0 10px 30px -14px rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#141a20;
+    --bg-alt:#191f26;
+    --surface:#1d242c;
+    --surface-2:#232b34;
+    --ink:#eef1e9;
+    --ink-soft:#a7b0bb;
+    --wood-1:#c99a5c;
+    --wood-2:#8f6633;
+    --wood-edge:#6b4a22;
+    --blue-1:#5b9bcf;
+    --blue-2:#3a6f99;
+    --gold:#e0a94a;
+    --teal:#3db69c;
+    --teal-2:#1f8f79;
+    --floor-1:#0d1116;
+    --floor-2:#05070a;
+    --danger:#e2685c;
+    --good:#4bcb8f;
+    --lcd-bg:#0a1712;
+    --lcd-screen:#081712;
+    --lcd-text:#8dffbd;
+    --lcd-text-dim:#3f8f6c;
+    --border:rgba(238,241,233,0.12);
+    --shadow: 0 10px 30px -14px rgba(0,0,0,0.55);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Poppins',system-ui,sans-serif;
+    font-weight:700;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:min(1900px,97vw);
+    margin:0 auto;
+    padding:28px 22px 56px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  header.top{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:14px;
+    border-bottom:3px solid var(--wood-2);
+    padding-bottom:16px;
+  }
+  header.top .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:12.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--teal-2);
+    margin:0 0 6px;
+  }
+  header.top h1{
+    margin:0;
+    font-weight:800;
+    font-size:clamp(26px,3.1vw,38px);
+    text-wrap:balance;
+    letter-spacing:-0.01em;
+  }
+  header.top p.sub{
+    margin:6px 0 0;
+    font-weight:600;
+    color:var(--ink-soft);
+    font-size:clamp(14px,1.3vw,16.5px);
+    max-width:60ch;
+  }
+  .apparatus-tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.06em;
+    color:var(--ink-soft);
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 12px;
+    white-space:nowrap;
+  }
+  .header-right{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:8px;
+  }
+  .theme-toggle{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:8px 14px 8px 12px;
+    cursor:pointer;
+    font-family:'Poppins',sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+    color:var(--ink);
+    transition:.12s;
+    white-space:nowrap;
+  }
+  .theme-toggle:hover{border-color:var(--teal);}
+  .theme-toggle:focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+  .theme-toggle .icon{font-size:14px; line-height:1;}
+
+  .layout{
+    display:grid;
+    grid-template-columns:minmax(0,1.55fr) minmax(320px,0.95fr);
+    gap:22px;
+    align-items:start;
+  }
+  @media (max-width:980px){
+    .layout{grid-template-columns:1fr;}
+  }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:20px 22px;
+  }
+  .card h2{
+    margin:0 0 4px;
+    font-size:clamp(16px,1.5vw,19px);
+    font-weight:800;
+    letter-spacing:-0.01em;
+  }
+  .card .hint{
+    margin:0 0 14px;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+
+  /* ---- scene ---- */
+  .scene-wrap{
+    position:relative;
+    border-radius:12px;
+    overflow:hidden;
+    background:linear-gradient(180deg,var(--bg-alt) 0%, var(--bg) 60%);
+    border:1px solid var(--border);
+  }
+  canvas#scene{
+    display:block;
+    width:100%;
+    height:auto;
+    aspect-ratio:900/460;
+    touch-action:none;
+    cursor:grab;
+  }
+  canvas#scene.dragging{cursor:grabbing;}
+
+  .controls{
+    margin-top:18px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px 22px;
+  }
+  @media (max-width:640px){ .controls{grid-template-columns:1fr;} }
+
+  .control-block label.title{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:13.5px;
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .control-block label.title .val{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    color:var(--blue-2);
+    font-size:13px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:2px 7px;
+  }
+  input[type=range]{
+    width:100%;
+    accent-color:var(--teal);
+    height:6px;
+    cursor:pointer;
+  }
+  .mass-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .mass-chip{
+    position:relative;
+  }
+  .mass-chip input{
+    position:absolute;
+    opacity:0;
+    width:100%;height:100%;
+    margin:0;
+    cursor:pointer;
+  }
+  .mass-chip span{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 12px;
+    border-radius:10px;
+    border:2px solid var(--border);
+    background:var(--surface-2);
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    transition:.12s;
+  }
+  .mass-chip input:checked + span{
+    border-color:var(--teal);
+    background:color-mix(in srgb, var(--teal) 14%, var(--surface-2));
+    color:var(--teal-2);
+  }
+  .mass-chip span::before{
+    content:"●";
+    font-size:8px;
+    color:currentColor;
+  }
+  .total-mass{
+    margin-top:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+  .total-mass b{color:var(--ink);}
+
+  .gate-controls{grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:16px 22px;}
+  @media (max-width:640px){ .gate-controls{grid-template-columns:1fr;} }
+
+  .btn-row{
+    grid-column:1 / -1;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:2px;
+  }
+  button{
+    font-family:'Poppins',sans-serif;
+    font-weight:700;
+    font-size:13.5px;
+    letter-spacing:.02em;
+    border-radius:10px;
+    border:2px solid transparent;
+    padding:11px 18px;
+    cursor:pointer;
+    transition:.12s;
+  }
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  button.primary{
+    background:var(--teal);
+    color:#ffffff;
+    box-shadow:0 6px 16px -8px color-mix(in srgb, var(--teal) 70%, transparent);
+  }
+  button.primary:not(:disabled):hover{background:var(--teal-2);}
+  button.ghost{
+    background:transparent;
+    border-color:var(--border);
+    color:var(--ink);
+  }
+  button.ghost:not(:disabled):hover{border-color:var(--ink-soft);}
+  button.small{padding:7px 12px; font-size:12.5px; border-radius:8px;}
+
+  /* ---- readout / LCD ---- */
+  .lcd{
+    background:var(--lcd-bg);
+    border-radius:12px;
+    padding:16px 16px 14px;
+    border:1px solid rgba(0,0,0,.3);
+  }
+  .lcd .lcd-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .lcd .lcd-head .name{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--lcd-text-dim);
+  }
+  .lcd .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--lcd-text-dim);
+  }
+  .lcd .dot.live{background:var(--lcd-text); box-shadow:0 0 8px var(--lcd-text);}
+  .lcd-screen{
+    background:var(--lcd-screen);
+    border-radius:8px;
+    padding:12px 14px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 14px;
+  }
+  .lcd-cell .k{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--lcd-text-dim);
+    margin-bottom:2px;
+  }
+  .lcd-cell .v{
+    font-family:'JetBrains Mono',monospace;
+    font-size:clamp(17px,2vw,21px);
+    font-weight:700;
+    color:var(--lcd-text);
+    font-variant-numeric:tabular-nums;
+  }
+  .lcd-cell .v .unit{font-size:11px; opacity:.75; margin-left:3px;}
+  .lcd-foot{
+    margin-top:10px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    color:var(--lcd-text-dim);
+    display:flex;
+    justify-content:space-between;
+  }
+
+  .check-row{
+    margin-top:16px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .check-row input[type=number]{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:14px;
+    width:110px;
+    padding:9px 10px;
+    border-radius:8px;
+    border:2px solid var(--border);
+    background:var(--surface-2);
+    color:var(--ink);
+  }
+  .check-row input[type=number]:focus{outline:2px solid var(--teal); outline-offset:1px;}
+  .feedback{
+    margin-top:10px;
+    font-size:13.5px;
+    font-weight:700;
+    padding:9px 12px;
+    border-radius:8px;
+    display:none;
+  }
+  .feedback.show{display:block;}
+  .feedback.ok{background:color-mix(in srgb, var(--good) 16%, transparent); color:var(--good);}
+  .feedback.no{background:color-mix(in srgb, var(--danger) 14%, transparent); color:var(--danger);}
+
+  /* ---- table ---- */
+  .table-wrap{overflow-x:auto; margin-top:6px;}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+    min-width:640px;
+  }
+  th,td{
+    padding:8px 9px;
+    text-align:right;
+    border-bottom:1px solid var(--border);
+    font-variant-numeric:tabular-nums;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:500;
+    white-space:nowrap;
+  }
+  th{
+    font-family:'Poppins',sans-serif;
+    font-weight:700;
+    text-transform:uppercase;
+    font-size:10.5px;
+    letter-spacing:.06em;
+    color:var(--ink-soft);
+    text-align:right;
+  }
+  th:first-child, td:first-child{text-align:left;}
+  tbody tr:hover{background:var(--surface-2);}
+  td.a-col{color:var(--teal-2); font-weight:700;}
+  .table-empty{
+    padding:18px 4px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  .table-foot{
+    margin-top:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+  .table-foot .avg b{
+    font-family:'JetBrains Mono',monospace;
+    color:var(--teal-2);
+  }
+
+  .howto ol{
+    margin:0;
+    padding-left:22px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .howto li{
+    font-size:14.5px;
+    font-weight:600;
+    line-height:1.55;
+  }
+  .howto li strong{font-weight:800;}
+
+  /* ---- collapsible sections ---- */
+  details.dropdown{padding:0;}
+  details.dropdown > summary{
+    list-style:none;
+    cursor:pointer;
+    padding:20px 22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  details.dropdown > summary::-webkit-details-marker{display:none;}
+  details.dropdown > summary::marker{content:"";}
+  details.dropdown > summary h2{margin:0;}
+  details.dropdown > summary .sum-hint{
+    margin:3px 0 0;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  details.dropdown > summary .chev{
+    flex:0 0 auto;
+    width:30px;height:30px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--ink-soft);
+    font-size:15px;
+    transition:transform .18s ease;
+  }
+  details.dropdown[open] > summary .chev{transform:rotate(180deg);}
+  details.dropdown > summary:focus-visible{outline:2px solid var(--teal); outline-offset:3px; border-radius:10px;}
+  details.dropdown .dropdown-body{
+    padding:0 22px 22px;
+  }
+
+  .friction-note{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    background:color-mix(in srgb, var(--teal) 12%, var(--surface));
+    border:1px solid color-mix(in srgb, var(--teal) 35%, var(--border));
+    border-left:5px solid var(--teal);
+    border-radius:12px;
+    padding:14px 18px;
+  }
+  .friction-note .icon{
+    font-size:19px;
+    line-height:1;
+    margin-top:1px;
+  }
+  .friction-note p{
+    margin:0;
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink);
+    line-height:1.5;
+  }
+  .friction-note p strong{font-weight:800; color:var(--teal-2);}
+
+  .notes-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+  }
+  @media (max-width:900px){ .notes-grid{grid-template-columns:1fr;} }
+  .notes-grid .eq{
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px 16px;
+  }
+  .notes-grid .eq h3{
+    margin:0 0 8px;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--teal-2);
+  }
+  .notes-grid .eq .formula{
+    font-family:'JetBrains Mono',monospace;
+    font-size:16px;
+    font-weight:700;
+    color:var(--ink);
+    margin-bottom:8px;
+  }
+  .notes-grid .eq p{
+    margin:0;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    line-height:1.5;
+  }
+
+  .foot-note{
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="top">
+    <div>
+      <p class="eyebrow">Motion Lab &middot; Speeding Up on a Ramp</p>
+      <h1>Ramp Acceleration Lab</h1>
+      <p class="sub">Change how high the ramp is and how heavy the cart is. Put two photogates anywhere on the ramp, then use the speeds they measure to find the cart's acceleration &mdash; part by part.</p>
+    </div>
+    <div class="header-right">
+      <div class="apparatus-tag">RAMP LENGTH = 100 cm &nbsp;|&nbsp; g = 9.80 m/s&sup2;</div>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
+        <span class="icon" aria-hidden="true">🌙</span>
+        <span class="label">Dark mode</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="friction-note">
+    <span class="icon" aria-hidden="true">💡</span>
+    <p><strong>No friction here:</strong> this ramp is a simplified model with zero friction, so nothing slows the cart down as it slides. In real life, ramps, wheels, and air always add a little friction &mdash; but leaving it out here makes the math easier while you learn about acceleration.</p>
+  </div>
+
+  <div class="layout">
+
+    <!-- LEFT: apparatus + controls -->
+    <div class="card">
+      <h2>Apparatus</h2>
+      <p class="hint">Drag the two gate posts on the ramp, or use the sliders below, to put them anywhere you want.</p>
+
+      <div class="scene-wrap">
+        <canvas id="scene" width="900" height="460"></canvas>
+      </div>
+
+      <div class="controls">
+
+        <div class="control-block">
+          <label class="title">Ramp height (release point) <span class="val" id="heightVal">40 cm</span></label>
+          <input type="range" id="heightSlider" min="10" max="70" step="1" value="40">
+        </div>
+
+        <div class="control-block">
+          <label class="title">Cart mass <span class="val" id="massVal">250 g</span></label>
+          <div class="mass-row">
+            <label class="mass-chip"><input type="checkbox" data-mass="50"><span>+50 g</span></label>
+            <label class="mass-chip"><input type="checkbox" data-mass="100"><span>+100 g</span></label>
+            <label class="mass-chip"><input type="checkbox" data-mass="200"><span>+200 g</span></label>
+          </div>
+          <div class="total-mass">Empty cart 250 g &nbsp;+&nbsp; added mass &nbsp;=&nbsp; <b id="totalMassText">250 g</b></div>
+        </div>
+
+        <div class="gate-controls">
+          <div class="control-block">
+            <label class="title">Photogate A position <span class="val" id="gateAVal">20 cm</span></label>
+            <input type="range" id="gateASlider" min="0" max="95" step="1" value="20">
+          </div>
+          <div class="control-block">
+            <label class="title">Photogate B position <span class="val" id="gateBVal">75 cm</span></label>
+            <input type="range" id="gateBSlider" min="0" max="95" step="1" value="75">
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="primary" id="releaseBtn">▶ Release cart</button>
+          <button class="ghost" id="resetBtn">↺ Reset cart</button>
+          <span style="flex:1"></span>
+          <span id="runStatus" style="font-size:12.5px;font-weight:700;color:var(--ink-soft);align-self:center;"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: readouts -->
+    <div style="display:flex;flex-direction:column;gap:22px;">
+
+      <div class="card">
+        <h2>Photogate timer</h2>
+        <p class="hint">Readings show up here the moment the cart passes each gate.</p>
+
+        <div class="lcd">
+          <div class="lcd-head">
+            <span class="name">VS-2 Photogate System</span>
+            <span class="dot" id="lcdDot"></span>
+          </div>
+          <div class="lcd-screen">
+            <div class="lcd-cell">
+              <div class="k">Gate A &middot; time</div>
+              <div class="v" id="t1Read">&ndash;&ndash;<span class="unit">s</span></div>
+            </div>
+            <div class="lcd-cell">
+              <div class="k">Gate A &middot; speed</div>
+              <div class="v" id="v1Read">&ndash;&ndash;<span class="unit">cm/s</span></div>
+            </div>
+            <div class="lcd-cell">
+              <div class="k">Gate B &middot; time</div>
+              <div class="v" id="t2Read">&ndash;&ndash;<span class="unit">s</span></div>
+            </div>
+            <div class="lcd-cell">
+              <div class="k">Gate B &middot; speed</div>
+              <div class="v" id="v2Read">&ndash;&ndash;<span class="unit">cm/s</span></div>
+            </div>
+          </div>
+          <div class="lcd-foot">
+            <span>&Delta;x (A&rarr;B): <span id="dxRead">&ndash;&ndash;</span> cm</span>
+            <span>&Delta;t (A&rarr;B): <span id="dtRead">&ndash;&ndash;</span> s</span>
+          </div>
+        </div>
+
+        <div class="check-row">
+          <label for="aGuess" style="font-size:13px;font-weight:700;">My acceleration answer, a =</label>
+          <input type="number" id="aGuess" step="0.1" placeholder="?">
+          <span style="font-size:12.5px;font-weight:700;color:var(--ink-soft);">cm/s&sup2;</span>
+          <button class="ghost small" id="checkBtn">Check</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+
+        <div style="margin-top:14px;">
+          <button class="primary small" id="logBtn" disabled>+ Add trial to data table</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DATA TABLE full width -->
+  <div class="card">
+    <h2>Trial data</h2>
+    <p class="hint">Save each run so you can compare acceleration for different spots on the ramp, different heights, and different masses.</p>
+    <div class="table-wrap">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Height (cm)</th>
+            <th>Mass (g)</th>
+            <th>Gate A (cm)</th>
+            <th>Gate B (cm)</th>
+            <th>&Delta;x (cm)</th>
+            <th>v&#8321; (cm/s)</th>
+            <th>v&#8322; (cm/s)</th>
+            <th>t&#8321; (s)</th>
+            <th>t&#8322; (s)</th>
+            <th>a = &Delta;v/&Delta;t</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+      <div class="table-empty" id="tableEmpty">No trials logged yet &mdash; release the cart and add a run to get started.</div>
+    </div>
+    <div class="table-foot">
+      <span>Trials saved: <b id="trialCount">0</b></span>
+      <span class="avg">Average acceleration so far: <b id="avgA">&ndash;&ndash;</b> cm/s&sup2;</span>
+      <button class="ghost small" id="clearTableBtn">Clear table</button>
+    </div>
+  </div>
+
+  <!-- HOW TO USE -->
+  <details class="card dropdown howto">
+    <summary>
+      <div>
+        <h2>How to use this simulation</h2>
+        <p class="sum-hint">Tap to open the step-by-step directions.</p>
+      </div>
+      <span class="chev" aria-hidden="true">⌄</span>
+    </summary>
+    <div class="dropdown-body">
+      <ol>
+        <li>Use the <strong>height slider</strong> to change how tall the ramp is. Watch the tall ruler next to the stand &mdash; it shows exactly how high the release point is.</li>
+        <li>Click the <strong>mass buttons</strong> (+50 g, +100 g, +200 g) to add weight to the cart. You can click more than one at a time.</li>
+        <li>Put <strong>Photogate A</strong> and <strong>Photogate B</strong> anywhere on the ramp. Drag the posts right on the ramp, or use the position sliders. Try one gate near the top and one near the bottom.</li>
+        <li>Click <strong>Release cart</strong>. It slides down from the fixed starting point. Each photogate records the <strong>time since release</strong> and <strong>how fast the cart was going</strong> the moment it passed.</li>
+        <li>Use the formula <strong>a = (v&#8322; &minus; v&#8321;) &divide; (t&#8322; &minus; t&#8321;)</strong> with the two readings to figure out the acceleration between the gates by hand. Type your answer in the check box to see if you're right.</li>
+        <li>Click <strong>Add trial to data table</strong> to save your run. Then change the height, mass, or gate spots and try again. Look at the <em>a</em> column &mdash; what stays the same, and what changes?</li>
+        <li>Click <strong>Reset cart</strong> to send the cart back to the top without erasing your saved data.</li>
+      </ol>
+    </div>
+  </details>
+
+  <!-- EQUATIONS / MODEL NOTES -->
+  <details class="card dropdown">
+    <summary>
+      <div>
+        <h2>The model behind the apparatus</h2>
+        <p class="sum-hint">Tap to open the formulas and the science behind them.</p>
+      </div>
+      <span class="chev" aria-hidden="true">⌄</span>
+    </summary>
+    <div class="dropdown-body">
+      <div class="notes-grid">
+        <div class="eq">
+          <h3>Why a taller ramp speeds things up more</h3>
+          <div class="formula">a = g &middot; (h / L)</div>
+          <p>The ramp is always L = 100 cm long. When you raise the release point to height <em>h</em>, you make the ramp steeper. A steeper ramp pulls the cart down faster, so a taller ramp always means a bigger acceleration &mdash; and that acceleration stays the same all the way down that ramp.</p>
+        </div>
+        <div class="eq">
+          <h3>Finding the acceleration between two gates</h3>
+          <div class="formula">a = (v&#8322; &minus; v&#8321;) &divide; (t&#8322; &minus; t&#8321;)</div>
+          <p>Each photogate gives you a speed and a time. It shouldn't matter which two spots you pick &mdash; near the top, near the bottom, or in the middle &mdash; this formula should give you close to the same number every time, because the ramp speeds up the cart by the same amount everywhere along it.</p>
+        </div>
+        <div class="eq">
+          <h3>What extra mass does &mdash; and doesn't do</h3>
+          <div class="formula">a &ne; f(m)</div>
+          <p>Try the same ramp height with no extra mass, then with 200 g added, using the same two gates. Since there's no friction, gravity speeds up every part of the cart by the same amount. So the acceleration should come out about the same, even though the cart is heavier. Extra mass makes the cart harder to stop &mdash; it doesn't make it speed up faster.</p>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <p class="foot-note">This is a simplified, friction-free model &middot; positions are measured from the fixed release point at the top of the ramp &middot; g = 980 cm/s&sup2;</p>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- physics constants ----------
+  var G = 980;      // cm/s^2
+  var L = 100;       // ramp length, cm
+  var FLAG_ANIM_S = 2.4; // wall-clock seconds for a full top-to-bottom run, any actual a
+
+  // ---------- state ----------
+  var state = {
+    heightCm: 40,
+    addedMass: 0,
+    gateA: 20,
+    gateB: 75,
+    running: false,
+    carS: 0,           // cm along ramp, 0 = release point
+    simTStart: 0,       // performance.now() at release
+    physTotal: 0,       // physics seconds top->bottom
+    lastFrameS: 0,
+    gateAHit: null,      // {v,t} once crossed this run
+    gateBHit: null,
+    rafId: null,
+    dragTarget: null     // 'A' | 'B' | null
+  };
+
+  var trials = [];
+  var trialCounter = 0;
+
+  // ---------- DOM ----------
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var heightSlider = document.getElementById('heightSlider');
+  var heightVal = document.getElementById('heightVal');
+  var massVal = document.getElementById('massVal');
+  var totalMassText = document.getElementById('totalMassText');
+  var gateASlider = document.getElementById('gateASlider');
+  var gateBSlider = document.getElementById('gateBSlider');
+  var gateAVal = document.getElementById('gateAVal');
+  var gateBVal = document.getElementById('gateBVal');
+  var releaseBtn = document.getElementById('releaseBtn');
+  var resetBtn = document.getElementById('resetBtn');
+  var runStatus = document.getElementById('runStatus');
+  var logBtn = document.getElementById('logBtn');
+  var checkBtn = document.getElementById('checkBtn');
+  var aGuess = document.getElementById('aGuess');
+  var feedback = document.getElementById('feedback');
+  var lcdDot = document.getElementById('lcdDot');
+  var t1Read = document.getElementById('t1Read');
+  var v1Read = document.getElementById('v1Read');
+  var t2Read = document.getElementById('t2Read');
+  var v2Read = document.getElementById('v2Read');
+  var dxRead = document.getElementById('dxRead');
+  var dtRead = document.getElementById('dtRead');
+  var tableBody = document.getElementById('tableBody');
+  var tableEmpty = document.getElementById('tableEmpty');
+  var trialCount = document.getElementById('trialCount');
+  var avgA = document.getElementById('avgA');
+  var clearTableBtn = document.getElementById('clearTableBtn');
+  var massChips = document.querySelectorAll('.mass-chip input');
+
+  // ---------- helpers ----------
+  function cssVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function accelFor(hCm){ return G * (hCm / L); }
+  function speedAt(sCm, a){ return Math.sqrt(Math.max(0, 2*a*sCm)); }
+  function timeAt(sCm, a){ return a>0 ? Math.sqrt(Math.max(0,2*sCm/a)) : 0; }
+  function fmt(n, d){ if(n===null||n===undefined||isNaN(n)) return '––'; return n.toFixed(d===undefined?2:d); }
+
+  function totalAddedMass(){
+    var sum = 0;
+    massChips.forEach(function(c){ if(c.checked) sum += parseInt(c.dataset.mass,10); });
+    return sum;
+  }
+
+  function clampGates(which){
+    var a = parseInt(gateASlider.value,10);
+    var b = parseInt(gateBSlider.value,10);
+    var MIN_GAP = 5;
+    if(which==='A'){
+      if(a > b - MIN_GAP){ b = Math.min(95, a + MIN_GAP); gateBSlider.value = b; }
+    } else if(which==='B'){
+      if(b < a + MIN_GAP){ a = Math.max(0, b - MIN_GAP); gateASlider.value = a; }
+    }
+    state.gateA = parseInt(gateASlider.value,10);
+    state.gateB = parseInt(gateBSlider.value,10);
+    gateAVal.textContent = state.gateA + ' cm';
+    gateBVal.textContent = state.gateB + ' cm';
+  }
+
+  // ---------- geometry (logical canvas 900x460) ----------
+  var GEO = {
+    xStand: 190,
+    yFloor: 400,
+    scale: 4.8,       // px per cm along the ramp
+    floorH: 34
+  };
+
+  function rampGeometry(){
+    var hPx = state.heightCm * GEO.scale;
+    var Lpx = L * GEO.scale;
+    var run = Math.sqrt(Math.max(0, Lpx*Lpx - hPx*hPx));
+    var top = { x: GEO.xStand, y: GEO.yFloor - hPx };
+    var bottom = { x: GEO.xStand + run, y: GEO.yFloor };
+    var dx = bottom.x - top.x, dy = bottom.y - top.y;
+    var dir = { x: dx/Lpx, y: dy/Lpx };
+    var normal = { x: dir.y, y: -dir.x }; // points "up" away from ramp surface
+    if(normal.y > 0){ normal.x*=-1; normal.y*=-1; }
+    return { top:top, bottom:bottom, dir:dir, normal:normal, Lpx:Lpx, hPx:hPx };
+  }
+
+  function pointAtS(sCm, geo){
+    var px = sCm * GEO.scale;
+    return { x: geo.top.x + geo.dir.x*px, y: geo.top.y + geo.dir.y*px };
+  }
+
+  // ---------- drawing ----------
+  function resizeCanvas(){
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = canvas.clientWidth || 900;
+    var cssH = cssW * (460/900);
+    canvas.width = Math.round(cssW*dpr);
+    canvas.height = Math.round(cssH*dpr);
+    ctx.setTransform(dpr*(cssW/900), 0, 0, dpr*(cssW/900), 0, 0);
+    draw();
+  }
+
+  function draw(){
+    var C = {
+      ink: cssVar('--ink'),
+      inkSoft: cssVar('--ink-soft'),
+      wood1: cssVar('--wood-1'),
+      wood2: cssVar('--wood-2'),
+      woodEdge: cssVar('--wood-edge'),
+      blue1: cssVar('--blue-1'),
+      blue2: cssVar('--blue-2'),
+      gold: cssVar('--gold'),
+      teal: cssVar('--teal'),
+      teal2: cssVar('--teal-2'),
+      floor1: cssVar('--floor-1'),
+      floor2: cssVar('--floor-2'),
+      danger: cssVar('--danger'),
+      surface: cssVar('--surface'),
+      border: cssVar('--border')
+    };
+
+    ctx.clearRect(0,0,900,460);
+    var geo = rampGeometry();
+
+    // floor
+    var g = ctx.createLinearGradient(0,GEO.yFloor,0,GEO.yFloor+GEO.floorH);
+    g.addColorStop(0,C.floor1); g.addColorStop(1,C.floor2);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, GEO.yFloor, 900, GEO.floorH);
+
+    // meter stick (vertical, fixed scale 0-70cm) just left of the stand
+    drawMeterStick(C, geo);
+
+    // stand pole (from release point down to floor, fixed x)
+    ctx.strokeStyle = C.inkSoft;
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(GEO.xStand, geo.top.y);
+    ctx.lineTo(GEO.xStand, GEO.yFloor);
+    ctx.stroke();
+    // stand base
+    ctx.fillStyle = C.inkSoft;
+    ctx.fillRect(GEO.xStand-26, GEO.yFloor-6, 52, 10);
+    // clamp block at release point
+    ctx.fillStyle = C.ink;
+    ctx.fillRect(GEO.xStand-14, geo.top.y-9, 28, 18);
+
+    // ramp (wood)
+    ctx.save();
+    ctx.lineCap = 'butt';
+    ctx.strokeStyle = C.woodEdge;
+    ctx.lineWidth = 20;
+    ctx.beginPath();
+    ctx.moveTo(geo.top.x, geo.top.y);
+    ctx.lineTo(geo.bottom.x, geo.bottom.y);
+    ctx.stroke();
+    var wg = ctx.createLinearGradient(geo.top.x, geo.top.y, geo.top.x, geo.top.y+16);
+    wg.addColorStop(0, C.wood1); wg.addColorStop(1, C.wood2);
+    ctx.strokeStyle = wg;
+    ctx.lineWidth = 15;
+    ctx.beginPath();
+    ctx.moveTo(geo.top.x, geo.top.y);
+    ctx.lineTo(geo.bottom.x, geo.bottom.y);
+    ctx.stroke();
+    // wood grain ticks (position markers every 10cm)
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = 1.4;
+    for(var s=0;s<=100;s+=10){
+      var p = pointAtS(s, geo);
+      var tx = -geo.normal.x*7, ty=-geo.normal.y*7;
+      ctx.beginPath();
+      ctx.moveTo(p.x+tx, p.y+ty);
+      ctx.lineTo(p.x-tx, p.y-ty);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // photogates
+    drawGate(C, geo, state.gateA, 'A', state.gateAHit);
+    drawGate(C, geo, state.gateB, 'B', state.gateBHit);
+
+    // cart
+    drawCart(C, geo);
+
+    // release point label (drawn last so it always stays clear of the cart)
+    ctx.strokeStyle = C.gold;
+    ctx.setLineDash([3,3]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(geo.top.x, geo.top.y-14);
+    ctx.lineTo(geo.top.x, geo.top.y-38);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = C.gold;
+    ctx.font = '700 12px Poppins, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('RELEASE POINT — FIXED', geo.top.x + 14, geo.top.y - 42);
+
+    ctx.textAlign = 'start';
+  }
+
+  function drawMeterStick(C, geo){
+    var x = GEO.xStand - 46;
+    var yBottom = GEO.yFloor;
+    var maxCm = 70;
+    var top = yBottom - maxCm*GEO.scale;
+    // stick body
+    var wg = ctx.createLinearGradient(x-9,0,x+9,0);
+    wg.addColorStop(0, C.wood2); wg.addColorStop(0.5, C.wood1); wg.addColorStop(1, C.wood2);
+    ctx.fillStyle = wg;
+    ctx.fillRect(x-9, top, 18, yBottom-top);
+    ctx.strokeStyle = C.woodEdge;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x-9, top, 18, yBottom-top);
+
+    // ticks
+    ctx.font = '700 9.5px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    for(var cm=0; cm<=maxCm; cm+=5){
+      var y = yBottom - cm*GEO.scale;
+      var major = (cm % 10 === 0);
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+      ctx.lineWidth = major ? 1.6 : 1;
+      ctx.beginPath();
+      ctx.moveTo(x-9, y);
+      ctx.lineTo(x-9+(major?9:6), y);
+      ctx.stroke();
+      if(major){
+        ctx.textAlign='right';
+        ctx.fillText(cm, x-13, y+3);
+      }
+    }
+    ctx.textAlign='start';
+
+    // current height marker
+    var hy = yBottom - state.heightCm*GEO.scale;
+    ctx.fillStyle = C.danger;
+    ctx.beginPath();
+    ctx.moveTo(x-9-11, hy);
+    ctx.lineTo(x-9-2, hy-5);
+    ctx.lineTo(x-9-2, hy+5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = C.danger;
+    ctx.setLineDash([2,3]);
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x-9-2, hy);
+    ctx.lineTo(GEO.xStand, hy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = C.danger;
+    ctx.font = '800 12px Poppins, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(state.heightCm + ' cm', x-22, hy - 8);
+    ctx.textAlign = 'start';
+
+    ctx.fillStyle = C.inkSoft;
+    ctx.font = '700 10px Poppins, sans-serif';
+    ctx.save();
+    ctx.translate(x-38, yBottom-60);
+    ctx.rotate(-Math.PI/2);
+    ctx.textAlign='center';
+    ctx.fillText('HEIGHT', 0, 0);
+    ctx.restore();
+  }
+
+  function drawGate(C, geo, sCm, label, hit){
+    var p = pointAtS(sCm, geo);
+    var nx = geo.normal.x, ny = geo.normal.y;
+    var postLen = 46;
+    var glow = hit && (performance.now() - hit._flashAt < 550);
+
+    // beam
+    ctx.strokeStyle = glow ? C.teal : 'rgba(120,130,140,0.55)';
+    ctx.lineWidth = glow ? 3 : 1.6;
+    if(glow){ ctx.shadowColor = C.teal; ctx.shadowBlur = 10; }
+    ctx.setLineDash([4,3]);
+    ctx.beginPath();
+    ctx.moveTo(p.x + nx*10, p.y + ny*10);
+    ctx.lineTo(p.x + nx*postLen, p.y + ny*postLen);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.shadowBlur = 0;
+
+    // posts (two small feet either side of ramp for a "gate" look)
+    ctx.fillStyle = C.ink;
+    ctx.beginPath();
+    ctx.arc(p.x + nx*10, p.y + ny*10, 4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(p.x + nx*postLen, p.y + ny*postLen, 5, 0, Math.PI*2);
+    ctx.fill();
+
+    // label chip
+    var lx = p.x + nx*(postLen+16), ly = p.y + ny*(postLen+16);
+    ctx.fillStyle = glow ? C.teal : C.surface;
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 1;
+    roundRect(lx-13, ly-11, 26, 22, 5);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = glow ? '#fff' : C.ink;
+    ctx.font = '800 12px Poppins, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, lx, ly+1);
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'start';
+  }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  function drawCart(C, geo){
+    var p = pointAtS(state.carS, geo);
+    var angle = Math.atan2(geo.dir.y, geo.dir.x);
+    var w = 58, h = 30;
+    var nx = geo.normal.x, ny = geo.normal.y;
+    var cx = p.x + nx*(h/2), cy = p.y + ny*(h/2);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+
+    // shadow under cart
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath();
+    ctx.ellipse(0, h/2+3, w/2, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // body
+    var bg = ctx.createLinearGradient(0,-h/2,0,h/2);
+    bg.addColorStop(0, C.blue1); bg.addColorStop(1, C.blue2);
+    ctx.fillStyle = bg;
+    roundRectLocal(-w/2, -h/2, w, h, 7);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // cabin
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    roundRectLocal(-w/2+9, -h/2-9, w-26, 12, 4);
+    ctx.fill();
+
+    // wheels
+    ctx.fillStyle = C.ink;
+    ctx.beginPath(); ctx.arc(-w/2+11, h/2, 7, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(w/2-11, h/2, 7, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = C.inkSoft;
+    ctx.beginPath(); ctx.arc(-w/2+11, h/2, 2.6, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(w/2-11, h/2, 2.6, 0, Math.PI*2); ctx.fill();
+
+    // stacked mass blocks
+    var masses = [];
+    massChips.forEach(function(c){ if(c.checked) masses.push(parseInt(c.dataset.mass,10)); });
+    var stackY = -h/2 - 9;
+    masses.forEach(function(m, i){
+      var bw = 16 + Math.log(m)*2.2, bh = 9;
+      var bx = -bw/2;
+      var by = stackY - i*(bh+2) - bh;
+      ctx.fillStyle = '#232b34';
+      roundRectLocal(bx, by, bw, bh, 2);
+      ctx.fill();
+      ctx.fillStyle = '#e8ecf1';
+      ctx.font = '700 7px "JetBrains Mono", monospace';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(m, 0, by+bh/2+0.5);
+    });
+    ctx.textBaseline='alphabetic';
+    ctx.textAlign='start';
+
+    ctx.restore();
+  }
+
+  function roundRectLocal(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  // ---------- interaction: dragging gates on canvas ----------
+  function eventToCanvasXY(evt){
+    var rect = canvas.getBoundingClientRect();
+    var cx = (evt.touches ? evt.touches[0].clientX : evt.clientX) - rect.left;
+    var cy = (evt.touches ? evt.touches[0].clientY : evt.clientY) - rect.top;
+    var sx = 900/rect.width, sy = 460/rect.height;
+    return { x: cx*sx, y: cy*sy };
+  }
+  function nearestSOnRamp(pt, geo){
+    var vx = pt.x - geo.top.x, vy = pt.y - geo.top.y;
+    var proj = vx*geo.dir.x + vy*geo.dir.y; // px along ramp
+    var sCm = proj / GEO.scale;
+    return Math.max(0, Math.min(100, sCm));
+  }
+  function distToGateHandle(pt, sCm, geo){
+    var p = pointAtS(sCm, geo);
+    var hx = p.x + geo.normal.x*46, hy = p.y + geo.normal.y*46;
+    return Math.hypot(pt.x-hx, pt.y-hy);
+  }
+
+  canvas.addEventListener('pointerdown', function(evt){
+    if(state.running) return;
+    var geo = rampGeometry();
+    var pt = eventToCanvasXY(evt);
+    var dA = distToGateHandle(pt, state.gateA, geo);
+    var dB = distToGateHandle(pt, state.gateB, geo);
+    var THRESH = 26;
+    if(dA < THRESH && dA <= dB){ state.dragTarget = 'A'; }
+    else if(dB < THRESH){ state.dragTarget = 'B'; }
+    else { state.dragTarget = null; return; }
+    canvas.classList.add('dragging');
+    canvas.setPointerCapture(evt.pointerId);
+  });
+  canvas.addEventListener('pointermove', function(evt){
+    if(!state.dragTarget) return;
+    var geo = rampGeometry();
+    var pt = eventToCanvasXY(evt);
+    var sCm = Math.round(nearestSOnRamp(pt, geo));
+    if(state.dragTarget === 'A'){
+      gateASlider.value = Math.min(sCm, parseInt(gateBSlider.value,10)-5);
+      clampGates('A');
+    } else {
+      gateBSlider.value = Math.max(sCm, parseInt(gateASlider.value,10)+5);
+      clampGates('B');
+    }
+    draw();
+  });
+  function endDrag(evt){
+    state.dragTarget = null;
+    canvas.classList.remove('dragging');
+  }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+
+  // ---------- run / animation ----------
+  function startRun(){
+    if(state.running) return;
+    state.heightCm = parseInt(heightSlider.value,10);
+    state.running = true;
+    state.carS = 0;
+    state.gateAHit = null;
+    state.gateBHit = null;
+    state.lastFrameS = 0;
+    var a = accelFor(state.heightCm);
+    state.physTotal = timeAt(L, a);
+    state.simTStart = performance.now();
+    setControlsEnabled(false);
+    releaseBtn.disabled = true;
+    logBtn.disabled = true;
+    runStatus.textContent = 'Running…';
+    lcdDot.classList.add('live');
+    resetReadout();
+    if(state.rafId) cancelAnimationFrame(state.rafId);
+    state.rafId = requestAnimationFrame(tick);
+  }
+
+  function tick(now){
+    var wallElapsed = (now - state.simTStart)/1000;
+    var frac = Math.min(1, wallElapsed / FLAG_ANIM_S);
+    var physT = frac * state.physTotal;
+    var a = accelFor(state.heightCm);
+    var sCm = Math.min(L, 0.5*a*physT*physT);
+
+    checkGateCross(state.lastFrameS, sCm, state.gateA, 'A', a);
+    checkGateCross(state.lastFrameS, sCm, state.gateB, 'B', a);
+    state.lastFrameS = sCm;
+    state.carS = sCm;
+    draw();
+
+    if(frac < 1){
+      state.rafId = requestAnimationFrame(tick);
+    } else {
+      finishRun();
+    }
+  }
+
+  function checkGateCross(prevS, curS, gateS, label, a){
+    if(prevS < gateS && curS >= gateS){
+      var v = speedAt(gateS, a);
+      var t = timeAt(gateS, a);
+      var hit = { v:v, t:t, _flashAt: performance.now() };
+      if(label==='A'){ state.gateAHit = hit; updateGateReadout('A', hit); }
+      else { state.gateBHit = hit; updateGateReadout('B', hit); }
+    }
+  }
+
+  function updateGateReadout(label, hit){
+    if(label==='A'){
+      t1Read.innerHTML = fmt(hit.t,3) + '<span class="unit">s</span>';
+      v1Read.innerHTML = fmt(hit.v,1) + '<span class="unit">cm/s</span>';
+    } else {
+      t2Read.innerHTML = fmt(hit.t,3) + '<span class="unit">s</span>';
+      v2Read.innerHTML = fmt(hit.v,1) + '<span class="unit">cm/s</span>';
+    }
+    if(state.gateAHit && state.gateBHit){
+      var dx = Math.abs(state.gateB - state.gateA);
+      var dt = state.gateBHit.t - state.gateAHit.t;
+      dxRead.textContent = fmt(dx,1);
+      dtRead.textContent = fmt(dt,3);
+    }
+  }
+
+  function resetReadout(){
+    t1Read.innerHTML = '––<span class="unit">s</span>';
+    v1Read.innerHTML = '––<span class="unit">cm/s</span>';
+    t2Read.innerHTML = '––<span class="unit">s</span>';
+    v2Read.innerHTML = '––<span class="unit">cm/s</span>';
+    dxRead.textContent = '––';
+    dtRead.textContent = '––';
+    feedback.classList.remove('show','ok','no');
+    aGuess.value = '';
+  }
+
+  function finishRun(){
+    state.running = false;
+    lcdDot.classList.remove('live');
+    releaseBtn.disabled = false;
+    setControlsEnabled(true);
+    if(state.gateAHit && state.gateBHit){
+      runStatus.textContent = 'Run finished — both gates picked up the cart.';
+      logBtn.disabled = false;
+    } else {
+      runStatus.textContent = 'Run finished — move a gate onto the ramp and try again.';
+      logBtn.disabled = true;
+    }
+  }
+
+  function resetCart(){
+    if(state.rafId) cancelAnimationFrame(state.rafId);
+    state.running = false;
+    state.carS = 0;
+    state.gateAHit = null;
+    state.gateBHit = null;
+    state.lastFrameS = 0;
+    lcdDot.classList.remove('live');
+    releaseBtn.disabled = false;
+    logBtn.disabled = true;
+    setControlsEnabled(true);
+    runStatus.textContent = '';
+    resetReadout();
+    draw();
+  }
+
+  function setControlsEnabled(en){
+    heightSlider.disabled = !en;
+    gateASlider.disabled = !en;
+    gateBSlider.disabled = !en;
+    massChips.forEach(function(c){ c.disabled = !en; });
+  }
+
+  // ---------- self-check ----------
+  function currentTrueA(){
+    return accelFor(state.heightCm);
+  }
+  checkBtn.addEventListener('click', function(){
+    if(!(state.gateAHit && state.gateBHit)){
+      feedback.textContent = 'Send the cart through both gates first.';
+      feedback.className = 'feedback show no';
+      return;
+    }
+    var guess = parseFloat(aGuess.value);
+    var dt = state.gateBHit.t - state.gateAHit.t;
+    var dv = state.gateBHit.v - state.gateAHit.v;
+    var actual = dv/dt;
+    if(isNaN(guess)){
+      feedback.textContent = 'Type a number in cm/s² first.';
+      feedback.className = 'feedback show no';
+      return;
+    }
+    var pctErr = Math.abs(guess-actual)/actual*100;
+    if(pctErr <= 6){
+      feedback.textContent = '✓ Nice work! The acceleration was ' + fmt(actual,1) + ' cm/s² (the formula predicts ' + fmt(currentTrueA(),1) + ' cm/s²).';
+      feedback.className = 'feedback show ok';
+    } else {
+      feedback.textContent = '✗ Not quite. The acceleration was actually ' + fmt(actual,1) + ' cm/s². Try the formula again: a = (v₂ − v₁) ÷ (t₂ − t₁).';
+      feedback.className = 'feedback show no';
+    }
+  });
+
+  // ---------- data table ----------
+  function addTrial(){
+    if(!(state.gateAHit && state.gateBHit)) return;
+    var dt = state.gateBHit.t - state.gateAHit.t;
+    var dv = state.gateBHit.v - state.gateAHit.v;
+    var a = dv/dt;
+    trialCounter++;
+    trials.push({
+      n: trialCounter,
+      h: state.heightCm,
+      m: 250 + totalAddedMass(),
+      gA: state.gateA,
+      gB: state.gateB,
+      dx: Math.abs(state.gateB-state.gateA),
+      v1: state.gateAHit.v,
+      v2: state.gateBHit.v,
+      t1: state.gateAHit.t,
+      t2: state.gateBHit.t,
+      a: a
+    });
+    renderTable();
+  }
+
+  function renderTable(){
+    if(trials.length===0){
+      tableBody.innerHTML = '';
+      tableEmpty.style.display = 'block';
+    } else {
+      tableEmpty.style.display = 'none';
+      tableBody.innerHTML = trials.map(function(r){
+        return '<tr>' +
+          '<td>'+r.n+'</td>' +
+          '<td>'+fmt(r.h,0)+'</td>' +
+          '<td>'+fmt(r.m,0)+'</td>' +
+          '<td>'+fmt(r.gA,0)+'</td>' +
+          '<td>'+fmt(r.gB,0)+'</td>' +
+          '<td>'+fmt(r.dx,1)+'</td>' +
+          '<td>'+fmt(r.v1,1)+'</td>' +
+          '<td>'+fmt(r.v2,1)+'</td>' +
+          '<td>'+fmt(r.t1,3)+'</td>' +
+          '<td>'+fmt(r.t2,3)+'</td>' +
+          '<td class="a-col">'+fmt(r.a,1)+'</td>' +
+        '</tr>';
+      }).join('');
+    }
+    trialCount.textContent = trials.length;
+    if(trials.length){
+      var avg = trials.reduce(function(s,r){return s+r.a;},0)/trials.length;
+      avgA.textContent = fmt(avg,1);
+    } else {
+      avgA.textContent = '––';
+    }
+  }
+
+  // ---------- wiring ----------
+  heightSlider.addEventListener('input', function(){
+    state.heightCm = parseInt(heightSlider.value,10);
+    heightVal.textContent = state.heightCm + ' cm';
+    if(!state.running){ draw(); }
+  });
+  gateASlider.addEventListener('input', function(){ clampGates('A'); if(!state.running) draw(); });
+  gateBSlider.addEventListener('input', function(){ clampGates('B'); if(!state.running) draw(); });
+  massChips.forEach(function(c){
+    c.addEventListener('change', function(){
+      var total = 250 + totalAddedMass();
+      massVal.textContent = total + ' g';
+      totalMassText.textContent = total + ' g';
+      if(!state.running) draw();
+    });
+  });
+  releaseBtn.addEventListener('click', startRun);
+  resetBtn.addEventListener('click', resetCart);
+  logBtn.addEventListener('click', addTrial);
+  clearTableBtn.addEventListener('click', function(){ trials = []; renderTable(); });
+
+  window.addEventListener('resize', resizeCanvas);
+
+  // ---------- init ----------
+  clampGates('A');
+  var initTotal = 250 + totalAddedMass();
+  massVal.textContent = initTotal + ' g';
+  totalMassText.textContent = initTotal + ' g';
+  heightVal.textContent = state.heightCm + ' cm';
+  renderTable();
+  resizeCanvas();
+
+  // ---------- light / dark mode ----------
+  var themeToggle = document.getElementById('themeToggle');
+  var THEME_KEY = 'rampLabTheme';
+  var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+  function systemPrefersDark(){ return !!(mq && mq.matches); }
+  function effectiveTheme(){
+    var attr = document.documentElement.getAttribute('data-theme');
+    if(attr === 'light' || attr === 'dark') return attr;
+    return systemPrefersDark() ? 'dark' : 'light';
+  }
+  function updateToggleUI(theme){
+    if(!themeToggle) return;
+    var icon = themeToggle.querySelector('.icon');
+    var label = themeToggle.querySelector('.label');
+    if(theme === 'dark'){
+      icon.textContent = '☀️';
+      label.textContent = 'Light mode';
+      themeToggle.setAttribute('aria-label','Switch to light mode');
+    } else {
+      icon.textContent = '🌙';
+      label.textContent = 'Dark mode';
+      themeToggle.setAttribute('aria-label','Switch to dark mode');
+    }
+  }
+  function setTheme(theme, persist){
+    document.documentElement.setAttribute('data-theme', theme);
+    updateToggleUI(theme);
+    if(persist){
+      try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+    }
+    draw();
+  }
+
+  (function initTheme(){
+    var stored = null;
+    try{ stored = localStorage.getItem(THEME_KEY); }catch(e){}
+    if(stored === 'light' || stored === 'dark'){
+      setTheme(stored, false);
+    } else {
+      updateToggleUI(effectiveTheme());
+    }
+  })();
+
+  if(themeToggle){
+    themeToggle.addEventListener('click', function(){
+      var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+      setTheme(next, true);
+    });
+  }
+
+  if(mq){
+    var mqHandler = function(){
+      var stored = null;
+      try{ stored = localStorage.getItem(THEME_KEY); }catch(e){}
+      if(!stored){
+        updateToggleUI(effectiveTheme());
+        draw();
+      }
+    };
+    if(mq.addEventListener) mq.addEventListener('change', mqHandler);
+    else if(mq.addListener) mq.addListener(mqHandler);
+  }
+})();
+</script>
+
+</body>
+</html>

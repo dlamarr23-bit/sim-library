@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ramp collision lab — source mass vs distance</title>
+
+<!--
+  ============================================================================
+  RAMP COLLISION LAB - LOADING THE SOURCE CAR  (PhET-style, single file)
+
+  HOW TO EMBED
+  1) Easiest: upload this file and drop it in an iframe:
+       <iframe src="ramp-source-mass-lab.html"
+               style="width:100%;height:1250px;border:0" loading="lazy"
+               title="Ramp collision simulation, source car mass"></iframe>
+  2) Or paste the style block, the cvlab div, and the script block into a page.
+     Every CSS rule is scoped under .cvlab.
+
+  THE MODEL
+     The source car is 60 g plus whatever is loaded on it. It is released from a
+     fixed point and reaches the ramp base at 200 cm/s every time, because the
+     speed at the bottom of a ramp does not depend on mass. It couples with the
+     receiver car, held at 260 g, and the pair slides to a stop.
+       v_pair = M_source * v_hit / (M_source + 260 g)
+       d      = v_pair^2 / (2 * mu * g)        mu = 0.06, g = 980 cm/s^2
+     0 cm on the meter stick is the base of the ramp, and the BACK of the
+     source car is the reference: it starts at 0 cm, so its final reading is
+     the distance travelled.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+.cvlab{
+  --bench:#DDE0D6;
+  --paper:#FBFBF7;
+  --rule:#C9CFC2;
+  --ink:#1B1D1C;
+  --ink-2:#5A5F58;
+  --blue:#1552B8;
+  --blue-d:#0E3B87;
+  --car:#1E7FC8;          /* the blue Eisco car */
+  --car-d:#12598F;
+  --epoxy:#22251F;        /* black bench top */
+  --wood:#E3C48D;
+  --wood-d:#B08F4D;
+  --steel:#9DA3A0;
+  --chalk:#F2F3EC;
+  --tape:#E8B93C;
+  --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
+  padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
+}
+.cvlab *{box-sizing:border-box}
+.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
+.cvlab p{margin:0}
+.cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+  display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--tape);margin-bottom:2px}
+.cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
+.cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
+.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:96px}
+.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:#8C9284}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
+
+.cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
+  border-radius:0 0 5px 5px;padding:10px 10px 12px}
+.cvlab canvas{display:block;width:100%}
+#cvlab-scene{height:clamp(220px,26vw,360px);border-radius:3px}
+.cvlab-hint{font-family:var(--font-m);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2);margin-top:6px}
+.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;
+  border-top:1px dashed var(--rule)}
+.cvlab-status{flex:1 1 240px;min-width:200px;font-size:16px;color:var(--ink-2)}
+.cvlab-status strong{color:var(--ink);font-weight:700}
+
+.cvlab-btn{font-family:var(--font-d);font-size:17px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;cursor:pointer;background:var(--paper);color:var(--ink);
+  border:1.5px solid var(--ink);border-radius:3px;padding:7px 14px;line-height:1.1;
+  transition:transform .08s ease,background .12s ease,color .12s ease}
+.cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.cvlab-btn:active:not(:disabled){transform:translateY(1px)}
+.cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
+.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:#fff;min-width:126px}
+.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:#fff}
+.cvlab-btn-sm{font-size:15px;padding:5px 10px;border-width:1px}
+
+.cvlab-grid{display:grid;gap:12px;margin-top:12px;
+  grid-template-columns:minmax(210px,.85fr) minmax(210px,.85fr) minmax(300px,1.45fr)}
+@media (max-width:1000px){.cvlab-grid{grid-template-columns:1fr 1fr}
+  .cvlab-panel-graph{grid-column:1/-1}}
+@media (max-width:640px){.cvlab-grid{grid-template-columns:1fr}}
+.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:5px;padding:12px;
+  display:flex;flex-direction:column;gap:10px}
+.cvlab-panel h2{font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-family:var(--font-m);
+  font-weight:700;color:var(--ink);padding-bottom:7px;border-bottom:2px solid var(--ink)}
+.cvlab-note{font-size:14.5px;color:var(--ink-2)}
+.cvlab-row{display:flex;flex-wrap:wrap;gap:6px}
+
+.cvlab-locked{display:flex;align-items:center;gap:8px;background:#EFF1E9;border:1px dashed var(--rule);
+  border-radius:3px;padding:7px 9px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
+.cvlab-locked b{color:var(--ink);font-size:15px}
+
+.cvlab-tray{background:linear-gradient(180deg,#2364CE,#1552B8 55%,#0E3B87);border-radius:4px;
+  padding:10px 8px 8px;display:flex;gap:5px;align-items:flex-end;justify-content:space-between;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.28)}
+.cvlab-mass{flex:1;cursor:pointer;background:none;border:0;padding:2px 0 0;display:flex;
+  flex-direction:column;align-items:center;gap:2px;border-radius:3px}
+.cvlab-mass:hover:not(:disabled) .cvlab-mass-ico{transform:translateY(-4px)}
+.cvlab-mass:disabled{opacity:.4;cursor:not-allowed}
+.cvlab-mass-ico{display:block;transition:transform .12s ease;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
+.cvlab-mass-lab{font-family:var(--font-m);font-size:12.5px;font-weight:700;color:#fff}
+.cvlab-count{font-family:var(--font-m);font-size:12px;color:var(--tape);min-height:13px}
+
+.cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
+.cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
+.cvlab-opts input{margin:3px 0 0;accent-color:var(--blue);flex:none}
+
+.cvlab-tablewrap{max-height:300px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
+.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:14px}
+.cvlab thead th{position:sticky;top:0;background:#EFF1E9;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;font-weight:700;padding:6px 6px;text-align:right;
+  border-bottom:1px solid var(--rule);color:var(--ink-2)}
+.cvlab thead th:first-child{text-align:left}
+.cvlab tbody td{padding:4px 6px;text-align:right;font-variant-numeric:tabular-nums;
+  border-bottom:1px solid #E8EAE1}
+.cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
+.cvlab tbody tr:last-child td{border-bottom:0}
+.cvlab tbody tr.is-new td{background:#FCF3D9}
+.cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
+
+#cvlab-graph{height:clamp(260px,30vw,420px)}
+.cvlab-key{display:flex;flex-wrap:wrap;gap:12px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
+.cvlab-key i{display:inline-block;width:16px;height:0;border-top-width:3px;border-top-style:solid;
+  vertical-align:middle;margin-right:5px}
+.cvlab-key b{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);
+  vertical-align:middle;margin-right:5px}
+
+.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
+  padding:10px 14px}
+.cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
+.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
+.cvlab-notes li{margin:3px 0}
+.cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
+</style>
+</head>
+<body style="margin:0;background:#DDE0D6">
+
+<div class="cvlab" id="cvlab">
+
+  <header class="cvlab-head">
+    <div>
+      <span class="cvlab-eyebrow">Motion lab &middot; collisions</span>
+      <h1>Ramp collision &mdash; loading the source car</h1>
+    </div>
+    <div class="cvlab-readouts">
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Source mass</span><span class="cvlab-ro-v" id="cvlab-ro-mass">60 g</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Pair speed</span><span class="cvlab-ro-v" id="cvlab-ro-speed">0 cm/s</span></div>
+      <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Distance</span><span class="cvlab-ro-v" id="cvlab-ro-dist">0.0 cm</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Stage</span><span class="cvlab-ro-v" id="cvlab-ro-stage">Ready</span></div>
+    </div>
+  </header>
+
+  <div class="cvlab-bench">
+    <canvas id="cvlab-scene" role="img"
+      aria-label="A ramp clamped to a ring stand. The loaded source car waits at a fixed release point, the receiver car sits at the base of the ramp beside two meter sticks reading 0 to 200 centimetres."></canvas>
+    <p class="cvlab-hint">Release point fixed &middot; 0 cm at the ramp base &middot; the back of the source car is the reference &middot; 200 cm of meter stick</p>
+    <div class="cvlab-bar">
+      <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Release car</button>
+      <button class="cvlab-btn" id="cvlab-reset">Reset cars</button>
+      <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
+        Load the source car, then release. It leaves the same point at the same speed every time.
+      </p>
+    </div>
+  </div>
+
+  <div class="cvlab-grid">
+
+    <section class="cvlab-panel">
+      <h2>Source car load</h2>
+      <div class="cvlab-locked">
+        <span>RECEIVER CAR</span><b>260 g</b><span>&mdash; 60 g car + 200 g mass, held constant</span>
+      </div>
+      <p class="cvlab-note">Tap a hooked mass to drop it in the source car's tray. The car itself is 60&nbsp;g.</p>
+      <div class="cvlab-tray" id="cvlab-tray"></div>
+      <div class="cvlab-row">
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-pop">Remove top mass</button>
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clear">Clear masses</button>
+      </div>
+      <p class="cvlab-note" id="cvlab-loadnote">Added: 0 g &middot; source total 60 g</p>
+      <div class="cvlab-opts">
+        <label><input type="checkbox" id="cvlab-curve">
+          <span>Show the predicted curve on the graph</span></label>
+        <label><input type="checkbox" id="cvlab-noise">
+          <span>Add measurement error, so repeats do not land on the same number</span></label>
+        <label><input type="checkbox" id="cvlab-slow">
+          <span>Half speed, to watch the collision</span></label>
+      </div>
+    </section>
+
+    <section class="cvlab-panel">
+      <h2>Trials</h2>
+      <div class="cvlab-tablewrap">
+        <table>
+          <caption class="cvlab-sr">Distance travelled for each source car mass</caption>
+          <thead><tr>
+            <th scope="col">#</th><th scope="col">Added (g)</th>
+            <th scope="col">Source (g)</th><th scope="col">Distance (cm)</th>
+          </tr></thead>
+          <tbody id="cvlab-tbody"></tbody>
+        </table>
+      </div>
+      <div class="cvlab-row">
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-cleartrials">Clear trials</button>
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-copy">Copy data</button>
+      </div>
+      <p class="cvlab-note" id="cvlab-copynote">&nbsp;</p>
+    </section>
+
+    <section class="cvlab-panel cvlab-panel-graph">
+      <h2>Distance vs source car mass</h2>
+      <canvas id="cvlab-graph" role="img"
+        aria-label="Graph of distance travelled in centimetres against source car mass in grams."></canvas>
+      <div class="cvlab-key">
+        <span><b></b>Your trials</span>
+        <span><i style="border-color:#A9AFA2;border-top-style:dashed"></i>Predicted curve</span>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="cvlab-notes">
+    <h3>How to use this simulation</h3>
+    <ol>
+      <li>Tap a hooked mass in the <strong>Source car load</strong> tray to drop it in the source car. Use <strong>Remove top mass</strong> or <strong>Clear masses</strong> to change the load. The receiver car always stays at 260 g.</li>
+      <li>Press <strong>Release car</strong>. It always reaches the bottom of the ramp at 200 cm/s, no matter how much mass it carries &mdash; only the collision changes with the load.</li>
+      <li>Watch the two cars couple and slide together, leaving a chalk mark where they stop.</li>
+      <li>Read the distance off the meter sticks: the first stick reads 0 to 100 cm, and the second stick starts over at 0 where it butts up against the first, just like in a real lab. Add the reading on the second stick to the full 100 cm of the first to get the total distance.</li>
+      <li>Each run is saved as a row in the <strong>Trials</strong> table and a point on the <strong>Distance vs source car mass</strong> graph, so you can compare loads.</li>
+      <li>Turn on <strong>Show the predicted curve</strong> to compare your data with the model, or <strong>Add measurement error</strong> so repeated trials don't land on the exact same number. Use <strong>Half speed</strong> to slow the collision down and watch it closely.</li>
+      <li>Press <strong>Reset cars</strong> to send the source car back to the release point, <strong>Clear trials</strong> to wipe the table and graph, or <strong>Copy data</strong> to copy your results for a spreadsheet.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------ constants */
+  var M_CAR      = 60;      // g, the bare source car
+  var M_RECV     = 260;     // g, receiver car 60 g + a 200 g mass, never changes
+  var V_HIT      = 200;     // cm/s at the base of the ramp, every run, whatever the mass
+  var MU         = 0.06;    // rolling resistance of the coupled pair
+  var GRAV       = 980;     // cm/s^2
+  var A_BENCH    = MU*GRAV; // 58.8 cm/s^2
+  var MAX_ADD    = 500;     // g cap on the source car tray
+  var MASS_OPTS  = [50,100,200];
+  var STICK_CM   = 200;     // two meter sticks, end to end
+  var RAMP_RUN   = 62;      // cm, horizontal
+  var RAMP_RISE  = 34;      // cm, vertical
+  var RAMP_LEN   = Math.sqrt(RAMP_RUN*RAMP_RUN + RAMP_RISE*RAMP_RISE);
+  var A_RAMP     = V_HIT*V_HIT/(2*RAMP_LEN);
+  var RAMP_ANG   = Math.atan2(RAMP_RISE, RAMP_RUN);
+  var CAR_L      = 16;      // cm
+  var CAR_H      = 4.4;     // cm, body
+  var WHEEL_R    = 1.5;     // cm
+  var ROD_TOP    = 46;      // cm above the bench
+  var X0         = -78, X1 = 212;   // world window, cm
+  var NOISE_SD   = 0.4;     // cm
+
+  /* ------------------------------------------------ state */
+  var masses = [];
+  var stage = "ready";      // ready | rolling | sliding | stopped
+  var tau = 0;              // seconds inside the current stage
+  var backX = -RAMP_RUN;    // cm, back edge of the source car along the bench axis
+  var backY = RAMP_RISE;    // cm above the bench
+  var carAng = RAMP_ANG;
+  var vPair = 0, dTarget = 0, travel = 0;
+  var trials = [], marks = [], newestRow = -1;
+  var flashUntil = 0, lastFrame = null, dirty = true;
+
+  var reduceMotion = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+
+  /* ------------------------------------------------ dom */
+  function $(id){ return document.getElementById(id); }
+  var sceneC = $("cvlab-scene"), graphC = $("cvlab-graph");
+  var sctx = sceneC.getContext("2d"), gctx = graphC.getContext("2d");
+  var elGo = $("cvlab-go"), elReset = $("cvlab-reset"), elStatus = $("cvlab-status");
+  var elTray = $("cvlab-tray"), elPop = $("cvlab-pop"), elClear = $("cvlab-clear");
+  var elLoad = $("cvlab-loadnote"), elBody = $("cvlab-tbody");
+  var elClearTrials = $("cvlab-cleartrials"), elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote");
+  var elCurve = $("cvlab-curve"), elNoise = $("cvlab-noise"), elSlow = $("cvlab-slow");
+  var roMass = $("cvlab-ro-mass"), roSpeed = $("cvlab-ro-speed"),
+      roDist = $("cvlab-ro-dist"), roStage = $("cvlab-ro-stage");
+
+  /* ------------------------------------------------ helpers */
+  function added(){ var s=0; for(var i=0;i<masses.length;i++) s+=masses[i]; return s; }
+  function srcMass(){ return M_CAR + added(); }
+  function pairSpeed(){ return srcMass()*V_HIT/(srcMass() + M_RECV); }
+  function predict(m1){ var v = m1*V_HIT/(m1 + M_RECV); return v*v/(2*A_BENCH); }
+  function fmt(n,p){ return n.toFixed(p===undefined?1:p); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function now(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function gauss(){
+    var u=0,v=0;
+    while(u===0) u=Math.random();
+    while(v===0) v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+  function say(msg){ elStatus.innerHTML = msg; }
+  function monoStack(){ return '"Poppins", ui-monospace, Menlo, Consolas, monospace'; }
+
+  function fit(canvas, ctx){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(240, Math.round(r.width)), h = Math.max(150, Math.round(r.height));
+    if(canvas.width !== w*dpr || canvas.height !== h*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { w:w, h:h };
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+
+  /* ------------------------------------------------ mass tray */
+  function massIcon(scale){
+    var s = 'width:' + (16+18*scale).toFixed(0) + 'px;height:' + (20+20*scale).toFixed(0) + 'px';
+    return '<svg class="cvlab-mass-ico" viewBox="0 0 40 44" style="' + s + '" aria-hidden="true">'
+      + '<path d="M20 13 V8 a5.5 5.5 0 1 1 -5.5 -5.5" fill="none" stroke="#0B0C0B" stroke-width="2.6" stroke-linecap="round"/>'
+      + '<path d="M13.5 13 H26.5 L33 33 H7 Z" fill="#1B1D1C"/>'
+      + '<ellipse cx="20" cy="33" rx="13" ry="3.6" fill="#111311"/>'
+      + '<ellipse cx="20" cy="32" rx="13" ry="3.6" fill="#2B2E2A"/>'
+      + '</svg>';
+  }
+  function buildTray(){
+    var html = "";
+    for(var i=0;i<MASS_OPTS.length;i++){
+      var m = MASS_OPTS[i];
+      var sc = 0.35 + 0.65*Math.pow(m/200, 0.45);
+      html += '<button class="cvlab-mass" data-m="' + m + '" aria-label="Add a ' + m + ' gram mass">'
+            + massIcon(sc) + '<span class="cvlab-mass-lab">' + m + ' g</span>'
+            + '<span class="cvlab-count" data-c="' + m + '"></span></button>';
+    }
+    elTray.innerHTML = html;
+    elTray.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-mass") : null;
+      if(!b || b.disabled) return;
+      var m = parseInt(b.getAttribute("data-m"),10);
+      if(added() + m > MAX_ADD){
+        say("The source car is loaded to its <strong>" + MAX_ADD + " g</strong> limit. Remove one to swap it out.");
+        return;
+      }
+      masses.push(m);
+      resetCars("Source car now <strong>" + srcMass() + " g</strong>. It still leaves at 200 cm/s. Release when ready.");
+    });
+  }
+
+  /* ------------------------------------------------ run control */
+  function resetCars(msg){
+    stage = "ready"; tau = 0; travel = 0; vPair = 0; dTarget = 0;
+    backX = -RAMP_RUN; backY = RAMP_RISE; carAng = RAMP_ANG;
+    elGo.textContent = "Release car";
+    dirty = true; lastFrame = null;
+    syncUI();
+    if(msg) say(msg);
+  }
+
+  function release(){
+    if(stage === "rolling" || stage === "sliding") return;
+    if(stage === "stopped") resetCars();
+    stage = "rolling"; tau = 0; lastFrame = null; dirty = true;
+    elGo.textContent = "Rolling\u2026";
+    say("Released. It reaches the base at <strong>200 cm/s</strong> &mdash; the extra mass does not change that.");
+    syncUI();
+  }
+
+  function collide(){
+    stage = "sliding"; tau = 0;
+    backX = 0; backY = 0; carAng = 0;
+    vPair = pairSpeed();
+    dTarget = vPair*vPair/(2*A_BENCH);
+    travel = 0;
+    flashUntil = now() + 260;
+    say("Contact. The pair leaves at <strong>" + fmt(vPair) + " cm/s</strong> carrying "
+        + (srcMass() + M_RECV) + " g.");
+  }
+
+  function stopSlide(){
+    stage = "stopped"; travel = dTarget; backX = dTarget; vPair = 0;
+    elGo.textContent = "Release again";
+    var shown = elNoise.checked ? Math.max(0, dTarget + gauss()*NOISE_SD) : dTarget;
+    shown = Math.round(shown*10)/10;
+    trials.push({ n: trials.length+1, add: added(), M: srcMass(), d: shown });
+    newestRow = trials.length - 1;
+    marks.push({ x: dTarget, M: srcMass(), born: now() });
+    if(marks.length > 8) marks.shift();
+    say("Stopped at <strong>" + fmt(shown) + " cm</strong> with a " + srcMass() + " g source car. Trial saved.");
+    renderTable(); drawGraph(); syncUI();
+  }
+
+  /* ------------------------------------------------ readouts */
+  function syncUI(){
+    var a = added(), busy = (stage === "rolling" || stage === "sliding");
+    roMass.textContent = srcMass() + " g";
+    roSpeed.textContent = fmt(stage === "sliding" ? curV() : (stage === "stopped" ? 0 : 0)) + " cm/s";
+    roDist.textContent = fmt(stage === "ready" ? 0 : Math.max(0, backX)) + " cm";
+    roStage.textContent = stage === "ready" ? "Ready"
+      : (stage === "rolling" ? "Rolling" : (stage === "sliding" ? "Sliding" : "Stopped"));
+
+    elLoad.innerHTML = "Added: <strong>" + a + " g</strong> &middot; source total <strong>"
+      + srcMass() + " g</strong>" + (a >= MAX_ADD ? " &middot; tray full" : "");
+
+    var counts = {};
+    for(var i=0;i<masses.length;i++) counts[masses[i]] = (counts[masses[i]]||0)+1;
+    var cs = elTray.querySelectorAll("[data-c]");
+    for(var j=0;j<cs.length;j++){
+      var key = cs[j].getAttribute("data-c");
+      cs[j].textContent = counts[key] ? "x" + counts[key] : "";
+    }
+    var bs = elTray.querySelectorAll(".cvlab-mass");
+    for(var k=0;k<bs.length;k++){
+      var m = parseInt(bs[k].getAttribute("data-m"),10);
+      bs[k].disabled = busy || (a + m > MAX_ADD);
+    }
+    elPop.disabled = busy || masses.length === 0;
+    elClear.disabled = busy || masses.length === 0;
+    elGo.disabled = busy;
+    elReset.disabled = busy || stage === "ready";
+    elClearTrials.disabled = trials.length === 0;
+    elCopy.disabled = trials.length === 0;
+  }
+  function curV(){ return Math.max(0, vPair - A_BENCH*tau); }
+
+  /* ------------------------------------------------ table */
+  function renderTable(){
+    if(trials.length === 0){
+      elBody.innerHTML = '<tr><td colspan="4"><span class="cvlab-empty">'
+        + 'No trials yet. Load the source car and release.</span></td></tr>';
+      return;
+    }
+    var html = "";
+    for(var i=0;i<trials.length;i++){
+      var t = trials[i];
+      html += '<tr' + (i===newestRow ? ' class="is-new"' : '') + '>'
+        + '<td>' + t.n + '</td><td>' + t.add + '</td><td>' + t.M + '</td>'
+        + '<td>' + fmt(t.d) + '</td></tr>';
+    }
+    elBody.innerHTML = html;
+  }
+
+  /* ------------------------------------------------ scene geometry */
+  var G = {};
+  function geometry(w,h){
+    var stickH = clamp(h*0.062, 16, 23);
+    var pad = 10;
+    var kw = (w - 2*pad)/(X1 - X0);
+    var kh = (h - stickH - 26)/ROD_TOP;
+    var k = Math.min(kw, kh);
+    var worldW = (X1 - X0)*k;
+    G.k = k;
+    G.left = (w - worldW)/2;
+    G.stickH = stickH;
+    G.benchY = h - stickH - 26;
+    G.w = w; G.h = h;
+    G.compact = w < 620;
+  }
+  function X(cm){ return G.left + (cm - X0)*G.k; }
+  function Y(cmAbove){ return G.benchY - cmAbove*G.k; }
+
+  /* ------------------------------------------------ the scene */
+  function drawScene(){
+    var s = fit(sceneC, sctx), w = s.w, h = s.h;
+    geometry(w,h);
+    var ctx = sctx;
+    ctx.clearRect(0,0,w,h);
+
+    /* wall */
+    var wall = ctx.createLinearGradient(0,0,0,G.benchY);
+    wall.addColorStop(0,"#F1F2EC"); wall.addColorStop(1,"#E2E5DC");
+    ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.benchY);
+
+    /* black backsplash, then the epoxy bench top */
+    var bsH = 7*G.k;
+    ctx.fillStyle = "#2A2D27"; ctx.fillRect(0, G.benchY-bsH, w, bsH);
+    ctx.fillStyle = "#3C4038"; ctx.fillRect(0, G.benchY-bsH, w, 1.5);
+    var top = ctx.createLinearGradient(0,G.benchY,0,h);
+    top.addColorStop(0,"#33372F"); top.addColorStop(1,"#1D201B");
+    ctx.fillStyle = top; ctx.fillRect(0, G.benchY, w, h-G.benchY);
+    ctx.fillStyle = "#575C51"; ctx.fillRect(0, G.benchY, w, 1.2);
+
+    drawStand(ctx);
+    drawRamp(ctx);
+    drawStick(ctx);
+    drawMarks(ctx);
+    if(stage === "ready") drawLandingZone(ctx);
+    drawReceiver(ctx);
+    drawSource(ctx);
+    if(now() < flashUntil && !reduceMotion) drawFlash(ctx);
+    drawReadoutLine(ctx);
+  }
+
+  /* ring stand: base plate, rod, right-angle clamp */
+  function drawStand(ctx){
+    var rodX = X(-RAMP_RUN - 8), k = G.k;
+    /* base plate */
+    ctx.fillStyle = "#6E736B";
+    roundRect(ctx, rodX - 13*k, G.benchY - 1.6*k, 26*k, 1.8*k, 1.5); ctx.fill();
+    ctx.fillStyle = "#8B9088";
+    roundRect(ctx, rodX - 13*k, G.benchY - 1.6*k, 26*k, 0.7*k, 1.5); ctx.fill();
+    /* rod */
+    var rg = ctx.createLinearGradient(rodX - 0.6*k, 0, rodX + 0.6*k, 0);
+    rg.addColorStop(0,"#7E837B"); rg.addColorStop(.4,"#B9BEB6"); rg.addColorStop(1,"#6B7068");
+    ctx.fillStyle = rg;
+    ctx.fillRect(rodX - 0.6*k, Y(ROD_TOP), 1.2*k, ROD_TOP*G.k - 1.6*k);
+    /* clamp at the ramp's top end */
+    var cy = Y(RAMP_RISE);
+    ctx.fillStyle = "#262924";
+    roundRect(ctx, rodX - 1.6*k, cy - 2.2*k, 3.2*k, 4.4*k, 1); ctx.fill();
+    ctx.fillStyle = "#3A3E37";
+    roundRect(ctx, rodX + 1.0*k, cy - 1.1*k, 7*k, 2.2*k, 1); ctx.fill();
+    ctx.fillStyle = "#9DA3A0";                       /* thumb screw */
+    ctx.beginPath(); ctx.arc(rodX - 2.6*k, cy, 1.1*k, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#6E736B";
+    ctx.fillRect(rodX - 2.6*k, cy - 0.35*k, 2.2*k, 0.7*k);
+  }
+
+  /* the wooden ramp, clamped high and resting on the bench at 0 cm */
+  function drawRamp(ctx){
+    var k = G.k, th = 1.6*k;
+    var ax = X(-RAMP_RUN), ay = Y(RAMP_RISE), bx = X(0), by = Y(0);
+    ctx.save();
+    ctx.translate(ax, ay); ctx.rotate(RAMP_ANG);
+    var len = RAMP_LEN*k;
+    var g = ctx.createLinearGradient(0,-th,0,th*0.4);
+    g.addColorStop(0,"#F1DCB2"); g.addColorStop(.5,"#E0C48F"); g.addColorStop(1,"#C0A063");
+    ctx.fillStyle = g;
+    ctx.fillRect(-2*k, -th, len + 4*k, th*1.4);
+    ctx.strokeStyle = "#A98A4E"; ctx.lineWidth = 1;
+    ctx.strokeRect(-2*k, -th, len + 4*k, th*1.4);
+    /* the release gate at the top */
+    ctx.fillStyle = "#12598F";
+    ctx.fillRect(-1*k, -th - 2.6*k, 1.2*k, 2.6*k);
+    ctx.restore();
+    /* fixed release point marker */
+    ctx.save();
+    ctx.setLineDash([3,3]); ctx.strokeStyle = "#E8B93C"; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(ax, ay - 3*k); ctx.lineTo(ax, Y(ROD_TOP) - 4); ctx.stroke();
+    ctx.restore();
+    if(!G.compact){
+      ctx.fillStyle = "#8A7024";
+      ctx.font = "700 9.5px " + monoStack();
+      ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      ctx.fillText("RELEASE POINT \u2014 FIXED", ax + 4, Y(ROD_TOP) + 2);
+    }
+    /* the base of the ramp is 0 cm */
+    ctx.strokeStyle = "#E8B93C"; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(bx, G.benchY - 3); ctx.lineTo(bx, G.benchY + G.stickH + 6); ctx.stroke();
+  }
+
+  /* one meter stick, 0 cm at the ramp base */
+  function drawStick(ctx){
+    var y = G.benchY + 4, hh = G.stickH, k = G.k;
+    for(var seg=0; seg<2; seg++){
+      var a = seg*100, b = a + 100;
+      var x0 = X(a) + (seg?1.5:0), x1 = X(b) - (seg?0:1.5);
+      var g = ctx.createLinearGradient(0,y,0,y+hh);
+      g.addColorStop(0,"#F2DFB8"); g.addColorStop(.45,"#E3C48D"); g.addColorStop(1,"#CDA765");
+      ctx.fillStyle = g;
+      roundRect(ctx, x0, y, x1-x0, hh, 2); ctx.fill();
+      ctx.strokeStyle = "#AE8B49"; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    var minor = k >= 3.0 ? 1 : (k >= 1.5 ? 5 : 10);
+    ctx.strokeStyle = "#4A3A1E"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var cm=0; cm<=STICK_CM; cm+=minor){
+      var len = (cm%50===0) ? hh*0.66 : ((cm%10===0) ? hh*0.46 : hh*0.24);
+      var px = Math.round(X(cm)) + 0.5;
+      ctx.moveTo(px, y); ctx.lineTo(px, y+len);
+    }
+    ctx.stroke();
+    var labStep = k >= 5.0 ? 10 : (k >= 2.4 ? 20 : 50);
+    ctx.fillStyle = "#3A2E17";
+    ctx.font = "700 " + (G.compact?8.5:10) + "px " + monoStack();
+    ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    for(var c=0; c<=STICK_CM; c+=labStep){
+      var lab = c <= 100 ? c : c - 100;
+      ctx.fillText(String(lab), X(c), y+hh-1.5);
+    }
+    /* the butt joint where the second stick begins */
+    ctx.strokeStyle = "#8A6C34"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(X(100), y-3); ctx.lineTo(X(100), y+hh+3); ctx.stroke();
+    if(!G.compact){
+      ctx.fillStyle = "#8A8F82";
+      ctx.font = "700 9px " + monoStack();
+      ctx.textBaseline = "top"; ctx.textAlign = "center";
+      ctx.fillText("METER STICK 1", X(50), y+hh+4);
+      ctx.fillText("METER STICK 2", X(150), y+hh+4);
+    }
+  }
+
+  /* chalk marks left on the bench at each stopping point */
+  function drawMarks(ctx){
+    var k = G.k;
+    for(var i=0;i<marks.length;i++){
+      var m = marks[i];
+      var age = reduceMotion ? 1 : clamp((now()-m.born)/260, 0, 1);
+      var mx = Math.round(X(m.x)) + 0.5;
+      ctx.globalAlpha = 0.50 + 0.45*(i+1)/marks.length;
+      ctx.strokeStyle = "#F2F3EC"; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(mx, G.benchY - 1);
+      ctx.lineTo(mx, G.benchY - (4 + 5*(i%3))*k*0.55*age - 2);
+      ctx.stroke();
+      if(!G.compact){
+        ctx.fillStyle = "#E7E9DF";
+        ctx.font = "700 9px " + monoStack();
+        ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+        ctx.fillText(m.M + "g", mx, G.benchY - (4 + 5*(i%3))*k*0.55*age - 4);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* an Eisco style car: blue tub, open tray, black wheels */
+  function drawCar(ctx, pxX, pxY, ang, load){
+    var k = G.k;
+    ctx.save();
+    ctx.translate(pxX, pxY);
+    ctx.rotate(ang);
+    var L = CAR_L*k, H = CAR_H*k, wr = WHEEL_R*k;
+
+    /* wheels first, so the body sits over them */
+    wheel(ctx, L*0.24, -wr, wr);
+    wheel(ctx, L*0.76, -wr, wr);
+
+    /* body */
+    var by = -wr*1.15 - H;
+    var g = ctx.createLinearGradient(0, by, 0, by+H);
+    g.addColorStop(0,"#38A0E0"); g.addColorStop(.45,"#1E7FC8"); g.addColorStop(1,"#12598F");
+    ctx.fillStyle = g;
+    roundRect(ctx, 0, by, L, H, H*0.16); ctx.fill();
+    /* open tray */
+    ctx.fillStyle = "#0F4E7E";
+    roundRect(ctx, L*0.26, by, L*0.48, H*0.42, 1); ctx.fill();
+    ctx.fillStyle = "#16669F";
+    roundRect(ctx, L*0.26, by, L*0.48, H*0.22, 1); ctx.fill();
+    /* the little side tabs and the end thumb screw */
+    ctx.fillStyle = "#12598F";
+    ctx.fillRect(L*0.12, by+H*0.55, L*0.05, H*0.35);
+    ctx.fillRect(L*0.83, by+H*0.55, L*0.05, H*0.35);
+    ctx.fillStyle = "#B9BEB6";
+    ctx.beginPath(); ctx.arc(L + 0.5*k, by+H*0.55, 0.55*k, 0, Math.PI*2); ctx.fill();
+
+    /* hooked masses in the tray */
+    if(load && load.length){
+      var shown = Math.min(load.length, 5);
+      var mh = H*0.60, mw = L*0.36, cx = L*0.5;
+      for(var i=0;i<shown;i++){
+        var yb = by - i*mh*0.80;
+        ctx.fillStyle = i%2 ? "#232622" : "#171917";
+        ctx.beginPath();
+        ctx.moveTo(cx - mw*0.5, yb); ctx.lineTo(cx + mw*0.5, yb);
+        ctx.lineTo(cx + mw*0.34, yb - mh); ctx.lineTo(cx - mw*0.34, yb - mh);
+        ctx.closePath(); ctx.fill();
+        if(i === shown-1){
+          ctx.strokeStyle = "#111311"; ctx.lineWidth = Math.max(1, k*0.22);
+          ctx.beginPath();
+          ctx.arc(cx, yb - mh - mh*0.42, mh*0.42, Math.PI*0.15, Math.PI*1.7);
+          ctx.stroke();
+        }
+      }
+      if(load.length > shown){
+        ctx.fillStyle = "#E7E9DF";
+        ctx.font = "700 " + Math.max(8, 2.2*k).toFixed(0) + "px " + monoStack();
+        ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.fillText("+" + (load.length-shown), cx + mw*0.6, by - shown*mh*0.80);
+      }
+    }
+    ctx.restore();
+  }
+  function wheel(ctx, cx, cy, r){
+    ctx.fillStyle = "#121412";
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#3A3E39";
+    ctx.beginPath(); ctx.arc(cx, cy, r*0.42, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#8E948C";
+    ctx.beginPath(); ctx.arc(cx, cy, r*0.16, 0, Math.PI*2); ctx.fill();
+  }
+
+  /* on the ramp the wheels ride the top face of the board, not its centre line */
+  function drawSource(ctx){
+    var f = RAMP_ANG > 0 ? carAng/RAMP_ANG : 0;
+    var th = 1.6*G.k*f;
+    drawCar(ctx, X(backX) + th*Math.sin(RAMP_ANG), Y(backY) - th*Math.cos(RAMP_ANG), carAng, masses);
+  }
+  function drawReceiver(ctx){
+    var rBack = Math.max(CAR_L, backX + CAR_L);
+    drawCar(ctx, X(rBack), Y(0), 0, [200]);   /* its 200 g mass never comes out */
+  }
+
+  /* in the ready state, show where the source car will be at the moment of contact */
+  function drawLandingZone(ctx){
+    var k = G.k, hgt = (CAR_H + WHEEL_R*2)*k;
+    ctx.save();
+    ctx.setLineDash([4,3]); ctx.strokeStyle = "rgba(232,185,60,.75)"; ctx.lineWidth = 1.2;
+    ctx.strokeRect(X(0)+0.5, G.benchY - hgt, CAR_L*k, hgt);
+    ctx.restore();
+    if(!G.compact){
+      ctx.fillStyle = "#C8A33A";
+      ctx.font = "700 8.5px " + monoStack();
+      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillText("BACK EDGE ON 0 cm", X(CAR_L/2), G.benchY - hgt - 3);
+      ctx.fillText("SOURCE CAR AT CONTACT", X(CAR_L/2), G.benchY - hgt - 12);
+    }
+  }
+
+  function drawFlash(ctx){
+    var k = G.k, cx = X(CAR_L), cy = Y(CAR_H*0.5 + WHEEL_R);
+    var f = 1 - (flashUntil - now())/260;
+    ctx.save();
+    ctx.globalAlpha = 0.85*(1-f);
+    ctx.strokeStyle = "#FFE9A8"; ctx.lineWidth = 2;
+    for(var i=0;i<7;i++){
+      var a = -Math.PI*0.55 + i*Math.PI*0.18;
+      var r0 = (1.5 + f*3)*k, r1 = (3 + f*7)*k;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a)*r0, cy + Math.sin(a)*r0);
+      ctx.lineTo(cx + Math.cos(a)*r1, cy + Math.sin(a)*r1);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* the live distance reading, measured from the back of the source car */
+  function drawReadoutLine(ctx){
+    if(stage === "ready") return;
+    var k = G.k, px = X(Math.max(0, backX));
+    var col = "#7FC0F2";
+    ctx.save();
+    ctx.setLineDash([4,4]); ctx.strokeStyle = col; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(px, Y(CAR_H + WHEEL_R*1.2)); ctx.lineTo(px, G.benchY + G.stickH + 4);
+    ctx.stroke();
+    ctx.restore();
+
+    var txt = fmt(Math.max(0, backX)) + " cm";
+    var fs = G.compact ? 10 : 12.5;
+    ctx.font = "700 " + fs + "px " + monoStack();
+    var tw = ctx.measureText(txt).width;
+    var lx = clamp(px + 7, 4, G.w - tw - 12);
+    var ly = Y(CAR_H + WHEEL_R*1.2) - fs - 8;
+    ctx.fillStyle = "rgba(251,251,247,.94)";
+    roundRect(ctx, lx-5, ly-3, tw+11, fs+7, 3); ctx.fill();
+    ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1;
+    roundRect(ctx, lx-5, ly-3, tw+11, fs+7, 3); ctx.stroke();
+    ctx.fillStyle = "#1552B8"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillText(txt, lx, ly);
+  }
+
+  /* ------------------------------------------------ graph */
+  var M_MAX = 600, D_MAX = 200;
+  function drawGraph(){
+    var s = fit(graphC, gctx), w = s.w, h = s.h;
+    var ctx = gctx;
+    var mL = 48, mR = 14, mT = 12, mB = 34;
+    var pw = w - mL - mR, ph = h - mT - mB;
+    var px = function(M){ return mL + (M/M_MAX)*pw; };
+    var py = function(d){ return mT + ph - (d/D_MAX)*ph; };
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL, mT, pw, ph);
+
+    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var d=0; d<=D_MAX; d+=20){ var y=Math.round(py(d))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
+    for(var M=0; M<=M_MAX; M+=25){ var x=Math.round(px(M))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
+    ctx.stroke();
+    ctx.strokeStyle = "#CCD2C4";
+    ctx.beginPath();
+    for(var d2=0; d2<=D_MAX; d2+=50){ var y2=Math.round(py(d2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
+    for(var M2=0; M2<=M_MAX; M2+=100){ var x2=Math.round(px(M2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
+    ctx.stroke();
+
+    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mL+0.5, mT); ctx.lineTo(mL+0.5, mT+ph); ctx.lineTo(mL+pw, mT+ph);
+    ctx.stroke();
+    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var d3=0; d3<=D_MAX; d3+=50) ctx.fillText(String(d3), mL-7, py(d3));
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for(var M3=0; M3<=M_MAX; M3+=100) ctx.fillText(String(M3), px(M3), mT+ph+6);
+    ctx.save();
+    ctx.translate(12, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("DISTANCE (cm)", 0, 0);
+    ctx.restore();
+    ctx.fillText("SOURCE CAR MASS (g)", mL+pw/2, mT+ph+19);
+
+    /* the predicted curve */
+    if(elCurve.checked){
+      ctx.save();
+      ctx.setLineDash([7,5]); ctx.strokeStyle = "#A9AFA2"; ctx.lineWidth = 2;
+      ctx.beginPath();
+      for(var i=0;i<=120;i++){
+        var Mi = M_CAR + (M_MAX - M_CAR)*i/120;
+        var qx = px(Mi), qy = py(Math.min(D_MAX, predict(Mi)));
+        if(i===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
+      }
+      ctx.stroke(); ctx.restore();
+    }
+
+    /* trial points, joined in mass order so the shape shows */
+    if(trials.length){
+      var pts = trials.slice().sort(function(a,b){ return a.M - b.M; });
+      ctx.strokeStyle = "rgba(21,82,184,.35)"; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      for(var j=0;j<pts.length;j++){
+        var ax = px(pts[j].M), ay = py(Math.min(D_MAX, pts[j].d));
+        if(j===0) ctx.moveTo(ax,ay); else ctx.lineTo(ax,ay);
+      }
+      ctx.stroke();
+      for(var m=0;m<pts.length;m++){
+        var bx = px(pts[m].M), byy = py(Math.min(D_MAX, pts[m].d));
+        ctx.fillStyle = "#1552B8";
+        ctx.beginPath(); ctx.arc(bx, byy, 4.2, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(bx, byy, 4.2, 0, Math.PI*2); ctx.stroke();
+      }
+    } else {
+      ctx.fillStyle = "#8A9082";
+      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Run a trial and the first point lands here.", mL+pw/2, mT+ph/2);
+    }
+  }
+
+  /* ------------------------------------------------ loop */
+  function frame(){
+    var n = now();
+    if(lastFrame === null) lastFrame = n;
+    var dt = (n - lastFrame)/1000; lastFrame = n;
+    if(dt > 0.1) dt = 0.1;
+    if(elSlow.checked) dt *= 0.45;
+
+    if(stage === "rolling"){
+      tau += dt;
+      var tEnd = V_HIT/A_RAMP;
+      if(tau >= tEnd){ collide(); }
+      else {
+        var sAlong = 0.5*A_RAMP*tau*tau;
+        backX = -RAMP_RUN + Math.cos(RAMP_ANG)*sAlong;
+        backY = Math.max(0, RAMP_RISE - Math.sin(RAMP_ANG)*sAlong);
+        var lead = RAMP_LEN - sAlong;                    /* cm of ramp left under the car */
+        carAng = RAMP_ANG * clamp(lead/CAR_L, 0, 1);     /* level off coming onto the bench */
+      }
+      dirty = true; syncUI();
+    } else if(stage === "sliding"){
+      tau += dt;
+      var tStop = vPair/A_BENCH;
+      if(tau >= tStop){ stopSlide(); }
+      else { travel = vPair*tau - 0.5*A_BENCH*tau*tau; backX = travel; }
+      dirty = true; syncUI();
+    }
+
+    if(dirty || now() < flashUntil){ drawScene(); dirty = false; }
+    requestAnimationFrame(frame);
+  }
+
+  /* ------------------------------------------------ wiring */
+  elGo.addEventListener("click", release);
+  elReset.addEventListener("click", function(){
+    resetCars("Cars reset. The source car is back at the release point.");
+  });
+  elPop.addEventListener("click", function(){
+    if(!masses.length) return;
+    masses.pop();
+    resetCars("Source car back to <strong>" + srcMass() + " g</strong>.");
+  });
+  elClear.addEventListener("click", function(){
+    if(!masses.length) return;
+    masses = [];
+    resetCars("Source car stripped back to its own <strong>60 g</strong>.");
+  });
+  elClearTrials.addEventListener("click", function(){
+    trials = []; marks = []; newestRow = -1;
+    renderTable(); drawGraph(); syncUI(); dirty = true;
+    say("Trials cleared, chalk marks wiped.");
+  });
+  elCopy.addEventListener("click", function(){
+    var rows = ["trial\tadded_g\tsource_g\tdistance_cm"];
+    for(var i=0;i<trials.length;i++){
+      var t = trials[i];
+      rows.push(t.n + "\t" + t.add + "\t" + t.M + "\t" + fmt(t.d));
+    }
+    var txt = rows.join("\n");
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = txt; ta.setAttribute("readonly","");
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); }catch(err){}
+      document.body.removeChild(ta);
+    }
+    function ok(){ elCopyNote.innerHTML = "Copied <strong>" + trials.length + "</strong> trials."; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok, function(){ fallback(); ok(); });
+    } else { fallback(); ok(); }
+  });
+  elCurve.addEventListener("change", drawGraph);
+  elNoise.addEventListener("change", function(){
+    say(elNoise.checked
+      ? "Measurement error on. Repeat a mass and the two readings will differ slightly."
+      : "Measurement error off. Readings are exact.");
+  });
+
+  var rt;
+  window.addEventListener("resize", function(){
+    clearTimeout(rt);
+    rt = setTimeout(function(){ dirty = true; drawScene(); drawGraph(); }, 120);
+  });
+  if(window.ResizeObserver){
+    var ro = new ResizeObserver(function(){ dirty = true; drawScene(); drawGraph(); });
+    ro.observe(sceneC.parentNode); ro.observe(graphC.parentNode);
+  }
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){ dirty = true; drawScene(); drawGraph(); });
+  }
+
+  buildTray();
+  renderTable();
+  resetCars();
+  drawGraph();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

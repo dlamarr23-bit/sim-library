@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poker Chip Collision Lab</title>
+<style>*,*::before,*::after{box-sizing:border-box;}html{-webkit-text-size-adjust:100%;}body{margin:0;}img,svg,canvas{display:block;max-width:100%;}</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#ECF2EE;
+  --card:#FFFFFF;
+  --card-2:#F3F8F5;
+  --card-3:#E5EEE9;
+  --ink:#0E1A15;
+  --ink-2:#3F5A50;
+  --ink-3:#748C82;
+  --line:#D1DED8;
+  --line-2:#B9CCC3;
+  --accent:#0C7A52;
+  --accent-deep:#075237;
+  --accent-soft:#DDF0E7;
+  --amber:#A96908;
+  --amber-soft:#FBEFD8;
+  --red:#BE2F2A;
+  --red-soft:#FAE5E3;
+  --blue:#1F6FD0;
+  --blue-soft:#E1EDFC;
+  --counter:#CFCABE;
+  --counter-2:#B4AE9F;
+  --counter-edge:#8E8878;
+  --shadow:0 1px 2px rgba(14,26,21,.06), 0 8px 24px rgba(14,26,21,.07);
+  --focus:#0A6A47;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0B1310;
+    --card:#141F1A;
+    --card-2:#1A2721;
+    --card-3:#21312A;
+    --ink:#E7F1EC;
+    --ink-2:#A4BCB1;
+    --ink-3:#789186;
+    --line:#28382F;
+    --line-2:#374A40;
+    --accent:#3FBE8B;
+    --accent-deep:#7BD9B2;
+    --accent-soft:#0F3327;
+    --amber:#E9A947;
+    --amber-soft:#3A2B10;
+    --red:#EF716A;
+    --red-soft:#3A1A18;
+    --blue:#5EA5F2;
+    --blue-soft:#15293F;
+    --counter:#57534A;
+    --counter-2:#413E37;
+    --counter-edge:#2C2A25;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    --focus:#6FD9AE;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0B1310;
+  --card:#141F1A;
+  --card-2:#1A2721;
+  --card-3:#21312A;
+  --ink:#E7F1EC;
+  --ink-2:#A4BCB1;
+  --ink-3:#789186;
+  --line:#28382F;
+  --line-2:#374A40;
+  --accent:#3FBE8B;
+  --accent-deep:#7BD9B2;
+  --accent-soft:#0F3327;
+  --amber:#E9A947;
+  --amber-soft:#3A2B10;
+  --red:#EF716A;
+  --red-soft:#3A1A18;
+  --blue:#5EA5F2;
+  --blue-soft:#15293F;
+  --counter:#57534A;
+  --counter-2:#413E37;
+  --counter-edge:#2C2A25;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  --focus:#6FD9AE;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight:700;font-size:clamp(15px,1.02vw,17px);line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"JetBrains Mono", ui-monospace, Menlo, monospace;font-variant-numeric:tabular-nums;}
+
+.wrap{
+  max-width:min(1900px, 97vw);margin:0 auto;
+  padding:clamp(18px,2.2vw,34px) clamp(14px,1.8vw,28px) 64px;
+  display:flex;flex-direction:column;gap:clamp(16px,1.6vw,24px);
+}
+
+.masthead{
+  display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;
+  gap:16px 28px;padding-bottom:clamp(12px,1.2vw,18px);border-bottom:3px solid var(--ink);
+}
+.eyebrow{
+  font-size:clamp(11px,.78vw,13px);font-weight:800;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 6px;
+}
+h1{margin:0;font-size:clamp(26px,3vw,43px);font-weight:800;letter-spacing:-.02em;line-height:1.03;text-wrap:balance;}
+.deck{margin:8px 0 0;max-width:62ch;font-weight:500;font-size:clamp(14px,1.02vw,17px);color:var(--ink-2);}
+.qbox{
+  flex:0 0 auto;background:var(--accent-soft);border:2px solid var(--accent);
+  border-radius:12px;padding:12px 18px;max-width:34ch;
+}
+.qbox .lab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-deep);font-weight:800;}
+.qbox p{margin:2px 0 0;font-size:clamp(14px,1.05vw,18px);font-weight:800;line-height:1.25;}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);}
+.card-hd{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 18px;border-bottom:1px solid var(--line);
+}
+.card-hd h2{
+  margin:0;font-size:clamp(13px,.95vw,15px);font-weight:800;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-2);
+}
+
+.bench-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(14px,1.4vw,22px);align-items:start;}
+@media (min-width:1120px){.bench-grid{grid-template-columns:minmax(0,1.85fr) minmax(340px,.9fr);}}
+.rail{display:flex;flex-direction:column;gap:clamp(14px,1.4vw,22px);}
+
+.stage{overflow:hidden;}
+.canvas-hold{position:relative;background:linear-gradient(180deg,var(--card-2) 0%, var(--card-3) 100%);border-bottom:1px solid var(--line);}
+canvas{display:block;width:100%;height:auto;}
+.stage-tag{position:absolute;top:12px;left:14px;display:flex;gap:8px;flex-wrap:wrap;}
+.pill{
+  font-size:clamp(10px,.72vw,12px);font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 11px;border-radius:999px;border:1.5px solid var(--line-2);
+  background:var(--card);color:var(--ink-2);
+}
+.pill.live{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);}
+.pill.good{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
+
+.readbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);}
+.read{background:var(--card);padding:12px 16px 13px;}
+.read .k{font-size:clamp(10px,.72vw,11.5px);font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
+.read .v{
+  font-size:clamp(22px,2.1vw,30px);font-weight:800;line-height:1.1;margin-top:2px;
+  font-family:"JetBrains Mono", ui-monospace, monospace;font-variant-numeric:tabular-nums;
+}
+.read .u{font-size:.5em;font-weight:700;color:var(--ink-3);margin-left:3px;}
+.read.a .v{color:var(--accent);}
+.read.b .v{color:var(--red);}
+
+.pad{padding:16px 18px 20px;}
+.grp+.grp{margin-top:20px;}
+.glabel{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  font-size:clamp(11px,.78vw,12.5px);font-weight:800;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:9px;
+}
+.glabel .hint{letter-spacing:0;text-transform:none;font-weight:600;color:var(--ink-3);font-size:12px;}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.seg.four{grid-template-columns:repeat(4,1fr);}
+button{font-family:inherit;}
+.opt{
+  appearance:none;cursor:pointer;background:var(--card-2);border:2px solid var(--line-2);
+  color:var(--ink-2);border-radius:11px;padding:11px 6px;
+  font-size:clamp(12px,.86vw,13.5px);font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  transition:background .14s, border-color .14s, color .14s, transform .08s;
+}
+.opt:hover{border-color:var(--accent);color:var(--ink);}
+.opt:active{transform:translateY(1px);}
+.opt[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;}
+:root[data-theme="dark"] .opt[aria-pressed="true"]{color:#06120D;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .opt[aria-pressed="true"]{color:#06120D;}}
+
+.force-row{display:flex;align-items:center;gap:14px;}
+.force-num{
+  font-family:"JetBrains Mono", ui-monospace, monospace;
+  font-size:clamp(30px,3vw,42px);font-weight:800;color:var(--amber);line-height:1;
+  min-width:2.1ch;text-align:center;
+}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;margin:0;}
+input[type=range]::-webkit-slider-runnable-track{
+  height:12px;border-radius:99px;background:linear-gradient(90deg,var(--accent-soft),var(--amber));border:1.5px solid var(--line-2);
+}
+input[type=range]::-moz-range-track{
+  height:12px;border-radius:99px;background:linear-gradient(90deg,var(--accent-soft),var(--amber));border:1.5px solid var(--line-2);
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+  background:var(--card);border:4px solid var(--amber);margin-top:-9px;cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.22);
+}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--card);border:4px solid var(--amber);cursor:pointer;}
+input[type=range]:focus-visible{outline:3px solid var(--focus);outline-offset:4px;border-radius:99px;}
+.force-word{margin-top:9px;font-size:clamp(13px,.95vw,15px);font-weight:800;color:var(--amber);}
+.force-word span{font-weight:600;color:var(--ink-3);}
+
+.go{
+  width:100%;margin-top:6px;background:var(--ink);color:var(--paper);
+  border:none;border-radius:12px;cursor:pointer;padding:15px 12px;
+  font-size:clamp(14px,1.05vw,17px);font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  transition:transform .08s, opacity .14s;
+}
+.go:hover{opacity:.88;}
+.go:active{transform:translateY(1px);}
+.go[disabled]{opacity:.4;cursor:not-allowed;}
+.ghost{
+  width:100%;margin-top:9px;background:transparent;color:var(--ink-2);
+  border:2px solid var(--line-2);border-radius:12px;cursor:pointer;padding:11px;
+  font-size:12.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+}
+.ghost:hover{border-color:var(--ink-2);color:var(--ink);}
+button:focus-visible, summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px;}
+
+.result{padding:16px 18px 18px;}
+.result .verdict{font-size:clamp(16px,1.35vw,21px);font-weight:800;line-height:1.25;margin:0;text-wrap:balance;max-width:46ch;}
+.result .why{margin:9px 0 0;font-weight:500;font-size:clamp(13.5px,.98vw,15.5px);color:var(--ink-2);line-height:1.6;max-width:78ch;}
+.result .why strong{font-weight:800;color:var(--ink);}
+.predict-back{margin-top:13px;padding-top:12px;border-top:1px dashed var(--line-2);font-size:13px;font-weight:700;color:var(--ink-2);}
+.tick{color:var(--accent);font-weight:800;}
+.cross{color:var(--red);font-weight:800;}
+
+/* count strip */
+.counts{
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+  margin-top:15px;padding:14px 16px;border-radius:12px;
+  background:var(--card-2);border:1.5px solid var(--line);
+}
+.cbox{text-align:center;}
+.cbox .cn{
+  font-family:"JetBrains Mono",monospace;font-size:clamp(30px,3.2vw,44px);font-weight:800;line-height:1;
+}
+.cbox .cl{font-size:11px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin-top:4px;}
+.cbox.in .cn{color:var(--ink);}
+.cbox.out .cn{color:var(--accent);}
+.ceq{font-size:clamp(22px,2vw,30px);font-weight:800;color:var(--ink-3);}
+
+/* energy flow */
+.eflow{padding:16px 18px 20px;display:flex;flex-direction:column;gap:0;}
+.ebox{border:2px solid var(--line-2);border-radius:13px;padding:12px 15px 13px;background:var(--card-2);}
+.ebox.src{border-color:var(--amber);}
+.ebox.rcv{border-color:var(--accent);}
+.etag{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;}
+.ebox.src .etag{color:var(--amber);}
+.ebox.rcv .etag{color:var(--accent);}
+.ename{font-size:clamp(14px,1vw,16px);font-weight:800;margin:1px 0 8px;}
+.erow{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-size:13px;font-weight:600;color:var(--ink-2);padding:3px 0;
+}
+.erow b{font-family:"JetBrains Mono",monospace;font-size:15px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
+.erow.down b{color:var(--amber);}
+.erow.up b{color:var(--accent);}
+.earrow{
+  align-self:center;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:9px 0;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  text-align:center;
+}
+.earrow .glyph{font-size:24px;line-height:1;color:var(--ink-3);}
+.eloss{
+  margin-top:12px;font-size:12.5px;font-weight:600;color:var(--ink-3);line-height:1.5;
+  border-top:1px dashed var(--line-2);padding-top:11px;
+}
+.eloss b{font-family:"JetBrains Mono",monospace;color:var(--ink-2);font-weight:800;}
+
+/* details */
+.folds{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(12px,1.2vw,18px);}
+@media (min-width:1120px){.folds{grid-template-columns:repeat(2,minmax(0,1fr));}}
+details.fold{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;}
+details.fold summary{
+  cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;padding:16px 18px;
+  font-size:clamp(14px,1.08vw,17.5px);font-weight:800;letter-spacing:-.01em;
+}
+details.fold summary::-webkit-details-marker{display:none;}
+.chev{
+  flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:var(--accent-soft);color:var(--accent-deep);
+  display:grid;place-items:center;font-size:14px;font-weight:800;transition:transform .2s ease;
+}
+details[open] .chev{transform:rotate(90deg);}
+.sumtag{margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
+.fold-body{padding:2px 18px 20px;border-top:1px solid var(--line);}
+.fold-body>*:first-child{margin-top:16px;}
+.fold-body p{font-weight:500;color:var(--ink-2);line-height:1.62;margin:0 0 12px;max-width:70ch;}
+.fold-body p strong, .fold-body li strong{font-weight:800;color:var(--ink);}
+.fold-body h3{margin:20px 0 8px;font-size:clamp(12px,.82vw,13px);font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:11px;}
+ol.steps li{counter-increment:s;position:relative;padding-left:40px;font-weight:500;color:var(--ink-2);line-height:1.55;max-width:70ch;}
+ol.steps li::before{
+  content:counter(s);position:absolute;left:0;top:-1px;width:27px;height:27px;border-radius:8px;
+  background:var(--ink);color:var(--paper);display:grid;place-items:center;
+  font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:800;
+}
+ul.plain{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
+ul.plain li{font-weight:500;color:var(--ink-2);line-height:1.55;padding-left:18px;position:relative;max-width:70ch;}
+ul.plain li::before{content:"";position:absolute;left:0;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--accent);}
+.vocab{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+.vterm{border-left:4px solid var(--accent);background:var(--card-2);border-radius:0 10px 10px 0;padding:10px 14px;}
+.vterm b{display:block;font-size:15px;font-weight:800;}
+.vterm span{font-weight:500;font-size:14px;color:var(--ink-2);line-height:1.5;}
+.callout{background:var(--amber-soft);border:1.5px solid var(--amber);border-radius:12px;padding:13px 16px;margin:14px 0 0;}
+.callout p{margin:0;color:var(--ink);font-weight:600;}
+.callout .ct{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);font-weight:800;margin-bottom:4px;}
+
+.tbl-wrap{overflow-x:auto;}
+table{border-collapse:collapse;width:100%;min-width:820px;}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;}
+th{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:var(--card-2);}
+td{font-weight:700;font-size:14px;}
+td.num{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}
+tbody tr:nth-child(even) td{background:var(--card-2);}
+.badge{display:inline-block;padding:3px 9px;border-radius:6px;font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;}
+.badge.ok{background:var(--accent-soft);color:var(--accent);}
+.badge.no{background:var(--red-soft);color:var(--red);}
+.empty{padding:26px 18px;color:var(--ink-3);font-weight:600;text-align:center;}
+.model-note{font-size:12.5px;font-weight:500;color:var(--ink-3);line-height:1.6;border-top:1px solid var(--line);padding-top:14px;margin-top:18px;max-width:80ch;}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;}}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">Motion Lab &middot; Quick Lab 2</p>
+      <h1>Chips In, Chips Out</h1>
+      <p class="deck">Four chips are stacked in a tower on a countertop. Slide 1, 2, or 3 chips into the bottom of the tower and count how many come out the other side.</p>
+    </div>
+    <div class="qbox">
+      <div class="lab">Lab question</div>
+      <p>How does Newton&rsquo;s First Law explain what happens to a stack of chips?</p>
+    </div>
+  </header>
+
+  <div class="bench-grid">
+   <div class="rail">
+
+    <section class="card stage" aria-label="Simulation countertop">
+      <div class="canvas-hold">
+        <canvas id="cv" width="1640" height="328" role="img"
+          aria-label="Side view of a countertop with a tower of four coloured poker chips. A stack of white chips slides in from the left toward the bottom of the tower."></canvas>
+        <div class="stage-tag">
+          <span class="pill" id="phasePill">Ready</span>
+          <span class="pill" id="speedPill">Slow motion &times;&frac14;</span>
+        </div>
+      </div>
+      <div class="readbar">
+        <div class="read a">
+          <div class="k">Speed at impact</div>
+          <div class="v" id="rHit">0.00<span class="u">m/s</span></div>
+        </div>
+        <div class="read b">
+          <div class="k">Knocked-out speed</div>
+          <div class="v" id="rOut">0.00<span class="u">m/s</span></div>
+        </div>
+        <div class="read">
+          <div class="k">Tower height now</div>
+          <div class="v" id="rTower">4<span class="u">chips</span></div>
+        </div>
+        <div class="read">
+          <div class="k">Clock</div>
+          <div class="v" id="rTime">0.000<span class="u">s</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-live="polite" aria-label="Result">
+      <div class="card-hd"><h2>What happened</h2></div>
+      <div class="result">
+        <p class="verdict" id="verdict">Choose how many chips to slide in, set your force, then let it go.</p>
+        <p class="why" id="why">Every chip here has exactly the same size and the same mass. That is what makes the pattern in this lab so clean.</p>
+        <div class="counts">
+          <div class="cbox in"><div class="cn mono" id="cIn">1</div><div class="cl">Chips slid in</div></div>
+          <div class="ceq" id="cEq">?</div>
+          <div class="cbox out"><div class="cn mono" id="cOut">&mdash;</div><div class="cl">Chips knocked out</div></div>
+        </div>
+        <div class="predict-back" id="pBack" hidden></div>
+      </div>
+    </section>
+   </div>
+
+   <div class="rail">
+
+    <section class="card pad" aria-label="Controls">
+      <div class="grp">
+        <div class="glabel">1 &middot; How many chips do you slide in?</div>
+        <div class="seg">
+          <button class="opt" data-n="1" aria-pressed="true">1 chip</button>
+          <button class="opt" data-n="2" aria-pressed="false">2 chips</button>
+          <button class="opt" data-n="3" aria-pressed="false">3 chips</button>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="glabel">2 &middot; How hard is the flick? <span class="hint">1&ndash;10</span></div>
+        <div class="force-row">
+          <span class="force-num mono" id="fNum">6</span>
+          <input type="range" id="force" min="1" max="10" step="1" value="6" aria-label="Flick strength from 1 to 10">
+        </div>
+        <div class="force-word" id="fWord">Hard flick <span>&mdash; 1.13 m/s</span></div>
+      </div>
+
+      <div class="grp">
+        <div class="glabel">3 &middot; Predict first <span class="hint">how many leave?</span></div>
+        <div class="seg four">
+          <button class="opt" data-p="0" aria-pressed="false">0</button>
+          <button class="opt" data-p="1" aria-pressed="false">1</button>
+          <button class="opt" data-p="2" aria-pressed="false">2</button>
+          <button class="opt" data-p="3" aria-pressed="false">3</button>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="glabel">4 &middot; Playback speed</div>
+        <div class="seg">
+          <button class="opt" data-sp="1" aria-pressed="false">Real</button>
+          <button class="opt" data-sp="0.25" aria-pressed="true">Slow</button>
+          <button class="opt" data-sp="0.08" aria-pressed="false">Super&nbsp;slow</button>
+        </div>
+      </div>
+
+      <button class="go" id="run">Slide the chips</button>
+      <button class="ghost" id="reset">Rebuild the tower</button>
+    </section>
+
+    <section class="card" aria-label="Energy transfer diagram">
+      <div class="card-hd"><h2>Energy transfer</h2></div>
+      <div class="eflow">
+        <div class="ebox src">
+          <div class="etag">Source object</div>
+          <div class="ename" id="eSrcName">The chips you slide in</div>
+          <div class="erow"><span>Motion energy before</span><b id="eSrcBefore">&mdash;</b></div>
+          <div class="erow down"><span>Decrease in energy</span><b id="eSrcDrop">&mdash;</b></div>
+        </div>
+        <div class="earrow">
+          <span class="glyph">&#8595;</span>
+          Energy flows during the collision
+        </div>
+        <div class="ebox rcv">
+          <div class="etag">Receiver object</div>
+          <div class="ename" id="eRcvName">The chips that get knocked out</div>
+          <div class="erow"><span>Motion energy before</span><b id="eRcvBefore">&mdash;</b></div>
+          <div class="erow up"><span>Increase in energy</span><b id="eRcvGain">&mdash;</b></div>
+        </div>
+        <div class="eloss" id="eLoss">Run a trial and this diagram fills in with real numbers. Energy is measured in millijoules (mJ). 1000&nbsp;mJ = 1&nbsp;joule.</div>
+      </div>
+    </section>
+
+   </div>
+  </div>
+
+  <div class="folds">
+
+    <details class="fold" open>
+      <summary><span class="chev">&#9656;</span> Lab directions <span class="sumtag">Do this</span></summary>
+      <div class="fold-body">
+        <ol class="steps">
+          <li>Four chips are already stacked into a tower on a smooth countertop, one on top of the other.</li>
+          <li>Set the controls to slide in <strong>1 chip</strong>. <strong>Predict</strong> how many chips will leave the stack, then run it and describe what happens.</li>
+          <li>Rebuild the tower and repeat with a stack of <strong>2 chips</strong>. Predict, run, describe.</li>
+          <li>Rebuild and repeat with a stack of <strong>3 chips</strong>. Predict, run, describe.</li>
+          <li>Now change only the <strong>force</strong>. Try each test again with a very gentle flick, then a very hard one. What is different?</li>
+          <li>Use the <strong>Energy transfer</strong> panel to fill in your energy diagram: name the <strong>source object</strong>, name the <strong>receiver object</strong>, and record which one decreases in energy and which one increases.</li>
+        </ol>
+        <h3>Follow up</h3>
+        <ul class="plain">
+          <li><strong>Claim:</strong> The number of poker chips I flick into the stack of poker chips will ________ the number of poker chips that leave the stack.</li>
+          <li><strong>Evidence and reasoning:</strong> use your trial log below and vocabulary from class to explain <em>why</em> that happens.</li>
+          <li>What happened to the chips that were sitting on top? Which of Newton&rsquo;s laws explains that?</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="chev">&#9656;</span> The science behind it <span class="sumtag">Read after</span></summary>
+      <div class="fold-body">
+        <p><strong>Newton&rsquo;s First Law of Motion</strong> says an object at rest stays at rest, and a moving object keeps moving the same way, unless an <strong>unbalanced force</strong> acts on it. Objects resist changes to their motion. That resistance is called <strong>inertia</strong>.</p>
+
+        <h3>Why the count always matches</h3>
+        <p>Every chip in this lab has the <strong>same mass</strong>. When a moving object hits a still object of equal mass head&#8209;on, it hands over almost all of its <strong>motion energy</strong> (kinetic energy) and nearly stops. So one incoming chip empties itself into one bottom chip, and that chip shoots out the far side. Two incoming chips reach two bottom chips. Three reach three. <strong>Chips in equals chips out</strong> &mdash; the collision passes the energy through, one chip at a time.</p>
+
+        <h3>Why the top chips do not fly away too</h3>
+        <p>Nothing pushes the top chips sideways. The only sideways force in the whole event happens down at the bottom, between the chips that touch. The chips above have <strong>inertia</strong>, so with no sideways force on them they do not move sideways &mdash; they simply drop straight down when the chip underneath them disappears. Gravity is now unbalanced, so they fall. This is the same reason a tablecloth can be yanked out from under a set table.</p>
+
+        <h3>Why a slow push ruins it</h3>
+        <p>A hard, fast flick delivers the force in a tiny fraction of a second, so only the bottom chips ever feel it. A slow push spreads the force through the entire tower, and the whole stack gets shoved along the counter together. Because the bottom starts moving while the top &ldquo;wants&rdquo; to stay still, the tower leans and topples &mdash; inertia again, just showing up in a different way.</p>
+
+        <h3>Following the energy</h3>
+        <ul class="plain">
+          <li>The <strong>source object</strong> is the chip or chips you slide in. They start with motion energy and lose almost all of it.</li>
+          <li>The <strong>receiver object</strong> is the chip or chips knocked out. They start with zero motion energy and gain a large amount.</li>
+          <li>The energy does not perfectly balance. About a fifth of it turns into <strong>sound and heat</strong> &mdash; that is the <em>click</em> you hear. Energy is never destroyed, but it does get spread out into forms you cannot use.</li>
+          <li><strong>Friction</strong> with the counter is what eventually stops the knocked-out chips. A harder flick means more motion energy, so they slide farther before friction uses it all up.</li>
+        </ul>
+
+        <div class="callout">
+          <div class="ct">Connect it to your life</div>
+          <p>This is how a Newton&rsquo;s cradle works, why a cue ball stops dead when it strikes another ball straight on, and why the bumper of a car is designed to take a hit so the passengers do not have to.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="chev">&#9656;</span> Words to know <span class="sumtag">Vocabulary</span></summary>
+      <div class="fold-body">
+        <div class="vocab">
+          <div class="vterm"><b>Inertia</b><span>An object&rsquo;s resistance to a change in its motion. It is why the top chips stay put.</span></div>
+          <div class="vterm"><b>Newton&rsquo;s First Law</b><span>An object at rest stays at rest and an object in motion stays in motion, unless an unbalanced force acts on it.</span></div>
+          <div class="vterm"><b>Collision</b><span>An event where two objects hit each other and push on each other for a very short time.</span></div>
+          <div class="vterm"><b>Kinetic energy</b><span>Motion energy. Anything that is moving has it. The faster it moves and the more mass it has, the more it has.</span></div>
+          <div class="vterm"><b>Energy transfer</b><span>Energy moving from one object to another. The source object loses it; the receiver object gains it.</span></div>
+          <div class="vterm"><b>Source object</b><span>The object that gives energy away in a transfer.</span></div>
+          <div class="vterm"><b>Receiver object</b><span>The object that takes energy in during a transfer.</span></div>
+          <div class="vterm"><b>Mass</b><span>The amount of matter in an object. Equal masses are why the energy passes through so cleanly here.</span></div>
+          <div class="vterm"><b>Friction</b><span>A force that resists sliding. It is what slows the knocked-out chips to a stop.</span></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="chev">&#9656;</span> How to use this simulation <span class="sumtag">Controls</span></summary>
+      <div class="fold-body">
+        <ol class="steps">
+          <li>Choose <strong>1, 2, or 3 chips</strong> to slide in. The white chips on the left are the ones you are sliding.</li>
+          <li>Drag the <strong>force slider</strong> from 1 to 10 to set how hard you flick. The words underneath tell you the speed that flick produces.</li>
+          <li>Pick a <strong>prediction</strong> for how many chips will leave the stack. The simulation checks it for you afterward.</li>
+          <li>Set the <strong>playback speed</strong>. A real collision lasts a few thousandths of a second, so use <strong>Slow</strong> or <strong>Super slow</strong> to actually watch the chips swap places.</li>
+          <li>Press <strong>Slide the chips</strong> and watch the bottom of the tower. Count how many chips shoot out to the right.</li>
+          <li>Check the big <strong>chips in &rarr; chips out</strong> comparison under the countertop, and read the <strong>Energy transfer</strong> panel for the real numbers you need for your energy diagram.</li>
+          <li>Press <strong>Rebuild the tower</strong>, change one thing, and run it again. Every trial is saved in the log below.</li>
+        </ol>
+      </div>
+    </details>
+
+  </div>
+
+  <section class="card" aria-label="Trial log">
+    <div class="card-hd">
+      <h2>Trial log</h2>
+      <button class="ghost" id="clear" style="width:auto;margin:0;padding:8px 14px;font-size:11px;">Clear</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Chips slid in</th><th>Force</th><th>Speed at impact</th>
+            <th>Chips knocked out</th><th>Their speed</th><th>Distance they slid</th>
+            <th>Energy transferred</th><th>Result</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="9" class="empty">No trials yet &mdash; run the simulation to fill this in.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:0 18px 18px;">
+      <div class="model-note">
+        <strong style="color:var(--ink-2);">How this model works:</strong> every chip is 39&nbsp;mm across with a mass of 10.5&nbsp;g. Chip thickness is drawn thicker than real life so the tower is easy to see. The collision uses a coefficient of restitution of 0.78, which is why the chips that get hit leave with about 89% of the incoming speed while the incoming chips keep about 11% and stop almost at once. Sliding friction on the countertop uses a coefficient of 0.45; friction during the short approach before the hit is ignored, so the speed you set is the speed at impact. Below about 0.52&nbsp;m/s the model treats the hit as too slow to separate the bottom chips, and the whole tower gets shoved instead &mdash; the lean you see there is drawn larger than life so it is easy to spot. Air resistance is ignored.
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+
+  var C={};
+  function readColors(){
+    var s=getComputedStyle(document.documentElement);
+    ['ink','ink-2','ink-3','line','line-2','card','card-2','card-3','accent','accent-deep',
+     'amber','red','blue','counter','counter-2','counter-edge','paper'].forEach(function(n){
+      C[n]=s.getPropertyValue('--'+n).trim();
+    });
+  }
+  readColors();
+  if(window.matchMedia){
+    var mq=window.matchMedia('(prefers-color-scheme: dark)');
+    if(mq.addEventListener) mq.addEventListener('change',function(){readColors();draw();});
+  }
+  new MutationObserver(function(){readColors();draw();})
+    .observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  /* ---- constants (SI) ---- */
+  var G=9.81;
+  var VIEW_W=0.440;
+  var PX=cv.width/VIEW_W;
+  var BENCH_Y=0.062;
+  var CHIP_D=0.039, CHIP_T=0.0085, CHIP_M=0.0105;
+  var TOWER_X=0.155, START_X=TOWER_X-CHIP_D-0.055;
+  var E_REST=0.78, MU=0.45, A_FRIC=MU*G;
+  var CLEAN_MIN=0.52;
+
+  var TOWER_COLS=[['#BE2F2A','#F3ECE1'],['#1F6FD0','#EDF2F8'],['#0C7A52','#E7F3EC'],['#23272E','#E9EBEE']];
+  var TOWER_NAMES=['red','blue','green','black'];
+  var STRIKER_COL=['#F0EADC','#5C6B64'];
+
+  function speedOf(f){ return 0.30 + 0.128*(f-1); }
+  function flickWord(f){
+    if(f<=2) return 'Gentle push';
+    if(f<=4) return 'Soft flick';
+    if(f<=6) return 'Hard flick';
+    if(f<=8) return 'Very hard flick';
+    return 'Full-power flick';
+  }
+
+  /* ---- state ---- */
+  var S={
+    n:1, force:6, speed:0.25, predict:null,
+    phase:'ready', t:0, clean:true,
+    striker:{x:START_X, v:0},
+    ejected:{x:TOWER_X, v:0, count:0, active:false},
+    towerX:TOWER_X,
+    tower:[],            // {ci, h, vh, falling}
+    shear:0, hitV:0, outV:0, trial:0, flash:0
+  };
+  var rows=[];
+
+  function buildTower(){
+    S.tower=[];
+    for(var i=0;i<4;i++) S.tower.push({ci:i, h:i*CHIP_T + CHIP_T/2, vh:0, falling:false});
+  }
+
+  function reset(){
+    S.phase='ready'; S.t=0; S.clean=true; S.shear=0; S.hitV=0; S.outV=0; S.flash=0;
+    S.striker.x=START_X; S.striker.v=0;
+    S.ejected={x:TOWER_X, v:0, count:0, active:false};
+    S.towerX=TOWER_X;
+    buildTower();
+    setPill('Ready');
+    document.getElementById('run').disabled=false;
+    document.getElementById('cOut').innerHTML='&mdash;';
+    document.getElementById('cEq').textContent='?';
+    updateReadouts(); draw();
+  }
+
+  /* ---- physics ---- */
+  function step(dt){
+    if(S.phase==='approach'){
+      S.striker.x += S.striker.v*dt;
+      if(S.striker.x >= TOWER_X - CHIP_D){
+        S.striker.x = TOWER_X - CHIP_D;
+        collide();
+      }
+    }
+    else if(S.phase==='fly'){
+      // striker after the hit
+      if(Math.abs(S.striker.v)>0){
+        S.striker.v = Math.max(0, S.striker.v - A_FRIC*dt);
+        S.striker.x = Math.min(TOWER_X-CHIP_D, S.striker.x + S.striker.v*dt);
+      }
+      // knocked-out chips
+      if(S.ejected.active){
+        S.ejected.v = Math.max(0, S.ejected.v - A_FRIC*dt);
+        S.ejected.x += S.ejected.v*dt;
+        if(S.ejected.x > VIEW_W-CHIP_D/2-0.004){ S.ejected.x=VIEW_W-CHIP_D/2-0.004; S.ejected.v=0; }
+      }
+      // remaining chips drop straight down
+      var stillFalling=false;
+      S.tower.forEach(function(c,i){
+        if(!c.falling) return;
+        c.vh += G*dt;
+        c.h  -= c.vh*dt;
+        var target = i*CHIP_T + CHIP_T/2;
+        if(c.h <= target){ c.h=target; c.vh=0; c.falling=false; }
+        else stillFalling=true;
+      });
+      if(!stillFalling && S.ejected.v===0 && S.striker.v===0) finish();
+    }
+    else if(S.phase==='shove'){
+      var v=S.striker.v;
+      if(v>0){
+        var moved=v*dt;
+        S.striker.v=Math.max(0,v-A_FRIC*dt);
+        S.striker.x+=moved;
+        S.towerX+=moved;                          // the whole tower rides along
+      }
+      // the top of the tower lags behind the base, so the stack shears over
+      if(S.shear < 0.011) S.shear = Math.min(0.011, S.shear + dt*0.10);
+      else if(v<=0) finish();
+    }
+    if(S.flash>0) S.flash-=dt*14;
+    S.t+=dt;
+  }
+
+  function collide(){
+    var v=S.hitV=S.striker.v;
+    S.flash=1;
+    if(v < CLEAN_MIN){
+      // too slow: momentum shared by everything, tower gets shoved and leans
+      S.clean=false;
+      S.striker.v = v*S.n/(S.n+4);
+      S.ejected.x = TOWER_X; S.ejected.count=0; S.ejected.active=false;
+      S.phase='shove'; setPill('Shoving…');
+      return;
+    }
+    S.clean=true;
+    S.ejected.count=S.n;
+    S.ejected.active=true;
+    S.ejected.x=TOWER_X;
+    S.ejected.v=S.outV=v*(1+E_REST)/2;
+    S.striker.v=v*(1-E_REST)/2;
+    // the bottom n chips leave; the rest fall straight down
+    S.tower=S.tower.slice(S.n);
+    S.tower.forEach(function(c){ c.falling=true; c.vh=0; });
+    S.phase='fly'; setPill('Collision!');
+  }
+
+  /* ---- drawing ---- */
+  function X(m){return m*PX;} function Y(m){return m*PX;}
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    var rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);
+    ctx.moveTo(x+rr,y);
+    ctx.lineTo(x+w-rr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
+    ctx.lineTo(x+w,y+h-rr); ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+    ctx.lineTo(x+rr,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
+    ctx.lineTo(x,y+rr); ctx.quadraticCurveTo(x,y,x+rr,y);
+    ctx.closePath();
+  }
+  function chip(cx,cy,w,h,base,stripe){
+    ctx.save();
+    roundRect(cx-w/2,cy-h/2,w,h,h*0.3);
+    ctx.fillStyle=base; ctx.fill();
+    ctx.lineWidth=2.2; ctx.strokeStyle='rgba(0,0,0,.42)'; ctx.stroke();
+    ctx.clip();
+    ctx.fillStyle=stripe;
+    for(var i=-1;i<=1;i++) ctx.fillRect(cx+i*(w/3.1)-w*0.045, cy-h/2, w*0.09, h);
+    ctx.fillStyle='rgba(255,255,255,.26)';
+    ctx.fillRect(cx-w/2, cy-h/2, w, h*0.28);
+    ctx.restore();
+  }
+
+  function drawCounter(){
+    var by=Y(BENCH_Y);
+    ctx.fillStyle=C['card-2']; ctx.fillRect(0,0,cv.width,by);
+    var g=ctx.createLinearGradient(0,by,0,cv.height);
+    g.addColorStop(0,C['counter']); g.addColorStop(1,C['counter-2']);
+    ctx.fillStyle=g; ctx.fillRect(0,by,cv.width,cv.height-by);
+    ctx.fillStyle=C['counter-edge']; ctx.fillRect(0,by,cv.width,Y(0.0018));
+
+    var top=by+Y(0.010);
+    ctx.strokeStyle=C['counter-edge']; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(0,top); ctx.lineTo(cv.width,top); ctx.stroke();
+    ctx.font='700 17px "JetBrains Mono", monospace';
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    for(var cm=0;cm<=44;cm++){
+      var px=X(cm/100), big=(cm%5===0);
+      ctx.beginPath(); ctx.lineWidth=big?2.5:1.5; ctx.strokeStyle=C['counter-edge'];
+      ctx.moveTo(px,top); ctx.lineTo(px, top+(big?15:8)); ctx.stroke();
+      if(big&&cm>0&&cm<44){ ctx.fillStyle=C['counter-edge']; ctx.fillText(String(cm),px,top+18); }
+    }
+    ctx.textAlign='left'; ctx.fillStyle=C['counter-edge'];
+    ctx.font='800 15px Poppins, sans-serif';
+    ctx.fillText('CENTIMETRES', 8, top+18);
+  }
+
+  function drawStriker(){
+    var by=Y(BENCH_Y), w=X(CHIP_D), h=Y(CHIP_T);
+    for(var i=0;i<S.n;i++){
+      chip(X(S.striker.x), by-(i*h+h/2), w, h, STRIKER_COL[0], STRIKER_COL[1]);
+    }
+  }
+  function drawTower(){
+    var by=Y(BENCH_Y), w=X(CHIP_D), h=Y(CHIP_T);
+    S.tower.forEach(function(c,i){
+      var sx = X(S.towerX) - (S.clean?0:X(S.shear)*i);
+      chip(sx, by-Y(c.h), w, h, TOWER_COLS[c.ci][0], TOWER_COLS[c.ci][1]);
+    });
+  }
+  function drawEjected(){
+    if(!S.ejected.active) return;
+    var by=Y(BENCH_Y), w=X(CHIP_D), h=Y(CHIP_T);
+    for(var i=0;i<S.ejected.count;i++){
+      chip(X(S.ejected.x), by-(i*h+h/2), w, h,
+           TOWER_COLS[i][0], TOWER_COLS[i][1]);
+    }
+  }
+
+  function arrow(x1,y,len,color,label){
+    if(Math.abs(len)<5) return;
+    var x2=x1+len;
+    ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x2-Math.sign(len)*10,y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2,y);
+    ctx.lineTo(x2-Math.sign(len)*15,y-8); ctx.lineTo(x2-Math.sign(len)*15,y+8);
+    ctx.closePath(); ctx.fill();
+    if(label){
+      ctx.font='800 16px Poppins, sans-serif';
+      ctx.textAlign=len>0?'left':'right'; ctx.textBaseline='bottom';
+      ctx.fillText(label, x1, y-12);
+    }
+  }
+
+  function drawFlash(){
+    if(S.flash<=0) return;
+    var by=Y(BENCH_Y), cx=X(TOWER_X-CHIP_D/2), cy=by-Y(CHIP_T*S.n/2);
+    ctx.save(); ctx.globalAlpha=Math.min(1,S.flash);
+    ctx.strokeStyle=C['amber']; ctx.lineWidth=5; ctx.lineCap='round';
+    for(var i=0;i<6;i++){
+      var a=(i/6)*6.2832 + 0.4, r0=34, r1=34+58*(1.15-S.flash);
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(a)*r0, cy+Math.sin(a)*r0);
+      ctx.lineTo(cx+Math.cos(a)*r1, cy+Math.sin(a)*r1);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function marks(){
+    var by=Y(BENCH_Y), x=X(TOWER_X);
+    ctx.save();
+    ctx.strokeStyle=C['ink-3']; ctx.globalAlpha=.5; ctx.lineWidth=2; ctx.setLineDash([4,7]);
+    ctx.beginPath(); ctx.moveTo(x,86); ctx.lineTo(x,by); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha=1;
+    ctx.font='800 16px Poppins, sans-serif';
+    ctx.fillStyle=C['ink-3']; ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText('tower started here', x-11, 96);
+    ctx.restore();
+  }
+
+  function legend(){
+    var x=cv.width-16, y=23;
+    ctx.font='800 16px Poppins, sans-serif';
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillStyle=C['ink-3'];
+    ctx.fillText('chips you slide in', x-58, y);
+    chip(x-26, y, 52, 17, STRIKER_COL[0], STRIKER_COL[1]);
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    drawCounter();
+    marks();
+    drawStriker();
+    drawEjected();
+    drawTower();
+    drawFlash();
+    if(S.phase==='approach'||S.phase==='fly'||S.phase==='shove'){
+      var by=Y(BENCH_Y), sc=190;
+      if(S.striker.v>0.02) arrow(X(S.striker.x), by-Y(0.0405), S.striker.v*sc, C['ink-2'], 'sliding in');
+      if(S.ejected.active && S.ejected.v>0.02)
+        arrow(X(S.ejected.x), by-Y(0.0515), S.ejected.v*sc, C['red'], 'knocked out');
+    }
+    legend();
+  }
+
+  /* ---- loop ---- */
+  var raf=null,last=0;
+  function loop(ts){
+    if(!last) last=ts;
+    var real=Math.min(0.05,(ts-last)/1000); last=ts;
+    var sim=real*S.speed, n=Math.max(1,Math.ceil(sim/0.0003));
+    for(var i=0;i<n && S.phase!=='done';i++) step(sim/n);
+    updateReadouts(); draw();
+    if(S.phase!=='done') raf=requestAnimationFrame(loop); else raf=null;
+  }
+
+  function run(){
+    if(S.phase!=='ready' && S.phase!=='done') return;
+    reset();
+    S.striker.v=speedOf(S.force);
+    S.phase='approach'; S.t=0;
+    setPill('Sliding in…');
+    document.getElementById('run').disabled=true;
+    last=0; raf=requestAnimationFrame(loop);
+  }
+
+  function mJ(x){ return (x*1000).toFixed(1)+' mJ'; }
+
+  function finish(){
+    S.phase='done'; setPill('Finished');
+    document.getElementById('run').disabled=false;
+
+    var m=S.n*CHIP_M, v=S.hitV;
+    var keIn=0.5*m*v*v;
+    var keOut=S.clean ? 0.5*m*Math.pow(v*(1+E_REST)/2,2) : 0;
+    var keSrcAfter=S.clean ? 0.5*m*Math.pow(v*(1-E_REST)/2,2) : 0.5*(m+4*CHIP_M)*Math.pow(v*S.n/(S.n+4),2);
+    var lost=Math.max(0, keIn-keOut-keSrcAfter);
+    var dist=(S.ejected.x-TOWER_X)*100;
+
+    var vEl=document.getElementById('verdict'), wEl=document.getElementById('why');
+    var out=S.clean?S.n:0;
+
+    document.getElementById('cIn').textContent=S.n;
+    document.getElementById('cOut').textContent=out;
+    document.getElementById('cEq').textContent = S.clean ? '=' : '≠';
+
+    if(S.clean){
+      vEl.textContent = 'You slid in ' + S.n + (S.n===1?' chip':' chips') + ' — and exactly ' + S.n +
+        (S.n===1?' chip':' chips') + ' left the stack.';
+      wEl.innerHTML = 'The ' + (S.n===1?'incoming chip':'incoming chips') + ' hit at <strong>'+v.toFixed(2)+
+        ' m/s</strong> and handed almost all of that motion energy to the bottom ' + (S.n===1?'chip':S.n+' chips')+
+        ', which shot out at <strong>'+S.outV.toFixed(2)+' m/s</strong> and slid <strong>'+dist.toFixed(1)+
+        ' cm</strong> before friction stopped '+(S.n===1?'it':'them')+'. The <strong>'+S.tower.length+
+        (S.tower.length===1?' chip':' chips')+' left on top</strong> felt no sideways force at all, so ' +
+        (S.tower.length===1?'it':'they')+' just dropped straight down. That is <strong>inertia</strong>.';
+    }else{
+      vEl.textContent = 'Too slow — the whole stack got shoved instead.';
+      wEl.innerHTML = 'At <strong>'+v.toFixed(2)+' m/s</strong> the hit was not sharp enough to separate the bottom '+
+        (S.n===1?'chip':'chips')+
+        '. The push spread through the entire tower and everything slid together. Look at the lean: the bottom started moving while the top tried to stay still — that is <strong>inertia</strong> showing up a different way. Turn the force up past <strong>0.52 m/s</strong> at impact and try again.';
+    }
+
+    // energy panel
+    document.getElementById('eSrcName').textContent =
+      'The ' + S.n + (S.n===1?' chip':' chips') + ' you slid in';
+    document.getElementById('eRcvName').textContent = S.clean
+      ? ('The ' + S.n + (S.n===1?' chip':' chips') + ' knocked out')
+      : 'Nothing was knocked out';
+    document.getElementById('eSrcBefore').textContent = mJ(keIn);
+    document.getElementById('eSrcDrop').textContent = '−'+mJ(Math.max(0,keIn-keSrcAfter));
+    document.getElementById('eRcvBefore').textContent = mJ(0);
+    document.getElementById('eRcvGain').textContent = '+'+mJ(keOut);
+    document.getElementById('eLoss').innerHTML = S.clean
+      ? 'About <b>'+mJ(lost)+'</b> did not make it across. That energy became <strong>sound and heat</strong> — the click you hear. Energy was not destroyed, just spread out.'
+      : 'No energy was transferred to a receiver object. It all stayed as motion of the whole stack, then <strong>friction</strong> turned it into heat.';
+
+    var pb=document.getElementById('pBack');
+    if(S.predict!==null){
+      var right=(S.predict===out);
+      pb.hidden=false;
+      pb.innerHTML='Your prediction: <strong>'+S.predict+' chip'+(S.predict===1?'':'s')+
+        ' out</strong> &nbsp;&middot;&nbsp; Actual: <strong>'+out+' chip'+(out===1?'':'s')+' out</strong> &nbsp;'+
+        (right?'<span class="tick">&#10003; Match</span>':'<span class="cross">&#10007; Not a match &mdash; why not?</span>');
+    }else pb.hidden=true;
+
+    S.trial++;
+    rows.unshift({
+      n:S.trial, chipsIn:S.n, f:S.force, v:v.toFixed(2),
+      out:out, outV:S.clean?S.outV.toFixed(2):'—',
+      dist:S.clean?dist.toFixed(1)+' cm':'—',
+      energy:S.clean?mJ(keOut):'0.0 mJ',
+      clean:S.clean
+    });
+    renderRows();
+  }
+
+  /* ---- UI ---- */
+  function setPill(t){
+    var p=document.getElementById('phasePill');
+    p.textContent=t;
+    p.className='pill'+(t==='Finished'?' good':(t==='Ready'?'':' live'));
+  }
+  function updateReadouts(){
+    document.getElementById('rHit').innerHTML =
+      (S.phase==='approach'?S.striker.v:S.hitV).toFixed(2)+'<span class="u">m/s</span>';
+    document.getElementById('rOut').innerHTML =
+      (S.ejected.active?S.ejected.v:0).toFixed(2)+'<span class="u">m/s</span>';
+    document.getElementById('rTower').innerHTML =
+      S.tower.length+'<span class="u">chip'+(S.tower.length===1?'':'s')+'</span>';
+    document.getElementById('rTime').innerHTML = S.t.toFixed(3)+'<span class="u">s</span>';
+  }
+  function renderRows(){
+    var tb=document.getElementById('tbody');
+    if(!rows.length){
+      tb.innerHTML='<tr><td colspan="9" class="empty">No trials yet &mdash; run the simulation to fill this in.</td></tr>';
+      return;
+    }
+    tb.innerHTML=rows.map(function(r){
+      return '<tr>'
+       +'<td class="num">'+r.n+'</td>'
+       +'<td class="num">'+r.chipsIn+'</td>'
+       +'<td class="num">'+r.f+'</td>'
+       +'<td class="num">'+r.v+' m/s</td>'
+       +'<td class="num">'+r.out+'</td>'
+       +'<td class="num">'+r.outV+(r.outV==='—'?'':' m/s')+'</td>'
+       +'<td class="num">'+r.dist+'</td>'
+       +'<td class="num">'+r.energy+'</td>'
+       +'<td><span class="badge '+(r.clean?'ok':'no')+'">'
+         +(r.clean?(r.chipsIn+' in = '+r.out+' out'):'Stack shoved')+'</span></td>'
+       +'</tr>';
+    }).join('');
+  }
+  function press(el,on){ el.setAttribute('aria-pressed', on?'true':'false'); }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-n]'),function(b){
+    b.addEventListener('click',function(){
+      S.n=+b.dataset.n;
+      Array.prototype.forEach.call(document.querySelectorAll('[data-n]'),function(o){press(o,o===b);});
+      document.getElementById('cIn').textContent=S.n;
+      reset();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-p]'),function(b){
+    b.addEventListener('click',function(){
+      var val=+b.dataset.p;
+      S.predict = (S.predict===val) ? null : val;
+      Array.prototype.forEach.call(document.querySelectorAll('[data-p]'),function(o){
+        press(o, S.predict!==null && +o.dataset.p===S.predict);
+      });
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-sp]'),function(b){
+    b.addEventListener('click',function(){
+      S.speed=+b.dataset.sp;
+      Array.prototype.forEach.call(document.querySelectorAll('[data-sp]'),function(o){press(o,o===b);});
+      document.getElementById('speedPill').textContent =
+        S.speed===1?'Real time':(S.speed===0.25?'Slow motion ×¼':'Super slow ×1⁄12');
+    });
+  });
+
+  var fs=document.getElementById('force');
+  function syncForce(){
+    S.force=+fs.value;
+    document.getElementById('fNum').textContent=S.force;
+    document.getElementById('fWord').innerHTML=flickWord(S.force)+
+      ' <span>&mdash; '+speedOf(S.force).toFixed(2)+' m/s at impact</span>';
+  }
+  fs.addEventListener('input',syncForce); syncForce();
+
+  document.getElementById('run').addEventListener('click',run);
+  document.getElementById('reset').addEventListener('click',function(){
+    if(raf){cancelAnimationFrame(raf);raf=null;} reset();
+  });
+  document.getElementById('clear').addEventListener('click',function(){ rows=[]; S.trial=0; renderRows(); });
+
+  reset();
+})();
+</script>
+
+</body>
+</html>

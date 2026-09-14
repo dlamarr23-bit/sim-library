@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plop, Plop, Fizz, Fizz — Reaction Rate Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a1220;
+  --bg2:#0d1a2e;
+  --card:#132039;
+  --card2:#0f1a2f;
+  --line:#26374f;
+  --line2:#33486a;
+  --ink:#eaf2ff;
+  --muted:#9cb1d0;
+  --accent:#22d3ee;
+  --accent2:#38bdf8;
+  --hot:#fb923c;
+  --hot2:#ef4444;
+  --cold:#60a5fa;
+  --good:#34d399;
+  --warn:#fbbf24;
+  --purple:#a78bfa;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 700px at 15% -10%, #16294a 0%, rgba(22,41,74,0) 60%),
+    radial-gradient(1000px 600px at 90% 0%, #123141 0%, rgba(18,49,65,0) 55%),
+    linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:'Poppins', system-ui, sans-serif;
+  font-weight:700;
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:min(1900px,97vw);margin:0 auto;padding:22px 0 60px}
+
+header.page{
+  display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 26px;
+  padding:18px 24px 20px;margin-bottom:18px;
+  background:linear-gradient(135deg, rgba(34,211,238,.10), rgba(56,189,248,.03));
+  border:1px solid var(--line);border-radius:18px;
+}
+header.page h1{
+  margin:0;font-size:clamp(24px,3vw,38px);font-weight:800;letter-spacing:-.5px;
+  background:linear-gradient(90deg,#7dd3fc,#22d3ee 45%,#a7f3d0);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+header.page .sub{color:var(--muted);font-weight:600;font-size:clamp(14px,1.15vw,17px);max-width:900px}
+.badge{
+  margin-left:auto;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
+  color:#04121b;background:linear-gradient(90deg,var(--accent),#7dd3fc);
+  padding:8px 16px;border-radius:999px;white-space:nowrap;
+}
+
+.grid-main{display:grid;grid-template-columns:340px minmax(0,1fr) 320px;gap:18px;align-items:start}
+.grid-two{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;margin-top:18px;align-items:start}
+
+.card{
+  background:linear-gradient(180deg,var(--card) 0%,var(--card2) 100%);
+  border:1px solid var(--line);border-radius:16px;padding:18px 18px 20px;
+  box-shadow:0 12px 34px rgba(0,0,0,.28);
+}
+.card h2{
+  margin:0 0 14px;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:var(--accent);display:flex;align-items:center;gap:9px;
+}
+.card h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+
+label.fieldlabel,.fieldlabel{display:block;font-size:14px;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px}
+
+.tempbig{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1;margin:2px 0 10px;
+  font-variant-numeric:tabular-nums}
+.tempbig span:last-child{font-size:20px;color:var(--muted);font-weight:700}
+
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:12px;border-radius:999px;outline:none;
+  background:linear-gradient(90deg,#3b82f6 0%,#22d3ee 22%,#34d399 42%,#fbbf24 66%,#f97316 84%,#ef4444 100%);
+  border:1px solid var(--line2);cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+  background:#fff;border:4px solid #0b1424;box-shadow:0 0 0 2px var(--accent),0 4px 12px rgba(0,0,0,.5);cursor:grab
+}
+input[type=range]::-moz-range-thumb{
+  width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid #0b1424;
+  box-shadow:0 0 0 2px var(--accent);cursor:grab
+}
+.rangeticks{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted);margin-top:6px}
+
+.presets{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:12px}
+.presets button{padding:9px 4px;font-size:12px;letter-spacing:.04em;line-height:1.35}
+
+button{
+  font-family:inherit;font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--ink);background:#1b2b47;border:1px solid var(--line2);border-radius:11px;
+  padding:12px 16px;cursor:pointer;transition:.15s transform,.15s background,.15s border-color;
+}
+button:hover:not(:disabled){background:#24395e;border-color:var(--accent);transform:translateY(-1px)}
+button:active:not(:disabled){transform:translateY(1px)}
+button:disabled{opacity:.38;cursor:not-allowed}
+button.primary{background:linear-gradient(90deg,#0891b2,#22d3ee);border-color:#67e8f9;color:#04141c}
+button.primary:hover:not(:disabled){background:linear-gradient(90deg,#06b6d4,#67e8f9)}
+button.hot{background:linear-gradient(90deg,#c2410c,#f97316);border-color:#fdba74;color:#1a0a02}
+button.hot:hover:not(:disabled){background:linear-gradient(90deg,#ea580c,#fb923c)}
+button.ghost{background:transparent}
+button.wide{width:100%;margin-top:10px}
+.btnrow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+
+.seg{display:flex;gap:6px;background:#0d1729;border:1px solid var(--line);border-radius:11px;padding:5px}
+.seg button{flex:1;padding:9px 6px;font-size:12px;border:none;background:transparent;border-radius:8px}
+.seg button.on{background:var(--accent);color:#04141c}
+
+.scenewrap{position:relative;width:100%;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#08111f}
+canvas#scene{display:block;width:100%;height:auto;aspect-ratio:1000/640}
+.statusbar{
+  display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;margin-top:12px;padding:11px 15px;
+  background:#0d1729;border:1px solid var(--line);border-radius:12px;font-size:14px;font-weight:700;
+}
+.statusbar .pill{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.statusbar .pill b{color:var(--ink);font-weight:800}
+.led{width:11px;height:11px;border-radius:50%;background:#475569;flex:none}
+.led.on{background:var(--good);box-shadow:0 0 12px var(--good)}
+.led.run{background:var(--warn);box-shadow:0 0 12px var(--warn)}
+.led.heat{background:var(--hot);box-shadow:0 0 12px var(--hot)}
+
+.lcd{
+  background:linear-gradient(180deg,#9fb0a2,#8ba28f);border:5px solid #2b2b2b;border-radius:12px;
+  padding:12px 14px;color:#10201a;box-shadow:inset 0 3px 10px rgba(0,0,0,.35);
+}
+.lcd .lcdlabel{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;opacity:.72}
+.lcd .lcdval{font-size:34px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.lcd .lcdval small{font-size:17px}
+.irbody{background:linear-gradient(180deg,#fbbf24,#f59e0b);border-radius:14px;padding:11px;border:1px solid #b45309}
+
+.timerbox{text-align:center;padding:14px 10px;background:#0b1526;border:1px solid var(--line);border-radius:13px}
+.timerbox .t{font-size:clamp(34px,3.6vw,46px);font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;
+  color:var(--warn);line-height:1}
+.timerbox .cap{font-size:12px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+
+.meter{height:20px;border-radius:999px;background:#0b1526;border:1px solid var(--line);overflow:hidden;margin-top:8px}
+.meter > i{display:block;height:100%;width:0%;border-radius:999px;
+  background:linear-gradient(90deg,#34d399,#fbbf24 55%,#ef4444);transition:width .12s linear}
+
+.kv{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.kv:last-child{border-bottom:none}
+.kv .k{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.kv .v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{
+  background:#0d1729;color:var(--accent);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
+  padding:11px 9px;text-align:left;border-bottom:2px solid var(--line2);position:sticky;top:0;
+}
+td{padding:10px 9px;border-bottom:1px solid var(--line);font-weight:700;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:rgba(34,211,238,.06)}
+.tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.07em}
+.tag.cold{background:rgba(96,165,250,.18);color:#93c5fd}
+.tag.room{background:rgba(52,211,153,.18);color:#6ee7b7}
+.tag.warm{background:rgba(251,191,36,.18);color:#fcd34d}
+.tag.hot{background:rgba(239,68,68,.2);color:#fca5a5}
+.tablescroll{max-height:330px;overflow:auto;border-radius:11px;border:1px solid var(--line)}
+.empty{padding:26px 14px;text-align:center;color:var(--muted);font-weight:700;font-size:15px}
+
+.avgrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:13px}
+.avgcell{background:#0b1526;border:1px solid var(--line);border-radius:12px;padding:11px 12px;text-align:center}
+.avgcell .lbl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.avgcell .val{font-size:25px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:3px}
+
+canvas#chart{display:block;width:100%;height:auto;aspect-ratio:760/470;border-radius:11px;background:#0b1526;border:1px solid var(--line)}
+
+.phscale{display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--line2);margin:6px 0 4px}
+.phscale div{flex:1;text-align:center;font-size:13px;font-weight:800;padding:9px 0;color:#0b1020}
+.phlabels{display:flex;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.phlabels span{text-align:center}
+.phhead{display:grid;grid-template-columns:1.3fr .95fr .85fr 96px 1fr;gap:12px;padding:0 12px 8px;
+  font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.striprow{display:grid;grid-template-columns:1.3fr .95fr .85fr 96px 1fr;gap:12px;align-items:center;
+  padding:13px 12px;border:1px solid var(--line);border-radius:13px;background:#0b1526;margin-bottom:11px}
+.striprow .name{font-size:15px;font-weight:800}
+.striprow .name small{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-top:2px}
+input[type=number]{
+  width:100%;font-family:inherit;font-weight:800;font-size:17px;color:var(--ink);background:#0d1729;
+  border:1px solid var(--line2);border-radius:10px;padding:9px 11px;text-align:center;
+}
+input[type=number]:focus{outline:none;border-color:var(--accent)}
+.strip{height:58px;border-radius:8px;border:2px solid #1c2942;background:#e8e4d5;position:relative;overflow:hidden;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
+.strip i{position:absolute;left:0;right:0;bottom:0;height:62%;background:#e8e4d5;transition:background .5s ease}
+.actual{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;text-align:center;line-height:1.1}
+.actual small{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.hit{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-top:5px}
+.hit.yes{color:var(--good)} .hit.no{color:var(--warn)}
+.explain{margin-top:14px;padding:15px 17px;border-radius:13px;border:1px dashed var(--accent);
+  background:rgba(34,211,238,.07);font-size:15px;font-weight:600;line-height:1.65;color:#d6ebff}
+.explain b{font-weight:800;color:#a5f3fc}
+.explain.hidden{display:none}
+
+ol.howto{margin:0;padding-left:24px;font-size:16px;font-weight:600;line-height:1.75;color:#dbe8fb}
+ol.howto li{margin-bottom:10px}
+ol.howto strong{font-weight:800;color:#fff}
+.notes{font-size:15px;font-weight:600;line-height:1.7;color:#cddcf2}
+.notes strong{color:#fff;font-weight:800}
+.eq{display:inline-block;background:#0b1526;border:1px solid var(--line2);border-radius:10px;
+  padding:9px 14px;margin:8px 0;font-size:16px;font-weight:800;color:#a7f3d0}
+.hintline{font-size:13px;font-weight:600;color:var(--muted);margin-top:9px;line-height:1.55}
+
+@media (max-width:1350px){
+  .grid-main{grid-template-columns:320px minmax(0,1fr)}
+  .grid-main .readouts{grid-column:1/-1}
+  .readouts .inner{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+  .readouts .inner > div{margin-top:0 !important}
+}
+@media (max-width:980px){
+  .grid-main{grid-template-columns:1fr}
+  .grid-two{grid-template-columns:1fr}
+  .readouts .inner{grid-template-columns:1fr}
+  .striprow,.phhead{grid-template-columns:1fr 1fr;gap:10px}
+  header.page .badge{margin-left:0}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="page">
+  <div>
+    <h1>Plop, Plop, Fizz, Fizz</h1>
+    <div class="sub">Measure how <strong>water temperature</strong> changes the <strong>rate of a chemical reaction</strong>. Heat the water, drop the Alka-Seltzer tablet, and time the fizz until the tablet is completely gone.</div>
+  </div>
+  <div class="badge">Reaction Rate Lab</div>
+</header>
+
+<div class="grid-main">
+
+  <section class="card">
+    <h2><span class="dot"></span>Set Up The Water</h2>
+
+    <label class="fieldlabel" for="tempSlider">Target water temperature</label>
+    <div class="tempbig"><span id="targetTemp">22</span><span> &deg;C</span></div>
+    <input type="range" id="tempSlider" min="0" max="95" step="1" value="22">
+    <div class="rangeticks"><span>0&deg; ice</span><span>22&deg; room</span><span>50&deg;</span><span>95&deg; near boiling</span></div>
+
+    <div class="presets">
+      <button data-temp="2">Ice<br>2&deg;C</button>
+      <button data-temp="22">Room<br>22&deg;C</button>
+      <button data-temp="50">Warm<br>50&deg;C</button>
+      <button data-temp="80">Hot<br>80&deg;C</button>
+    </div>
+
+    <button class="hot wide" id="btnHeat">Set Water Bath</button>
+    <div class="hintline" id="heatHint">The hot plate (or ice bath) will bring the water to your target, then hold it there.</div>
+
+    <h2 style="margin-top:22px"><span class="dot"></span>Run The Trial</h2>
+    <button class="primary wide" id="btnDrop" disabled>Drop Tablet</button>
+    <div class="btnrow">
+      <button class="ghost" id="btnRecord" disabled>Record Trial</button>
+      <button class="ghost" id="btnReset">New Beaker</button>
+    </div>
+
+    <div class="fieldlabel" style="margin-top:20px">Simulation speed</div>
+    <div class="seg" id="speedSeg">
+      <button data-speed="1" class="on">1&times;</button>
+      <button data-speed="5">5&times;</button>
+      <button data-speed="20">20&times;</button>
+    </div>
+    <div class="hintline">Cold-water trials take several real minutes. Speed up time &mdash; the stopwatch still reports the <strong>true</strong> reaction time in seconds.</div>
+
+    <div class="fieldlabel" style="margin-top:18px">Fizz sound</div>
+    <div class="seg" id="soundSeg">
+      <button data-sound="0" class="on">Off</button>
+      <button data-sound="1">On</button>
+    </div>
+
+    <div style="margin-top:20px;padding:13px 14px;background:#0b1526;border:1px solid var(--line);border-radius:12px">
+      <div class="fieldlabel" style="margin-bottom:8px">Controlled variables</div>
+      <div style="font-size:13px;font-weight:600;color:var(--muted);line-height:1.7">
+        Same 400 mL beaker &middot; 250 mL of water &middot; <strong style="color:#cbd9ee">1 whole tablet</strong>, same brand and size &middot; tablet dropped, not stirred
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="dot"></span>Lab Bench</h2>
+    <div class="scenewrap"><canvas id="scene" width="1000" height="640"></canvas></div>
+    <div class="statusbar">
+      <div class="pill"><span class="led" id="ledHeat"></span><b id="heatState">Heater off</b></div>
+      <div class="pill"><span class="led" id="ledRun"></span><b id="runState">Waiting</b></div>
+      <div class="pill">Water: <b id="sbTemp">22.0 &deg;C</b></div>
+      <div class="pill">Tablet left: <b id="sbTablet">100%</b></div>
+      <div class="pill">Trials recorded: <b id="sbTrials">0</b></div>
+    </div>
+  </section>
+
+  <section class="card readouts">
+    <h2><span class="dot"></span>Instruments</h2>
+    <div class="inner">
+
+      <div>
+        <div class="timerbox">
+          <div class="t" id="stopwatch">0:00.0</div>
+          <div class="cap">Reaction stopwatch</div>
+        </div>
+        <div class="hintline">Starts the instant the tablet hits the water. Stops when the tablet is <strong>completely dissolved</strong>.</div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="irbody">
+          <div class="lcd">
+            <div class="lcdlabel">IR Thermometer</div>
+            <div class="lcdval"><span id="irTemp">22.0</span><small> &deg;C</small></div>
+            <div class="lcdlabel" style="margin-top:2px"><span id="irF">71.6</span> &deg;F</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="fieldlabel">Fizz loudness</div>
+        <div class="kv" style="padding-top:2px"><span class="k">Sound level</span><span class="v"><span id="loudVal">0</span> dB</span></div>
+        <div class="meter"><i id="loudBar"></i></div>
+        <div class="hintline">More collisions per second &rarr; more CO<sub>2</sub> bubbles bursting per second &rarr; a louder fizz.</div>
+
+        <div style="margin-top:14px">
+          <div class="kv"><span class="k">Last time</span><span class="v" id="lastTime">&mdash;</span></div>
+          <div class="kv"><span class="k">Last temp</span><span class="v" id="lastTemp">&mdash;</span></div>
+          <div class="kv"><span class="k">Peak loudness</span><span class="v" id="peakLoud">&mdash;</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<div class="grid-two">
+  <section class="card">
+    <h2><span class="dot"></span>Data Table</h2>
+    <div class="tablescroll">
+      <table>
+        <thead><tr><th>#</th><th>Water temp (&deg;C)</th><th>Category</th><th>Time to dissolve (s)</th><th>Peak loudness (dB)</th></tr></thead>
+        <tbody id="dataBody"></tbody>
+      </table>
+    </div>
+    <div class="avgrow">
+      <div class="avgcell"><div class="lbl">Room temp avg (18&ndash;26&deg;C)</div><div class="val" id="avgRoom">&mdash;</div></div>
+      <div class="avgcell"><div class="lbl">Hot water avg (&ge;45&deg;C)</div><div class="val" id="avgHot">&mdash;</div></div>
+      <div class="avgcell"><div class="lbl">Cold water avg (&le;10&deg;C)</div><div class="val" id="avgCold">&mdash;</div></div>
+    </div>
+    <div class="btnrow">
+      <button class="ghost" id="btnClear">Clear Table</button>
+      <button class="ghost" id="btnCopy">Copy Data</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="dot"></span>Graph &mdash; Reaction Time vs. Water Temperature</h2>
+    <canvas id="chart" width="760" height="470"></canvas>
+    <div class="seg" style="margin-top:12px">
+      <button id="btnCurve" class="on">Show model curve</button>
+      <button id="btnGrid" class="on">Show gridlines</button>
+    </div>
+    <div class="hintline">Each dot is one recorded trial. Notice the curve is <strong>steep on the cold end</strong> &mdash; a 10 &deg;C change matters far more in cold water than in hot water.</div>
+  </section>
+</div>
+
+<section class="card" style="margin-top:18px">
+  <h2><span class="dot"></span>Bonus Content &mdash; Testing pH With Indicator Strips</h2>
+
+  <div class="notes" style="margin-bottom:16px">
+    pH measures how <strong>acidic</strong> or <strong>basic (alkaline)</strong> a water-based liquid is, on a scale from 0 to 14. It tells us how many hydrogen ions are present: <strong>0&ndash;6 are acids</strong>, <strong>7 is neutral</strong>, and <strong>8&ndash;14 are bases</strong>.
+  </div>
+
+  <div class="phscale" id="phScale"></div>
+  <div class="phlabels" style="margin-bottom:20px">
+    <span style="flex:3">strong acid</span><span style="flex:3">weak acid</span><span style="flex:1">neutral</span><span style="flex:3">weak alkali</span><span style="flex:4">strong alkali</span>
+  </div>
+
+  <div class="phhead">
+    <div>Item</div><div>Your estimated pH</div><div>Actual pH</div><div>Strip color</div><div>Test</div>
+  </div>
+
+  <div id="phRows"></div>
+
+  <div class="explain hidden" id="phExplain"></div>
+  <div class="hintline">Type your prediction first, <em>then</em> dip the strip &mdash; that is what the &ldquo;Est. pH&rdquo; row on your lab sheet is for.</div>
+</section>
+
+<div class="grid-two">
+  <section class="card">
+    <h2><span class="dot"></span>How To Use This Simulation</h2>
+    <ol class="howto">
+      <li>Drag the <strong>temperature slider</strong> (or tap a preset) to pick the water temperature you want to test, then press <strong>Set Water Bath</strong>. Watch the IR thermometer until the water reaches your target and holds steady.</li>
+      <li>Press <strong>Drop Tablet</strong>. The stopwatch starts the moment the tablet hits the water, and the fizz-loudness meter shows how violently the reaction is going.</li>
+      <li>If the trial is slow (cold water), switch the <strong>simulation speed</strong> to 5&times; or 20&times;. The stopwatch still reports the real reaction time in seconds.</li>
+      <li>When the tablet is <strong>completely gone</strong>, the stopwatch stops. Press <strong>Record Trial</strong> to send that temperature and time to the data table.</li>
+      <li>Press <strong>New Beaker</strong> for fresh water, change the temperature, and run it again. Do at least one <strong>room temperature</strong> trial and one <strong>hot water</strong> trial so you can fill in your lab sheet.</li>
+      <li>Read the <strong>graph</strong> to see the pattern, and use the three average boxes under the data table for your class-average row.</li>
+      <li>For the bonus, type your <strong>estimated pH</strong> in each box, then dip the strips: plain water first, then the fizzing mixture, then the mixture after it has stood for five minutes.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="dot"></span>The Science Behind The Model</h2>
+    <div class="notes">
+      <p style="margin-top:0">The tablet holds solid <strong>citric acid</strong> and <strong>sodium bicarbonate</strong>. They cannot react while dry &mdash; the water dissolves them so the particles can finally <strong>collide</strong>:</p>
+      <div class="eq">3 NaHCO<sub>3</sub> + C<sub>6</sub>H<sub>8</sub>O<sub>7</sub> &rarr; 3 CO<sub>2</sub> &uarr; + 3 H<sub>2</sub>O + Na<sub>3</sub>C<sub>6</sub>H<sub>5</sub>O<sub>7</sub></div>
+      <p>That escaping <strong>carbon dioxide gas</strong> is the fizz. Hotter water gives the particles more kinetic energy, so they collide <strong>more often</strong> and <strong>harder</strong> &mdash; more of those collisions have enough energy to react, so the tablet disappears sooner.</p>
+      <p>This sim uses a <strong>Q<sub>10</sub> = 1.75</strong> rate model, meaning the reaction runs about <strong>1.75&times; faster for every 10 &deg;C</strong> you add:</p>
+      <div class="eq">t = 3 + 57 &middot; 1.75<sup>(20 &minus; T)/10</sup> seconds</div>
+      <p>The constant 3 s is a floor &mdash; even in near-boiling water the tablet still needs time to physically break apart and mix. Each trial also gets a small random wobble (&plusmn;4%), just like real groups in a real lab, so your data will not sit perfectly on the curve.</p>
+      <p style="margin-bottom:0"><strong>Physical or chemical change?</strong> Watch for the evidence: a <strong>new substance</strong> (CO<sub>2</sub> gas) is produced, bubbles form, and the change cannot be reversed by re-freezing or evaporating the water.</p>
+    </div>
+  </section>
+</div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ================= MODEL ================= */
+var ROOM_TEMP = 22;
+var Q10 = 1.75;
+var T_FLOOR = 3;
+var T_BASE = 57;
+
+function dissolveTime(T){
+  return T_FLOOR + T_BASE * Math.pow(Q10, (20 - T) / 10);
+}
+function loudnessFor(T){
+  var t = dissolveTime(T);
+  var x = Math.min(1, Math.max(0, Math.pow(60 / t, 0.55) / Math.pow(60 / T_FLOOR, 0.55)));
+  return 40 + 32 * x;
+}
+function category(T){
+  if (T <= 10) return {k:'cold', label:'Cold'};
+  if (T < 30)  return {k:'room', label:'Room temp'};
+  if (T < 45)  return {k:'warm', label:'Warm'};
+  return {k:'hot', label:'Hot'};
+}
+
+/* ================= STATE ================= */
+var S = {
+  target: 22,
+  temp: 22,
+  heating: false,
+  phase: 'ready',
+  progress: 0,
+  simTime: 0,
+  speed: 1,
+  trialTotal: 0,
+  loud: 0,
+  peakLoud: 0,
+  lastTime: null,
+  lastTemp: null,
+  lastLoud: null,
+  recorded: true,
+  tabletY: -60,
+  tabletVY: 0,
+  trials: [],
+  sound: false,
+  showCurve: true,
+  showGrid: true
+};
+
+function $(id){ return document.getElementById(id); }
+
+/* ================= CANVAS SCENE ================= */
+var cv = $('scene'), cx = cv.getContext('2d');
+var W = 1000, H = 640;
+var BX = 368, BW = 264, BTOP = 128, BBOT = 468;
+var WATER_TOP = 276;
+var PLATE_TOP = 468;
+
+var bubbles = [], foam = [], steam = [];
+
+function rnd(a,b){ return a + Math.random()*(b-a); }
+
+function waterColor(T){
+  var t = Math.min(1, Math.max(0, T/95));
+  return [Math.round(150 + 45*t), Math.round(205 - 25*t), Math.round(245 - 55*t)];
+}
+
+function roundRect(x,y,w,h,r){
+  cx.beginPath();
+  cx.moveTo(x+r,y); cx.lineTo(x+w-r,y); cx.quadraticCurveTo(x+w,y,x+w,y+r);
+  cx.lineTo(x+w,y+h-r); cx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  cx.lineTo(x+r,y+h); cx.quadraticCurveTo(x,y+h,x,y+h-r);
+  cx.lineTo(x,y+r); cx.quadraticCurveTo(x,y,x+r,y); cx.closePath();
+}
+
+function drawScene(){
+  cx.clearRect(0,0,W,H);
+
+  var bg = cx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#0e1e33'); bg.addColorStop(.55,'#102942'); bg.addColorStop(1,'#0a1626');
+  cx.fillStyle = bg; cx.fillRect(0,0,W,H);
+
+  var bench = cx.createLinearGradient(0,548,0,H);
+  bench.addColorStop(0,'#15594f'); bench.addColorStop(1,'#0d3b35');
+  cx.fillStyle = bench; cx.fillRect(0,548,W,H-548);
+  cx.fillStyle='rgba(255,255,255,.05)'; cx.fillRect(0,548,W,3);
+
+  var hotAmt = Math.min(1, Math.max(0,(S.temp-30)/60));
+  var coldAmt = Math.min(1, Math.max(0,(14-S.temp)/14));
+
+  if (hotAmt > 0.02){
+    var g = cx.createRadialGradient(500,PLATE_TOP+10,10,500,PLATE_TOP+10,300);
+    g.addColorStop(0,'rgba(249,115,22,'+(0.30*hotAmt)+')');
+    g.addColorStop(1,'rgba(249,115,22,0)');
+    cx.fillStyle=g; cx.fillRect(180,330,640,260);
+  }
+
+  drawHotPlate(hotAmt);
+  drawBeakerBack(coldAmt);
+  drawGlass();
+  if (S.temp > 55) drawSteam(Math.min(1,(S.temp-55)/40));
+  drawLaserDot();
+  drawProps();
+}
+
+function drawProps(){
+  // ---- Alka-Seltzer packet lying on the bench, left ----
+  cx.save();
+  cx.translate(120, 566); cx.rotate(-0.10);
+  cx.fillStyle='rgba(0,0,0,.28)'; roundRect(-84,52,176,10,5); cx.fill();
+  roundRect(-84,-52,168,104,8);
+  var pg = cx.createLinearGradient(-84,0,84,0);
+  pg.addColorStop(0,'#2f9fd6'); pg.addColorStop(1,'#1c7fbc');
+  cx.fillStyle=pg; cx.fill();
+  cx.strokeStyle='#12557f'; cx.lineWidth=2; cx.stroke();
+  // foil tear strip
+  roundRect(60,-52,44,104,6);
+  var fg = cx.createLinearGradient(60,0,104,0);
+  fg.addColorStop(0,'#e9edf2'); fg.addColorStop(.5,'#b9c2cc'); fg.addColorStop(1,'#dfe5ec');
+  cx.fillStyle=fg; cx.fill(); cx.strokeStyle='#8c96a2'; cx.lineWidth=1.5; cx.stroke();
+  // white logo oval
+  cx.beginPath(); cx.ellipse(-8,-2,52,40,0,0,Math.PI*2);
+  cx.fillStyle='#ffffff'; cx.fill();
+  cx.strokeStyle='#12406b'; cx.lineWidth=3; cx.stroke();
+  cx.fillStyle='#123f66'; cx.textAlign='center';
+  cx.font='800 15px Poppins, sans-serif';
+  cx.fillText('Alka-', -8, -8);
+  cx.fillText('Seltzer', -8, 10);
+  cx.font='700 8px Poppins, sans-serif';
+  cx.fillStyle='rgba(255,255,255,.9)';
+  cx.fillText('2 EFFERVESCENT TABLETS', -6, 42);
+  cx.restore();
+
+  // ---- spare tablets on the bench ----
+  for (var i=0;i<2;i++){
+    cx.save(); cx.translate(228 + i*40, 596 + i*9);
+    cx.fillStyle='rgba(0,0,0,.25)';
+    cx.beginPath(); cx.ellipse(2,5,24,9,0,0,Math.PI*2); cx.fill();
+    cx.beginPath(); cx.ellipse(0,0,23,17,0,0,Math.PI*2);
+    var tgz = cx.createLinearGradient(-23,-17,23,17);
+    tgz.addColorStop(0,'#ffffff'); tgz.addColorStop(1,'#dbe0e6');
+    cx.fillStyle=tgz; cx.fill();
+    cx.strokeStyle='rgba(140,152,168,.9)'; cx.lineWidth=1.5; cx.stroke();
+    cx.restore();
+  }
+
+  // ---- pH strip vial on the bench, right ----
+  cx.save();
+  cx.translate(852, 560);
+  cx.fillStyle='rgba(0,0,0,.28)';
+  cx.beginPath(); cx.ellipse(0,62,42,11,0,0,Math.PI*2); cx.fill();
+  roundRect(-30,-58,60,120,9);
+  var vg = cx.createLinearGradient(-30,0,30,0);
+  vg.addColorStop(0,'rgba(228,244,255,.30)'); vg.addColorStop(.45,'rgba(255,255,255,.16)');
+  vg.addColorStop(1,'rgba(190,220,245,.30)');
+  cx.fillStyle=vg; cx.fill();
+  cx.strokeStyle='rgba(215,238,255,.72)'; cx.lineWidth=3; cx.stroke();
+  // strips inside
+  var stripCols=['#f6c324','#d5d92b','#4caf50','#2fae7e'];
+  for (var s=0;s<4;s++){
+    roundRect(-21 + s*11, -34, 8, 84, 3);
+    cx.fillStyle='#e8e4d5'; cx.fill();
+    roundRect(-21 + s*11, 26, 8, 24, 3);
+    cx.fillStyle=stripCols[s]; cx.fill();
+  }
+  // cap
+  roundRect(-33,-72,66,20,6);
+  cx.fillStyle='#e2e8f0'; cx.fill();
+  cx.strokeStyle='#94a3b8'; cx.lineWidth=1.5; cx.stroke();
+  cx.fillStyle='rgba(230,245,255,.72)'; cx.font='800 11px Poppins, sans-serif'; cx.textAlign='center';
+  cx.fillText('pH STRIPS', 0, 88);
+  cx.restore();
+
+  // ---- scene caption ----
+  cx.fillStyle='rgba(230,245,255,.42)';
+  cx.font='800 13px Poppins, sans-serif'; cx.textAlign='left';
+  cx.fillText('250 mL WATER  ·  400 mL BEAKER  ·  1 WHOLE TABLET', 34, 40);
+}
+
+function drawHotPlate(hotAmt){
+  roundRect(248, PLATE_TOP, 504, 40, 7);
+  var gt = cx.createLinearGradient(0,PLATE_TOP,0,PLATE_TOP+40);
+  gt.addColorStop(0,'#f4f5f7'); gt.addColorStop(1,'#c9ccd3');
+  cx.fillStyle = gt; cx.fill();
+  cx.strokeStyle='#9aa0ab'; cx.lineWidth=2; cx.stroke();
+
+  if (hotAmt>0.03){
+    cx.save(); roundRect(258, PLATE_TOP+3, 484, 12, 5); cx.clip();
+    cx.fillStyle='rgba(249,115,22,'+(0.45*hotAmt)+')'; cx.fillRect(258,PLATE_TOP,484,16);
+    cx.restore();
+  }
+
+  roundRect(262, PLATE_TOP+40, 476, 66, 8);
+  var gb = cx.createLinearGradient(0,PLATE_TOP+40,0,PLATE_TOP+106);
+  gb.addColorStop(0,'#e5e7ec'); gb.addColorStop(1,'#b9bec8');
+  cx.fillStyle = gb; cx.fill(); cx.strokeStyle='#9aa0ab'; cx.stroke();
+
+  roundRect(286, PLATE_TOP+52, 428, 44, 6);
+  var gp = cx.createLinearGradient(286,0,714,0);
+  gp.addColorStop(0,'#1b6aa5'); gp.addColorStop(1,'#155e91');
+  cx.fillStyle=gp; cx.fill();
+  cx.strokeStyle='#0e4870'; cx.lineWidth=1.5; cx.stroke();
+
+  cx.fillStyle='rgba(255,255,255,.85)';
+  cx.font='800 11px Poppins, sans-serif'; cx.textAlign='left';
+  cx.fillText('TORREY PINES SCIENTIFIC', 300, PLATE_TOP+79);
+  cx.textAlign='right';
+  cx.font='800 11px Poppins, sans-serif';
+  cx.fillText('HOT PLATE', 706, PLATE_TOP+79);
+
+  var lit = S.heating || S.temp > ROOM_TEMP + 1;
+  roundRect(490, PLATE_TOP+64, 34, 16, 3);
+  cx.fillStyle = lit ? '#ff3b1f' : '#4a1d16'; cx.fill();
+  if (lit){ cx.shadowColor='#ff3b1f'; cx.shadowBlur=16; cx.fill(); cx.shadowBlur=0; }
+
+  cx.beginPath(); cx.arc(596, PLATE_TOP+74, 16, 0, Math.PI*2);
+  var gk = cx.createLinearGradient(580,0,612,0);
+  gk.addColorStop(0,'#f7f8fa'); gk.addColorStop(1,'#cfd3da');
+  cx.fillStyle=gk; cx.fill(); cx.strokeStyle='#8b9099'; cx.lineWidth=1.5; cx.stroke();
+  var ang = -Math.PI*0.75 + (S.target/95)*Math.PI*1.5;
+  cx.beginPath(); cx.moveTo(596,PLATE_TOP+74);
+  cx.lineTo(596+Math.cos(ang)*13, PLATE_TOP+74+Math.sin(ang)*13);
+  cx.strokeStyle='#2b2f36'; cx.lineWidth=3.5; cx.stroke();
+
+  cx.fillStyle='#2c3038';
+  cx.fillRect(272,PLATE_TOP+106,26,9); cx.fillRect(702,PLATE_TOP+106,26,9);
+}
+
+function drawBeakerBack(coldAmt){
+  var c = waterColor(S.temp), r=c[0], g=c[1], b=c[2];
+  cx.save();
+  cx.beginPath();
+  cx.moveTo(BX+3, WATER_TOP);
+  cx.lineTo(BX+3, BBOT-14);
+  cx.quadraticCurveTo(BX+3, BBOT-2, BX+16, BBOT-2);
+  cx.lineTo(BX+BW-16, BBOT-2);
+  cx.quadraticCurveTo(BX+BW-3, BBOT-2, BX+BW-3, BBOT-14);
+  cx.lineTo(BX+BW-3, WATER_TOP);
+  cx.closePath();
+  cx.clip();
+
+  var wg = cx.createLinearGradient(0,WATER_TOP,0,BBOT);
+  wg.addColorStop(0,'rgba('+r+','+g+','+b+',0.62)');
+  wg.addColorStop(1,'rgba('+Math.round(r*0.72)+','+Math.round(g*0.76)+','+Math.round(b*0.9)+',0.80)');
+  cx.fillStyle = wg; cx.fillRect(BX,WATER_TOP,BW,BBOT-WATER_TOP);
+
+  if (S.progress > 0){
+    cx.fillStyle='rgba(255,255,255,'+(0.16*Math.min(1,S.progress*1.4))+')';
+    cx.fillRect(BX,WATER_TOP,BW,BBOT-WATER_TOP);
+  }
+
+  for (var i=0;i<bubbles.length;i++){
+    var p = bubbles[i];
+    cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    cx.fillStyle='rgba(255,255,255,'+p.a+')'; cx.fill();
+    cx.strokeStyle='rgba(255,255,255,'+(p.a*0.9)+')'; cx.lineWidth=1; cx.stroke();
+  }
+
+  drawTablet();
+
+  for (var j=0;j<foam.length;j++){
+    var f = foam[j];
+    cx.beginPath(); cx.arc(f.x,f.y,f.r,0,Math.PI*2);
+    cx.fillStyle='rgba(255,255,255,'+f.a+')'; cx.fill();
+  }
+
+  cx.strokeStyle='rgba(255,255,255,.55)'; cx.lineWidth=3;
+  cx.beginPath(); cx.moveTo(BX,WATER_TOP+1); cx.lineTo(BX+BW,WATER_TOP+1); cx.stroke();
+
+  if (coldAmt > 0.15) drawIce(coldAmt);
+  cx.restore();
+}
+
+function drawIce(amt){
+  var n = Math.round(2 + amt*4);
+  for (var i=0;i<n;i++){
+    var px = BX + 26 + (i*47) % (BW-58);
+    var bob = Math.sin(performance.now()/700 + i*1.4)*3;
+    var py = WATER_TOP + 12 + bob + (i%2)*9;
+    cx.save(); cx.translate(px,py); cx.rotate((i*0.5)%1.1 - 0.5);
+    roundRect(-15,-13,30,26,5);
+    cx.fillStyle='rgba(226,244,255,.82)'; cx.fill();
+    cx.strokeStyle='rgba(255,255,255,.95)'; cx.lineWidth=2; cx.stroke();
+    roundRect(-10,-9,11,9,3);
+    cx.fillStyle='rgba(255,255,255,.55)'; cx.fill();
+    cx.restore();
+  }
+}
+
+function drawTablet(){
+  if (S.phase === 'ready' || S.progress >= 1) return;
+  var r0 = 31;
+  var r = r0 * Math.pow(Math.max(0, 1 - S.progress), 0.42);
+  if (r < 0.8) return;
+  cx.save(); cx.translate(500, S.tabletY);
+  if (S.phase === 'fizzing') cx.rotate(Math.sin(performance.now()/90)*0.03);
+  cx.beginPath(); cx.ellipse(0,0,r,r*0.92,0,0,Math.PI*2);
+  var tg = cx.createLinearGradient(-r,-r,r,r);
+  tg.addColorStop(0,'#ffffff'); tg.addColorStop(1,'#dfe4ea');
+  cx.fillStyle=tg; cx.fill();
+  cx.strokeStyle='rgba(150,160,175,.9)'; cx.lineWidth=2; cx.stroke();
+  cx.fillStyle='rgba(190,200,212,.6)';
+  for (var i=0;i<5;i++){
+    var a = i*1.257 + S.progress*4;
+    var rr = r*0.55;
+    cx.beginPath(); cx.arc(Math.cos(a)*rr*0.7, Math.sin(a)*rr*0.7, Math.max(1,r*0.11), 0, Math.PI*2); cx.fill();
+  }
+  cx.restore();
+}
+
+function drawGlass(){
+  cx.save();
+  cx.beginPath();
+  cx.moveTo(BX, BTOP);
+  cx.lineTo(BX, BBOT-16);
+  cx.quadraticCurveTo(BX, BBOT, BX+18, BBOT);
+  cx.lineTo(BX+BW-18, BBOT);
+  cx.quadraticCurveTo(BX+BW, BBOT, BX+BW, BBOT-16);
+  cx.lineTo(BX+BW, BTOP);
+  cx.strokeStyle='rgba(215,238,255,.78)'; cx.lineWidth=4.5; cx.lineJoin='round'; cx.stroke();
+
+  cx.beginPath();
+  cx.moveTo(BX+BW, BTOP+3);
+  cx.lineTo(BX+BW+22, BTOP-7);
+  cx.lineTo(BX+BW+20, BTOP+3);
+  cx.strokeStyle='rgba(215,238,255,.72)'; cx.lineWidth=4; cx.stroke();
+
+  cx.beginPath(); cx.ellipse(BX+BW/2, BTOP, BW/2, 9, 0, 0, Math.PI*2);
+  cx.strokeStyle='rgba(215,238,255,.5)'; cx.lineWidth=3; cx.stroke();
+
+  cx.strokeStyle='rgba(230,245,255,.42)'; cx.lineWidth=2;
+  cx.font='700 11px Poppins, sans-serif'; cx.fillStyle='rgba(230,245,255,.5)'; cx.textAlign='left';
+  var marks=[['400',168],['300',240],['250',276],['200',312],['100',384]];
+  for (var i=0;i<marks.length;i++){
+    cx.beginPath(); cx.moveTo(BX+BW-34, marks[i][1]); cx.lineTo(BX+BW-6, marks[i][1]); cx.stroke();
+    cx.fillText(marks[i][0], BX+BW-72, marks[i][1]+4);
+  }
+  var hg = cx.createLinearGradient(BX+14,0,BX+40,0);
+  hg.addColorStop(0,'rgba(255,255,255,.20)'); hg.addColorStop(1,'rgba(255,255,255,0)');
+  cx.fillStyle=hg; cx.fillRect(BX+14, BTOP+12, 26, BBOT-BTOP-30);
+  cx.restore();
+}
+
+function drawSteam(amt){
+  for (var i=0;i<steam.length;i++){
+    var s = steam[i];
+    cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    cx.fillStyle='rgba(255,255,255,'+(s.a*amt*0.5)+')'; cx.fill();
+  }
+}
+
+function drawLaserDot(){
+  var t = performance.now()/300;
+  cx.beginPath(); cx.arc(BX+BW-40, WATER_TOP+52, 4.5+Math.sin(t)*0.8, 0, Math.PI*2);
+  cx.fillStyle='rgba(255,60,60,.9)'; cx.fill();
+  cx.shadowColor='#ff2b2b'; cx.shadowBlur=14; cx.fill(); cx.shadowBlur=0;
+}
+
+/* ================= PARTICLES ================= */
+function spawnBubbles(intensity, dt){
+  var n = intensity * 120 * dt;
+  var count = Math.floor(n) + (Math.random() < (n % 1) ? 1 : 0);
+  var r = 31 * Math.pow(Math.max(0,1-S.progress),0.42);
+  for (var i=0;i<count && bubbles.length<520;i++){
+    bubbles.push({
+      x: 500 + rnd(-r-6, r+6),
+      y: S.tabletY + rnd(-6, 8),
+      r: rnd(1.6, 4.6 + intensity*3),
+      vy: -rnd(38, 92) - intensity*46,
+      a: rnd(.45,.9),
+      w: rnd(0,6.28),
+      ws: rnd(.9,2.4)
+    });
+  }
+}
+
+function updateParticles(dt){
+  for (var i=bubbles.length-1;i>=0;i--){
+    var p = bubbles[i];
+    p.y += p.vy*dt;
+    p.w += p.ws*dt*3;
+    p.x += Math.sin(p.w)*11*dt;
+    p.vy -= 12*dt;
+    if (p.y <= WATER_TOP+2){
+      if (foam.length < 260){
+        foam.push({x:p.x, y:WATER_TOP + rnd(0,7), r:rnd(2.5,6.5), a:rnd(.4,.85), life:rnd(.5,1.7)});
+      }
+      bubbles.splice(i,1);
+    }
+  }
+  for (var j=foam.length-1;j>=0;j--){
+    var f = foam[j];
+    f.life -= dt; f.a = Math.max(0, f.a - dt*0.5);
+    if (f.life <= 0 || f.a <= 0.02) foam.splice(j,1);
+  }
+  if (S.temp > 55){
+    var rate = (S.temp-55)/40 * 16 * dt;
+    if (Math.random() < rate && steam.length < 90){
+      steam.push({x: BX+rnd(30,BW-30), y: WATER_TOP-4, r: rnd(6,14), a: rnd(.25,.5), vy:-rnd(16,34), vx:rnd(-8,8)});
+    }
+  }
+  for (var k=steam.length-1;k>=0;k--){
+    var s = steam[k];
+    s.y += s.vy*dt; s.x += s.vx*dt; s.r += 9*dt; s.a -= 0.30*dt;
+    if (s.a <= 0.01 || s.y < BTOP-90) steam.splice(k,1);
+  }
+}
+
+/* ================= AUDIO ================= */
+var actx=null, noiseSrc=null, noiseGain=null;
+function initAudio(){
+  if (actx) return;
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    actx = new AC();
+    var len = actx.sampleRate*2;
+    var buf = actx.createBuffer(1,len,actx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i=0;i<len;i++) d[i] = Math.random()*2-1;
+    noiseSrc = actx.createBufferSource();
+    noiseSrc.buffer = buf; noiseSrc.loop = true;
+    var bp = actx.createBiquadFilter();
+    bp.type='bandpass'; bp.frequency.value=3200; bp.Q.value=0.8;
+    var hp = actx.createBiquadFilter();
+    hp.type='highpass'; hp.frequency.value=1400;
+    noiseGain = actx.createGain(); noiseGain.gain.value = 0;
+    noiseSrc.connect(bp); bp.connect(hp); hp.connect(noiseGain); noiseGain.connect(actx.destination);
+    noiseSrc.start();
+  }catch(e){ actx=null; }
+}
+function setFizzGain(v){
+  if (!noiseGain || !actx) return;
+  var g = S.sound ? Math.min(0.10, v*0.10) : 0;
+  noiseGain.gain.setTargetAtTime(g, actx.currentTime, 0.08);
+}
+
+/* ================= SIM LOOP ================= */
+var last = performance.now();
+function loop(now){
+  var dt = (now - last)/1000; last = now;
+  if (dt > 0.1) dt = 0.1;
+  var sdt = dt * S.speed;
+
+  var diff = S.target - S.temp;
+  if (S.heating){
+    S.temp += diff * Math.min(1, 1.6*sdt);
+    if (Math.abs(S.target - S.temp) < 0.08){ S.temp = S.target; S.heating = false; }
+  } else {
+    S.temp = S.target + Math.sin(now/1400)*0.12;
+  }
+
+  if (S.phase === 'dropping'){
+    S.tabletVY += 900*dt;
+    S.tabletY += S.tabletVY*dt;
+    if (S.tabletY >= WATER_TOP + 12){
+      S.tabletY = WATER_TOP + 12;
+      S.phase = 'fizzing';
+      S.simTime = 0;
+      S.progress = 0;
+      S.peakLoud = 0;
+      S.trialTotal = dissolveTime(S.temp) * (1 + (Math.random()-0.5)*0.08);
+    }
+  }
+
+  var intensity = 0;
+  if (S.phase === 'fizzing'){
+    S.simTime += sdt;
+    S.progress = Math.min(1, S.simTime / S.trialTotal);
+    var restY = BBOT - 24;
+    if (S.tabletY < restY) S.tabletY = Math.min(restY, S.tabletY + 46*dt);
+
+    var taper = S.progress > 0.82 ? (1 - (S.progress-0.82)/0.18) : 1;
+    intensity = Math.min(1, Math.max(0,(loudnessFor(S.temp)-40)/32)) * taper;
+    S.loud = 40 + (loudnessFor(S.temp)-40)*taper + Math.sin(now/70)*0.9;
+    if (S.loud > S.peakLoud) S.peakLoud = S.loud;
+
+    if (S.progress >= 1){
+      S.phase = 'done';
+      S.lastTime = S.trialTotal;
+      S.lastTemp = S.temp;
+      S.lastLoud = S.peakLoud;
+      S.recorded = false;
+      S.loud = 0;
+      syncUI();
+    }
+  } else if (S.phase === 'done'){
+    S.loud = Math.max(0, S.loud - dt*40);
+  }
+
+  if (S.phase === 'fizzing') spawnBubbles(0.25 + intensity, dt);
+  updateParticles(dt);
+  setFizzGain(intensity);
+
+  drawScene();
+  liveUI();
+  requestAnimationFrame(loop);
+}
+
+/* ================= UI ================= */
+function fmtTime(s){
+  var m = Math.floor(s/60);
+  var r = s - m*60;
+  return m + ':' + (r<10?'0':'') + r.toFixed(1);
+}
+
+function liveUI(){
+  $('irTemp').textContent = S.temp.toFixed(1);
+  $('irF').textContent = (S.temp*9/5+32).toFixed(1);
+  $('sbTemp').textContent = S.temp.toFixed(1) + ' °C';
+  $('sbTablet').textContent = Math.round((1-S.progress)*100) + '%';
+  $('stopwatch').textContent = fmtTime(S.phase==='ready' ? 0 : S.simTime);
+  $('loudVal').textContent = S.loud < 1 ? '0' : S.loud.toFixed(0);
+  $('loudBar').style.width = Math.min(100, Math.max(0,(S.loud-38)/34*100)) + '%';
+
+  $('ledHeat').className = 'led' + (S.heating ? ' heat' : (Math.abs(S.temp-ROOM_TEMP)>1.5 ? ' on' : ''));
+  $('heatState').textContent = S.heating
+    ? (S.target < S.temp ? 'Chilling…' : 'Heating…')
+    : (S.target < ROOM_TEMP-1 ? 'Ice bath holding ' + S.target + '°C'
+      : (S.target > ROOM_TEMP+1 ? 'Hot plate holding ' + S.target + '°C' : 'Heater off'));
+
+  $('ledRun').className = 'led' + (S.phase==='fizzing' ? ' run' : (S.phase==='done' ? ' on' : ''));
+  $('runState').textContent =
+    S.phase==='ready' ? 'Waiting for tablet' :
+    S.phase==='dropping' ? 'Tablet falling…' :
+    S.phase==='fizzing' ? 'Reacting — fizzing!' : 'Reaction complete';
+}
+
+function syncUI(){
+  var settled = !S.heating && Math.abs(S.temp - S.target) < 0.5;
+  $('btnDrop').disabled = !(settled && S.phase === 'ready');
+  $('btnRecord').disabled = !(S.phase === 'done' && !S.recorded);
+  $('targetTemp').textContent = S.target;
+  $('sbTrials').textContent = S.trials.length;
+  $('lastTime').textContent = S.lastTime == null ? '—' : S.lastTime.toFixed(1) + ' s';
+  $('lastTemp').textContent = S.lastTemp == null ? '—' : S.lastTemp.toFixed(1) + ' °C';
+  $('peakLoud').textContent = S.lastLoud == null ? '—' : S.lastLoud.toFixed(0) + ' dB';
+  var hint;
+  if (S.phase === 'fizzing' || S.phase === 'dropping'){
+    hint = 'Reaction in progress — the water is being held at ' + S.temp.toFixed(1) + ' °C.';
+  } else if (S.phase === 'done'){
+    hint = 'This beaker already has a dissolved tablet in it. Press ' + String.fromCharCode(8220) + 'New Beaker' + String.fromCharCode(8221) + ' for fresh water before the next trial.';
+  } else if (settled){
+    hint = 'Water is holding at ' + S.temp.toFixed(1) + ' °C. Ready to drop the tablet.';
+  } else {
+    hint = 'The hot plate (or ice bath) will bring the water to your target, then hold it there.';
+  }
+  $('heatHint').textContent = hint;
+  updatePhButtons();
+}
+setInterval(syncUI, 250);
+
+/* -------- controls -------- */
+$('tempSlider').addEventListener('input', function(e){
+  S.target = parseInt(e.target.value,10);
+  $('targetTemp').textContent = S.target;
+});
+
+var presetBtns = document.querySelectorAll('.presets button');
+for (var pi=0; pi<presetBtns.length; pi++){
+  presetBtns[pi].addEventListener('click', function(){
+    S.target = parseInt(this.dataset.temp,10);
+    $('tempSlider').value = S.target;
+    $('targetTemp').textContent = S.target;
+    startHeat();
+  });
+}
+
+function startHeat(){
+  if (S.phase === 'fizzing') return;
+  S.heating = true;
+  syncUI();
+}
+$('btnHeat').addEventListener('click', startHeat);
+
+$('btnDrop').addEventListener('click', function(){
+  if (S.phase !== 'ready') return;
+  initAudio();
+  S.phase = 'dropping';
+  S.tabletY = BTOP - 70;
+  S.tabletVY = 0;
+  S.simTime = 0;
+  S.progress = 0;
+  syncUI();
+});
+
+$('btnReset').addEventListener('click', function(){
+  S.phase = 'ready';
+  S.progress = 0; S.simTime = 0; S.loud = 0;
+  S.tabletY = BTOP - 70;
+  bubbles = []; foam = [];
+  phState.mix = null; phState.stood = null;
+  renderPhRows();
+  updatePhExplain();
+  syncUI();
+});
+
+$('speedSeg').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if(!b) return;
+  S.speed = parseFloat(b.dataset.speed);
+  var kids = this.children;
+  for (var i=0;i<kids.length;i++) kids[i].classList.toggle('on', kids[i] === b);
+});
+
+$('soundSeg').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if(!b) return;
+  S.sound = b.dataset.sound === '1';
+  if (S.sound) initAudio();
+  var kids = this.children;
+  for (var i=0;i<kids.length;i++) kids[i].classList.toggle('on', kids[i] === b);
+});
+
+/* -------- data table -------- */
+$('btnRecord').addEventListener('click', function(){
+  if (S.recorded || S.lastTime == null) return;
+  S.trials.push({ T: S.lastTemp, t: S.lastTime, L: S.lastLoud });
+  S.recorded = true;
+  renderTable(); drawChart(); syncUI();
+});
+
+$('btnClear').addEventListener('click', function(){
+  S.trials = []; renderTable(); drawChart(); syncUI();
+});
+
+$('btnCopy').addEventListener('click', function(){
+  var out = 'Trial\tWater temp (C)\tCategory\tTime (s)\tPeak loudness (dB)\n';
+  for (var i=0;i<S.trials.length;i++){
+    var r = S.trials[i];
+    out += (i+1)+'\t'+r.T.toFixed(1)+'\t'+category(r.T).label+'\t'+r.t.toFixed(1)+'\t'+r.L.toFixed(0)+'\n';
+  }
+  var btn = $('btnCopy');
+  var done = function(ok){
+    btn.textContent = ok ? 'Copied!' : 'Copy failed';
+    setTimeout(function(){ btn.textContent='Copy Data'; },1600);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(out).then(function(){done(true);}, function(){done(false);});
+  } else { done(false); }
+});
+
+function renderTable(){
+  var tb = $('dataBody');
+  if (!S.trials.length){
+    tb.innerHTML = '<tr><td colspan="5"><div class="empty">No trials yet &mdash; set a temperature, drop a tablet, then press <strong>Record Trial</strong>.</div></td></tr>';
+  } else {
+    var html = '';
+    for (var i=0;i<S.trials.length;i++){
+      var r = S.trials[i], c = category(r.T);
+      html += '<tr><td>'+(i+1)+'</td><td>'+r.T.toFixed(1)+'</td>'+
+              '<td><span class="tag '+c.k+'">'+c.label+'</span></td>'+
+              '<td><strong>'+r.t.toFixed(1)+'</strong></td><td>'+r.L.toFixed(0)+'</td></tr>';
+    }
+    tb.innerHTML = html;
+  }
+  var avg = function(fn){
+    var v = S.trials.filter(fn);
+    if (!v.length) return '—';
+    var sum = 0;
+    for (var i=0;i<v.length;i++) sum += v[i].t;
+    return (sum/v.length).toFixed(1)+' s';
+  };
+  $('avgRoom').textContent = avg(function(r){ return r.T>=18 && r.T<=26; });
+  $('avgHot').textContent  = avg(function(r){ return r.T>=45; });
+  $('avgCold').textContent = avg(function(r){ return r.T<=10; });
+}
+
+/* -------- chart -------- */
+var ch = $('chart'), ctx2 = ch.getContext('2d');
+var CW = 760, CH = 470;
+var M = {l:74, r:22, t:22, b:56};
+
+$('btnCurve').addEventListener('click', function(){
+  S.showCurve = !S.showCurve; this.classList.toggle('on',S.showCurve); drawChart();
+});
+$('btnGrid').addEventListener('click', function(){
+  S.showGrid = !S.showGrid; this.classList.toggle('on',S.showGrid); drawChart();
+});
+
+function drawChart(){
+  var maxT = Math.max(200, dissolveTime(0)*1.05);
+  for (var i=0;i<S.trials.length;i++) maxT = Math.max(maxT, S.trials[i].t*1.12);
+  var yMax = Math.ceil(maxT/25)*25;
+  var px = function(T){ return M.l + (T/100)*(CW-M.l-M.r); };
+  var py = function(t){ return CH-M.b - (t/yMax)*(CH-M.t-M.b); };
+
+  ctx2.clearRect(0,0,CW,CH);
+  ctx2.fillStyle='#0b1526'; ctx2.fillRect(0,0,CW,CH);
+
+  if (S.showGrid){
+    ctx2.strokeStyle='rgba(255,255,255,.07)'; ctx2.lineWidth=1;
+    for (var T=0;T<=100;T+=10){ ctx2.beginPath(); ctx2.moveTo(px(T),M.t); ctx2.lineTo(px(T),CH-M.b); ctx2.stroke(); }
+    for (var t=0;t<=yMax;t+=25){ ctx2.beginPath(); ctx2.moveTo(M.l,py(t)); ctx2.lineTo(CW-M.r,py(t)); ctx2.stroke(); }
+  }
+
+  ctx2.strokeStyle='#4a6488'; ctx2.lineWidth=2.5;
+  ctx2.beginPath(); ctx2.moveTo(M.l,M.t); ctx2.lineTo(M.l,CH-M.b); ctx2.lineTo(CW-M.r,CH-M.b); ctx2.stroke();
+
+  ctx2.fillStyle='#9cb1d0'; ctx2.font='700 13px Poppins, sans-serif'; ctx2.textAlign='center';
+  for (var T2=0;T2<=100;T2+=20) ctx2.fillText(T2+'°', px(T2), CH-M.b+22);
+  ctx2.textAlign='right';
+  for (var t2=0;t2<=yMax;t2+=50) ctx2.fillText(t2, M.l-10, py(t2)+5);
+
+  ctx2.fillStyle='#22d3ee'; ctx2.font='800 14px Poppins, sans-serif'; ctx2.textAlign='center';
+  ctx2.fillText('WATER TEMPERATURE (°C)', M.l+(CW-M.l-M.r)/2, CH-10);
+  ctx2.save(); ctx2.translate(20, M.t+(CH-M.t-M.b)/2); ctx2.rotate(-Math.PI/2);
+  ctx2.fillText('TIME TO DISSOLVE (s)', 0, 0); ctx2.restore();
+
+  if (S.showCurve){
+    ctx2.strokeStyle='rgba(167,139,250,.85)'; ctx2.lineWidth=3; ctx2.setLineDash([7,6]);
+    ctx2.beginPath();
+    for (var T3=0;T3<=100;T3+=1){
+      var tt = Math.min(yMax, dissolveTime(T3));
+      if (T3===0) ctx2.moveTo(px(T3),py(tt)); else ctx2.lineTo(px(T3),py(tt));
+    }
+    ctx2.stroke(); ctx2.setLineDash([]);
+    ctx2.fillStyle='rgba(167,139,250,.95)'; ctx2.font='800 12px Poppins, sans-serif'; ctx2.textAlign='left';
+    ctx2.fillText('PREDICTED CURVE', px(52), py(dissolveTime(52))-14);
+  }
+
+  var colors = {cold:'#60a5fa', room:'#34d399', warm:'#fbbf24', hot:'#f87171'};
+  for (var k=0;k<S.trials.length;k++){
+    var r2 = S.trials[k];
+    var x = px(r2.T), y = py(Math.min(yMax,r2.t));
+    ctx2.beginPath(); ctx2.arc(x,y,7.5,0,Math.PI*2);
+    ctx2.fillStyle = colors[category(r2.T).k]; ctx2.fill();
+    ctx2.strokeStyle='#0b1526'; ctx2.lineWidth=2.5; ctx2.stroke();
+  }
+
+  if (!S.trials.length){
+    ctx2.fillStyle='rgba(156,177,208,.75)'; ctx2.font='700 15px Poppins, sans-serif'; ctx2.textAlign='center';
+    ctx2.fillText('Record a trial to plot your first data point', CW/2, CH/2 - 10);
+  }
+}
+
+/* ================= pH BONUS ================= */
+var PH_COLORS = ['#c9161a','#e0231d','#ec3b1a','#f26522','#f7941e','#f6c324','#d5d92b',
+                 '#4caf50','#2fae7e','#1f9ec9','#2a6fbb','#3b4fa8','#5a3b9c','#6b2d8f','#7b1fa2'];
+
+function hex2rgb(h){ return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]; }
+function phColor(ph){
+  var v = Math.min(14, Math.max(0, ph));
+  var a = Math.floor(v), b = Math.min(14, a+1), f = v - a;
+  var ca = hex2rgb(PH_COLORS[a]), cb = hex2rgb(PH_COLORS[b]);
+  return 'rgb('+Math.round(ca[0]+(cb[0]-ca[0])*f)+','+Math.round(ca[1]+(cb[1]-ca[1])*f)+','+Math.round(ca[2]+(cb[2]-ca[2])*f)+')';
+}
+function phWord(ph){
+  if (ph < 3) return 'strong acid';
+  if (ph < 6.6) return 'weak acid';
+  if (ph <= 7.4) return 'neutral';
+  if (ph <= 11) return 'weak alkali';
+  return 'strong alkali';
+}
+function colorWord(ph){
+  if (ph < 3) return 'red';
+  if (ph < 4.5) return 'orange';
+  if (ph < 5.7) return 'yellow-orange';
+  if (ph < 6.7) return 'yellow-green';
+  if (ph <= 7.4) return 'green';
+  if (ph <= 8.6) return 'blue-green';
+  if (ph <= 10.5) return 'blue';
+  return 'purple';
+}
+
+(function buildScale(){
+  var host = $('phScale');
+  for (var i=1;i<=14;i++){
+    var d = document.createElement('div');
+    d.style.background = PH_COLORS[i];
+    d.textContent = i;
+    host.appendChild(d);
+  }
+})();
+
+var phState = { water:null, mix:null, stood:null, est:{water:'',mix:'',stood:''} };
+
+var PH_ITEMS = [
+  { key:'water', name:'Water',
+    sub:'250 mL of plain tap water, before anything is added',
+    btn:'Dip Strip In Water' },
+  { key:'mix', name:'Water + Alka-Seltzer',
+    sub:'Tested while the tablet is fizzing (or right after)',
+    btn:'Dip Strip In Mixture' },
+  { key:'stood', name:'Water + Alka-Seltzer, after standing 5 min',
+    sub:'Tested after the CO₂ gas has escaped',
+    btn:'Let It Stand, Then Dip' }
+];
+
+function actualPh(key){
+  if (key === 'water') return 7.0 + (Math.random()-0.5)*0.2;
+  if (key === 'mix')   return 6.0 + (Math.random()-0.5)*0.3;
+  return 7.8 + (Math.random()-0.5)*0.3;
+}
+
+function renderPhRows(){
+  var host = $('phRows');
+  host.innerHTML = '';
+  for (var i=0;i<PH_ITEMS.length;i++){
+    var item = PH_ITEMS[i];
+    var val = phState[item.key];
+    var est = phState.est[item.key];
+    var row = document.createElement('div');
+    row.className = 'striprow';
+
+    var hit = '';
+    if (val != null && est !== '' && !isNaN(parseFloat(est))){
+      var diff = Math.abs(parseFloat(est) - val);
+      hit = '<div class="hit '+(diff<=1.0?'yes':'no')+'">'+(diff<=1.0?'Nice estimate':'Off by '+diff.toFixed(1))+'</div>';
+    }
+
+    row.innerHTML =
+      '<div class="name">'+item.name+'<small>'+item.sub+'</small></div>'+
+      '<div><input type="number" min="0" max="14" step="0.5" placeholder="0–14" value="'+est+'" data-est="'+item.key+'">'+hit+'</div>'+
+      '<div class="actual">'+(val==null?'<span style="color:#5b6f8f">—</span>':val.toFixed(1))+
+        '<small>'+(val==null?'not tested':phWord(val))+'</small></div>'+
+      '<div class="strip"><i style="background:'+(val==null?'#e8e4d5':phColor(val))+'"></i></div>'+
+      '<div><button data-dip="'+item.key+'">'+item.btn+'</button>'+
+        (val==null?'':'<div class="hit yes" style="margin-top:6px">Strip turned '+colorWord(val)+'</div>')+'</div>';
+    host.appendChild(row);
+  }
+
+  var inputs = host.querySelectorAll('input[data-est]');
+  for (var a=0;a<inputs.length;a++){
+    inputs[a].addEventListener('input', function(e){ phState.est[e.target.dataset.est] = e.target.value; });
+    inputs[a].addEventListener('change', function(){ renderPhRows(); });
+  }
+  var dips = host.querySelectorAll('button[data-dip]');
+  for (var b=0;b<dips.length;b++){
+    dips[b].addEventListener('click', function(){
+      phState[this.dataset.dip] = actualPh(this.dataset.dip);
+      renderPhRows();
+      updatePhExplain();
+    });
+  }
+  updatePhButtons();
+}
+
+function updatePhButtons(){
+  var host = $('phRows'); if (!host) return;
+  var started = (S.phase === 'fizzing' || S.phase === 'done');
+  var btns = host.querySelectorAll('button[data-dip]');
+  for (var i=0;i<btns.length;i++){
+    var b = btns[i], k = b.dataset.dip;
+    if (k === 'water'){
+      b.disabled = started;
+      b.title = b.disabled ? 'There is already Alka-Seltzer in this beaker — press New Beaker for plain water.' : '';
+    } else {
+      b.disabled = !started;
+      b.title = b.disabled ? 'Drop a tablet in the beaker first.' : '';
+    }
+  }
+}
+
+function updatePhExplain(){
+  var box = $('phExplain');
+  if (phState.mix == null && phState.stood == null){
+    box.classList.add('hidden'); box.innerHTML=''; return;
+  }
+  box.classList.remove('hidden');
+  var html = '';
+
+  if (phState.water != null){
+    html += '<b>Plain water.</b> The strip stayed <b>'+colorWord(phState.water)+'</b> at <b>pH '+phState.water.toFixed(1)+'</b> — <b>neutral</b>. Water has equal amounts of H⁺ and OH⁻ ions.<br><br>';
+  } else {
+    html += '<em style="color:#a5f3fc">Tip: press <b>New Beaker</b> and dip a strip in the plain water first, so you have something to compare against.</em><br><br>';
+  }
+
+  if (phState.mix != null){
+    html += '<b>While it is fizzing.</b> The strip read <b>pH '+phState.mix.toFixed(1)+'</b> and turned <b>'+colorWord(phState.mix)+'</b> — the mixture became a <b>weak acid</b>. ' +
+            'Two things are adding hydrogen ions: the <b>citric acid</b> from the tablet dissolves into the water, and the <b>carbon dioxide</b> being produced dissolves back in to form <b>carbonic acid</b> (CO₂ + H₂O → H₂CO₃). More H⁺ ions means a <b>lower</b> pH.';
+  }
+
+  if (phState.stood != null){
+    if (phState.mix != null) html += '<br><br>';
+    html += '<b>After standing five minutes.</b> The strip climbed to <b>pH '+phState.stood.toFixed(1)+'</b> and turned <b>'+colorWord(phState.stood)+'</b> — a <b>weak alkali</b>. ' +
+            'Left alone, the CO₂ bubbles out of the beaker and the carbonic acid leaves with it. What remains is the leftover <b>sodium bicarbonate and sodium citrate</b>, which are basic, so the pH climbs back past neutral. ' +
+            'That is exactly why Alka-Seltzer works as an <b>antacid</b>: it ends up neutralizing stomach acid.';
+  }
+
+  if (phState.mix == null){
+    html += '<br><br><em style="color:#a5f3fc">You still have not tested the mixture <b>while it is fizzing</b> — drop a tablet, then dip the second strip before the reaction finishes. The pH is different during the fizz than it is afterward.</em>';
+  } else if (phState.stood == null){
+    html += '<br><br><em style="color:#a5f3fc">Now test the third row — let the mixture stand for five minutes and dip again. The pH does something surprising.</em>';
+  }
+
+  box.innerHTML = html;
+}
+
+/* ================= INIT ================= */
+renderPhRows();
+renderTable();
+drawChart();
+syncUI();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

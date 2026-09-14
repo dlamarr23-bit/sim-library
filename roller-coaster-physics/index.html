@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roller Coaster Physics — Energy Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================== TOKENS ============================== */
+:root{
+  color-scheme: light;
+  --surface-1:#fcfcfb;
+  --plane:#f4f2ec;
+  --text-primary:#0b0b0b;
+  --text-secondary:#52514e;
+  --muted:#898781;
+  --grid:#e1e0d9;
+  --baseline:#c3c2b7;
+  --border:rgba(11,11,11,.10);
+  --series-1:#2a78d6;      /* kinetic  */
+  --series-2:#eb6834;      /* potential */
+  --series-3:#1baf7a;      /* total    */
+  --good:#0ca30c;
+  --critical:#d03b3b;
+  --accent:#2a78d6;
+  --chip:#ffffff;
+
+  --sky-top:#9fd4ee;
+  --sky-bot:#e8f4f7;
+  --hill-far:#c3d3b4;
+  --floor:#e6dcc4;
+  --floor-2:#d3c39d;
+  --rail:#5a5550;
+  --rail-top:#8d8781;
+  --post:#a09a92;
+  --car:#2a78d6;
+  --car-2:#1c5cab;
+  --egg:#fdf3e0;
+  --egg-line:#d9c9a8;
+}
+html[data-theme="dark"]{
+  color-scheme: dark;
+  --surface-1:#1a1a19;
+  --plane:#0d0d0d;
+  --text-primary:#ffffff;
+  --text-secondary:#c3c2b7;
+  --muted:#898781;
+  --grid:#2c2c2a;
+  --baseline:#383835;
+  --border:rgba(255,255,255,.10);
+  --series-1:#3987e5;
+  --series-2:#d95926;
+  --series-3:#199e70;
+  --good:#0ca30c;
+  --critical:#e66767;
+  --accent:#3987e5;
+  --chip:#232322;
+
+  --sky-top:#1d2b44;
+  --sky-bot:#33404f;
+  --hill-far:#2b3340;
+  --floor:#332c22;
+  --floor-2:#28221a;
+  --rail:#b3aca4;
+  --rail-top:#d8d2ca;
+  --post:#6c665f;
+  --car:#3987e5;
+  --car-2:#6da7ec;
+  --egg:#efe4cd;
+  --egg-line:#9c8f75;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--text-primary);font-weight:700;
+  font:700 17px/1.5 "Poppins",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:min(1900px, 97vw);margin:0 auto;padding:16px 14px 48px}
+
+header.top{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+header.top h1{font-size:clamp(24px,2.6vw,32px);margin:0;letter-spacing:-.01em;font-weight:800}
+header.top p{margin:2px 0 0;color:var(--text-secondary);font-size:16px;max-width:70ch}
+.spacer{flex:1 1 auto}
+
+button,select,input{font:inherit;color:inherit}
+.btn{background:var(--chip);color:var(--text-primary);border:1px solid var(--border);
+  border-radius:9px;padding:8px 13px;cursor:pointer;line-height:1.1;white-space:nowrap;font-weight:700}
+.btn:hover{background:color-mix(in srgb, var(--accent) 10%, var(--chip))}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);color:#fff;border-color:transparent;font-weight:700}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 10px;font-size:15px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+.card{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;
+  padding:14px 16px;margin-bottom:14px}
+.card h2{font-size:14px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  margin:0 0 12px;font-weight:800}
+
+/* -------- sliders -------- */
+.dials{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+@media (max-width:1080px){.dials{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.dials{grid-template-columns:1fr}}
+.dial{background:var(--plane);border:1px solid var(--border);border-radius:11px;padding:10px 12px}
+.dial .row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.dial .lab{font-size:14px;color:var(--text-secondary);font-weight:700}
+.dial .val{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.dial .val small{font-size:14px;font-weight:700;color:var(--text-secondary)}
+input[type=range]{width:100%;accent-color:var(--accent);height:24px;margin:2px 0 0}
+.dial .ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);
+  font-variant-numeric:tabular-nums;font-weight:700}
+
+/* -------- stage -------- */
+.stage{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--border);
+  background:var(--sky-bot)}
+#scene{display:block;width:100%;height:auto}
+#ruler{display:block;width:100%;height:auto;background:var(--surface-1);
+  border-top:1px solid var(--border)}
+.badge{position:absolute;top:10px;left:12px;display:flex;align-items:center;gap:8px;
+  color:#fff;font-size:14px;font-weight:700;letter-spacing:.05em;
+  text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.badge .led{width:10px;height:10px;border-radius:50%;background:#c9c9c9}
+.badge.live .led{background:#ff3b30;box-shadow:0 0 8px #ff3b30}
+.clockbox{position:absolute;top:10px;right:14px;color:#fff;font-weight:700;font-size:17px;
+  font-variant-numeric:tabular-nums;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.gnote{position:absolute;top:32px;right:14px;text-align:right;color:#fff;font-size:13px;opacity:.92;
+  text-shadow:0 1px 3px rgba(0,0,0,.55);font-weight:700}
+
+.transport{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.timeline{flex:1 1 300px;display:flex;align-items:center;gap:10px;min-width:240px}
+.clock{font-variant-numeric:tabular-nums;font-weight:700;font-size:19px;min-width:92px;text-align:right}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--chip)}
+.seg button{background:transparent;border:0;padding:7px 11px;cursor:pointer;font-size:15px;font-weight:700}
+.seg button + button{border-left:1px solid var(--border)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:700}
+
+/* -------- panels -------- */
+.cols{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:14px;align-items:start}
+@media (max-width:1000px){.cols{grid-template-columns:1fr}}
+
+.readout{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:4px 0 10px}
+.tile{background:var(--plane);border:1px solid var(--border);border-radius:11px;padding:10px 12px}
+.tile .lab{font-size:13px;color:var(--text-secondary);font-weight:700}
+.tile .val{font-size:28px;font-weight:800;line-height:1.15;margin-top:2px;font-variant-numeric:tabular-nums}
+.tile .val small{font-size:14px;font-weight:700;color:var(--text-secondary)}
+
+.steps{margin:0;padding-left:20px;color:var(--text-secondary);font-size:15px}
+.steps li{margin:3px 0}
+.steps b{color:var(--text-primary)}
+.hint{font-size:14px;color:var(--text-secondary);margin:2px 0 0;font-weight:700}
+.markrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.gates{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 4px}
+.gates label{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--text-secondary);
+  background:var(--plane);border:1px solid var(--border);border-radius:10px;padding:6px 11px}
+.gates label span{white-space:nowrap}
+.gates label input{flex:1 1 auto;min-width:0}
+.gates label b{color:var(--text-primary);font-variant-numeric:tabular-nums;min-width:58px;text-align:right}
+@media (max-width:640px){.gates{grid-template-columns:1fr}}
+
+.calc{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.calc input[type=number]{width:112px;padding:8px 10px;border-radius:9px;border:1px solid var(--border);
+  background:var(--surface-1);font-size:18px;font-variant-numeric:tabular-nums;font-weight:700}
+.calc .eq{font-size:18px;font-weight:700;min-width:34px}
+.calc .unit{color:var(--text-secondary);min-width:26px;font-weight:700}
+.calc .tick{font-size:20px;color:var(--good);width:20px}
+
+.stepbox{display:flex;gap:11px;padding:11px 0;border-top:1px solid var(--grid)}
+.stepbox:first-of-type{border-top:0;padding-top:2px}
+.stepnum{flex:0 0 auto;width:25px;height:25px;border-radius:50%;background:var(--accent);color:#fff;
+  display:grid;place-items:center;font-size:14px;font-weight:700;margin-top:3px}
+.stepbody{flex:1 1 auto;min-width:0}
+.steptitle{font-weight:700;margin-bottom:6px}
+.stepbox.locked{opacity:.42}
+.stepbox.locked .stepnum{background:var(--muted)}
+.stepbox.locked input,.stepbox.locked button{pointer-events:none}
+.stepbox.done .stepnum{background:var(--good)}
+
+.formula{font-size:15.5px;color:var(--text-secondary);background:var(--plane);
+  border:1px dashed var(--baseline);border-radius:10px;padding:8px 11px;margin:0 0 9px;
+  font-variant-numeric:tabular-nums}
+.formula b{color:var(--text-primary)}
+.verdict{font-size:15px;margin-top:8px;min-height:20px}
+.verdict.ok{color:var(--good);font-weight:700}
+.verdict.no{color:var(--critical);font-weight:700}
+
+/* -------- charts + table -------- */
+.legend{display:flex;gap:16px;align-items:center;font-size:14px;color:var(--text-secondary);
+  margin-bottom:8px;flex-wrap:wrap;font-weight:700}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.k{width:16px;height:3px;border-radius:2px}
+.k1{background:var(--series-1)} .k2{background:var(--series-2)} .k3{background:var(--series-3)}
+
+.chartwrap{position:relative}
+#energy,#scatter{display:block;width:100%;height:auto}
+.tip{position:absolute;pointer-events:none;background:var(--surface-1);border:1px solid var(--border);
+  border-radius:9px;padding:7px 10px;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.13);
+  font-variant-numeric:tabular-nums;opacity:0;transition:opacity .08s;white-space:nowrap;z-index:4}
+.tip b{display:block;margin-bottom:3px}
+.tip i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+.locknote{background:var(--plane);border:1px dashed var(--baseline);border-radius:11px;
+  padding:16px 18px;color:var(--text-secondary);font-size:15px;text-align:center}
+
+table{width:100%;border-collapse:collapse;font-size:14.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:6px 7px;border-bottom:1px solid var(--grid)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:700;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase}
+tbody tr:last-child td{border-bottom:0}
+.empty{color:var(--muted);font-size:15px;padding:12px 2px}
+footer.note{color:var(--muted);font-size:13.5px;margin-top:10px;font-weight:700}
+.hidden{display:none !important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.warn{color:var(--critical);font-weight:700;font-size:15px}
+.howto{margin:0;padding-left:22px;color:var(--text-secondary);font-size:15px}
+.howto li{margin:6px 0}
+.howto b{color:var(--text-primary)}
+</style>
+</head>
+<body data-palette="#2a78d6,#eb6834,#1baf7a">
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Roller Coaster Physics — Energy Lab</h1>
+      <p>Set the hills, the car’s mass and the track friction. Release the car, time it through the photogates, and work out where its energy went. The simulation reports only what an instrument could measure — every energy value is yours to calculate.</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn sm" id="fullResetBtn">⟲ Reset simulation</button>
+    <button class="btn ghost sm" id="themeBtn">🌙 Dark</button>
+  </header>
+
+  <!-- ===================== CONTROLS ===================== -->
+  <section class="card">
+    <h2>1 · Build the ride</h2>
+    <div class="dials" id="dials"></div>
+    <div class="transport" style="margin-top:14px">
+      <button class="btn primary" id="releaseBtn">▶ Release the car</button>
+      <button class="btn sm" id="resetBtn">⟲ Back to the top</button>
+      <div class="seg" role="group" aria-label="Playback speed">
+        <button data-rate="1" aria-pressed="true">1×</button>
+        <button data-rate="0.5" aria-pressed="false">½×</button>
+        <button data-rate="0.25" aria-pressed="false">¼×</button>
+      </div>
+      <span class="hint">Predict first — will the egg survive?</span>
+      <div class="seg" role="group" aria-label="Prediction">
+        <button id="predSurvive" aria-pressed="false">🥚 It survives</button>
+        <button id="predBreak" aria-pressed="false">💥 It breaks</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STAGE ===================== -->
+  <section class="card">
+    <h2>2 · Run it</h2>
+    <div class="stage">
+      <svg id="scene" viewBox="0 0 1200 340" role="img" aria-label="Roller coaster track with a car and an egg"></svg>
+      <svg id="ruler" viewBox="0 0 1200 52" aria-hidden="true"></svg>
+      <div class="badge" id="badge"><span class="led"></span><span id="badgeTxt">AT THE TOP</span></div>
+      <div class="clockbox" id="clockbox">0.000 s</div>
+      <div class="gnote">Height gridlines are exactly 0.25 m apart · g = 9.8 m/s²</div>
+    </div>
+    <div class="transport">
+      <div class="seg" role="group" aria-label="Step through time">
+        <button id="b10" title="Back 0.1 s">◀◀</button>
+        <button id="b01" title="Back 0.01 s">◀</button>
+        <button id="f01" title="Forward 0.01 s">▶</button>
+        <button id="f10" title="Forward 0.1 s">▶▶</button>
+      </div>
+      <div class="timeline">
+        <input type="range" id="scrub" min="0" max="100" step="0.001" value="0" aria-label="Time">
+        <span class="clock" id="clock">0.000 s</span>
+      </div>
+      <span id="outcome" class="hint"></span>
+    </div>
+  </section>
+
+  <div class="cols">
+    <!-- ===================== INSTRUMENTS ===================== -->
+    <section class="card">
+      <h2>3 · Read the instruments</h2>
+      <ol class="steps">
+        <li>Slide the two <b>photogates</b> along the flat run-out to where you want to measure.</li>
+        <li>Release the car. Each gate stamps the clock as the car passes.</li>
+        <li>Everything below is a direct reading — a height, a mass, a distance, two clock times. Nothing else.</li>
+      </ol>
+      <div class="gates">
+        <label><span>Gate A</span><input type="range" id="gateA" min="11.4" max="13.0" step="0.05"><b id="gateAv">—</b></label>
+        <label><span>Gate B</span><input type="range" id="gateB" min="11.5" max="13.4" step="0.05"><b id="gateBv">—</b></label>
+      </div>
+      <div class="readout">
+        <div class="tile"><div class="lab">Release height &nbsp;h₁</div><div class="val" id="rH">— <small>m</small></div></div>
+        <div class="tile"><div class="lab">Mass of the car &nbsp;m</div><div class="val" id="rM">— <small>kg</small></div></div>
+        <div class="tile"><div class="lab">Gate separation &nbsp;d</div><div class="val" id="rD">— <small>m</small></div></div>
+        <div class="tile"><div class="lab">Gravity &nbsp;g</div><div class="val">9.8 <small>m/s²</small></div></div>
+        <div class="tile"><div class="lab">Clock at gate A &nbsp;t<sub>A</sub></div><div class="val" id="rTA">— <small>s</small></div></div>
+        <div class="tile"><div class="lab">Clock at gate B &nbsp;t<sub>B</sub></div><div class="val" id="rTB">— <small>s</small></div></div>
+      </div>
+      <p class="hint">The run-out is level, so the car has <b>no height</b> between the gates — every joule it still
+        has is kinetic. Two gates give you an <b>average</b> speed across the gap, so keep them close together
+        if you want the speed at a particular spot.</p>
+      <p class="warn hidden" id="gateWarn"></p>
+    </section>
+
+    <!-- ===================== WORKSHEET ===================== -->
+    <section class="card">
+      <h2>4 · Do the maths yourself</h2>
+      <div id="worksheet"></div>
+    </section>
+  </div>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section class="card">
+    <h2>5 · Check your work against the energy graph</h2>
+    <div id="chartLock" class="locknote">The energy graph stays hidden until you have finished all five calculations for this run. Work them out first — then compare.</div>
+    <div id="chartArea" class="hidden">
+      <div class="legend">
+        <span><i class="k k1"></i> Kinetic energy</span>
+        <span><i class="k k2"></i> Potential energy</span>
+        <span><i class="k k3"></i> Total energy</span>
+        <div class="spacer"></div>
+        <span class="hint">● your two calculated values</span>
+      </div>
+      <div class="chartwrap">
+        <svg id="energy" viewBox="0 0 900 320" role="img" aria-label="Kinetic, potential and total energy against time"></svg>
+        <div class="tip" id="tip"></div>
+      </div>
+      <p class="hint" id="energyNote"></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>6 · Your runs</h2>
+    <div class="legend">
+      <span>Speed at the gates against release height — one dot per saved run</span>
+      <div class="spacer"></div>
+      <button class="btn ghost sm" id="clearLog">Clear all runs</button>
+    </div>
+    <svg id="scatter" viewBox="0 0 900 260" role="img" aria-label="Speed at the gates against release height"></svg>
+    <div id="scatterEmpty" class="empty">No runs saved yet — finish the five calculations, then press <b>Save this run</b>.</div>
+    <table id="logTable" class="hidden">
+      <thead><tr>
+        <th>#</th><th>h₁ (m)</th><th>h₂ (m)</th><th>h₃ (m)</th><th>m (kg)</th><th>μ</th>
+        <th>d (m)</th><th>Δt (s)</th><th>v (m/s)</th><th>E<sub>p</sub> (J)</th><th>E<sub>k</sub> (J)</th>
+        <th>Lost (J)</th><th>Egg</th><th>Guess</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <footer class="note">The track is 14 m long end to end and the run-out is level. Friction acts along the whole path, so a longer route costs more energy even when the drop is the same.</footer>
+  </section>
+
+  <section class="card">
+    <h2>How to use this simulation</h2>
+    <ol class="howto">
+      <li>Grab any of the three blue dots on the hill crests in the scene and drag it up or down — or use the <strong>Hill height</strong> sliders in Build the ride — to shape the track, then set the car's <strong>mass</strong> and the <strong>track friction</strong>.</li>
+      <li>Predict whether the egg will survive, then press <strong>Release the car</strong> to run it. Use <strong>⟲ Reset simulation</strong> at the top any time to put the hills, mass, friction, and gates back to their starting values.</li>
+      <li>Drag the two <strong>photogates</strong> onto the flat run-out where you want to measure, and use the transport buttons or the scrubber under the scene to step through the run frame by frame.</li>
+      <li>Work through the five calculations in <strong>Do the maths yourself</strong> using only the instrument readings — height, mass, gate positions, and the two clock times. Type an answer and press <strong>Check</strong>.</li>
+      <li>Once all five are correct, the energy graph in section 5 unlocks so you can compare your worked values against the car's real kinetic, potential, and total energy over time.</li>
+      <li>Press <strong>Save this run</strong> to add it to the table and the speed-vs-height graph in <strong>Your runs</strong>, so you can compare several hill and friction setups side by side.</li>
+      <li>Press <strong>Back to the top</strong> to replay the same setup, or <strong>Start over</strong> in the worksheet to clear your answers without changing the track.</li>
+    </ol>
+  </section>
+
+</div>
+
+<script>
+(() => {
+"use strict";
+/* ==================================================================
+   CONSTANTS + GEOMETRY
+   ================================================================== */
+const G_ACC   = 9.8;
+const TRACK_M = 14;                 // horizontal length of the track, metres
+const SCENE_W = 1200, SCENE_H = 340;
+const PAD_L   = 64, PAD_R = 18;     // gutter for the height axis
+const PXM     = (SCENE_W - PAD_L - PAD_R) / TRACK_M;   // px per metre — SAME on both axes
+const GROUND_Y = 262;               // y of the zero-height line
+const GRID_M  = 0.25;               // height gridline spacing, metres
+const EGG_KE  = 12.0;               // egg cracks above this impact energy (J) — not shown to students
+const SVGNS   = "http://www.w3.org/2000/svg";
+const DT      = 0.0002;             // integrator step
+const SAMPLE  = 5;                  // record every 5th step (1 ms)
+const MAX_T   = 25;
+const CAR_L   = 34, CAR_H = 13;     // car body size, px — shared by the physics stop-check and the drawing
+const CAR_HALF_M   = (CAR_L / 2) / PXM;        // half the car's length, in metres
+const EGG_INSET_PX = 12;                       // how far before the literal rail end the egg sits, px
+const EGG_X_M = TRACK_M - EGG_INSET_PX / PXM;  // the egg's position along the track, metres
+
+const el = (id) => document.getElementById(id);
+const mk = (tag, a = {}) => { const n = document.createElementNS(SVGNS, tag);
+  for (const k in a) n.setAttribute(k, a[k]); return n; };
+const fmt = (v, n) => Number(v).toFixed(n);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+/* control points of the profile: first segment is a parabola so the car
+   actually starts rolling; the rest are cosine ramps so crests and valleys
+   are smooth. */
+const NODE_X = [0, 2.2, 4.4, 6.6, 8.8, 11.0, TRACK_M];
+function nodes(c){ return [c.h1, 0, c.h2, 0, c.h3, 0, 0]; }
+
+function yAt(x, ny){
+  if (x <= 0) return ny[0] * (1 + (-x / NODE_X[1])) ** 2;   // extends upward off the start
+  for (let i = 0; i < NODE_X.length - 1; i++){
+    const x0 = NODE_X[i], x1 = NODE_X[i+1];
+    if (x <= x1){
+      const t = (x - x0) / (x1 - x0), y0 = ny[i], y1 = ny[i+1];
+      if (i === 0) return y0 * (1 - t) ** 2;                 // the first drop
+      return y0 + (y1 - y0) * (1 - Math.cos(Math.PI * t)) / 2;
+    }
+  }
+  return 0;
+}
+function slopeAt(x, ny){
+  if (x <= 0) return -2 * ny[0] * (1 - x / NODE_X[1]) / NODE_X[1];
+  for (let i = 0; i < NODE_X.length - 1; i++){
+    const x0 = NODE_X[i], x1 = NODE_X[i+1], L = x1 - x0;
+    if (x <= x1){
+      const t = (x - x0) / L, y0 = ny[i], y1 = ny[i+1];
+      if (i === 0) return -2 * y0 * (1 - t) / L;
+      return (y1 - y0) * Math.PI * Math.sin(Math.PI * t) / (2 * L);
+    }
+  }
+  return 0;
+}
+
+/* ==================================================================
+   STATE
+   ================================================================== */
+const CFG_DEFAULT = { h1:1.20, h2:0.80, h3:0.50, m:2.0, mu:0.03 };
+const GATE_DEFAULT = { A:11.60, B:12.60 };
+const CFG = { ...CFG_DEFAULT };
+const S = {
+  t:0, playing:false, rate:1,
+  gateA:11.60, gateB:12.60,
+  run:null,                                  // the precomputed trajectory
+  work:{ dt:null, v:null, ep:null, ek:null, lost:null },
+  tries:{ dt:0, v:0, ep:0, ek:0, lost:0 },
+  predict:null,                              // "survive" | "break"
+  runs:[]
+};
+const gateD = () => Math.round((S.gateB - S.gateA) * 100) / 100;
+
+/* ==================================================================
+   SIMULATION — deterministic, computed once per configuration
+   ================================================================== */
+function simulate(){
+  const ny = nodes(CFG), mu = CFG.mu;
+  const T = [], X = [], Y = [], V = [];
+  let x = 0, v = 0, t = 0, i = 0;
+  let hitEgg = false, stalled = false;
+
+  const push = () => { T.push(t); X.push(x); Y.push(yAt(x, ny)); V.push(v); };
+  push();
+
+  /* derivatives of (x, v) for a bead on the profile */
+  const deriv = (xx, vv) => {
+    const sl = slopeAt(xx, ny), den = Math.hypot(1, sl);
+    const sn = sl / den, cs = 1 / den;
+    const drag = Math.abs(vv) < 1e-9 ? 0 : mu * G_ACC * cs * Math.sign(vv);
+    return { dx: vv * cs, dv: -G_ACC * sn - drag };
+  };
+
+  while (t < MAX_T){
+    const sl0 = slopeAt(x, ny);
+    if (Math.abs(v) < 2e-3 && Math.abs(sl0) <= mu){ v = 0; stalled = true; break; }
+    const k1 = deriv(x, v);
+    const k2 = deriv(x + k1.dx * DT / 2, v + k1.dv * DT / 2);
+    x += k2.dx * DT;
+    v += k2.dv * DT;
+    t += DT;
+    i++;
+    /* the car's FRONT bumper is what reaches the egg, not its centre — so it is
+       physically stopped right at the egg instead of sliding its whole body past it */
+    if (x + CAR_HALF_M >= EGG_X_M){ x = EGG_X_M - CAR_HALF_M; hitEgg = true; push(); break; }
+    if (x < 0){ x = 0; v = 0; }                 // back on the launch platform
+    if (i % SAMPLE === 0) push();
+  }
+
+  /* photogate crossings: first forward pass of each gate */
+  const cross = (gx) => {
+    for (let k = 1; k < X.length; k++){
+      if (X[k-1] < gx && X[k] >= gx){
+        const f = (gx - X[k-1]) / (X[k] - X[k-1]);
+        return Math.round((T[k-1] + f * (T[k] - T[k-1])) * 10000) / 10000;  // 0.1 ms resolution
+      }
+    }
+    return null;
+  };
+  const tA = cross(S.gateA), tB = cross(S.gateB);
+  const vImpact = hitEgg ? Math.abs(V[V.length - 1]) : 0;
+  const keImpact = 0.5 * CFG.m * vImpact * vImpact;
+
+  return {
+    cfg: { ...CFG }, ny, T, X, Y, V, tA, tB,
+    duration: T[T.length - 1],
+    hitEgg, stalled, vImpact, keImpact,
+    eggBroke: hitEgg && keImpact > EGG_KE,
+    epTop: CFG.m * G_ACC * CFG.h1,
+  };
+}
+
+/* linear lookup of the state at time t */
+function stateAt(t){
+  const R = S.run;
+  if (!R) return { x:0, y:CFG.h1, v:0 };
+  const T = R.T;
+  if (t <= 0) return { x:R.X[0], y:R.Y[0], v:R.V[0] };
+  if (t >= T[T.length-1]) { const n = T.length-1; return { x:R.X[n], y:R.Y[n], v:R.V[n] }; }
+  let lo = 0, hi = T.length - 1;
+  while (hi - lo > 1){ const mid = (lo + hi) >> 1; (T[mid] <= t ? lo = mid : hi = mid); }
+  const f = (t - T[lo]) / (T[hi] - T[lo]);
+  return { x:R.X[lo] + f*(R.X[hi]-R.X[lo]), y:R.Y[lo] + f*(R.Y[hi]-R.Y[lo]),
+           v:R.V[lo] + f*(R.V[hi]-R.V[lo]) };
+}
+
+/* ==================================================================
+   SCENE
+   ================================================================== */
+const scene = el("scene");
+const px = (m) => PAD_L + m * PXM;
+const py = (h) => GROUND_Y - h * PXM;
+let trackLayer, carLayer, gateLayer, handleLayer;
+
+function buildScene(){
+  scene.textContent = "";
+  const defs = mk("defs");
+  const sky = mk("linearGradient", { id:"cSky", x1:0, y1:0, x2:0, y2:1 });
+  sky.appendChild(mk("stop", { offset:"0%", "stop-color":"var(--sky-top)" }));
+  sky.appendChild(mk("stop", { offset:"100%", "stop-color":"var(--sky-bot)" }));
+  const fl = mk("linearGradient", { id:"cFloor", x1:0, y1:0, x2:0, y2:1 });
+  fl.appendChild(mk("stop", { offset:"0%", "stop-color":"var(--floor)" }));
+  fl.appendChild(mk("stop", { offset:"100%", "stop-color":"var(--floor-2)" }));
+  defs.appendChild(sky); defs.appendChild(fl);
+  scene.appendChild(defs);
+
+  scene.appendChild(mk("rect", { x:0, y:0, width:SCENE_W, height:GROUND_Y, fill:"url(#cSky)" }));
+  scene.appendChild(mk("path", { fill:"var(--hill-far)", opacity:.55,
+    d:`M0,${GROUND_Y-38} Q220,${GROUND_Y-34} `
+     + `Q700,${GROUND_Y-44} Q1080,${GROUND_Y-30} `
+     + `L1200,${GROUND_Y} Z` }));
+
+  /* height gridlines, exactly GRID_M apart */
+  const gg = mk("g");
+  for (let h = 0; h <= 2.50 + 1e-9; h += GRID_M){
+    const y = py(h);
+    if (y < 8) break;
+    const major = Math.abs(h * 4 % 4) < 1e-6;      // whole metres
+    gg.appendChild(mk("line", { x1:PAD_L, y1:y, x2:SCENE_W - PAD_R, y2:y,
+      stroke:"var(--baseline)", "stroke-width": h === 0 ? 1.8 : (major ? 1.4 : 1),
+      opacity: h === 0 ? .85 : (major ? .6 : .3) }));
+    const tx = mk("text", { x:PAD_L - 8, y: h === 0 ? y - 6 : y + 4, "text-anchor":"end",
+      fill: major ? "var(--text-secondary)" : "var(--muted)",
+      "font-size":15.5, "font-family":'"Poppins", system-ui, sans-serif',
+      "font-weight":"700" });
+    tx.textContent = fmt(h, 2);
+    gg.appendChild(tx);
+  }
+  const hAx = mk("text", { x:4, y:py(2.50) - 12, "text-anchor":"start",
+    fill:"var(--text-secondary)", "font-size":14.5, "font-weight":"700",
+    "font-family":'"Poppins", system-ui, sans-serif' });
+  hAx.textContent = "height (m)";
+  gg.appendChild(hAx);
+  scene.appendChild(gg);
+
+  scene.appendChild(mk("rect", { x:0, y:GROUND_Y, width:SCENE_W, height:SCENE_H-GROUND_Y,
+    fill:"url(#cFloor)" }));
+
+  trackLayer  = mk("g"); scene.appendChild(trackLayer);
+  gateLayer   = mk("g"); scene.appendChild(gateLayer);
+  carLayer    = mk("g"); scene.appendChild(carLayer);
+  handleLayer = mk("g"); scene.appendChild(handleLayer);   // on top, so the drag grips are always reachable
+}
+
+function trackPath(ny){
+  let d = "";
+  for (let i = 0; i <= 560; i++){
+    const x = (i / 560) * TRACK_M;
+    d += (i ? "L" : "M") + px(x).toFixed(1) + "," + py(yAt(x, ny)).toFixed(1);
+  }
+  return d;
+}
+
+function drawTrack(){
+  const ny = nodes(CFG);
+  trackLayer.textContent = "";
+
+  /* support posts */
+  for (let x = 0.25; x < TRACK_M; x += 0.5){
+    const y = py(yAt(x, ny));
+    if (GROUND_Y - y < 5) continue;
+    trackLayer.appendChild(mk("line", { x1:px(x), y1:y + 5, x2:px(x), y2:GROUND_Y,
+      stroke:"var(--post)", "stroke-width":2.4, opacity:.65 }));
+  }
+  const d = trackPath(ny);
+  trackLayer.appendChild(mk("path", { d, fill:"none", stroke:"var(--rail)", "stroke-width":9,
+    "stroke-linecap":"round" }));
+  trackLayer.appendChild(mk("path", { d, fill:"none", stroke:"var(--rail-top)", "stroke-width":3.4,
+    "stroke-linecap":"round" }));
+
+  /* crest markers for the three hill heights (these are the INPUTS, so they are shown) */
+  [["h₁", 0, CFG.h1], ["h₂", NODE_X[2], CFG.h2], ["h₃", NODE_X[4], CFG.h3]].forEach(([lab, x, h]) => {
+    if (h < 0.03) return;
+    trackLayer.appendChild(mk("line", { x1:px(x), y1:py(h), x2:px(x), y2:GROUND_Y,
+      stroke:"var(--accent)", "stroke-width":1.6, "stroke-dasharray":"5 4", opacity:.8 }));
+    const t = mk("text", { x:px(x) + 8, y:py(h) - 17, fill:"var(--accent)", "font-size":17,
+      "font-weight":"700", "font-family":'"Poppins", system-ui, sans-serif',
+      style:"paint-order:stroke;stroke:var(--surface-1);stroke-width:4px" });
+    t.textContent = `${lab} = ${fmt(h,2)} m`;
+    trackLayer.appendChild(t);
+  });
+
+  /* the egg */
+  const eggBroke = S.run && S.run.eggBroke && S.t >= S.run.duration - 1e-9;
+  const ex = px(EGG_X_M), ey = GROUND_Y - 2;
+  const eg = mk("g");
+  if (eggBroke){
+    eg.appendChild(mk("path", { d:`M${ex-16},${ey} q8,-14 16,-2 q8,-12 16,2 z`, fill:"var(--egg)",
+      stroke:"var(--egg-line)", "stroke-width":1.6 }));
+    eg.appendChild(mk("ellipse", { cx:ex, cy:ey - 1, rx:26, ry:5, fill:"#f4c542", opacity:.95 }));
+    eg.appendChild(mk("circle", { cx:ex + 4, cy:ey - 3, r:5, fill:"#e8952a" }));
+  } else {
+    eg.appendChild(mk("ellipse", { cx:ex, cy:ey - 13, rx:11, ry:14.5, fill:"var(--egg)",
+      stroke:"var(--egg-line)", "stroke-width":1.6 }));
+    eg.appendChild(mk("ellipse", { cx:ex - 3.5, cy:ey - 17, rx:3.2, ry:4.6, fill:"#fff", opacity:.6 }));
+  }
+  trackLayer.appendChild(eg);
+  positionHandles();
+}
+
+function drawGates(){
+  gateLayer.textContent = "";
+  [["A", S.gateA, "#e34948"], ["B", S.gateB, "#2a78d6"]].forEach(([lab, gx, col]) => {
+    const g = mk("g");
+    const X = px(gx);
+    g.appendChild(mk("line", { x1:X, y1:GROUND_Y + 6, x2:X, y2:GROUND_Y - 74,
+      stroke:col, "stroke-width":2.6 }));
+    g.appendChild(mk("rect", { x:X - 7, y:GROUND_Y - 80, width:14, height:12, rx:3, fill:col }));
+    const t = mk("text", { x:X, y:GROUND_Y - 86, "text-anchor":"middle", fill:col,
+      "font-size":16, "font-weight":"700", "font-family":'"Poppins", system-ui, sans-serif',
+      style:"paint-order:stroke;stroke:var(--surface-1);stroke-width:4px" });
+    t.textContent = lab;
+    g.appendChild(t);
+    gateLayer.appendChild(g);
+  });
+  /* the measured span */
+  const y = GROUND_Y - 52;
+  gateLayer.appendChild(mk("line", { x1:px(S.gateA), y1:y, x2:px(S.gateB), y2:y,
+    stroke:"var(--text-secondary)", "stroke-width":1.6 }));
+  const dt = mk("text", { x:(px(S.gateA) + px(S.gateB)) / 2, y:y - 6, "text-anchor":"middle",
+    fill:"var(--text-primary)", "font-size":16, "font-weight":"700",
+    "font-family":'"Poppins", system-ui, sans-serif',
+    style:"paint-order:stroke;stroke:var(--surface-1);stroke-width:4px" });
+  dt.textContent = `d = ${fmt(gateD(), 2)} m`;
+  gateLayer.appendChild(dt);
+}
+
+/* ==================================================================
+   DRAG-THE-TRACK HANDLES — grab a hill crest and pull it up or down
+   ================================================================== */
+const HANDLES = [
+  { key:"h1", x:NODE_X[0] },
+  { key:"h2", x:NODE_X[2] },
+  { key:"h3", x:NODE_X[4] },
+];
+const handleEls = {};
+
+function buildHandles(){
+  handleLayer.textContent = "";
+  HANDLES.forEach(hd => {
+    const dial = DIALS.find(d => d.key === hd.key);
+    const g = mk("g", { style:"cursor:ns-resize;touch-action:none", tabindex:"0",
+      role:"slider", "aria-label": dial.lab,
+      "aria-valuemin":dial.min, "aria-valuemax":dial.max });
+    const grip = mk("circle", { r:9, fill:"var(--accent)", stroke:"var(--surface-1)",
+      "stroke-width":2.5 });
+    const tip = mk("title");
+    tip.textContent = "Drag up or down to change " + dial.lab.toLowerCase();
+    g.appendChild(tip);
+    g.appendChild(grip);
+    handleLayer.appendChild(g);
+    handleEls[hd.key] = { g, grip };
+
+    let dragging = false, startY = 0, startVal = 0;
+    const onMove = (e) => {
+      if (!dragging) return;
+      const rect = scene.getBoundingClientRect();
+      const scaleY = SCENE_H / rect.height;          // svg viewBox units per on-screen px
+      const dyPx = (e.clientY - startY) * scaleY;
+      let v = startVal + (-dyPx / PXM);               // dragging up increases height
+      v = Math.round(v / dial.step) * dial.step;
+      v = clamp(v, dial.min, dial.max);
+      if (CFG[hd.key] !== v){
+        CFG[hd.key] = v;
+        syncDialUI(hd.key);
+        newRun(false);
+      }
+    };
+    const onUp = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    g.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      startY = e.clientY;
+      startVal = CFG[hd.key];
+      e.preventDefault();
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    });
+    g.addEventListener("keydown", (e) => {
+      const step = (e.key === "ArrowUp") ? dial.step : (e.key === "ArrowDown") ? -dial.step : 0;
+      if (!step) return;
+      e.preventDefault();
+      CFG[hd.key] = clamp(Math.round((CFG[hd.key] + step) / dial.step) * dial.step, dial.min, dial.max);
+      syncDialUI(hd.key);
+      newRun(false);
+    });
+  });
+}
+
+function positionHandles(){
+  HANDLES.forEach(hd => {
+    const he = handleEls[hd.key];
+    if (!he) return;
+    he.grip.setAttribute("cx", px(hd.x));
+    he.grip.setAttribute("cy", py(CFG[hd.key]));
+  });
+}
+
+function drawCar(){
+  const st = stateAt(S.t);
+  const ny = S.run ? S.run.ny : nodes(CFG);
+  const sl = slopeAt(st.x, ny);
+  const ang = Math.atan(sl) * 180 / Math.PI;
+  carLayer.textContent = "";
+  const g = mk("g", { transform:`translate(${px(st.x).toFixed(1)},${py(st.y).toFixed(1)}) rotate(${ang.toFixed(1)})` });
+  const L = CAR_L, H = CAR_H;
+  g.appendChild(mk("rect", { x:-L/2, y:-H-7, width:L, height:H, rx:4, fill:"var(--car)" }));
+  g.appendChild(mk("path", { d:`M${-L/2+7},${-H-7} l6,-7 l10,0 l5,7 z`, fill:"var(--car-2)" }));
+  [-L/2 + 8, L/2 - 8].forEach(cx => {
+    g.appendChild(mk("circle", { cx, cy:-5, r:5.4, fill:"#2b2b2b" }));
+    g.appendChild(mk("circle", { cx, cy:-5, r:2, fill:"#c9c9c9" }));
+  });
+  carLayer.appendChild(g);
+}
+
+/* ==================================================================
+   RULER
+   ================================================================== */
+function buildRuler(){
+  const r = el("ruler");
+  r.textContent = "";
+  r.appendChild(mk("line", { x1:0, y1:7, x2:SCENE_W, y2:7, stroke:"var(--baseline)", "stroke-width":2 }));
+  for (let m = 0; m <= TRACK_M + 1e-9; m += 0.5){
+    const x = px(m), big = Math.abs(m % 2) < 1e-9;
+    r.appendChild(mk("line", { x1:x, y1:7, x2:x, y2: big ? 21 : 14,
+      stroke: big ? "var(--text-secondary)" : "var(--baseline)", "stroke-width": big ? 2 : 1.3 }));
+    if (big){
+      const tx = mk("text", { x:Math.min(x, SCENE_W - 26), y:41, "text-anchor":"middle",
+        fill:"var(--muted)", "font-size":19, "font-family":'"Poppins", system-ui, sans-serif' });
+      tx.textContent = m + " m";
+      r.appendChild(tx);
+    }
+  }
+}
+
+/* ==================================================================
+   THE WORKSHEET — five gated steps
+   ================================================================== */
+const STEPS = [
+  { key:"ep",   title:"How much potential energy did it start with?",
+    law:"E<sub>p</sub> = m × g × h₁", unit:"J", sym:"Eₚ", dp:2,
+    tol:(c) => Math.max(0.1, Math.abs(c) * 0.02),
+    hint:"Multiply the mass by g by the release height. Joules = kg × m/s² × m." },
+  { key:"dt",   title:"How long did the car take to cross the gates?",
+    law:"Δt = t<sub>B</sub> − t<sub>A</sub>", unit:"s", sym:"Δt", dp:4,
+    tol:(c) => Math.max(0.0004, Math.abs(c) * 0.005),
+    hint:"Subtract the clock reading at gate A from the reading at gate B." },
+  { key:"v",    title:"How fast was it going there?",
+    law:"v = d ÷ Δt", unit:"m/s", sym:"v", dp:2,
+    tol:(c) => Math.max(0.08, Math.abs(c) * 0.03),
+    hint:"Divide the gate separation by the time it took — distance over time." },
+  { key:"ek",   title:"How much kinetic energy did it have at the gates?",
+    law:"E<sub>k</sub> = ½ × m × v²", unit:"J", sym:"Eₖ", dp:2,
+    tol:(c) => Math.max(0.2, Math.abs(c) * 0.05),
+    hint:"Square the speed first, then multiply by the mass, then halve it. Do not forget the ½." },
+  { key:"lost", title:"How much energy did friction take?",
+    law:"E<sub>lost</sub> = E<sub>p</sub> − E<sub>k</sub>", unit:"J", sym:"Eₗₒₛₜ", dp:2,
+    tol:(c) => Math.max(0.25, Math.abs(c) * 0.06),
+    hint:"The run-out is level, so the car has no potential energy left. Whatever is missing went to friction — and with μ = 0 that should be about zero." },
+];
+
+function buildWorksheet(){
+  const box = el("worksheet");
+  box.textContent = "";
+  STEPS.forEach((st, i) => {
+    const d = document.createElement("div");
+    d.className = "stepbox" + (i ? " locked" : "");
+    d.id = "step-" + st.key;
+    d.innerHTML =
+      `<div class="stepnum">${i+1}</div>
+       <div class="stepbody">
+         <div class="steptitle">${st.title}</div>
+         <p class="formula">${st.law} = <b id="sub-${st.key}">—</b></p>
+         <div class="calc">
+           <label class="sr" for="in-${st.key}">${st.sym} in ${st.unit}</label>
+           <span class="eq">${st.sym} =</span>
+           <input type="number" id="in-${st.key}" step="any" placeholder="0">
+           <span class="unit">${st.unit}</span>
+           <button class="btn primary" id="go-${st.key}">Check</button>
+           <span class="tick" id="tk-${st.key}"></span>
+         </div>
+         <div class="verdict" id="vd-${st.key}" role="status"></div>
+       </div>`;
+    box.appendChild(d);
+  });
+  const tail = document.createElement("div");
+  tail.className = "markrow";
+  tail.style.marginTop = "12px";
+  tail.innerHTML = `<button class="btn" id="saveRun" disabled>＋ Save this run</button>
+                    <button class="btn ghost sm" id="clearWork">Start over</button>
+                    <span class="hint" id="workDone"></span>`;
+  box.appendChild(tail);
+
+  STEPS.forEach(st => {
+    el("go-" + st.key).onclick = () => checkStep(st.key);
+    el("in-" + st.key).addEventListener("keydown", e => { if (e.key === "Enter") checkStep(st.key); });
+  });
+  el("saveRun").onclick = saveRun;
+  el("clearWork").onclick = resetWork;
+}
+
+/* the correct value for each step, derived from the instrument readings only */
+function correct(key){
+  const R = S.run;
+  const tA = R && R.tA, tB = R && R.tB;
+  if (key === "dt")  return (tA != null && tB != null) ? Math.round((tB - tA) * 10000) / 10000 : null;
+  if (key === "v")   return S.work.dt ? gateD() / S.work.dt : null;
+  if (key === "ep")  return R ? R.cfg.m * G_ACC * R.cfg.h1 : null;
+  if (key === "ek")  return (S.work.v != null && R) ? 0.5 * R.cfg.m * S.work.v ** 2 : null;
+  if (key === "lost")return (S.work.ep != null && S.work.ek != null) ? S.work.ep - S.work.ek : null;
+  return null;
+}
+
+function substitutions(){
+  const R = S.run, W = S.work;
+  const has = R && R.tA != null && R.tB != null;
+  el("sub-dt").innerHTML = has ? `${fmt(R.tB,4)} s − ${fmt(R.tA,4)} s` : "t<sub>B</sub> − t<sub>A</sub>";
+  el("sub-v").innerHTML  = (has && W.dt != null) ? `${fmt(gateD(),2)} m ÷ ${fmt(W.dt,4)} s` : "d ÷ Δt";
+  el("sub-ep").innerHTML = R ? `${fmt(R.cfg.m,1)} kg × 9.8 m/s² × ${fmt(R.cfg.h1,2)} m` : "m × g × h₁";
+  el("sub-ek").innerHTML = (R && W.v != null)
+    ? `½ × ${fmt(R.cfg.m,1)} kg × (${fmt(W.v,2)} m/s)²` : "½ × m × v²";
+  el("sub-lost").innerHTML = (W.ep != null && W.ek != null)
+    ? `${fmt(W.ep,2)} J − ${fmt(W.ek,2)} J` : "E<sub>p</sub> − E<sub>k</sub>";
+}
+
+function checkStep(key){
+  const st = STEPS.find(s => s.key === key), out = el("vd-" + key);
+  const c = correct(key);
+  if (c == null){
+    out.className = "verdict no";
+    out.textContent = (key === "dt" || key === "v")
+      ? "Release the car first — both gates need a clock reading."
+      : "Finish the step above before this one.";
+    return;
+  }
+  const guess = parseFloat(el("in-" + key).value);
+  if (Number.isNaN(guess)){
+    out.className = "verdict";
+    out.textContent = `Type your value for ${st.sym}, then press Check.`;
+    return;
+  }
+  S.tries[key]++;
+  if (Math.abs(guess - c) <= st.tol(c)){
+    S.work[key] = c;
+    el("tk-" + key).textContent = "✓";
+    el("step-" + key).classList.add("done");
+    out.className = "verdict ok";
+    out.textContent = `✓ Correct — ${fmt(c, st.dp)} ${st.unit}.`;
+    const idx = STEPS.findIndex(s => s.key === key);
+    if (STEPS[idx+1]) el("step-" + STEPS[idx+1].key).classList.remove("locked");
+    substitutions();
+    afterWork();
+    return;
+  }
+  el("tk-" + key).textContent = "";
+  out.className = "verdict no";
+  if (S.tries[key] === 1)      out.textContent = `Not quite. ${st.hint}`;
+  else if (S.tries[key] === 2) out.textContent = `Still off. ${st.hint} Check your units too.`;
+  else                         out.textContent = `${st.hint} Set it up like this: ${el("sub-"+key).textContent}.`;
+}
+
+function afterWork(){
+  const done = STEPS.every(s => S.work[s.key] != null);
+  el("saveRun").disabled = !done;
+  el("chartLock").classList.toggle("hidden", done);
+  el("chartArea").classList.toggle("hidden", !done);
+  if (done){
+    el("workDone").textContent = "All five done — the energy graph is unlocked below.";
+    drawEnergy();
+  } else {
+    el("workDone").textContent = "";
+  }
+}
+
+function resetWork(){
+  S.work = { dt:null, v:null, ep:null, ek:null, lost:null };
+  S.tries = { dt:0, v:0, ep:0, ek:0, lost:0 };
+  STEPS.forEach((st, i) => {
+    el("in-" + st.key).value = "";
+    el("vd-" + st.key).textContent = "";
+    el("vd-" + st.key).className = "verdict";
+    el("tk-" + st.key).textContent = "";
+    const b = el("step-" + st.key);
+    b.classList.remove("done");
+    b.classList.toggle("locked", i > 0);
+  });
+  substitutions();
+  afterWork();
+}
+
+/* ==================================================================
+   INSTRUMENT PANEL
+   ================================================================== */
+function refreshInstruments(){
+  const R = S.run;
+  el("rH").innerHTML = fmt(CFG.h1, 2) + ' <small>m</small>';
+  el("rM").innerHTML = fmt(CFG.m, 1) + ' <small>kg</small>';
+  el("rD").innerHTML = fmt(gateD(), 2) + ' <small>m</small>';
+  el("gateAv").textContent = fmt(S.gateA, 2) + " m";
+  el("gateBv").textContent = fmt(S.gateB, 2) + " m";
+  const tA = R && R.tA, tB = R && R.tB;
+  el("rTA").innerHTML = tA != null ? fmt(tA,4) + ' <small>s</small>' : '— <small>s</small>';
+  el("rTB").innerHTML = tB != null ? fmt(tB,4) + ' <small>s</small>' : '— <small>s</small>';
+
+  const warn = el("gateWarn");
+  if (R && (R.tA == null || R.tB == null)){
+    warn.classList.remove("hidden");
+    warn.textContent = R.stalled
+      ? "The car never reached the gates — it did not have enough energy to clear a hill. Raise h₁, lower the hill in front of it, or cut the friction."
+      : "The car did not pass both gates. Move the gates onto the part of the run-out the car reaches.";
+  } else warn.classList.add("hidden");
+  substitutions();
+}
+
+/* ==================================================================
+   PLAYBACK
+   ================================================================== */
+let raf = null, last = 0;
+function tick(now){
+  if (!S.playing) return;
+  S.t += Math.min(0.05, (now - last) / 1000) * S.rate;
+  last = now;
+  if (S.t >= S.run.duration){ S.t = S.run.duration; setPlaying(false); }
+  render();
+  raf = requestAnimationFrame(tick);
+}
+function setPlaying(on){
+  S.playing = on;
+  el("releaseBtn").innerHTML = on ? "❚❚ Pause" : (S.t > 0 ? "▶ Continue" : "▶ Release the car");
+  el("badge").classList.toggle("live", on);
+  el("badgeTxt").textContent = on ? "RUNNING" : (S.t <= 0 ? "AT THE TOP" : "PAUSED");
+  if (on){ last = performance.now(); raf = requestAnimationFrame(tick); }
+  else if (raf){ cancelAnimationFrame(raf); raf = null; }
+  if (!on) showOutcome();
+}
+function seek(t){ S.t = clamp(t, 0, S.run.duration); render(); }
+
+function render(){
+  drawTrack();
+  drawGates();
+  drawCar();
+  el("clock").textContent = fmt(S.t, 3) + " s";
+  el("clockbox").textContent = fmt(S.t, 3) + " s";
+  el("badgeTxt").textContent = S.playing ? "RUNNING" : (S.t <= 1e-9 ? "AT THE TOP" : "PAUSED");
+  showOutcome();
+  const sc = el("scrub");
+  if (document.activeElement !== sc) sc.value = String(S.t);
+}
+
+function showOutcome(){
+  const R = S.run, o = el("outcome");
+  if (!R || S.t < R.duration - 1e-6){ o.textContent = ""; return; }
+  if (R.stalled){ o.textContent = "The car ran out of energy and stopped on the track."; return; }
+  if (!R.hitEgg){ o.textContent = "The car never made it to the end."; return; }
+  const guessed = S.predict ? (S.predict === (R.eggBroke ? "break" : "survive")) : null;
+  o.innerHTML = (R.eggBroke ? "💥 <b>The egg broke.</b>" : "🥚 <b>The egg survived.</b>")
+    + (guessed === null ? "" : guessed ? " Your prediction was right." : " Your prediction was wrong.");
+}
+
+function newRun(keepWork){
+  setPlaying(false);
+  S.run = simulate();
+  S.t = 0;
+  el("scrub").max = String(Math.ceil(S.run.duration * 1000) / 1000);   // reachable on the step grid
+  if (!keepWork) resetWork();
+  refreshInstruments();
+  render();
+  el("outcome").textContent = "";
+  el("releaseBtn").innerHTML = "▶ Release the car";
+}
+
+/* ==================================================================
+   ENERGY CHART
+   ================================================================== */
+function drawEnergy(){
+  const R = S.run, c = el("energy");
+  c.textContent = "";
+  const W = 900, H = 320, padL = 62, padR = 96, padT = 16, padB = 44;
+  const T = R.T, n = T.length;
+  const tMax = R.duration || 1;
+  const eMax = Math.max(...R.Y.map((y, i) => R.cfg.m*G_ACC*y + 0.5*R.cfg.m*R.V[i]**2)) * 1.10 || 1;
+  const X = (t) => padL + (t / tMax) * (W - padL - padR);
+  const Y = (e) => H - padB - (e / eMax) * (H - padT - padB);
+
+  /* gridlines + axes */
+  const step = niceStep(eMax / 4);
+  for (let e = 0; e <= eMax; e += step){
+    c.appendChild(mk("line", { x1:padL, y1:Y(e), x2:W-padR, y2:Y(e),
+      stroke: e === 0 ? "var(--baseline)" : "var(--grid)", "stroke-width":1 }));
+    const t = mk("text", { x:padL-8, y:Y(e)+4, "text-anchor":"end", fill:"var(--muted)",
+      "font-size":14.5, "font-family":'"Poppins", system-ui, sans-serif' });
+    t.textContent = String(+e.toFixed(2));
+    c.appendChild(t);
+  }
+  const tStep = niceStep(tMax / 5);
+  for (let t = 0; t <= tMax + 1e-9; t += tStep){
+    const tx = mk("text", { x:X(t), y:H-padB+20, "text-anchor":"middle", fill:"var(--muted)",
+      "font-size":14.5, "font-family":'"Poppins", system-ui, sans-serif' });
+    tx.textContent = String(+t.toFixed(2));
+    c.appendChild(tx);
+  }
+  const ax = mk("text", { x:X(tMax/2), y:H-6, "text-anchor":"middle", fill:"var(--text-secondary)",
+    "font-size":15, "font-family":'"Poppins", system-ui, sans-serif' });
+  ax.textContent = "time (s)";
+  c.appendChild(ax);
+  const ay = mk("text", { x:padL-8, y:padT+2, "text-anchor":"end", fill:"var(--text-secondary)",
+    "font-size":15, "font-family":'"Poppins", system-ui, sans-serif' });
+  ay.textContent = "J";
+  c.appendChild(ay);
+
+  /* the three curves, thinned to ~340 points */
+  const stride = Math.max(1, Math.floor(n / 340));
+  const series = [
+    { key:"ke", col:"var(--series-1)", lab:"Kinetic",   f:(i) => 0.5*R.cfg.m*R.V[i]**2 },
+    { key:"pe", col:"var(--series-2)", lab:"Potential", f:(i) => R.cfg.m*G_ACC*R.Y[i] },
+    { key:"tot",col:"var(--series-3)", lab:"Total",     f:(i) => 0.5*R.cfg.m*R.V[i]**2 + R.cfg.m*G_ACC*R.Y[i] },
+  ];
+  const ends = [];
+  series.forEach(s => {
+    let d = "";
+    for (let i = 0; i < n; i += stride)
+      d += (d ? "L" : "M") + X(T[i]).toFixed(1) + "," + Y(s.f(i)).toFixed(1);
+    d += "L" + X(T[n-1]).toFixed(1) + "," + Y(s.f(n-1)).toFixed(1);
+    c.appendChild(mk("path", { d, fill:"none", stroke:s.col, "stroke-width":2,
+      "stroke-linejoin":"round", "stroke-linecap":"round" }));
+    ends.push({ lab:s.lab, col:s.col, y:Y(s.f(n-1)) });
+  });
+  /* direct end labels: nudge apart and lead with a hairline rather than stacking.
+     They are also the relief the contrast check asks for on the aqua series. */
+  ends.sort((a, b) => a.y - b.y);
+  const MINGAP = 16;
+  for (let i = 1; i < ends.length; i++)
+    if (ends[i].y - ends[i-1].y < MINGAP) ends[i].y = ends[i-1].y + MINGAP;
+  const shift = Math.max(0, ends[ends.length-1].y - (H - padB - 2));
+  ends.forEach(e => e.y -= shift);
+  const xEnd = X(T[n-1]);
+  ends.forEach(e => {
+    const yTrue = Y(series.find(s => s.lab === e.lab).f(n-1));
+    if (Math.abs(yTrue - e.y) > 2)
+      c.appendChild(mk("path", { d:`M${xEnd.toFixed(1)},${yTrue.toFixed(1)} L${xEnd.toFixed(1)},${e.y.toFixed(1)}`,
+        stroke:e.col, "stroke-width":1, fill:"none", opacity:.75 }));
+    const lt = mk("text", { x:xEnd + 12, y:e.y + 4, fill:"var(--text-primary)",
+      "font-size":15, "font-weight":"700", "font-family":'"Poppins", system-ui, sans-serif' });
+    lt.textContent = e.lab;
+    c.appendChild(lt);
+  });
+
+  /* gate span + the student's two calculated points */
+  if (R.tA != null && R.tB != null){
+    c.appendChild(mk("rect", { x:X(R.tA), y:padT, width:Math.max(1, X(R.tB)-X(R.tA)),
+      height:H-padT-padB, fill:"var(--text-secondary)", opacity:.08 }));
+    const gl = mk("text", { x:(X(R.tA)+X(R.tB))/2, y:padT+13, "text-anchor":"middle",
+      fill:"var(--muted)", "font-size":14, "font-family":'"Poppins", system-ui, sans-serif' });
+    gl.textContent = "gates";
+    c.appendChild(gl);
+  }
+  const dot = (t, e, col, lab, anchor) => {
+    const cx = X(t), cy = Y(e);
+    c.appendChild(mk("circle", { cx, cy, r:5.5, fill:col,
+      stroke:"var(--surface-1)", "stroke-width":2 }));
+    const below = cy < padT + 34;
+    const tx = mk("text", { x:cx + (anchor === "end" ? -9 : 9), y:cy + (below ? 19 : -10),
+      "text-anchor": anchor || "start",
+      fill:"var(--text-primary)", "font-size":14.5, "font-weight":"700",
+      "font-family":'"Poppins", system-ui, sans-serif',
+      style:"paint-order:stroke;stroke:var(--surface-1);stroke-width:4.5px" });
+    tx.textContent = lab;
+    c.appendChild(tx);
+  };
+  dot(0, S.work.ep, "var(--series-2)", `your Eₚ ${fmt(S.work.ep,2)} J`);
+  if (R.tB != null) dot(R.tB, S.work.ek, "var(--series-1)", `your Eₖ ${fmt(S.work.ek,2)} J`, "end");
+
+  el("energyNote").textContent =
+    `Total energy falls by ${fmt(S.work.lost, 2)} J between the top and the gates — that is the ${fmt(S.work.lost,2)} J `
+    + `you worked out as friction loss. With μ = ${fmt(R.cfg.mu,2)} it turns into heat in the wheels and the track.`;
+
+  wireTip(c, { R, X, Y, tMax, padL, padR, padT, padB, W, H, series });
+}
+function niceStep(raw){
+  const mag = Math.pow(10, Math.floor(Math.log10(raw || 1)));
+  return ([1, 2, 2.5, 5, 10].find(m => m*mag >= raw) || 10) * mag;
+}
+
+function wireTip(svg, K){
+  const tip = el("tip"), wrap = svg.parentElement;
+  const cross = mk("line", { y1:K.padT, y2:K.H-K.padB, stroke:"var(--baseline)",
+    "stroke-width":1, opacity:0 });
+  svg.appendChild(cross);
+  const marks = K.series.map(s => {
+    const m = mk("circle", { r:4.5, fill:s.col, stroke:"var(--surface-1)", "stroke-width":2, opacity:0 });
+    svg.appendChild(m); return m;
+  });
+  const hide = () => { tip.style.opacity = 0; cross.setAttribute("opacity", 0);
+    marks.forEach(m => m.setAttribute("opacity", 0)); };
+  svg.addEventListener("pointerleave", hide);
+  svg.addEventListener("pointermove", (e) => {
+    const b = svg.getBoundingClientRect();
+    const vx = ((e.clientX - b.left) / b.width) * K.W;
+    if (vx < K.padL || vx > K.W - K.padR) return hide();
+    const t = ((vx - K.padL) / (K.W - K.padL - K.padR)) * K.tMax;
+    const T = K.R.T;
+    let lo = 0, hi = T.length - 1;
+    while (hi - lo > 1){ const mid = (lo+hi)>>1; (T[mid] <= t ? lo = mid : hi = mid); }
+    cross.setAttribute("x1", K.X(T[lo])); cross.setAttribute("x2", K.X(T[lo]));
+    cross.setAttribute("opacity", .9);
+    let rows = "";
+    K.series.forEach((s, i) => {
+      const val = s.f(lo);
+      marks[i].setAttribute("cx", K.X(T[lo]));
+      marks[i].setAttribute("cy", K.Y(val));
+      marks[i].setAttribute("opacity", 1);
+      rows += `<div><i class="k" style="background:${s.col}"></i>${s.lab}: ${fmt(val,2)} J</div>`;
+    });
+    tip.innerHTML = `<b>t = ${fmt(T[lo],3)} s</b>${rows}`;
+    tip.style.opacity = 1;
+    const leftPx = (K.X(T[lo]) / K.W) * b.width;
+    const right = leftPx + 16 + tip.offsetWidth < b.width - 6;
+    tip.style.left = (right ? leftPx + 16 : Math.max(6, leftPx - tip.offsetWidth - 16)) + "px";
+    tip.style.top  = (leftPx < b.width * 0.42 ? b.height * 0.52 : 14) + "px";
+  });
+}
+
+/* ==================================================================
+   RUN LOG + SCATTER
+   ================================================================== */
+function saveRun(){
+  const R = S.run;
+  S.runs.push({
+    n: S.runs.length + 1,
+    h1:R.cfg.h1, h2:R.cfg.h2, h3:R.cfg.h3, m:R.cfg.m, mu:R.cfg.mu,
+    d:gateD(), dt:S.work.dt, v:S.work.v, ep:S.work.ep, ek:S.work.ek, lost:S.work.lost,
+    broke:R.eggBroke, predict:S.predict,
+  });
+  drawRuns();
+  el("workDone").textContent = `Run ${S.runs.length} saved.`;
+}
+
+function drawRuns(){
+  const tb = el("logTable").querySelector("tbody");
+  tb.textContent = "";
+  const has = S.runs.length > 0;
+  el("logTable").classList.toggle("hidden", !has);
+  el("scatterEmpty").classList.toggle("hidden", has);
+  el("scatter").classList.toggle("hidden", !has);
+  if (!has){ el("scatter").textContent = ""; return; }
+
+  S.runs.forEach(r => {
+    const tr = document.createElement("tr");
+    const guess = r.predict == null ? "—"
+      : (r.predict === (r.broke ? "break" : "survive") ? "✓" : "✗");
+    tr.innerHTML = `<td>${r.n}</td><td>${fmt(r.h1,2)}</td><td>${fmt(r.h2,2)}</td><td>${fmt(r.h3,2)}</td>`
+      + `<td>${fmt(r.m,1)}</td><td>${fmt(r.mu,2)}</td>`
+      + `<td>${fmt(r.d,2)}</td><td>${fmt(r.dt,4)}</td><td>${fmt(r.v,2)}</td>`
+      + `<td>${fmt(r.ep,2)}</td><td>${fmt(r.ek,2)}</td><td>${fmt(r.lost,2)}</td>`
+      + `<td>${r.broke ? "💥 broke" : "🥚 survived"}</td>`
+      + `<td>${guess}</td>`;
+    tb.appendChild(tr);
+  });
+
+  /* scatter: release height vs measured speed at the gates */
+  const c = el("scatter");
+  c.textContent = "";
+  const W = 900, H = 260, padL = 60, padR = 24, padT = 16, padB = 46;
+  const hMax = Math.max(2.0, ...S.runs.map(r => r.h1)) * 1.05;
+  const vMax = Math.max(1, ...S.runs.map(r => r.v)) * 1.15;
+  const X = (h) => padL + (h / hMax) * (W - padL - padR);
+  const Y = (v) => H - padB - (v / vMax) * (H - padT - padB);
+
+  const vs = niceStep(vMax / 4);
+  for (let v = 0; v <= vMax; v += vs){
+    c.appendChild(mk("line", { x1:padL, y1:Y(v), x2:W-padR, y2:Y(v),
+      stroke: v === 0 ? "var(--baseline)" : "var(--grid)", "stroke-width":1 }));
+    const t = mk("text", { x:padL-8, y:Y(v)+4, "text-anchor":"end", fill:"var(--muted)",
+      "font-size":14.5, "font-family":'"Poppins", system-ui, sans-serif' });
+    t.textContent = String(+v.toFixed(1));
+    c.appendChild(t);
+  }
+  const hs = niceStep(hMax / 5);
+  for (let h = 0; h <= hMax + 1e-9; h += hs){
+    const t = mk("text", { x:X(h), y:H-padB+20, "text-anchor":"middle", fill:"var(--muted)",
+      "font-size":14.5, "font-family":'"Poppins", system-ui, sans-serif' });
+    t.textContent = String(+h.toFixed(2));
+    c.appendChild(t);
+  }
+  const xl = mk("text", { x:(padL + W-padR)/2, y:H-6, "text-anchor":"middle",
+    fill:"var(--text-secondary)", "font-size":15, "font-family":'"Poppins", system-ui, sans-serif' });
+  xl.textContent = "release height h₁ (m)";
+  c.appendChild(xl);
+  const yl = mk("text", { x:padL-8, y:padT+2, "text-anchor":"end", fill:"var(--text-secondary)",
+    "font-size":15, "font-family":'"Poppins", system-ui, sans-serif' });
+  yl.textContent = "v (m/s)";
+  c.appendChild(yl);
+
+  S.runs.forEach(r => {
+    c.appendChild(mk("circle", { cx:X(r.h1), cy:Y(r.v), r:6, fill:"var(--series-1)",
+      stroke:"var(--surface-1)", "stroke-width":2 }));
+    const t = mk("text", { x:X(r.h1), y:Y(r.v) - 12, "text-anchor":"middle",
+      fill:"var(--text-primary)", "font-size":14, "font-weight":"700",
+      "font-family":'"Poppins", system-ui, sans-serif',
+      style:"paint-order:stroke;stroke:var(--surface-1);stroke-width:4px" });
+    t.textContent = r.n;
+    c.appendChild(t);
+  });
+}
+
+/* ==================================================================
+   DIALS
+   ================================================================== */
+const DIALS = [
+  { key:"h1", lab:"Hill 1 — release height", unit:"m",  min:0.40, max:2.00, step:0.05, dp:2 },
+  { key:"h2", lab:"Hill 2 height",           unit:"m",  min:0.00, max:1.80, step:0.05, dp:2 },
+  { key:"h3", lab:"Hill 3 height",           unit:"m",  min:0.00, max:1.80, step:0.05, dp:2 },
+  { key:"m",  lab:"Mass of the car",         unit:"kg", min:0.50, max:5.00, step:0.10, dp:1 },
+  { key:"mu", lab:"Track friction  μ",       unit:"",   min:0.00, max:0.12, step:0.01, dp:2 },
+];
+function buildDials(){
+  const box = el("dials");
+  box.textContent = "";
+  DIALS.forEach(d => {
+    const w = document.createElement("div");
+    w.className = "dial";
+    w.innerHTML =
+      `<div class="row"><span class="lab">${d.lab}</span>
+         <span class="val" id="dv-${d.key}">${fmt(CFG[d.key], d.dp)} <small>${d.unit}</small></span></div>
+       <input type="range" id="dr-${d.key}" min="${d.min}" max="${d.max}" step="${d.step}"
+              value="${CFG[d.key]}">
+       <div class="ends"><span>${fmt(d.min, d.dp)}</span><span>${fmt(d.max, d.dp)}</span></div>`;
+    box.appendChild(w);
+    el("dr-" + d.key).addEventListener("input", (e) => {
+      CFG[d.key] = parseFloat(e.target.value);
+      syncDialUI(d.key);
+      newRun(false);
+    });
+  });
+}
+
+/* keep the slider + its readout in sync with CFG, whoever changed it
+   (the slider itself, a track-drag handle, or a full reset) */
+function syncDialUI(key){
+  const d = DIALS.find(dd => dd.key === key);
+  if (!d) return;
+  const range = el("dr-" + key);
+  if (range && document.activeElement !== range) range.value = String(CFG[key]);
+  const dv = el("dv-" + key);
+  if (dv) dv.innerHTML = `${fmt(CFG[key], d.dp)} <small>${d.unit}</small>`;
+}
+
+/* ==================================================================
+   BOOT
+   ================================================================== */
+buildScene();
+buildHandles();
+buildRuler();
+buildDials();
+buildWorksheet();
+el("gateA").value = String(S.gateA);
+el("gateB").value = String(S.gateB);
+newRun(false);
+drawRuns();
+
+el("releaseBtn").onclick = () => {
+  if (!S.playing && S.t >= S.run.duration - 1e-9) S.t = 0;
+  setPlaying(!S.playing);
+};
+el("resetBtn").onclick = () => { setPlaying(false); seek(0); el("outcome").textContent = ""; };
+el("fullResetBtn").onclick = () => {
+  setPlaying(false);
+  Object.assign(CFG, CFG_DEFAULT);
+  DIALS.forEach(d => syncDialUI(d.key));
+  S.gateA = GATE_DEFAULT.A; S.gateB = GATE_DEFAULT.B;
+  el("gateA").value = String(S.gateA);
+  el("gateB").value = String(S.gateB);
+  setPredict(null);
+  newRun(false);
+};
+el("b10").onclick = () => { setPlaying(false); seek(S.t - 0.10); };
+el("b01").onclick = () => { setPlaying(false); seek(S.t - 0.01); };
+el("f01").onclick = () => { setPlaying(false); seek(S.t + 0.01); };
+el("f10").onclick = () => { setPlaying(false); seek(S.t + 0.10); };
+el("scrub").addEventListener("input", e => { setPlaying(false); seek(parseFloat(e.target.value)); });
+
+document.querySelectorAll("[data-rate]").forEach(b => {
+  b.onclick = () => {
+    S.rate = parseFloat(b.dataset.rate);
+    document.querySelectorAll("[data-rate]").forEach(o => o.setAttribute("aria-pressed", String(o === b)));
+  };
+});
+
+const setGates = () => {
+  S.gateA = parseFloat(el("gateA").value);
+  S.gateB = parseFloat(el("gateB").value);
+  if (S.gateB - S.gateA < 0.2){
+    S.gateB = Math.min(13.4, S.gateA + 0.2);
+    el("gateB").value = String(S.gateB);
+  }
+  newRun(false);
+};
+el("gateA").addEventListener("input", setGates);
+el("gateB").addEventListener("input", setGates);
+
+el("predSurvive").onclick = () => setPredict("survive");
+el("predBreak").onclick   = () => setPredict("break");
+function setPredict(p){
+  S.predict = p;
+  el("predSurvive").setAttribute("aria-pressed", String(p === "survive"));
+  el("predBreak").setAttribute("aria-pressed", String(p === "break"));
+}
+
+el("clearLog").onclick = () => { S.runs = []; drawRuns(); };
+el("themeBtn").onclick = () => {
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  el("themeBtn").textContent = dark ? "🌙 Dark" : "☀️ Light";
+  render();
+  if (!el("chartArea").classList.contains("hidden")) drawEnergy();
+  drawRuns();
+};
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.code === "Space"){ e.preventDefault(); el("releaseBtn").click(); }
+  if (e.key === "ArrowLeft"){ setPlaying(false); seek(S.t - (e.shiftKey ? 0.1 : 0.01)); }
+  if (e.key === "ArrowRight"){ setPlaying(false); seek(S.t + (e.shiftKey ? 0.1 : 0.01)); }
+});
+})();
+</script>
+</body>
+</html>

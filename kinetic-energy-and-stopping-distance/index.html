@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stopping distance — kinetic energy and friction</title>
+
+<!--
+  ============================================================================
+  STOPPING DISTANCE LAB  (PhET-style, single file, no dependencies)
+
+  HOW TO EMBED
+  1) Easiest: upload this file and drop it in an iframe:
+       <iframe src="stopping-distance-lab.html"
+               style="width:100%;height:1420px;border:0" loading="lazy"
+               title="Stopping distance simulation"></iframe>
+  2) Or paste the style block, the cvlab div, and the script block into a page.
+     Every CSS rule is scoped under .cvlab.
+
+  THE MODEL
+     On the board:   a = g (sin th - mu cos th)
+     On the counter: a = -mu g
+     Because friction work is mu m g times horizontal distance,
+       v^2 at the bottom = 2 g h (1 - mu / tan th)
+       stopping distance  d = v^2 / (2 mu g) = KE / (mu m g)
+     so d is proportional to the kinetic energy, and KE = F d exactly.
+     The back of the car is the reference; it reads 0 cm where the board
+     meets the counter.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+.cvlab{
+  --paper:#FFFFFF; --shell:#EDEFF3; --rule:#D9DDE4;
+  --ink:#14181F; --ink-2:#5A6473;
+  --brand:#1E7FC8; --brand-d:#12598F; --brand-l:#5AB0EE;
+  --accent:#F4640C;
+  --ok:#16A34A; --bad:#DC2626;
+  --wood:#DFC08A; --wood-d:#AE8B4E;
+  --counter:#1D2126; --oak:#C79A62;
+  --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--shell);font-family:var(--font-b);color:var(--ink);font-weight:700;
+  padding:16px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+.cvlab *{box-sizing:border-box}
+.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-b);font-weight:700;letter-spacing:-.01em}
+.cvlab p{margin:0}
+.cvlab :focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+
+.cvlab-head{background:linear-gradient(120deg,#141A22,#22303C);color:#fff;
+  border-radius:14px 14px 0 0;padding:16px 20px;
+  display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.cvlab-eyebrow{display:block;font-size:13px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--brand-l);margin-bottom:3px}
+.cvlab-head h1{font-size:clamp(20px,3vw,30px);line-height:1.1}
+.cvlab-readouts{display:flex;flex-wrap:wrap;gap:9px}
+.cvlab-ro{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  border-radius:10px;padding:7px 12px;min-width:106px}
+.cvlab-ro-k{display:block;font-size:11.5px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;color:#9AA6B8}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#F2F5FA;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.cvlab-ro-hi .cvlab-ro-v{color:var(--brand-l)}
+.cvlab-ro-acc .cvlab-ro-v{color:#FFB37A}
+
+.cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
+  border-radius:0 0 14px 14px;padding:12px}
+.cvlab canvas{display:block;width:100%}
+#cvlab-scene{height:clamp(220px,20vw,272px);border-radius:10px}
+@media (max-width:820px){#cvlab-scene{height:clamp(180px,32vw,220px)}}
+.cvlab-hint{font-size:14px;color:var(--ink-2);margin-top:8px;font-weight:700}
+.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;padding-top:12px;
+  border-top:1px solid var(--rule)}
+.cvlab-status{flex:1 1 250px;min-width:200px;font-size:16px;color:var(--ink-2);font-weight:700}
+.cvlab-status strong{color:var(--ink);font-weight:700}
+.cvlab-status.is-ok strong{color:var(--ok)}
+
+.cvlab-btn{font-family:var(--font-b);font-size:17px;font-weight:700;cursor:pointer;
+  background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:9px;
+  padding:9px 16px;line-height:1.1;transition:transform .08s ease,background .14s ease,color .14s ease}
+.cvlab-btn:hover:not(:disabled){background:var(--ink);color:#fff}
+.cvlab-btn:active:not(:disabled){transform:translateY(1px)}
+.cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
+.cvlab-btn-go{background:var(--accent);border-color:#C64A05;color:#fff;min-width:160px}
+.cvlab-btn-go:hover:not(:disabled){background:#C64A05;color:#fff}
+.cvlab-btn-sm{font-size:15px;padding:7px 12px;border-width:1.5px;border-radius:8px}
+
+.cvlab-grid{display:grid;gap:14px;margin-top:14px;
+  grid-template-columns:minmax(240px,.92fr) minmax(250px,1.08fr)}
+@media (max-width:660px){.cvlab-grid{grid-template-columns:1fr}}
+.cvlab-panel-graphs{margin-top:14px}
+.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:14px;
+  display:flex;flex-direction:column;gap:11px}
+.cvlab-panel h2{font-size:15px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;
+  color:var(--ink);padding-bottom:9px;border-bottom:2px solid var(--ink)}
+.cvlab-note{font-size:14.5px;color:var(--ink-2);font-weight:700}
+.cvlab-row{display:flex;flex-wrap:wrap;gap:7px}
+
+.cvlab-field{display:flex;flex-direction:column;gap:5px}
+.cvlab-field>span{font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-2)}
+.cvlab input[type=range]{width:100%;accent-color:var(--brand);margin:2px 0}
+.cvlab select{font-family:var(--font-b);font-size:15.5px;padding:8px 9px;border:1.5px solid var(--ink);
+  border-radius:9px;background:#fff;color:var(--ink);width:100%;font-weight:700}
+.cvlab-hbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.cvlab-hb{cursor:pointer;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;
+  padding:7px 2px;font-family:var(--font-m);font-size:14px;font-weight:700;color:var(--ink);
+  transition:border-color .14s ease,background .14s ease}
+.cvlab-hb:hover{background:#F4F7FB}
+.cvlab-hb.is-on{border-color:var(--brand);background:#EAF4FD;color:var(--brand-d)}
+
+.cvlab-calc{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:#F4F6FA;
+  border:1px solid var(--rule);border-radius:9px;padding:9px 11px;line-height:1.9}
+.cvlab-calc b{color:var(--ink);font-weight:700}
+.cvlab-calc em{font-style:normal;color:var(--brand-d);font-weight:700}
+
+.cvlab-tablewrap{max-height:258px;overflow:auto;border:1px solid var(--rule);border-radius:9px}
+.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13.5px}
+.cvlab thead th{position:sticky;top:0;background:#F4F6FA;font-size:11px;letter-spacing:.04em;
+  font-weight:700;padding:6px 4px;text-align:right;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);white-space:nowrap;font-family:var(--font-b);text-transform:uppercase}
+.cvlab thead th:first-child{text-align:left}
+.cvlab tbody td{padding:5px 4px;text-align:right;font-variant-numeric:tabular-nums;
+  border-bottom:1px solid #EEF0F4;white-space:nowrap}
+.cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
+.cvlab tbody tr:last-child td{border-bottom:0}
+.cvlab tbody tr.is-new td{background:#EAF4FD}
+.cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
+
+.cvlab-graphs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:1000px){.cvlab-graphs{grid-template-columns:1fr 1fr}}
+@media (max-width:700px){.cvlab-graphs{grid-template-columns:1fr}}
+.cvlab-gwrap{display:flex;flex-direction:column;gap:4px}
+.cvlab-gtitle{font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink)}
+.cvlab-gtitle span{display:block;font-size:11.5px;letter-spacing:0;color:var(--ink-2);
+  text-transform:none;font-weight:700}
+.cvlab-gwrap canvas{height:clamp(200px,20vw,260px)}
+.cvlab-opts{display:flex;flex-direction:column;gap:8px;font-size:15px;color:var(--ink-2);font-weight:700}
+.cvlab-opts label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.cvlab-opts input{margin:3px 0 0;accent-color:var(--brand);flex:none}
+
+.cvlab-notes{margin-top:14px;background:var(--paper);border:1px solid var(--rule);border-radius:14px;
+  padding:12px 16px}
+.cvlab-notes h3{font-size:17px;margin:0 0 8px}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#2B323C}
+.cvlab-notes ul,.cvlab-notes ol{margin:5px 0 0;padding-left:20px}
+.cvlab-notes li{margin:4px 0}
+.cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
+</style>
+</head>
+<body style="margin:0;background:#EDEFF3">
+
+<div class="cvlab" id="cvlab">
+
+  <header class="cvlab-head">
+    <div>
+      <span class="cvlab-eyebrow">Work and energy &middot; friction</span>
+      <h1>Stopping distance</h1>
+    </div>
+    <div class="cvlab-readouts">
+      <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Release height</span><span class="cvlab-ro-v" id="cvlab-ro-h">10 cm</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Photogate</span><span class="cvlab-ro-v" id="cvlab-ro-v">&mdash;</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Kinetic energy</span><span class="cvlab-ro-v" id="cvlab-ro-ke">&mdash;</span></div>
+      <div class="cvlab-ro cvlab-ro-acc"><span class="cvlab-ro-k">Stopping distance</span><span class="cvlab-ro-v" id="cvlab-ro-d">&mdash;</span></div>
+    </div>
+  </header>
+
+  <div class="cvlab-bench">
+    <canvas id="cvlab-scene" role="img"
+      aria-label="A wooden board clamped to a ring stand runs down to a black counter top. A photogate stands where the board meets the counter at zero centimetres, with a meter stick lying along the counter. The blue car waits on the board at the release height."></canvas>
+    <p class="cvlab-hint">0&nbsp;cm is where the board meets the counter &middot; every distance is read to the <strong>back of the car</strong> &middot; the photogate reads its speed as it leaves the board</p>
+    <div class="cvlab-bar">
+      <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Release the car</button>
+      <button class="cvlab-btn cvlab-btn-sm" id="cvlab-reset">Put it back</button>
+      <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
+        Set a release height on the board, then let the car go and see how far it runs.
+      </p>
+    </div>
+  </div>
+
+  <div class="cvlab-grid">
+
+    <section class="cvlab-panel">
+      <h2>Set up the run</h2>
+      <label class="cvlab-field" for="cvlab-h">
+        <span>Release height <b id="cvlab-hval" style="font-family:var(--font-m)">10 cm</b></span>
+        <input type="range" id="cvlab-h" min="2" max="15" step="1" value="10">
+      </label>
+      <div class="cvlab-field">
+        <span>Or jump straight to</span>
+        <div class="cvlab-hbtns" id="cvlab-hbtns"></div>
+      </div>
+      <p class="cvlab-calc" id="cvlab-calc">&nbsp;</p>
+      <label class="cvlab-field" for="cvlab-speed">
+        <span>Playback speed</span>
+        <select id="cvlab-speed">
+          <option value="0.5" selected>Slowed down, easy to watch</option>
+          <option value="0.2">Slow motion</option>
+          <option value="1">Real speed, about two seconds</option>
+        </select>
+      </label>
+      <div class="cvlab-opts">
+        <label><input type="checkbox" id="cvlab-noise">
+          <span>Add measurement error, the way a real meter stick and gate read</span></label>
+      </div>
+    </section>
+
+    <section class="cvlab-panel">
+      <h2>Your trials</h2>
+      <div class="cvlab-tablewrap">
+        <table>
+          <caption class="cvlab-sr">Release height, gate speed, kinetic energy and stopping distance</caption>
+          <thead><tr>
+            <th scope="col">#</th><th scope="col">h (cm)</th>
+            <th scope="col">v (m/s)</th><th scope="col">KE (J)</th><th scope="col">d (cm)</th>
+          </tr></thead>
+          <tbody id="cvlab-tbody"></tbody>
+        </table>
+      </div>
+      <div class="cvlab-row">
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clear">Clear trials</button>
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-copy">Copy data</button>
+      </div>
+      <p class="cvlab-note" id="cvlab-copynote">&nbsp;</p>
+    </section>
+
+  </div>
+
+  <section class="cvlab-panel cvlab-panel-graphs">
+    <h2>What the data shows</h2>
+    <div class="cvlab-graphs">
+      <div class="cvlab-gwrap">
+        <span class="cvlab-gtitle">Energy against speed
+          <span>this one is not a straight line, and that is the point</span></span>
+        <canvas id="cvlab-g3" role="img"
+          aria-label="Graph of kinetic energy against the speed measured by the photogate."></canvas>
+      </div>
+      <div class="cvlab-gwrap">
+        <span class="cvlab-gtitle">Distance against release height
+          <span>how far it runs for how high you start it</span></span>
+        <canvas id="cvlab-g1" role="img" aria-label="Graph of stopping distance against release height."></canvas>
+      </div>
+      <div class="cvlab-gwrap">
+        <span class="cvlab-gtitle">Distance against kinetic energy
+          <span>the slope of this one is worth a look</span></span>
+        <canvas id="cvlab-g2" role="img" aria-label="Graph of stopping distance against kinetic energy at the bottom of the board."></canvas>
+      </div>
+    </div>
+    <div class="cvlab-opts">
+      <label><input type="checkbox" id="cvlab-fit">
+        <span>Draw a best fit line through the origin and tell me what its slope means</span></label>
+      <label><input type="checkbox" id="cvlab-vsq">
+        <span>Plot the energy graph against speed <em style="font-style:normal">squared</em>, which straightens it out</span></label>
+    </div>
+    <p class="cvlab-note" id="cvlab-kenote">&nbsp;</p>
+    <p class="cvlab-note" id="cvlab-fitnote">&nbsp;</p>
+  </section>
+
+  <section class="cvlab-notes">
+    <h3>How to use this simulation</h3>
+    <ol>
+      <li>Set a <strong>release height</strong> with the slider or the quick-jump buttons, then press <strong>Release the car</strong> to watch it roll down the board and slide to a stop on the counter.</li>
+      <li>Watch the readouts at the top: <strong>Release height</strong>, <strong>Photogate</strong> speed, <strong>Kinetic energy</strong>, and <strong>Stopping distance</strong> update as each run finishes.</li>
+      <li>Use the <strong>Playback speed</strong> dropdown to slow the run down or watch it at real speed, and turn on <strong>Add measurement error</strong> for more realistic readings.</li>
+      <li>Each run adds a row to the <strong>Your trials</strong> table, so you can compare release heights, speeds, energies, and stopping distances directly.</li>
+      <li>Check the three graphs under <strong>What the data shows</strong>: energy against speed, distance against release height, and distance against kinetic energy.</li>
+      <li>Turn on <strong>Draw a best fit line</strong> to see the slope of a graph, or <strong>Plot the energy graph against speed squared</strong> to straighten the curved energy-speed graph.</li>
+      <li>Press <strong>Put it back</strong> to reset the car, <strong>Clear trials</strong> to wipe the table, or <strong>Copy data</strong> to export your results.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------ constants */
+  var G        = 9.8;          // m/s^2
+  var M_CAR    = 0.060;        // kg, the blue dynamics car
+  var MU       = 0.113;        // rolling resistance, board and counter alike
+  var RAMP_H   = 17.5;         // cm, height of the clamped end
+  var RAMP_RUN = 50;           // cm, horizontal run of the board
+  var TAN      = RAMP_H/RAMP_RUN;
+  var TH       = Math.atan(TAN);
+  var SIN_T    = Math.sin(TH), COS_T = Math.cos(TH);
+  var STICK_CM = 100;          // one meter stick, 0 at the foot of the board
+  var CAR_LEN  = 10, CAR_H = 3.0, WHEEL_R = 0.9, INSET = 1.8;
+  var GATE_X   = 4.5;          // where the photogate frame stands
+  var H_MIN    = 2, H_MAX = 15;
+  var NOISE_D  = 0.6;          // cm, reading the meter stick
+  var NOISE_V  = 0.012;        // m/s, the gate's own scatter
+  var VIEW_X0  = -68, VIEW_X1 = 110, VIEW_Y0 = -4, VIEW_Y1 = 34;
+
+  /* ------------------------------------------------ state */
+  var relH = 10;
+  var stage = "ready";         // ready | running | done
+  var s = 0, v = 0, spin = 0, xBack = 0;
+  var gateV = null, gateKE = null, stopD = null, gateSeen = false;
+  var trials = [];
+  var speedScale = 0.5, lastFrame = null, dirty = true;
+
+  var reduceMotion = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+
+  /* ------------------------------------------------ dom */
+  function $(id){ return document.getElementById(id); }
+  var sceneC = $("cvlab-scene"), g1C = $("cvlab-g1"), g2C = $("cvlab-g2"), g3C = $("cvlab-g3");
+  var sctx = sceneC.getContext("2d"), g1 = g1C.getContext("2d"),
+      g2 = g2C.getContext("2d"), g3 = g3C.getContext("2d");
+  var elGo = $("cvlab-go"), elReset = $("cvlab-reset"), elStatus = $("cvlab-status");
+  var elH = $("cvlab-h"), elHVal = $("cvlab-hval"), elHBtns = $("cvlab-hbtns");
+  var elCalc = $("cvlab-calc"), elSpeed = $("cvlab-speed"), elNoise = $("cvlab-noise");
+  var elBody = $("cvlab-tbody"), elClear = $("cvlab-clear");
+  var elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote");
+  var elFit = $("cvlab-fit"), elFitNote = $("cvlab-fitnote");
+  var elVsq = $("cvlab-vsq"), elKeNote = $("cvlab-kenote");
+  var roH = $("cvlab-ro-h"), roV = $("cvlab-ro-v"), roKE = $("cvlab-ro-ke"), roD = $("cvlab-ro-d");
+
+  /* ------------------------------------------------ helpers */
+  function fmt(x,p){ return x.toFixed(p===undefined?1:p); }
+  function clamp(x,a,b){ return x<a?a:(x>b?b:x); }
+  function now(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function say(m,kind){
+    elStatus.innerHTML = m;
+    elStatus.className = "cvlab-status" + (kind ? " is-" + kind : "");
+  }
+  function gauss(){
+    var u=0,w=0;
+    while(u===0) u=Math.random();
+    while(w===0) w=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w);
+  }
+  /* the exact answers, used for the notes and to check the simulation */
+  function idealV(h){ return Math.sqrt(2*G*(h/100)*(1 - MU/TAN)); }
+  function idealD(h){ var vv = idealV(h); return vv*vv/(2*MU*G)*100; }
+  function xRelease(h){ return -h/TAN; }
+  function rampPath(h){ return Math.abs(xRelease(h))/COS_T; }   /* cm along the board */
+
+  function fit(canvas, ctx){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(240, Math.round(r.width)), h = Math.max(150, Math.round(r.height));
+    if(canvas.width !== w*dpr || canvas.height !== h*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { w:w, h:h };
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+  function axisStep(maxv){
+    var raw = Math.max(maxv,1e-9)/5;
+    var e = Math.pow(10, Math.floor(Math.log10(raw)));
+    var m = raw/e;
+    var st = m<=1 ? 1 : (m<=2 ? 2 : (m<=5 ? 5 : 10));
+    return st*e;
+  }
+
+  /* ------------------------------------------------ the track: board then counter */
+  function trackY(x){
+    if(x <= 0) return Math.min(RAMP_H, -x*TAN);
+    return 0;
+  }
+  /* position of the car's back edge for a path distance s from the release point */
+  function backAt(sCm){
+    var L1 = rampPath(relH);
+    if(sCm <= L1) return xRelease(relH) + sCm*COS_T;
+    return sCm - L1;
+  }
+
+  /* ------------------------------------------------ run control */
+  function resetRun(msg){
+    stage = "ready"; s = 0; v = 0; spin = 0;
+    gateV = null; gateKE = null; stopD = null; gateSeen = false;
+    xBack = xRelease(relH);
+    lastFrame = null; dirty = true;
+    elGo.textContent = "Release the car";
+    refresh();
+    if(msg) say(msg);
+  }
+  function launch(){
+    if(stage === "running") return;
+    stage = "running"; s = 0; v = 0; spin = 0;
+    gateV = null; gateKE = null; stopD = null; gateSeen = false;
+    xBack = xRelease(relH);
+    lastFrame = null; dirty = true;
+    elGo.textContent = "Running\u2026";
+    say("Away it goes from <strong>" + relH + " cm</strong>. Watch the gate, then where it stops.");
+    refresh();
+  }
+  function finish(){
+    stage = "done";
+    elGo.textContent = "Release again";
+    var d = xBack, vv = gateV || 0;
+    if(elNoise.checked){
+      d = Math.max(0, d + gauss()*NOISE_D);
+      vv = Math.max(0, vv + gauss()*NOISE_V);
+    }
+    d = Math.round(d*10)/10;
+    vv = Math.round(vv*1000)/1000;
+    stopD = d; gateV = vv; gateKE = 0.5*M_CAR*vv*vv;
+    trials.push({ n: trials.length+1, h: relH, v: vv, ke: gateKE, d: d });
+    say("Stopped with its back on <strong>" + fmt(d) + " cm</strong>, from "
+        + relH + " cm up the board.", "ok");
+    refresh();
+  }
+
+  /* ------------------------------------------------ the physics */
+  function stepPhysics(dt){
+    var n = Math.min(240, Math.max(1, Math.ceil(dt/0.0012)));
+    var h = dt/n;
+    var L1 = rampPath(relH);
+    for(var i=0;i<n;i++){
+      var onBoard = s < L1;
+      var a = onBoard ? G*(SIN_T - MU*COS_T) : -MU*G;
+      v += a*h;
+      if(!onBoard && v <= 0){ v = 0; xBack = backAt(s); finish(); return; }
+      var dsM = v*h;                    /* metres */
+      s += dsM*100;                     /* s is in cm */
+      spin += dsM/(WHEEL_R/100);
+      /* the gate reads the speed as the back edge passes 0 cm */
+      if(!gateSeen && s >= L1){
+        gateSeen = true;
+        gateV = v; gateKE = 0.5*M_CAR*v*v;
+      }
+      xBack = backAt(s);
+      if(xBack > STICK_CM + 12){ finish(); return; }
+    }
+  }
+
+  /* ------------------------------------------------ panels */
+  function buildHBtns(){
+    var hs = [2,4,6,8,10,12,14,15], html = "";
+    for(var i=0;i<hs.length;i++){
+      html += '<button class="cvlab-hb" data-h="' + hs[i] + '">' + hs[i] + '</button>';
+    }
+    elHBtns.innerHTML = html;
+    elHBtns.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-hb") : null;
+      if(!b || stage === "running") return;
+      relH = parseInt(b.getAttribute("data-h"),10);
+      elH.value = String(relH);
+      resetRun("Car set at <strong>" + relH + " cm</strong> up the board.");
+    });
+  }
+  function renderHBtns(){
+    var bs = elHBtns.querySelectorAll(".cvlab-hb");
+    for(var i=0;i<bs.length;i++){
+      var hv = parseInt(bs[i].getAttribute("data-h"),10);
+      bs[i].className = "cvlab-hb" + (hv === relH ? " is-on" : "");
+    }
+  }
+
+  function renderTable(){
+    if(!trials.length){
+      elBody.innerHTML = '<tr><td colspan="5"><span class="cvlab-empty">'
+        + 'No trials yet. Pick a height and release the car.</span></td></tr>';
+      return;
+    }
+    var html = "";
+    for(var i=0;i<trials.length;i++){
+      var t = trials[i];
+      html += '<tr' + (i === trials.length-1 ? ' class="is-new"' : '') + '>'
+        + '<td>' + t.n + '</td><td>' + t.h + '</td><td>' + fmt(t.v,3) + '</td>'
+        + '<td>' + fmt(t.ke,4) + '</td><td>' + fmt(t.d) + '</td></tr>';
+    }
+    elBody.innerHTML = html;
+  }
+
+  function renderReadouts(){
+    roH.textContent = relH + " cm";
+    roV.textContent = gateV === null ? "\u2014" : fmt(gateV,3) + " m/s";
+    roKE.textContent = gateKE === null ? "\u2014" : fmt(gateKE,4) + " J";
+    roD.textContent = stage === "running" ? fmt(Math.max(0,xBack)) + " cm"
+      : (stopD === null ? "\u2014" : fmt(stopD) + " cm");
+    elHVal.textContent = relH + " cm";
+    elH.disabled = stage === "running";
+    elGo.disabled = stage === "running";
+    elReset.disabled = stage === "running" || stage === "ready";
+    elClear.disabled = trials.length === 0;
+    elCopy.disabled = trials.length === 0;
+
+    var lines = "board <b>" + RAMP_H + " cm</b> over <b>" + RAMP_RUN + " cm</b>, about <b>"
+      + fmt(TH*180/Math.PI) + "&deg;</b><br>"
+      + "car <b>" + fmt(M_CAR*1000) + " g</b> &divide; 1000 = <em>" + M_CAR.toFixed(3) + " kg</em><br>"
+      + "release <b>" + relH + " cm</b> &divide; 100 = <em>" + (relH/100).toFixed(2) + " m</em>";
+    if(gateV !== null){
+      lines += "<br>KE = &frac12; m v&sup2; = &frac12; &times; " + M_CAR.toFixed(3)
+             + " &times; " + fmt(gateV,3) + "&sup2; = <em>" + fmt(gateKE,4) + " J</em>";
+    }
+    elCalc.innerHTML = lines;
+  }
+
+  function refresh(){ renderHBtns(); renderTable(); renderReadouts(); drawGraphs(); dirty = true; }
+
+  /* ------------------------------------------------ scene */
+  var V = {};
+  function geometry(w,h){
+    V.w = w; V.h = h; V.compact = w < 620;
+    V.k = Math.min((w-16)/(VIEW_X1-VIEW_X0), (h-16)/(VIEW_Y1-VIEW_Y0));
+    V.ox = (w - (VIEW_X1-VIEW_X0)*V.k)/2 - VIEW_X0*V.k;
+    V.oy = h - (h - (VIEW_Y1-VIEW_Y0)*V.k)/2 + VIEW_Y0*V.k;
+  }
+  function PX(cm){ return V.ox + cm*V.k; }
+  function PY(cm){ return V.oy - cm*V.k; }
+
+  function drawScene(){
+    var sz = fit(sceneC, sctx), w = sz.w, h = sz.h;
+    geometry(w,h);
+    var ctx = sctx;
+    ctx.clearRect(0,0,w,h);
+    var wall = ctx.createLinearGradient(0,0,0,PY(0));
+    wall.addColorStop(0,"#F8FAFC"); wall.addColorStop(1,"#E6EBF1");
+    ctx.fillStyle = wall; ctx.fillRect(0,0,w,PY(0));
+    /* the black backsplash, then the black epoxy top */
+    var bs = 5*V.k;
+    ctx.fillStyle = "#262B31"; ctx.fillRect(0, PY(0)-bs, w, bs);
+    ctx.fillStyle = "#39404A"; ctx.fillRect(0, PY(0)-bs, w, 1.4);
+    var top = ctx.createLinearGradient(0,PY(0),0,h);
+    top.addColorStop(0,"#2A2F36"); top.addColorStop(.16,"#1D2126"); top.addColorStop(1,"#15181C");
+    ctx.fillStyle = top; ctx.fillRect(0,PY(0),w,h-PY(0));
+    ctx.fillStyle = "rgba(255,255,255,.20)"; ctx.fillRect(0,PY(0),w,1.6);
+
+    drawHeightScale(ctx);
+    drawStand(ctx);
+    drawBoard(ctx);
+    drawStick(ctx);
+    drawGate(ctx);
+    drawTimer(ctx);
+    drawCar(ctx);
+    drawMarks(ctx);
+  }
+
+  function drawHeightScale(ctx){
+    var k = V.k, x = PX(-63);
+    ctx.strokeStyle = "rgba(120,132,148,.85)"; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(x, PY(0)); ctx.lineTo(x, PY(RAMP_H+2)); ctx.stroke();
+    ctx.fillStyle = "#5A6473";
+    ctx.font = '700 ' + Math.max(7, 0.62*k).toFixed(1) + 'px "IBM Plex Mono", monospace';
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var cm=0; cm<=RAMP_H; cm+=1){
+      var big = (cm % 5 === 0);
+      ctx.strokeStyle = "rgba(120,132,148,.8)"; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, PY(cm)); ctx.lineTo(x + (big ? 1.9*k : 1.0*k), PY(cm)); ctx.stroke();
+      if(big && !V.compact) ctx.fillText(String(cm), x - 3, PY(cm));
+    }
+  }
+
+  function drawStand(ctx){
+    var k = V.k, x = PX(-55);
+    ctx.fillStyle = "#5E6772";
+    roundRect(ctx, PX(-62), PY(1.1), 15*k, 1.1*k, 2); ctx.fill();
+    ctx.fillStyle = "#7C8794";
+    roundRect(ctx, PX(-62), PY(1.1), 15*k, 0.42*k, 2); ctx.fill();
+    var rg = ctx.createLinearGradient(x-0.55*k,0,x+0.55*k,0);
+    rg.addColorStop(0,"#79828E"); rg.addColorStop(.4,"#BAC2CB"); rg.addColorStop(1,"#6A7380");
+    ctx.fillStyle = rg;
+    ctx.fillRect(x-0.55*k, PY(26), 1.1*k, PY(1.1)-PY(26));
+    /* the right angle clamp gripping the top of the board */
+    var cy = PY(RAMP_H + 0.6);
+    ctx.fillStyle = "#23272D";
+    roundRect(ctx, x-1.3*k, cy-1.6*k, 2.6*k, 3.2*k, 0.4*k); ctx.fill();
+    ctx.fillStyle = "#343A42";
+    roundRect(ctx, x+0.8*k, cy-0.55*k, 4.4*k, 1.1*k, 0.25*k); ctx.fill();
+    ctx.fillStyle = "#9AA3AD";
+    ctx.beginPath(); ctx.arc(x-2.0*k, cy, 0.72*k, 0, Math.PI*2); ctx.fill();
+  }
+
+  /* the wooden board, with the blue end piece the clamp holds */
+  function drawBoard(ctx){
+    var k = V.k, th = 1.3*k;
+    var ax = PX(-RAMP_RUN), ay = PY(RAMP_H), bx = PX(0), by = PY(0);
+    var ang = Math.atan2(by-ay, bx-ax), len = Math.hypot(bx-ax, by-ay);
+    ctx.save();
+    ctx.translate(ax, ay); ctx.rotate(ang);
+    ctx.fillStyle = "rgba(12,16,20,.22)";
+    ctx.fillRect(-1*k, th*0.2, len + 2*k, th*0.9);
+    var g = ctx.createLinearGradient(0, 0, 0, th);
+    g.addColorStop(0,"#F2DDB2"); g.addColorStop(.42,"#DFC08A"); g.addColorStop(1,"#B28F52");
+    ctx.fillStyle = g;
+    ctx.fillRect(-1*k, 0, len + 2*k, th);
+    ctx.strokeStyle = "rgba(150,116,60,.8)"; ctx.lineWidth = 1;
+    ctx.strokeRect(-1*k, 0, len + 2*k, th);
+    ctx.strokeStyle = "rgba(160,124,66,.4)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, th*0.34); ctx.lineTo(len, th*0.34);
+    ctx.moveTo(len*0.06, th*0.68); ctx.lineTo(len*0.94, th*0.68);
+    ctx.stroke();
+    /* blue plastic end piece */
+    ctx.fillStyle = "#1E7FC8";
+    roundRect(ctx, -1.4*k, -0.5*k, 6.5*k, th + 1.0*k, 0.35*k); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.28)";
+    roundRect(ctx, -1.0*k, -0.2*k, 5.7*k, 0.5*k, 0.2*k); ctx.fill();
+    ctx.restore();
+  }
+
+  /* the meter stick lying on the counter, 0 cm at the foot of the board */
+  function drawStick(ctx){
+    var k = V.k, y = PY(0) + 2, hh = Math.max(11, 2.4*k);
+    var g = ctx.createLinearGradient(0,y,0,y+hh);
+    g.addColorStop(0,"#F4E2B8"); g.addColorStop(.45,"#E2C58E"); g.addColorStop(1,"#C9A765");
+    ctx.fillStyle = g;
+    roundRect(ctx, PX(0), y, STICK_CM*k, hh, 2); ctx.fill();
+    ctx.strokeStyle = "#AE8B4E"; ctx.lineWidth = 1; ctx.stroke();
+    var minor = k >= 3.0 ? 1 : (k >= 1.6 ? 5 : 10);
+    ctx.strokeStyle = "#4A3A1E"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var cm=0; cm<=STICK_CM; cm+=minor){
+      var L = (cm%50===0) ? hh*0.66 : ((cm%10===0) ? hh*0.46 : hh*0.24);
+      var px = Math.round(PX(cm)) + 0.5;
+      ctx.moveTo(px, y); ctx.lineTo(px, y+L);
+    }
+    ctx.stroke();
+    var labStep = k >= 3.6 ? 10 : 20;
+    ctx.fillStyle = "#3A2E17";
+    ctx.font = '700 ' + (V.compact?7.5:9.5) + 'px "IBM Plex Mono", monospace';
+    ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    for(var c2=0; c2<=STICK_CM; c2+=labStep) ctx.fillText(String(c2), PX(c2), y+hh-1.5);
+  }
+
+  /* the photogate: a frame the car rolls through, with a lit beam */
+  function drawGate(ctx){
+    var k = V.k, x = PX(GATE_X);
+    var w0 = 6.6*k, hgt = 7.2*k;
+    var baseY = PY(0);
+    ctx.fillStyle = "#3B424B";
+    roundRect(ctx, x - w0/2 - 0.6*k, baseY - 0.9*k, w0 + 1.2*k, 1.0*k, 2); ctx.fill();
+    var g = ctx.createLinearGradient(0, baseY-hgt, 0, baseY);
+    g.addColorStop(0,"#6C7683"); g.addColorStop(1,"#454C55");
+    ctx.fillStyle = g;
+    /* two uprights and a bridge */
+    roundRect(ctx, x - w0/2, baseY - hgt, 1.5*k, hgt, 0.3*k); ctx.fill();
+    roundRect(ctx, x + w0/2 - 1.5*k, baseY - hgt, 1.5*k, hgt, 0.3*k); ctx.fill();
+    roundRect(ctx, x - w0/2, baseY - hgt, w0, 1.5*k, 0.3*k); ctx.fill();
+    /* the beam, and a red indicator that lights while the car is in the gate */
+    var inGate = (stage === "running" && xBack + CAR_LEN > GATE_X - 3 && xBack < GATE_X + 3);
+    ctx.strokeStyle = inGate ? "rgba(226,72,64,.85)" : "rgba(226,72,64,.35)";
+    ctx.lineWidth = Math.max(1, 0.22*k);
+    ctx.setLineDash([2.5, 2.5]);
+    ctx.beginPath();
+    ctx.moveTo(x - w0/2 + 1.5*k, baseY - hgt*0.52);
+    ctx.lineTo(x + w0/2 - 1.5*k, baseY - hgt*0.52);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = inGate ? "#F1443A" : "#7C3A38";
+    ctx.beginPath(); ctx.arc(x - w0/2 + 0.75*k, baseY - hgt + 0.75*k, 0.45*k, 0, Math.PI*2); ctx.fill();
+    if(inGate){
+      ctx.fillStyle = "rgba(241,68,58,.25)";
+      ctx.beginPath(); ctx.arc(x - w0/2 + 0.75*k, baseY - hgt + 0.75*k, 1.1*k, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  /* the little timer box that shows what the gate measured */
+  function drawTimer(ctx){
+    var k = V.k, x = PX(16), y = PY(0);
+    var w0 = 20*k, hgt = 6.2*k;
+    var g = ctx.createLinearGradient(0, y-hgt, 0, y);
+    g.addColorStop(0,"#E7EBF0"); g.addColorStop(.5,"#CDD4DC"); g.addColorStop(1,"#A9B2BC");
+    ctx.fillStyle = g;
+    roundRect(ctx, x, y-hgt, w0, hgt, 0.6*k); ctx.fill();
+    ctx.strokeStyle = "#8A939D"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = "#16303F";
+    roundRect(ctx, x + 1.2*k, y - hgt + 1.1*k, w0 - 2.4*k, hgt*0.52, 0.35*k); ctx.fill();
+    ctx.fillStyle = gateV === null ? "#3C6E84" : "#6BE3B8";
+    ctx.font = '700 ' + Math.max(8, 1.9*k).toFixed(1) + 'px "IBM Plex Mono", monospace';
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.fillText(gateV === null ? "--.---" : fmt(gateV,3),
+                 x + w0 - 2.2*k, y - hgt + 1.1*k + hgt*0.26);
+    ctx.fillStyle = "#8FB6C6";
+    ctx.font = '700 ' + Math.max(5.5, 0.9*k).toFixed(1) + 'px "IBM Plex Mono", monospace';
+    ctx.textAlign = "left";
+    ctx.fillText("m/s", x + 1.9*k, y - hgt + 1.1*k + hgt*0.26);
+    if(!V.compact){
+      ctx.fillStyle = "#5A6473";
+      ctx.font = '700 ' + Math.max(5.5, 0.85*k).toFixed(1) + 'px "Poppins", sans-serif';
+      ctx.textAlign = "left"; ctx.textBaseline = "top";
+      ctx.fillText("PHOTOGATE TIMER", x + 1.4*k, y - hgt*0.34);
+    }
+  }
+
+  /* the blue dynamics car, an open tub on four black wheels */
+  function drawCar(ctx){
+    var k = V.k;
+    var xa = xBack + INSET, xb = xBack + CAR_LEN - INSET;
+    var ya = trackY(xa), yb = trackY(xb);
+    var cx = (xa + xb)/2, cy = (ya + yb)/2;
+    var ang = Math.atan2(-(yb - ya)*k, (xb - xa)*k);
+    var L = CAR_LEN*k, Hh = CAR_H*k, R = WHEEL_R*k;
+    ctx.save();
+    ctx.translate(PX(cx), PY(cy));
+    ctx.rotate(ang);
+    ctx.fillStyle = "rgba(10,14,18,.30)";
+    ctx.beginPath(); ctx.ellipse(0, 1.5, L*0.44, Math.max(1.4,0.24*k), 0, 0, Math.PI*2); ctx.fill();
+
+    /* body: a tub with raised sides and rounded ends */
+    var bodyTop = -(R*2 + Hh*0.62);
+    var g = ctx.createLinearGradient(0, bodyTop, 0, -R*0.4);
+    g.addColorStop(0,"#7CC6F2"); g.addColorStop(.30,"#2E93D6");
+    g.addColorStop(.80,"#1E7FC8"); g.addColorStop(1,"#12598F");
+    ctx.fillStyle = g;
+    roundRect(ctx, -L/2, bodyTop, L, R*2 + Hh*0.30, Math.max(2, 0.55*k)); ctx.fill();
+    ctx.strokeStyle = "rgba(6,44,74,.55)"; ctx.lineWidth = Math.max(1, 0.10*k);
+    roundRect(ctx, -L/2, bodyTop, L, R*2 + Hh*0.30, Math.max(2, 0.55*k)); ctx.stroke();
+    /* the open recess in the middle of the deck */
+    ctx.fillStyle = "#0F4E7E";
+    roundRect(ctx, -L*0.27, bodyTop + 0.15*k, L*0.54, Hh*0.34, Math.max(1.5, 0.3*k)); ctx.fill();
+    ctx.fillStyle = "#17679F";
+    roundRect(ctx, -L*0.27, bodyTop + 0.15*k, L*0.54, Hh*0.17, Math.max(1.5, 0.3*k)); ctx.fill();
+    /* highlight along the flank */
+    ctx.fillStyle = "rgba(255,255,255,.34)";
+    ctx.fillRect(-L*0.44, bodyTop + Hh*0.52, L*0.88, Math.max(1.1, 0.13*k));
+    /* the little pegs on the sides */
+    ctx.fillStyle = "#1A73B4";
+    roundRect(ctx, -L*0.34, -R*1.35, 0.5*k, 0.9*k, 1); ctx.fill();
+    roundRect(ctx, L*0.30, -R*1.35, 0.5*k, 0.9*k, 1); ctx.fill();
+
+    function wheel(wx){
+      ctx.save();
+      ctx.translate(wx, -R);
+      ctx.fillStyle = "#14171B";
+      ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.fill();
+      ctx.rotate(spin);
+      ctx.strokeStyle = "#333A41"; ctx.lineWidth = Math.max(1, R*0.16);
+      for(var i=0;i<4;i++){
+        var a2 = i/4*Math.PI*2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a2)*R*0.20, Math.sin(a2)*R*0.20);
+        ctx.lineTo(Math.cos(a2)*R*0.62, Math.sin(a2)*R*0.62);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#4A525B";
+      ctx.beginPath(); ctx.arc(0,0,R*0.22,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    wheel(-L/2 + INSET*k); wheel(L/2 - INSET*k);
+    ctx.restore();
+  }
+
+  /* the 0 cm mark, the release height line, and the distance bracket */
+  function drawMarks(ctx){
+    var k = V.k;
+    /* release height */
+    ctx.save();
+    ctx.setLineDash([5,4]); ctx.strokeStyle = "rgba(30,127,200,.85)"; ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(PX(-63), PY(relH)); ctx.lineTo(PX(xRelease(relH) + 4), PY(relH));
+    ctx.stroke();
+    ctx.restore();
+    /* 0 cm, where the board meets the counter */
+    ctx.strokeStyle = "#F4640C"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(PX(0), PY(0) - 3.4*k); ctx.lineTo(PX(0), PY(0) + 3.6*k); ctx.stroke();
+    if(V.compact) return;
+    tag(ctx, PX(0) - 21, PY(0) + 5.7*k, "0 cm", "#F4640C");
+    tag(ctx, PX(-58), PY(relH) - 13, "release " + relH + " cm", "#1E7FC8");
+    /* the stopping distance, once it has stopped */
+    if(stage === "done" && stopD !== null){
+      /* drawn above the counter, clear of the car and the meter stick */
+      var y = PY(11.2);
+      ctx.strokeStyle = "#F4640C"; ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(PX(0), y + 5); ctx.lineTo(PX(0), y);
+      ctx.lineTo(PX(xBack), y); ctx.lineTo(PX(xBack), y + 5);
+      ctx.stroke();
+      ctx.fillStyle = "#F4640C";
+      ctx.beginPath();
+      ctx.moveTo(PX(xBack), y); ctx.lineTo(PX(xBack)-6, y-3.5); ctx.lineTo(PX(xBack)-6, y+3.5);
+      ctx.closePath(); ctx.fill();
+      tag(ctx, (PX(0) + PX(xBack))/2 - 46, y - 13,
+          "stopping distance " + fmt(stopD) + " cm", "#F4640C");
+    }
+  }
+  function tag(ctx, x, y, txt, col){
+    ctx.font = '700 12px "Poppins", system-ui, sans-serif';
+    var tw = ctx.measureText(txt).width;
+    var bx = clamp(x, 4, V.w - tw - 16);
+    ctx.fillStyle = "rgba(255,255,255,.94)";
+    roundRect(ctx, bx-6, y-9.5, tw+12, 19, 6); ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = 1.4;
+    roundRect(ctx, bx-6, y-9.5, tw+12, 19, 6); ctx.stroke();
+    ctx.fillStyle = col; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(txt, bx, y+0.5);
+  }
+
+  /* the closest thing to a speed that doubled, so the energy ratio can be shown */
+  function doublePair(){
+    var best = null;
+    for(var i=0;i<trials.length;i++){
+      for(var j=0;j<trials.length;j++){
+        if(i === j) continue;
+        var a = trials[i], b = trials[j];
+        if(a.v < 0.05 || b.v <= a.v) continue;
+        var r = b.v/a.v;
+        if(r < 1.8 || r > 2.2) continue;
+        var err = Math.abs(r - 2);
+        if(!best || err < best.err) best = { lo:a, hi:b, vr:r, kr:b.ke/a.ke, err:err };
+      }
+    }
+    return best;
+  }
+
+  /* ------------------------------------------------ graphs */
+  function drawGraphs(){
+    plotKE(g3, g3C);
+    plot(g1, g1C, "h", "RELEASE HEIGHT (cm)", 16, "#1E7FC8");
+    plot(g2, g2C, "ke", "KINETIC ENERGY (J)", 0.065, "#F4640C");
+    if(!elFit.checked || trials.length < 2){
+      elFitNote.innerHTML = trials.length < 2
+        ? "Two or more trials are needed before a line means anything."
+        : "Tick the box to fit a line through the origin.";
+      return;
+    }
+    var sxy=0, sxx=0;
+    for(var i=0;i<trials.length;i++){
+      var x = trials[i].ke, y = trials[i].d/100;      /* metres, so the slope is 1/F */
+      sxy += x*y; sxx += x*x;
+    }
+    var slope = sxx>0 ? sxy/sxx : 0;
+    var force = slope>0 ? 1/slope : 0;
+    var msg = "Distance against kinetic energy has a slope of <b>" + fmt(slope,1)
+      + " m/J</b>. One over that is a force: <b>" + fmt(force,4) + " N</b>. Compare it with "
+      + "&mu; m g = 0.113 &times; 0.060 &times; 9.8 = <b>0.0664 N</b>.";
+    if(elVsq.checked){
+      var syy=0, sxx2=0;
+      for(var q=0;q<trials.length;q++){
+        var xv = trials[q].v*trials[q].v;
+        syy += xv*trials[q].ke; sxx2 += xv*xv;
+      }
+      var sl2 = sxx2>0 ? syy/sxx2 : 0;
+      msg += " On the squared axis, energy against v&sup2; has a slope of <b>" + fmt(sl2,4)
+           + "</b>, and twice that is <b>" + fmt(2*sl2,3) + " kg</b> &mdash; the car's mass.";
+    }
+    elFitNote.innerHTML = msg;
+  }
+  /* energy against speed. A parabola, unless the squared axis is switched on. */
+  function plotKE(ctx, canvas){
+    var sz = fit(canvas, ctx), w = sz.w, h = sz.h;
+    var sq = elVsq.checked;
+    var mL = 50, mR = 12, mT = 12, mB = 34;
+    var pw = w-mL-mR, ph = h-mT-mB;
+    var maxX = sq ? 2.1 : 1.55, maxY = 0.065;
+    for(var i=0;i<trials.length;i++){
+      var xv = sq ? trials[i].v*trials[i].v : trials[i].v;
+      if(xv > maxX) maxX = xv*1.08;
+      if(trials[i].ke > maxY) maxY = trials[i].ke*1.08;
+    }
+    var xStep = axisStep(maxX), yStep = axisStep(maxY);
+    maxX = Math.ceil(maxX/xStep)*xStep; maxY = Math.ceil(maxY/yStep)*yStep;
+    var PXg = function(a){ return mL + (a/maxX)*pw; };
+    var PYg = function(b){ return mT + ph - (b/maxY)*ph; };
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "#FCFDFE"; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = "#E8ECF1"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var y0=0; y0<=maxY+1e-12; y0+=yStep/2){ var ya=Math.round(PYg(y0))+0.5; ctx.moveTo(mL,ya); ctx.lineTo(mL+pw,ya); }
+    for(var x0=0; x0<=maxX+1e-12; x0+=xStep/2){ var xa=Math.round(PXg(x0))+0.5; ctx.moveTo(xa,mT); ctx.lineTo(xa,mT+ph); }
+    ctx.stroke();
+    ctx.strokeStyle = "#D3D9E0";
+    ctx.beginPath();
+    for(var y1=0; y1<=maxY+1e-12; y1+=yStep){ var yb=Math.round(PYg(y1))+0.5; ctx.moveTo(mL,yb); ctx.lineTo(mL+pw,yb); }
+    for(var x1=0; x1<=maxX+1e-12; x1+=xStep){ var xb=Math.round(PXg(x1))+0.5; ctx.moveTo(xb,mT); ctx.lineTo(xb,mT+ph); }
+    ctx.stroke();
+
+    /* the theory line or curve, on request */
+    if(elFit.checked){
+      ctx.save(); ctx.setLineDash([6,4]);
+      ctx.strokeStyle = "rgba(90,100,115,.85)"; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for(var t=0;t<=120;t++){
+        var xv2 = maxX*t/120;
+        var kv = sq ? 0.5*M_CAR*xv2 : 0.5*M_CAR*xv2*xv2;
+        if(kv > maxY) break;                     /* leave the plot rather than flatten on it */
+        var qx = PXg(xv2), qy = PYg(kv);
+        if(t===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
+      }
+      ctx.stroke(); ctx.restore();
+    }
+
+    /* mark the pair whose speed doubled */
+    var dp = doublePair();
+    if(dp){
+      var xLo = sq ? dp.lo.v*dp.lo.v : dp.lo.v;
+      var xHi = sq ? dp.hi.v*dp.hi.v : dp.hi.v;
+      ctx.save();
+      ctx.setLineDash([3,3]); ctx.strokeStyle = "rgba(22,163,74,.75)"; ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(PXg(xLo), PYg(0)); ctx.lineTo(PXg(xLo), PYg(dp.lo.ke));
+      ctx.lineTo(mL, PYg(dp.lo.ke));
+      ctx.moveTo(PXg(xHi), PYg(0)); ctx.lineTo(PXg(xHi), PYg(Math.min(maxY,dp.hi.ke)));
+      ctx.lineTo(mL, PYg(Math.min(maxY,dp.hi.ke)));
+      ctx.stroke();
+      ctx.restore();
+      /* the two ratios, on the axis gaps they belong to */
+      ctx.fillStyle = "#16A34A";
+      ctx.font = '700 11px "Poppins", sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(sq ? "\u00D7" + fmt(xHi/xLo,1) : "speed \u00D72",
+                   (PXg(xLo)+PXg(xHi))/2, PYg(0) - 11);
+      ctx.save();
+      ctx.translate(mL + 21, (PYg(dp.lo.ke)+PYg(Math.min(maxY,dp.hi.ke)))/2);
+      ctx.rotate(-Math.PI/2);
+      ctx.fillText("energy \u00D7" + fmt(dp.kr,1), 0, 0);
+      ctx.restore();
+    }
+
+    ctx.strokeStyle = "#14181F"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
+    ctx.fillStyle = "#5A6473";
+    ctx.font = '700 10px "IBM Plex Mono", monospace';
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var y2=0; y2<=maxY+1e-12; y2+=yStep) ctx.fillText(y2.toFixed(2), mL-6, PYg(y2));
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for(var x2=0; x2<=maxX+1e-12; x2+=xStep) ctx.fillText(x2.toFixed(1), PXg(x2), mT+ph+6);
+    ctx.save();
+    ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = "#14181F"; ctx.font = '700 9.5px "Poppins", sans-serif';
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("KINETIC ENERGY (J)", 0, 0);
+    ctx.restore();
+    ctx.fillStyle = "#14181F"; ctx.font = '700 9.5px "Poppins", sans-serif';
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.fillText(sq ? "SPEED SQUARED (m\u00B2/s\u00B2)" : "GATE SPEED (m/s)", mL+pw/2, mT+ph+19);
+
+    if(!trials.length){
+      ctx.fillStyle = "#93A0AF";
+      ctx.font = '700 12px "Poppins", sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Points land here.", mL+pw/2, mT+ph/2);
+    } else {
+      var pts = [];
+      for(var p2=0;p2<trials.length;p2++){
+        pts.push({ x: sq ? trials[p2].v*trials[p2].v : trials[p2].v, y: trials[p2].ke });
+      }
+      pts.sort(function(a,b){ return a.x-b.x; });
+      for(var m=0;m<pts.length;m++){
+        var cxp = PXg(pts[m].x), cyp = PYg(Math.min(maxY, pts[m].y));
+        ctx.fillStyle = "#16A34A";
+        ctx.beginPath(); ctx.arc(cxp, cyp, 4.6, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "#FCFDFE"; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.arc(cxp, cyp, 4.6, 0, Math.PI*2); ctx.stroke();
+      }
+    }
+
+    /* the sentence that spells the pattern out */
+    if(dp){
+      elKeNote.innerHTML = "The gate read <b>" + fmt(dp.lo.v,3) + " m/s</b> from "
+        + dp.lo.h + " cm and <b>" + fmt(dp.hi.v,3) + " m/s</b> from " + dp.hi.h
+        + " cm. The speed went up <b>" + fmt(dp.vr,2) + " times</b> and the energy went up <b>"
+        + fmt(dp.kr,2) + " times</b>, because energy depends on the <b>square</b> of the speed.";
+    } else if(trials.length >= 2){
+      elKeNote.innerHTML = "Find two runs where one gate speed is double the other, then compare "
+        + "their energies. The sim will do the arithmetic for you once you have them.";
+    } else {
+      elKeNote.innerHTML = "Run a few heights, then look for two speeds where one is double the other.";
+    }
+  }
+
+  function plot(ctx, canvas, key, xlabel, xMaxHint, col){
+    var sz = fit(canvas, ctx), w = sz.w, h = sz.h;
+    var mL = 44, mR = 12, mT = 12, mB = 34;
+    var pw = w-mL-mR, ph = h-mT-mB;
+    var maxX = xMaxHint, maxY = 100;
+    for(var i=0;i<trials.length;i++){
+      var xv = key === "h" ? trials[i].h : trials[i].ke;
+      if(xv > maxX) maxX = xv*1.1;
+      if(trials[i].d > maxY) maxY = trials[i].d*1.08;
+    }
+    var xStep = axisStep(maxX), yStep = axisStep(maxY);
+    maxX = Math.ceil(maxX/xStep)*xStep; maxY = Math.ceil(maxY/yStep)*yStep;
+    var PXg = function(a){ return mL + (a/maxX)*pw; };
+    var PYg = function(b){ return mT + ph - (b/maxY)*ph; };
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "#FCFDFE"; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = "#E8ECF1"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var yy=0; yy<=maxY+1e-9; yy+=yStep/2){ var y1=Math.round(PYg(yy))+0.5; ctx.moveTo(mL,y1); ctx.lineTo(mL+pw,y1); }
+    for(var xx=0; xx<=maxX+1e-9; xx+=xStep/2){ var x1=Math.round(PXg(xx))+0.5; ctx.moveTo(x1,mT); ctx.lineTo(x1,mT+ph); }
+    ctx.stroke();
+    ctx.strokeStyle = "#D3D9E0";
+    ctx.beginPath();
+    for(var y2=0; y2<=maxY+1e-9; y2+=yStep){ var yb=Math.round(PYg(y2))+0.5; ctx.moveTo(mL,yb); ctx.lineTo(mL+pw,yb); }
+    for(var x2=0; x2<=maxX+1e-9; x2+=xStep){ var xb=Math.round(PXg(x2))+0.5; ctx.moveTo(xb,mT); ctx.lineTo(xb,mT+ph); }
+    ctx.stroke();
+
+    ctx.strokeStyle = "#14181F"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
+    ctx.fillStyle = "#5A6473";
+    ctx.font = '700 10px "IBM Plex Mono", monospace';
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var y3=0; y3<=maxY+1e-9; y3+=yStep) ctx.fillText(String(Math.round(y3)), mL-6, PYg(y3));
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for(var x3=0; x3<=maxX+1e-9; x3+=xStep){
+      ctx.fillText(key === "h" ? String(Math.round(x3)) : x3.toFixed(2), PXg(x3), mT+ph+6);
+    }
+    ctx.save();
+    ctx.translate(12, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = "#14181F"; ctx.font = '700 9.5px "Poppins", sans-serif';
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("STOPPING DISTANCE (cm)", 0, 0);
+    ctx.restore();
+    ctx.fillStyle = "#14181F"; ctx.font = '700 9.5px "Poppins", sans-serif';
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.fillText(xlabel, mL+pw/2, mT+ph+19);
+
+    if(!trials.length){
+      ctx.fillStyle = "#93A0AF";
+      ctx.font = '700 12px "Poppins", sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Points land here.", mL+pw/2, mT+ph/2);
+      return;
+    }
+    var pts = [];
+    for(var p=0;p<trials.length;p++){
+      pts.push({ x: key === "h" ? trials[p].h : trials[p].ke, y: trials[p].d });
+    }
+    pts.sort(function(a,b){ return a.x-b.x; });
+    if(elFit.checked && pts.length >= 2){
+      var sxy=0, sxx=0;
+      for(var q=0;q<pts.length;q++){ sxy += pts[q].x*pts[q].y; sxx += pts[q].x*pts[q].x; }
+      var sl = sxx>0 ? sxy/sxx : 0;
+      var xEnd = Math.min(maxX, maxY/Math.max(sl,1e-9));
+      ctx.save(); ctx.setLineDash([6,4]);
+      ctx.strokeStyle = "rgba(90,100,115,.8)"; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(PXg(0), PYg(0)); ctx.lineTo(PXg(xEnd), PYg(sl*xEnd)); ctx.stroke();
+      ctx.restore();
+    }
+    for(var m=0;m<pts.length;m++){
+      var cxp = PXg(pts[m].x), cyp = PYg(Math.min(maxY, pts[m].y));
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(cxp, cyp, 4.6, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#FCFDFE"; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(cxp, cyp, 4.6, 0, Math.PI*2); ctx.stroke();
+    }
+  }
+
+  /* ------------------------------------------------ loop */
+  function frame(){
+    var n = now();
+    if(lastFrame === null) lastFrame = n;
+    var dt = (n - lastFrame)/1000; lastFrame = n;
+    if(dt > 0.06) dt = 0.06;
+    if(stage === "running"){
+      stepPhysics(dt*speedScale);
+      dirty = true; renderReadouts();
+    }
+    if(dirty || stage === "running"){ drawScene(); dirty = false; }
+    requestAnimationFrame(frame);
+  }
+
+  /* ------------------------------------------------ wiring */
+  elGo.addEventListener("click", launch);
+  elReset.addEventListener("click", function(){ resetRun("Back on the board at " + relH + " cm."); });
+  elH.addEventListener("input", function(){
+    relH = parseInt(elH.value,10);
+    resetRun();
+  });
+  elSpeed.addEventListener("change", function(){
+    speedScale = parseFloat(elSpeed.value) || 0.5;
+  });
+  elFit.addEventListener("change", drawGraphs);
+  elVsq.addEventListener("change", drawGraphs);
+  elNoise.addEventListener("change", function(){
+    say(elNoise.checked
+      ? "Reading error on. Repeat a height and the numbers will differ a little."
+      : "Reading error off. Readings are exact.");
+  });
+  elClear.addEventListener("click", function(){
+    trials = []; refresh(); say("Trials cleared.");
+  });
+  elCopy.addEventListener("click", function(){
+    var rows = ["trial\theight_cm\tgate_speed_ms\tkinetic_energy_J\tstopping_distance_cm"];
+    for(var i=0;i<trials.length;i++){
+      var t = trials[i];
+      rows.push(t.n + "\t" + t.h + "\t" + fmt(t.v,3) + "\t" + fmt(t.ke,5) + "\t" + fmt(t.d));
+    }
+    var txt = rows.join("\n");
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = txt; ta.setAttribute("readonly","");
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); }catch(err){}
+      document.body.removeChild(ta);
+    }
+    function ok(){ elCopyNote.innerHTML = "Copied <b>" + trials.length + "</b> trials."; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok, function(){ fallback(); ok(); });
+    } else { fallback(); ok(); }
+  });
+
+  var rt;
+  window.addEventListener("resize", function(){
+    clearTimeout(rt); rt = setTimeout(function(){ dirty = true; drawGraphs(); }, 120);
+  });
+  if(window.ResizeObserver){
+    var ro = new ResizeObserver(function(){ dirty = true; drawGraphs(); });
+    ro.observe(sceneC.parentNode); ro.observe(g1C.parentNode);
+  }
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){ dirty = true; drawGraphs(); });
+  }
+
+  buildHBtns();
+  resetRun();
+  requestAnimationFrame(frame);
+
+  if(window.__sdHook) window.__sdHook({
+    setH: function(x){ relH = x; resetRun(); },
+    launch: launch,
+    state: function(){
+      return { stage:stage, s:s, v:v, xBack:xBack, gateV:gateV, gateKE:gateKE,
+               stopD:stopD, relH:relH, trials:trials };
+    },
+    idealV: idealV, idealD: idealD, trackY: trackY, MU: MU, M: M_CAR, TAN: TAN
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Measuring Motion — Savanna Speed Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================== TOKENS ============================== */
+:root{
+  color-scheme: light;
+  --surface-1:#fcfcfb;
+  --plane:#f4f2ec;
+  --text-primary:#0b0b0b;
+  --text-secondary:#52514e;
+  --muted:#898781;
+  --grid:#e1e0d9;
+  --baseline:#c3c2b7;
+  --border:rgba(11,11,11,.10);
+  --series-1:#2a78d6;
+  --series-2:#eb6834;
+  --good:#0ca30c;
+  --critical:#d03b3b;
+  --accent:#2a78d6;
+  --chip:#ffffff;
+  --chip-on:#2a78d6;
+  /* scene */
+  --sky-top:#7fc4e8;
+  --sky-bot:#dff0f4;
+  --sun:#fff3c4;
+  --hill-far:#b7c9a8;
+  --hill-near:#9db98a;
+  --ground:#d9c188;
+  --ground-2:#c9ad6d;
+  --grass:#a9993f;
+  --tree:#6b5637;
+  --canopy:#57713f;
+  --canopy-2:#486034;
+  --shadow:rgba(60,45,20,.28);
+}
+html[data-theme="dark"]{
+  color-scheme: dark;
+  --surface-1:#1a1a19;
+  --plane:#0d0d0d;
+  --text-primary:#ffffff;
+  --text-secondary:#c3c2b7;
+  --muted:#898781;
+  --grid:#2c2c2a;
+  --baseline:#383835;
+  --border:rgba(255,255,255,.10);
+  --series-1:#3987e5;
+  --series-2:#d95926;
+  --good:#0ca30c;
+  --critical:#e66767;
+  --accent:#3987e5;
+  --chip:#232322;
+  --chip-on:#3987e5;
+  --sky-top:#243a5c;
+  --sky-bot:#8a5a44;
+  --sun:#ffd39a;
+  --hill-far:#3b4457;
+  --hill-near:#2e3442;
+  --ground:#6b5636;
+  --ground-2:#5a472c;
+  --grass:#8a7534;
+  --tree:#2b2318;
+  --canopy:#2f3a26;
+  --canopy-2:#25301e;
+  --shadow:rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--plane); color:var(--text-primary);
+  font-family:'Poppins',system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-weight:700;
+  line-height:1.5;
+}
+.wrap{max-width:1680px;margin:0 auto;padding:16px 14px 48px}
+header.top{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+header.top h1{font-size:24px;margin:0;letter-spacing:-.01em;font-weight:800}
+header.top p{margin:2px 0 0;color:var(--text-secondary);font-size:14px;max-width:62ch}
+.spacer{flex:1 1 auto}
+button, select, input{font-family:inherit;font-weight:700;color:inherit}
+.btn{
+  background:var(--chip); color:var(--text-primary);
+  border:1px solid var(--border); border-radius:9px; padding:8px 13px;
+  cursor:pointer; line-height:1.1; white-space:nowrap;
+}
+.btn:hover{background:color-mix(in srgb, var(--accent) 10%, var(--chip))}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);color:#fff;border-color:transparent;font-weight:700}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:6px 10px;font-size:14px}
+.card{
+  background:var(--surface-1); border:1px solid var(--border);
+  border-radius:14px; padding:14px 16px; margin-bottom:14px;
+}
+.card h2{font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:800}
+/* -------- animal chips -------- */
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--chip);border:1px solid var(--border);border-radius:999px;
+  padding:6px 14px 6px 8px;cursor:pointer;font-size:14px;font-weight:700;
+}
+.chip svg{display:block}
+.chip[aria-pressed="true"]{background:var(--chip-on);color:#fff;border-color:transparent;font-weight:700}
+.chip[aria-pressed="true"] .dot{background:#fff}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+/* -------- stage -------- */
+.stage{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:var(--sky-bot)}
+#scene{display:block;width:100%;height:auto}
+#ruler{display:block;width:100%;height:auto;background:var(--surface-1);border-top:1px solid var(--border)}
+.viewfinder{position:absolute;inset:0;pointer-events:none}
+.vf-corner{position:absolute;width:26px;height:26px;border:3px solid rgba(255,255,255,.85);border-radius:3px}
+.vf-corner.tl{top:12px;left:12px;border-right:0;border-bottom:0}
+.vf-corner.tr{top:12px;right:12px;border-left:0;border-bottom:0}
+.vf-corner.bl{bottom:12px;left:12px;border-right:0;border-top:0}
+.vf-corner.br{bottom:12px;right:12px;border-left:0;border-top:0}
+.rec{
+  position:absolute;top:12px;left:50px;display:flex;align-items:center;gap:8px;
+  color:#fff;font-size:14px;font-weight:700;letter-spacing:.06em;
+  text-shadow:0 1px 3px rgba(0,0,0,.55);
+}
+.rec .led{width:11px;height:11px;border-radius:50%;background:#ff3b30;box-shadow:0 0 8px #ff3b30}
+.rec.paused .led{background:#c9c9c9;box-shadow:none}
+.tc{
+  position:absolute;top:12px;right:52px;color:#fff;font-weight:700;font-size:15px;
+  font-variant-numeric:tabular-nums;text-shadow:0 1px 3px rgba(0,0,0,.55);
+}
+.scale-note{
+  position:absolute;top:38px;left:50px;color:#fff;font-size:12.5px;
+  text-shadow:0 1px 3px rgba(0,0,0,.6);opacity:.92
+}
+/* -------- transport -------- */
+.transport{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.timeline{flex:1 1 320px;display:flex;align-items:center;gap:10px;min-width:260px}
+input[type=range]{width:100%;accent-color:var(--accent);height:26px}
+.clock{font-variant-numeric:tabular-nums;font-weight:700;font-size:17px;min-width:96px;text-align:right}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--chip)}
+.seg button{background:transparent;border:0;padding:7px 11px;cursor:pointer;font-size:14px}
+.seg button + button{border-left:1px solid var(--border)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:700}
+/* -------- panels -------- */
+.cols{display:grid;grid-template-columns:minmax(0,0.85fr) minmax(0,1.15fr);gap:14px;align-items:start}
+@media (max-width:940px){.cols{grid-template-columns:1fr}}
+.readout{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:4px 0 12px}
+.tile{background:var(--plane);border:1px solid var(--border);border-radius:11px;padding:10px 12px}
+.tile .lab{font-size:12px;color:var(--text-secondary);letter-spacing:.02em;font-weight:700}
+.tile .val{font-size:26px;font-weight:800;line-height:1.15;margin-top:2px}
+.tile .val small{font-size:14px;font-weight:600;color:var(--text-secondary)}
+.steps{margin:0;padding-left:20px;color:var(--text-secondary);font-size:14px}
+.steps li{margin:3px 0}
+.steps b{color:var(--text-primary)}
+.markrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.pill{
+  display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--text-secondary);
+  background:var(--plane);border:1px solid var(--border);border-radius:999px;padding:5px 11px;
+  font-variant-numeric:tabular-nums;font-weight:700;
+}
+.pill i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.pill i.a{background:#e34948}
+.pill i.b{background:#2a78d6}
+.calc{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.calc input[type=number]{
+  width:112px;padding:9px 11px;border-radius:9px;border:1px solid var(--border);
+  background:var(--surface-1);font-size:17px;font-variant-numeric:tabular-nums;
+}
+.calc .eq{font-size:18px;font-weight:700;min-width:26px}
+.calc .unit{color:var(--text-secondary);min-width:30px}
+.calc .tick{font-size:20px;color:var(--good);width:22px}
+.stepbox{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--grid)}
+.stepbox:first-of-type{border-top:0;padding-top:2px}
+.stepnum{
+  flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;
+  display:grid;place-items:center;font-size:14px;font-weight:700;margin-top:2px;
+}
+.stepbody{flex:1 1 auto;min-width:0}
+.steptitle{font-weight:700;margin-bottom:7px}
+.stepbox.locked{opacity:.42}
+.stepbox.locked .stepnum{background:var(--muted)}
+.stepbox.locked input,.stepbox.locked button{pointer-events:none}
+.stepbox.done .stepnum{background:var(--good)}
+.hint{font-size:13px;color:var(--text-secondary);margin:2px 0 0}
+.verdict{font-size:14px;margin-top:10px;min-height:22px}
+.verdict.ok{color:var(--good);font-weight:700}
+.verdict.no{color:var(--critical);font-weight:700}
+.formula{
+  font-size:14.5px;color:var(--text-secondary);background:var(--plane);
+  border:1px dashed var(--baseline);border-radius:10px;padding:8px 11px;margin:0 0 10px;
+  font-variant-numeric:tabular-nums;
+}
+.formula b{color:var(--text-primary)}
+/* -------- table + chart -------- */
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--grid)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+tbody tr:last-child td{border-bottom:0}
+.empty{color:var(--muted);font-size:14px;padding:14px 2px}
+.legend{display:flex;gap:16px;align-items:center;font-size:13px;color:var(--text-secondary);margin-bottom:8px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.key{width:14px;height:10px;border-radius:2px;background:var(--series-1)}
+.key.tick{width:3px;height:16px;border-radius:1px;background:var(--series-2)}
+footer.note{color:var(--muted);font-size:12.5px;margin-top:8px}
+.hidden{display:none !important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* -------- how-to-use directions -------- */
+.howto ol{margin:0;padding-left:22px;color:var(--text-secondary);font-size:14.5px}
+.howto li{margin:7px 0}
+.howto li b{color:var(--text-primary)}
+.howto .tips{margin-top:12px;padding-top:12px;border-top:1px solid var(--grid)}
+.howto .tips p{margin:5px 0;color:var(--text-secondary);font-size:14px}
+</style>
+</head>
+<body data-palette="#2a78d6,#eb6834">
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Measuring Motion — Savanna Speed Lab</h1>
+      <p>Film an animal crossing the savanna, pause the tape, measure how far it travelled and how long it took, then work out its speed.</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn ghost sm" id="themeBtn" aria-label="Toggle dark mode">🌙 Dark</button>
+  </header>
+  <!-- ===================== SUBJECT PICKER ===================== -->
+  <section class="card">
+    <h2>1 · Choose your subject</h2>
+    <div class="chips" id="chips" role="group" aria-label="Choose an animal"></div>
+    <div class="transport" style="margin-top:12px">
+      <div class="seg" role="group" aria-label="Gait">
+        <button id="gaitWalk" aria-pressed="false">🚶 Walking</button>
+        <button id="gaitRun" aria-pressed="true">💨 Running</button>
+      </div>
+      <div class="seg" role="group" aria-label="Playback speed">
+        <button data-rate="1" aria-pressed="false">1×</button>
+        <button data-rate="0.5" aria-pressed="false">½×</button>
+        <button data-rate="0.25" aria-pressed="true">¼×</button>
+        <button data-rate="0.1" aria-pressed="false">⅒×</button>
+      </div>
+      <span class="pill" id="slowNote">Playback is slowed — the clock shows <b>real</b> time</span>
+    </div>
+  </section>
+  <!-- ===================== STAGE ===================== -->
+  <section class="card">
+    <h2>2 · Roll the tape</h2>
+    <div class="stage">
+      <svg id="scene" viewBox="0 0 1200 430" role="img" aria-label="Savanna scene with a moving animal"></svg>
+      <svg id="ruler" viewBox="0 0 1200 58" aria-hidden="true"></svg>
+      <div class="viewfinder">
+        <div class="vf-corner tl"></div><div class="vf-corner tr"></div>
+        <div class="vf-corner bl"></div><div class="vf-corner br"></div>
+      </div>
+      <div class="rec paused" id="recBadge"><span class="led"></span><span id="recTxt">PAUSED</span></div>
+      <div class="tc" id="timecode">00:00.00</div>
+      <div class="scale-note">Field of view: 24 m · the acacias are planted exactly 5 m apart</div>
+    </div>
+    <div class="transport">
+      <button class="btn primary" id="playBtn">▶ Play</button>
+      <button class="btn sm" id="rewindBtn" title="Back to the start">⟲ Rewind</button>
+      <div class="seg" role="group" aria-label="Step frames">
+        <button id="b10" title="Back 0.1 s">◀◀</button>
+        <button id="b01" title="Back 0.01 s">◀</button>
+        <button id="f01" title="Forward 0.01 s">▶</button>
+        <button id="f10" title="Forward 0.1 s">▶▶</button>
+      </div>
+      <div class="timeline">
+        <input type="range" id="scrub" min="0" max="100" step="0.01" value="0" aria-label="Tape position">
+        <span class="clock" id="clock">0.00 s</span>
+      </div>
+    </div>
+  </section>
+  <div class="cols">
+    <!-- ===================== MEASURE ===================== -->
+    <section class="card">
+      <h2>3 · Read the tape</h2>
+      <ol class="steps">
+        <li>Pause where the animal is fully in view, then press <b>Mark start</b> — flag <b>A</b> lands on its nose.</li>
+        <li>Scrub forward and press <b>Mark end</b> to drop flag <b>B</b>.</li>
+        <li>Read the four numbers below off the ruler and the clock. The sim will not do the arithmetic for you.</li>
+        <li>You can also <b>drag either flag</b> to line it up by eye.</li>
+      </ol>
+      <div class="markrow" style="margin-top:12px">
+        <button class="btn" id="markA">🚩 Mark start (A)</button>
+        <button class="btn" id="markB">🏁 Mark end (B)</button>
+        <button class="btn ghost sm" id="clearMarks">Clear</button>
+      </div>
+      <div class="readout" style="grid-template-columns:1fr 1fr">
+        <div class="tile"><div class="lab">Starting position &nbsp;x₁</div><div class="val" id="x1Out">— <small>m</small></div></div>
+        <div class="tile"><div class="lab">Ending position &nbsp;x₂</div><div class="val" id="x2Out">— <small>m</small></div></div>
+        <div class="tile"><div class="lab">Start time &nbsp;t₁</div><div class="val" id="t1Out">— <small>s</small></div></div>
+        <div class="tile"><div class="lab">End time &nbsp;t₂</div><div class="val" id="t2Out">— <small>s</small></div></div>
+      </div>
+      <p class="hint">Tip: the acacias are exactly <b>5 m</b> apart — use them to sanity-check your positions.</p>
+    </section>
+    <!-- ===================== CALCULATE ===================== -->
+    <section class="card">
+      <h2>4 · Do the maths yourself</h2>
+      <div class="stepbox" id="stepD">
+        <div class="stepnum">1</div>
+        <div class="stepbody">
+          <div class="steptitle">How far did it travel?</div>
+          <p class="formula">distance = ending position − starting position &nbsp;→&nbsp; <b id="fD">x₂ − x₁</b></p>
+          <div class="calc">
+            <label for="ansD" class="sr">Distance in metres</label>
+            <span class="eq">d =</span>
+            <input type="number" id="ansD" step="0.1" min="0" placeholder="0.0">
+            <span class="unit">m</span>
+            <button class="btn primary" id="checkD">Check</button>
+            <span class="tick" id="tickD"></span>
+          </div>
+          <div class="verdict" id="vD" role="status"></div>
+        </div>
+      </div>
+      <div class="stepbox locked" id="stepT">
+        <div class="stepnum">2</div>
+        <div class="stepbody">
+          <div class="steptitle">How long did it take?</div>
+          <p class="formula">time = end time − start time &nbsp;→&nbsp; <b id="fT">t₂ − t₁</b></p>
+          <div class="calc">
+            <label for="ansT" class="sr">Time in seconds</label>
+            <span class="eq">t =</span>
+            <input type="number" id="ansT" step="0.01" min="0" placeholder="0.00">
+            <span class="unit">s</span>
+            <button class="btn primary" id="checkT">Check</button>
+            <span class="tick" id="tickT"></span>
+          </div>
+          <div class="verdict" id="vT" role="status"></div>
+        </div>
+      </div>
+      <div class="stepbox locked" id="stepV">
+        <div class="stepnum">3</div>
+        <div class="stepbody">
+          <div class="steptitle">How fast was it going?</div>
+          <p class="formula">speed = distance ÷ time &nbsp;→&nbsp; <b id="fV">d ÷ t</b></p>
+          <div class="calc">
+            <label for="ansV" class="sr">Speed in metres per second</label>
+            <span class="eq">v =</span>
+            <input type="number" id="ansV" step="0.1" min="0" placeholder="0.0">
+            <span class="unit">m/s</span>
+            <button class="btn primary" id="checkV">Check</button>
+            <span class="tick" id="tickV"></span>
+          </div>
+          <div class="verdict" id="vV" role="status"></div>
+          <div class="readout" style="grid-template-columns:1fr 1fr;margin-top:12px">
+            <div class="tile"><div class="lab">Your speed</div><div class="val" id="sMine">— <small>m/s</small></div></div>
+            <div class="tile"><div class="lab">Same speed in other units</div><div class="val" id="sConv">— <small>km/h</small></div></div>
+          </div>
+          <div class="markrow" style="margin-top:10px">
+            <button class="btn" id="logBtn">＋ Save this trial</button>
+            <button class="btn ghost sm" id="resetCalc">Start over</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <!-- ===================== RESULTS ===================== -->
+  <section class="card">
+    <h2>5 · Which animal is fastest?</h2>
+    <div class="legend">
+      <span>Speed you measured, in metres per second</span>
+      <div class="spacer"></div>
+      <button class="btn ghost sm" id="clearLog">Clear all trials</button>
+    </div>
+    <svg id="chart" viewBox="0 0 900 140" role="img" aria-label="Bar chart comparing measured animal speeds"></svg>
+    <p class="hint" id="chartCap" style="margin:4px 0 10px"></p>
+    <div id="chartEmpty" class="empty">No trials saved yet — work out a speed above, then press <b>Save this trial</b>.</div>
+    <table id="logTable" class="hidden">
+      <thead><tr><th>Animal</th><th>Gait</th><th>x₁ (m)</th><th>x₂ (m)</th><th>d (m)</th><th>t₁ (s)</th><th>t₂ (s)</th><th>t (s)</th><th>Speed (m/s)</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <footer class="note">Animals are drawn to true relative size within the 24 m field of view, and the acacias are planted exactly 5 m apart.</footer>
+  </section>
+  <!-- ===================== HOW TO USE ===================== -->
+  <section class="card howto">
+    <h2>How to use this simulation</h2>
+    <ol>
+      <li><b>Pick an animal.</b> Click a chip in step 1 to choose which animal you'll film, and choose whether it's <b>Walking</b> or <b>Running</b>. Use the playback-speed buttons (1×, ½×, ¼×, ⅒×) to slow the action down — the on-screen clock always shows real time, no matter the playback speed.</li>
+      <li><b>Roll the tape.</b> Press <b>▶ Play</b> in step 2 to start the animal moving across the scene. Use <b>⟲ Rewind</b>, the step buttons (◀◀ ◀ ▶ ▶▶), or drag the scrub bar to move the tape backward or forward one frame at a time — you can also use the arrow keys on your keyboard (hold Shift for bigger jumps).</li>
+      <li><b>Mark a start point.</b> Pause when the animal is clearly in view, then press <b>🚩 Mark start (A)</b> in step 3. This drops a red flag on its nose and records the position and time.</li>
+      <li><b>Mark an end point.</b> Scrub the tape forward, then press <b>🏁 Mark end (B)</b> to drop the blue flag further along. You can fine-tune either flag by dragging it left or right, or nudging it with the arrow keys.</li>
+      <li><b>Read the numbers.</b> The starting position (x₁), ending position (x₂), start time (t₁), and end time (t₂) appear as soon as both flags are placed. Use the ruler above the scene and the acacia trees — planted exactly 5 m apart — to double-check your readings.</li>
+      <li><b>Work out the distance.</b> In step 4, subtract the starting position from the ending position and type your answer into the <b>d =</b> box, then press <b>Check</b>. Wrong answers get a hint; keep trying until it's correct.</li>
+      <li><b>Work out the time.</b> Once distance is correct, subtract the start time from the end time and enter it in the <b>t =</b> box, then press <b>Check</b>.</li>
+      <li><b>Work out the speed.</b> Once time is correct, divide distance by time and enter the result in the <b>v =</b> box, then press <b>Check</b> to reveal the speed in metres per second and its equivalent in km/h and mph.</li>
+      <li><b>Save your trial.</b> Press <b>＋ Save this trial</b> to add your result to the bar chart and table in step 5, so you can compare speeds across different animals and gaits. Press <b>Start over</b> to clear the calculator, or <b>Clear</b> to remove the flags and try the same animal again.</li>
+    </ol>
+    <div class="tips">
+      <p><b>Tips:</b> Toggle 🌙 <b>Dark</b> / ☀️ <b>Light</b> in the top-right corner for a night version of the scene. Press the <b>spacebar</b> to play or pause from anywhere on the page. Try comparing the same animal's walking speed to its running speed, or race several animals and see whose bar comes out longest on the chart.</p>
+    </div>
+  </section>
+</div>
+<script>
+(() => {
+"use strict";
+/* ==================================================================
+   CONSTANTS
+   ================================================================== */
+const FIELD_M   = 24;              // metres visible across the scene
+const SCENE_W   = 1200, SCENE_H = 430;
+const PPM       = SCENE_W / FIELD_M;   // 50 px per metre
+const GROUND_Y  = 356;
+const TICK_MAJOR= 4;               // label the ruler every N metres
+const SVGNS     = "http://www.w3.org/2000/svg";
+const el  = (id) => document.getElementById(id);
+const mk  = (tag, attrs = {}) => { const n = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]); return n; };
+const fmt = (v, n = 2) => Number(v).toFixed(n);
+/* ==================================================================
+   ANIMAL DATA  (metres, metres/second)
+   ================================================================== */
+const ANIMALS = [
+ { id:"cheetah", name:"Cheetah", plan:"quad",
+   shoulder:0.85, body:1.25, depth:0.40, neck:{len:0.36, ang:-42}, head:{len:0.26, h:0.19},
+   tail:{len:0.75, ang:14, type:"thin"},
+   backTilt:-3, coat:"#d9ab52", belly:"#f4e5bd", dark:"#8a6a2c", pattern:"spots",
+   speed:{walk:1.4, run:29.0}, stride:{walk:1.0, run:6.5}, duty:{walk:0.60, run:0.32}, bob:{walk:0.03, run:0.14} },
+ { id:"gazelle", name:"Gazelle", plan:"quad",
+   shoulder:0.65, body:0.98, depth:0.31, neck:{len:0.32, ang:-54}, head:{len:0.20, h:0.13},
+   tail:{len:0.20, ang:10, type:"thin"}, horns:"straight",
+   backTilt:-3, coat:"#c9904f", belly:"#f7f0e2", dark:"#4a3a24", pattern:"band",
+   speed:{walk:1.3, run:22.0}, stride:{walk:0.80, run:4.2}, duty:{walk:0.60, run:0.34}, bob:{walk:0.03, run:0.15} },
+ { id:"lion", name:"Lion", plan:"quad",
+   shoulder:1.10, body:1.80, depth:0.58, neck:{len:0.38, ang:-24}, head:{len:0.34, h:0.28},
+   tail:{len:0.85, ang:16, type:"tuft"}, mane:true,
+   backTilt:-2, coat:"#cf9d5e", belly:"#e9d7b0", dark:"#6d4a23", pattern:"none",
+   speed:{walk:1.4, run:22.0}, stride:{walk:1.2, run:5.5}, duty:{walk:0.60, run:0.34}, bob:{walk:0.03, run:0.12} },
+ { id:"wildebeest", name:"Wildebeest", plan:"quad",
+   shoulder:1.30, body:1.72, depth:0.62, neck:{len:0.50, ang:-38}, head:{len:0.56, h:0.30},
+   tail:{len:0.62, ang:4, type:"brush"}, horns:"curved", mane:true,
+   backTilt:-7, coat:"#7d6f66", belly:"#8d8078", dark:"#3f3830", pattern:"none",
+   speed:{walk:1.3, run:22.0}, stride:{walk:1.4, run:4.8}, duty:{walk:0.60, run:0.35}, bob:{walk:0.03, run:0.12} },
+ { id:"zebra", name:"Zebra", plan:"quad",
+   shoulder:1.35, body:1.95, depth:0.62, neck:{len:0.66, ang:-42}, head:{len:0.45, h:0.20},
+   tail:{len:0.58, ang:4, type:"brush"}, mane:true,
+   coat:"#f4f1ea", belly:"#ffffff", dark:"#26241f", pattern:"stripes",
+   speed:{walk:1.4, run:18.0}, stride:{walk:1.5, run:4.6}, duty:{walk:0.62, run:0.36}, bob:{walk:0.03, run:0.11} },
+ { id:"ostrich", name:"Ostrich", plan:"biped",
+   shoulder:1.15, body:1.05, depth:0.78, neck:{len:0.82, ang:-70}, head:{len:0.22, h:0.14},
+   tail:{len:0.58, ang:-8, type:"plume"},
+   coat:"#4a4441", belly:"#eae4d6", dark:"#e7a24a", pattern:"none",
+   legColor:"#cfa87e", hoof:"#e7a24a", noEar:true, beak:true, legWFactor:0.55, wing:true,
+   speed:{walk:1.4, run:19.0}, stride:{walk:1.4, run:4.5}, duty:{walk:0.60, run:0.30}, bob:{walk:0.03, run:0.10} },
+ { id:"giraffe", name:"Giraffe", plan:"quad",
+   shoulder:3.00, body:2.20, depth:0.95, neck:{len:2.00, ang:-64}, head:{len:0.55, h:0.28},
+   tail:{len:0.90, ang:4, type:"tuft"}, horns:"ossicone",
+   backTilt:-10, coat:"#e0b366", belly:"#f4e2bd", dark:"#a9682c", pattern:"patches",
+   speed:{walk:1.5, run:14.0}, stride:{walk:2.4, run:5.5}, duty:{walk:0.62, run:0.40}, bob:{walk:0.02, run:0.08} },
+ { id:"elephant", name:"Elephant", plan:"quad",
+   shoulder:3.20, body:3.55, depth:1.95, neck:{len:0.40, ang:-18}, head:{len:1.15, h:1.15},
+   tail:{len:1.00, ang:4, type:"tuft"}, trunk:true, tusks:true, bigEar:true,
+   coat:"#8d8880", belly:"#9c968d", dark:"#5d5951", pattern:"none",
+   speed:{walk:1.3, run:11.0}, stride:{walk:1.9, run:3.4}, duty:{walk:0.65, run:0.45}, bob:{walk:0.02, run:0.06} },
+ { id:"human", name:"Human sprinter", plan:"biped",
+   shoulder:0.95, body:0.80, depth:0.40, neck:{len:0.12, ang:-90}, head:{len:0.22, h:0.22},
+   coat:"#3b6fb0", belly:"#e8b98f", dark:"#2b3a4a", pattern:"none",
+   speed:{walk:1.4, run:10.4}, stride:{walk:1.5, run:4.6}, duty:{walk:0.62, run:0.28}, bob:{walk:0.025, run:0.10} }
+];
+/* ==================================================================
+   STATE
+   ================================================================== */
+const S = {
+  animal: ANIMALS[0],
+  gait: "run",
+  rate: 0.25,
+  t: 0,
+  playing: false,
+  markA: null,   // {x: metres, t: seconds}
+  markB: null,
+  work: { d:null, t:null, v:null },   // values the student worked out and got right
+  tries: { d:0, t:0, v:0 },
+  trials: []
+};
+const v      = () => S.animal.speed[S.gait];
+const bodyM  = () => noseOffsetM(S.animal) + S.animal.body;
+const durS   = () => (FIELD_M + bodyM() + 1) / v();
+/* ------------------------------------------------------------------
+   geom(): the skeleton, in pixels, in the animal's local frame.
+   Origin = the ground directly under the chest/hip.  +x is forwards,
+   -y is up.  Both the renderer and the nose-offset read from here, so
+   the drawing and the physics can never disagree.
+   ------------------------------------------------------------------ */
+function geom(a){
+  const M = PPM;
+  const H = a.shoulder*M, L = a.body*M, D = a.depth*M;
+  const biped  = a.plan === "biped";
+  const human  = a.id === "human";
+  const legLen = biped ? H : H - D*0.34;
+  let torso, nb, hips;
+  if (human){
+    torso = { cx:0, cy:-(H + L*0.5) };
+    nb    = { x:0, y:-(H + L) };
+    hips  = [{ hx:0, hy:-H, bend:-1 }];
+  } else if (biped){
+    torso = { cx:-L*0.12, cy:-(H + D*0.42) };
+    nb    = { x: L*0.32,  y:-(H + D*0.62) };
+    hips  = [{ hx:-L*0.06, hy:-H, bend:-1 }];
+  } else {
+    torso = { cx:-L/2, cy:-(H - D/2) };
+    nb    = { x:0, y:-(H - D*0.10) };
+    hips  = [{ hx:-L*0.86, hy:-(H*0.985 - D*0.30), bend:-1 },   // hind
+              { hx:-L*0.14, hy:-(H - D*0.30),       bend: 1 }];  // fore
+  }
+  const ra = a.neck.ang*Math.PI/180;
+  const ne = { x: nb.x + a.neck.len*M*Math.cos(ra), y: nb.y + a.neck.len*M*Math.sin(ra) };
+  const hAng = (a.neck.ang*0.30)*Math.PI/180;
+  const headC = { x: ne.x + a.head.len*M*0.5*Math.cos(hAng), y: ne.y + a.head.len*M*0.5*Math.sin(hAng) };
+  let noseX = ne.x + a.head.len*M*Math.cos(hAng);
+  if (a.trunk) noseX += a.head.len*M*0.15 + 1.55*M*0.55;
+  if (human)   noseX = D*0.55;
+  noseX = Math.max(noseX, D*0.4);
+  const rump = biped ? { x: torso.cx - L*0.42, y: torso.cy + D*0.10 }
+                     : { x: -L,               y: -(H*0.94 - D*0.16) };
+  return { M, H, L, D, biped, human, legLen, seg:legLen/2, torso, nb, ne, hAng, headC, noseX, rump, hips };
+}
+/* how far the nose sticks out ahead of the chest, in metres */
+const noseOffsetM = (a) => geom(a).noseX / PPM;
+/* ==================================================================
+   SCENE  (static backdrop)
+   ================================================================== */
+const scene = el("scene");
+function acacia(x, scale, dark){
+  const g = mk("g", { transform:`translate(${x},${GROUND_Y}) scale(${scale})` });
+  g.appendChild(mk("path", { d:"M0,0 L-5,-90 L-13,-118 M0,0 L4,-92 L14,-116",
+    stroke:"var(--tree)", "stroke-width":9, fill:"none", "stroke-linecap":"round" }));
+  const c = dark ? "var(--canopy-2)" : "var(--canopy)";
+  g.appendChild(mk("ellipse", { cx:0, cy:-124, rx:66, ry:17, fill:c }));
+  g.appendChild(mk("ellipse", { cx:-26, cy:-136, rx:38, ry:14, fill:c }));
+  g.appendChild(mk("ellipse", { cx:30, cy:-134, rx:34, ry:13, fill:c }));
+  return g;
+}
+/* horizon silhouette helper: y offsets are measured up from the ground line */
+const hzY = (up) => GROUND_Y - up;
+/* [metres from the left edge, draw scale, darker canopy] — spacing is exactly 5 m */
+const TREES_M = [[2,1.50,true],[7,1.12,true],[12,0.96,true],[17,1.34,false],[22,1.20,true]];
+const TREE_GAP_M = 5;
+function buildScene(){
+  scene.textContent = "";
+  const defs = mk("defs");
+  const sky = mk("linearGradient", { id:"sky", x1:0, y1:0, x2:0, y2:1 });
+  sky.appendChild(mk("stop", { offset:"0%",  "stop-color":"var(--sky-top)" }));
+  sky.appendChild(mk("stop", { offset:"100%","stop-color":"var(--sky-bot)" }));
+  const gnd = mk("linearGradient", { id:"gnd", x1:0, y1:0, x2:0, y2:1 });
+  gnd.appendChild(mk("stop", { offset:"0%",  "stop-color":"var(--ground)" }));
+  gnd.appendChild(mk("stop", { offset:"100%","stop-color":"var(--ground-2)" }));
+  defs.appendChild(sky); defs.appendChild(gnd);
+  scene.appendChild(defs);
+  scene.appendChild(mk("rect", { x:0, y:0, width:SCENE_W, height:GROUND_Y, fill:"url(#sky)" }));
+  scene.appendChild(mk("circle", { cx:772, cy:56, r:32, fill:"var(--sun)", opacity:.9 }));
+  scene.appendChild(mk("circle", { cx:772, cy:56, r:54, fill:"var(--sun)", opacity:.18 }));
+  scene.appendChild(mk("path", { fill:"var(--hill-far)", opacity:.85,
+    d:`M0,${GROUND_Y} L0,${hzY(78)} Q150,${hzY(128)} 300,${hzY(86)} Q430,${hzY(54)} 560,${hzY(92)} `
+     +`Q700,${hzY(132)} 830,${hzY(88)} Q980,${hzY(42)} 1200,${hzY(96)} L1200,${GROUND_Y} Z` }));
+  scene.appendChild(mk("path", { fill:"var(--hill-near)",
+    d:`M0,${GROUND_Y} L0,${hzY(40)} Q190,${hzY(70)} 360,${hzY(42)} Q520,${hzY(18)} 700,${hzY(50)} `
+     +`Q900,${hzY(82)} 1200,${hzY(42)} L1200,${GROUND_Y} Z` }));
+  /* Acacias are planted at 2, 7, 12, 17 and 22 m — exactly 5 m apart, so the
+     row doubles as a scale the students can pace off without the ruler. */
+  TREES_M.forEach(([m, sc, dk]) => scene.appendChild(acacia(m*PPM, sc, dk)));
+  scene.appendChild(mk("rect", { x:0, y:GROUND_Y, width:SCENE_W, height:SCENE_H-GROUND_Y, fill:"url(#gnd)" }));
+  scene.appendChild(mk("line", { x1:0, y1:GROUND_Y, x2:SCENE_W, y2:GROUND_Y,
+    stroke:"var(--grass)", "stroke-width":2, opacity:.55 }));
+  // grass tufts on the near side of the lane
+  const rnd = lcg(7);
+  for (let i = 0; i < 110; i++){
+    const x = rnd()*SCENE_W, y = GROUND_Y + 6 + rnd()*(SCENE_H-GROUND_Y-10), h = 5 + rnd()*9;
+    scene.appendChild(mk("path", { d:`M${x},${y} q2,-${h} 5,-${h*1.2}`, stroke:"var(--grass)",
+      "stroke-width":1.6, fill:"none", opacity:.55, "stroke-linecap":"round" }));
+  }
+  actorLayer = mk("g", { id:"actorLayer" });
+  scene.appendChild(actorLayer);
+  flagLayer  = mk("g", { id:"flagLayer" });
+  scene.appendChild(flagLayer);
+}
+let actorLayer, flagLayer;
+/* tiny seeded RNG so patterns are stable */
+function lcg(seed){ let s = seed >>> 0; return () => (s = (s*1664525 + 1013904223) >>> 0) / 4294967296; }
+/* ==================================================================
+   RULER
+   ================================================================== */
+function buildRuler(){
+  const r = el("ruler");
+  r.textContent = "";
+  r.appendChild(mk("line", { x1:0, y1:8, x2:SCENE_W, y2:8, stroke:"var(--baseline)", "stroke-width":2 }));
+  for (let m = 0; m <= FIELD_M; m++){
+    const x = m*PPM, big = m % TICK_MAJOR === 0;
+    r.appendChild(mk("line", { x1:x, y1:8, x2:x, y2:big ? 24 : 16,
+      stroke: big ? "var(--text-secondary)" : "var(--baseline)", "stroke-width": big ? 2 : 1.4 }));
+    if (big){
+      const tx = mk("text", { x: m===0 ? 12 : (m===FIELD_M ? x-12 : x), y:44,
+        "text-anchor": m===0 ? "start" : (m===FIELD_M ? "end" : "middle"),
+        fill:"var(--muted)", "font-size":19, "font-family":"'Poppins', system-ui, sans-serif", "font-weight":700 });
+      tx.textContent = m + " m";
+      r.appendChild(tx);
+    }
+  }
+  rulerMarks = mk("g");
+  r.appendChild(rulerMarks);
+}
+let rulerMarks;
+/* ==================================================================
+   PARAMETRIC ANIMAL RENDERER
+   ================================================================== */
+function footOffset(u, S_px, lift, duty){
+  u -= Math.floor(u);
+  if (u < duty){ const s = u/duty; return { x: S_px/2 - s*S_px, y: 0 }; }
+  const s = (u - duty)/(1 - duty);
+  return { x: -S_px/2 + s*S_px, y: -lift*Math.sin(Math.PI*s) };
+}
+/* two-link limb; bend = +1 knee backwards (elbow), -1 knee forwards.
+   The sideways knee bulge is capped so a long-legged animal keeps a gentle
+   bend instead of folding shut like a compass and crossing its other legs. */
+function legPoints(hx, hy, fx, fy, L, bend, maxBulge){
+  let dx = fx - hx, dy = fy - hy;
+  let d = Math.hypot(dx, dy);
+  const max = 2*L - 0.001;
+  if (d > max){ const k = max/d; dx *= k; dy *= k; d = max; fx = hx+dx; fy = hy+dy; }
+  if (d < 0.001) d = 0.001;
+  let h = Math.sqrt(Math.max(0, L*L - (d/2)*(d/2)));
+  if (maxBulge != null) h = Math.min(h, maxBulge);
+  const mx = hx + dx/2, my = hy + dy/2;
+  const nx = -dy/d, ny = dx/d;
+  return [[hx,hy], [mx + nx*h*bend, my + ny*h*bend], [fx,fy]];
+}
+const ptsStr = (p) => p.map(q => q[0].toFixed(1)+","+q[1].toFixed(1)).join(" ");
+let clipSeq = 0;
+function buildActor(a){
+  const G = geom(a);
+  const M = G.M, H = G.H, L = G.L, D = G.D;
+  const biped = G.biped, legLen = G.legLen, seg = G.seg;
+  const noseOffPx = G.noseX;
+  const g = mk("g", { class:"actor" });
+  const shadow = mk("ellipse", {
+    cx: biped ? 0 : (noseOffPx - L)/2, cy:2,
+    rx: biped ? Math.max(L*0.34, legLen*0.30) : (L+noseOffPx)*0.40,
+    ry: Math.max(4, D*0.13), fill:"var(--shadow)" });
+  g.appendChild(shadow);
+  const bob = mk("g");                              // everything that bobs
+  g.appendChild(bob);
+  const farLegs = mk("g", { opacity:.72 });
+  bob.appendChild(farLegs);
+  /* ---- tail (behind torso; tilts with the back) ---- */
+  const rump = G.rump;
+  const tailG = mk("g", a.backTilt
+    ? { transform:`rotate(${a.backTilt} ${G.torso.cx} ${G.torso.cy})` } : {});
+  bob.appendChild(tailG);
+  if (a.tail){
+    const tl = a.tail.len*M;
+    const flow = S.gait === "run" ? 1 : 0;                 // streams out when running
+    const ex = rump.x - tl*(0.52 + 0.40*flow), ey = rump.y + tl*(0.66 - 0.50*flow);
+    const tail = mk("path", { d:`M${rump.x},${rump.y} Q${rump.x - tl*0.62},${rump.y + tl*(0.16 - 0.30*flow)} ${ex},${ey}`,
+      stroke:a.tail.type === "plume" ? a.belly : a.coat,
+      "stroke-width": a.tail.type === "brush" ? Math.max(3, D*0.13) : Math.max(2.4, D*0.06),
+      fill:"none", "stroke-linecap":"round" });
+    tailG.appendChild(tail);
+    if (a.tail.type === "tuft")
+      tailG.appendChild(mk("ellipse", { cx:ex, cy:ey + tl*0.06, rx:Math.max(3.5, D*0.09), ry:Math.max(5.5, D*0.15),
+        fill:a.dark }));
+    if (a.tail.type === "brush")
+      tailG.appendChild(mk("path", { d:`M${ex},${ey} q${-tl*0.10},${tl*0.30} ${tl*0.06},${tl*0.42}`,
+        stroke:a.dark, "stroke-width":Math.max(4, D*0.16), fill:"none", "stroke-linecap":"round" }));
+    if (a.tail.type === "plume")
+      tailG.appendChild(mk("ellipse", { cx:rump.x - tl*0.30, cy:rump.y + tl*0.06,
+        rx:tl*0.86, ry:tl*0.66, fill:a.belly, opacity:.95,
+        transform:`rotate(-18 ${rump.x - tl*0.34} ${rump.y + tl*0.10})` }));
+  }
+  /* ---- torso ---- */
+  const cx = G.torso.cx, cy = G.torso.cy;
+  const clipId = "clip-" + a.id + "-" + (++clipSeq);
+  const clip = mk("clipPath", { id: clipId });
+  let torsoShape;
+  if (G.human){
+    torsoShape = mk("rect", { x:-D*0.46, y:-(H + L), width:D*0.92, height:L, rx:D*0.36 });
+  } else if (biped){
+    torsoShape = mk("ellipse", { cx:cx, cy:cy, rx:L*0.56, ry:D/2 });
+  } else {
+    torsoShape = mk("ellipse", { cx:cx, cy:cy, rx:L/2, ry:D/2 });
+  }
+  clip.appendChild(torsoShape.cloneNode());
+  bob.appendChild(clip);
+  /* torso group carries the back-slope so the coat pattern tilts with it */
+  const torsoG = mk("g", a.backTilt ? { transform:`rotate(${a.backTilt} ${cx} ${cy})` } : {});
+  bob.appendChild(torsoG);
+  const torso = torsoShape.cloneNode();
+  torso.setAttribute("fill", a.coat);
+  torsoG.appendChild(torso);
+  /* belly wash */
+  if (!biped){
+    torsoG.appendChild(mk("ellipse", { cx:cx + L*0.06, cy:cy + D*0.22, rx:L*0.40, ry:D*0.26,
+      fill:a.belly, opacity:.75, "clip-path":`url(#${clipId})` }));
+  }
+  /* folded wing (ratites) */
+  if (a.wing)
+    torsoG.appendChild(mk("ellipse", { cx:cx - L*0.06, cy:cy + D*0.06, rx:L*0.36, ry:D*0.26,
+      fill:a.belly, opacity:.9, transform:`rotate(-8 ${cx - L*0.06} ${cy + D*0.06})` }));
+  /* ---- coat pattern ---- */
+  const pat = mk("g", { "clip-path":`url(#${clipId})` });
+  const rnd = lcg(a.id.length*977 + 13);
+  if (a.pattern === "spots"){
+    for (let i = 0; i < 46; i++){
+      const px = cx + (rnd()-0.5)*L, py = cy + (rnd()-0.5)*D;
+      pat.appendChild(mk("ellipse", { cx:px, cy:py, rx:Math.max(1.1, D*0.055), ry:Math.max(1.1, D*0.045),
+        fill:a.dark, opacity:.85 }));
+    }
+  } else if (a.pattern === "stripes"){
+    for (let i = 0; i <= 13; i++){
+      const px = cx - L/2 + (i/13)*L;
+      pat.appendChild(mk("path", { d:`M${px},${cy-D} q${D*0.16},${D} 0,${2*D}`,
+        stroke:a.dark, "stroke-width":Math.max(2.4, L*0.030), fill:"none" }));
+    }
+  } else if (a.pattern === "patches"){
+    for (let i = 0; i < 34; i++){
+      const px = cx + (rnd()-0.5)*L*1.06, py = cy + (rnd()-0.5)*D*1.06;
+      const r0 = Math.max(3.5, D*0.19);
+      pat.appendChild(mk("path", { d:hexPath(px, py, r0*(0.75+rnd()*0.5)), fill:a.dark, opacity:.9 }));
+    }
+  } else if (a.pattern === "band"){
+    pat.appendChild(mk("rect", { x:cx-L/2, y:cy+D*0.06, width:L, height:D*0.20, fill:a.dark, opacity:.85 }));
+    pat.appendChild(mk("rect", { x:cx-L/2, y:cy+D*0.26, width:L, height:D*0.30, fill:"#ffffff", opacity:.85 }));
+  }
+  torsoG.appendChild(pat);
+  /* ---- neck + head group ---- */
+  const headG = mk("g");
+  bob.appendChild(headG);
+  const nb = G.nb, ne = G.ne;
+  if (!G.human){
+    headG.appendChild(mk("line", { x1:nb.x, y1:nb.y, x2:ne.x, y2:ne.y, stroke:a.coat,
+      "stroke-width": Math.max(6, D*(a.id==="giraffe"?0.30:a.id==="ostrich"?0.16:0.55)), "stroke-linecap":"round" }));
+    if (a.pattern === "patches"){
+      const nStripe = mk("g");
+      for (let i = 1; i < 7; i++){
+        const f = i/7, px = nb.x + (ne.x-nb.x)*f, py = nb.y + (ne.y-nb.y)*f;
+        nStripe.appendChild(mk("path", { d:hexPath(px, py, D*0.11), fill:a.dark, opacity:.9 }));
+      }
+      headG.appendChild(nStripe);
+    }
+    if (a.pattern === "stripes"){
+      for (let i = 1; i < 6; i++){
+        const f = i/6, px = nb.x + (ne.x-nb.x)*f, py = nb.y + (ne.y-nb.y)*f;
+        headG.appendChild(mk("circle", { cx:px, cy:py, r:D*0.09, fill:a.dark }));
+      }
+    }
+  }
+  if (a.mane){
+    headG.appendChild(a.id === "lion"
+      ? mk("circle", { cx:ne.x*0.75, cy:ne.y*1.0, r:Math.max(9, D*0.72), fill:a.dark, opacity:.9 })
+      : mk("path", { d:`M${nb.x},${nb.y} Q${(nb.x+ne.x)/2 - D*0.18},${(nb.y+ne.y)/2 - D*0.30} ${ne.x},${ne.y}`,
+          stroke:a.dark, "stroke-width":Math.max(4, D*0.20), fill:"none", "stroke-linecap":"round" }));
+  }
+  const hAng = G.hAng;
+  const hx = G.headC.x, hy = G.headC.y;
+  const headEl = mk("ellipse", { cx:hx, cy:hy, rx:a.head.len*M*0.58, ry:a.head.h*M*0.52,
+    fill:a.coat, transform:`rotate(${a.neck.ang*0.30} ${hx} ${hy})` });
+  headG.appendChild(headEl);
+  const noseX = ne.x + a.head.len*M*Math.cos(hAng), noseY = ne.y + a.head.len*M*Math.sin(hAng);
+  /* eye */
+  headG.appendChild(mk("circle", { cx:hx + a.head.len*M*0.16, cy:hy - a.head.h*M*0.16,
+    r:Math.max(1.3, a.head.h*M*0.10), fill:"#1b1b1b" }));
+  /* ear */
+  if (!a.bigEar && !G.human && !a.noEar)
+    headG.appendChild(mk("ellipse", { cx:hx - a.head.len*M*0.34, cy:hy - a.head.h*M*0.55,
+      rx:Math.max(2.5, a.head.h*M*0.24), ry:Math.max(3.5, a.head.h*M*0.36), fill:a.dark, opacity:.85,
+      transform:`rotate(-24 ${hx - a.head.len*M*0.34} ${hy - a.head.h*M*0.55})` }));
+  if (a.horns === "straight"){
+    const hh = a.head.h*M;
+    [-2.5, 1.5].forEach(dx => headG.appendChild(mk("path", {
+      d:`M${hx+dx},${hy - hh*0.45} q${-hh*0.35},${-hh*1.1} ${hh*0.15},${-hh*2.0}`,
+      stroke:a.dark, "stroke-width":Math.max(1.8, hh*0.13), fill:"none", "stroke-linecap":"round" })));
+  }
+  if (a.horns === "curved"){
+    const hh = a.head.h*M, bx = hx - a.head.len*M*0.20, by = hy - hh*0.42;
+    headG.appendChild(mk("path", {
+      d:`M${bx},${by} q${-hh*0.34},${-hh*0.30} ${hh*0.04},${-hh*0.54} q${hh*0.40},${-hh*0.06} ${hh*0.36},${hh*0.20}`,
+      stroke:"#e9e2d0", "stroke-width":Math.max(2.4, hh*0.15), fill:"none", "stroke-linecap":"round" }));
+  }
+  if (a.beak){
+    const hh = a.head.h*PPM;
+    headG.appendChild(mk("path", { d:`M${G.noseX - hh*0.30},${hy - hh*0.10} L${G.noseX + hh*0.10},${hy + hh*0.10} `
+      + `L${G.noseX - hh*0.30},${hy + hh*0.30} Z`, fill:a.dark }));
+  }
+  if (a.horns === "ossicone"){
+    [-4, 5].forEach(dx => {
+      headG.appendChild(mk("line", { x1:hx+dx, y1:hy - a.head.h*M*0.45, x2:hx+dx-1, y2:hy - a.head.h*M*1.35,
+        stroke:a.dark, "stroke-width":3.2, "stroke-linecap":"round" }));
+      headG.appendChild(mk("circle", { cx:hx+dx-1, cy:hy - a.head.h*M*1.4, r:3, fill:a.dark }));
+    });
+  }
+  if (a.bigEar)
+    headG.insertBefore(mk("ellipse", { cx:hx - a.head.len*M*0.62, cy:hy - a.head.h*M*0.12,
+      rx:a.head.len*M*0.62, ry:a.head.h*M*0.80, fill:a.dark, opacity:.85 }), headEl);
+  if (a.tusks)
+    [0.30, 0.44].forEach((f,i) => headG.appendChild(mk("path", {
+      d:`M${noseX - a.head.len*M*0.25},${noseY + a.head.h*M*0.10} q${a.head.len*M*0.5},${a.head.h*M*(0.5+f*0.2)} ${a.head.len*M*0.78},${a.head.h*M*0.55}`,
+      stroke:"#f0ead6", "stroke-width":4 - i, fill:"none", "stroke-linecap":"round", opacity:.95 })));
+  if (a.trunk){
+    const t0x = noseX - a.head.len*M*0.10, t0y = noseY + a.head.h*M*0.18;
+    const tw = 1.55*M;
+    headG.appendChild(mk("path", {
+      d:`M${t0x},${t0y} q${tw*0.42},${tw*0.30} ${tw*0.40},${tw*0.62} q-0.02,${tw*0.26} ${tw*0.22},${tw*0.20}`,
+      stroke:a.coat, "stroke-width":Math.max(7, a.head.h*M*0.30), fill:"none", "stroke-linecap":"round" }));
+  }
+  if (G.human){
+    const hcy = -(H + L + a.head.h*M*0.42);
+    headG.appendChild(mk("circle", { cx:0, cy:hcy, r:a.head.h*M*0.46, fill:a.belly }));
+    headG.appendChild(mk("path", { d:`M${-a.head.h*M*0.48},${hcy - a.head.h*M*0.24} `
+      + `a${a.head.h*M*0.50},${a.head.h*M*0.50} 0 0 1 ${a.head.h*M*0.96},0 z`, fill:"#3a2a1c" }));
+  }
+  /* ---- legs (or arms for human) ---- */
+  const nearLegs = mk("g");
+  bob.appendChild(nearLegs);
+  const legDefs = [];
+  let hipSpan = legLen;                    // distance between fore and hind hips
+  if (biped){
+    const hp = G.hips[0];
+    legDefs.push({ ...hp, phase:0.0, far:true  });
+    legDefs.push({ ...hp, phase:0.5, far:false });
+  } else {
+    const hind = G.hips[0], fore = G.hips[1];
+    hipSpan = fore.hx - hind.hx;
+    legDefs.push({ ...hind, phase:0.00, far:true  });
+    legDefs.push({ ...fore, phase:0.25, far:true  });
+    legDefs.push({ ...hind, phase:0.50, far:false });
+    legDefs.push({ ...fore, phase:0.75, far:false });
+  }
+  const legW = Math.max(2.6, Math.min(legLen*0.20, D*0.26) * (a.legWFactor || 1));
+  const legEls = legDefs.map(def => {
+    const p = mk("polyline", { points:"", fill:"none",
+      stroke: a.legColor || (G.human ? a.belly : a.coat),
+      "stroke-width": legW, "stroke-linecap":"round", "stroke-linejoin":"round" });
+    (def.far ? farLegs : nearLegs).appendChild(p);
+    return p;
+  });
+  /* hooves / feet */
+  const hoofEls = a.id === "human" ? [] : legDefs.map(def => {
+    const c = mk("ellipse", { rx:legW*0.62, ry:legW*0.40, fill:a.hoof || a.dark, opacity:.9 });
+    (def.far ? farLegs : nearLegs).appendChild(c);
+    return c;
+  });
+  /* human arms */
+  let armEls = [];
+  if (G.human){
+    armEls = [0.5, 0.0].map((ph,i) => {
+      const p = mk("polyline", { points:"", fill:"none", stroke:a.belly,
+        "stroke-width":Math.max(3, legLen*0.10), "stroke-linecap":"round", "stroke-linejoin":"round" });
+      (i === 0 ? farLegs : nearLegs).appendChild(p);
+      return { el:p, phase:ph };
+    });
+  }
+  /* head-bob amplitude shrinks as the neck gets long, or a giraffe's head would swing metres */
+  const headSwing = Math.min(4, 60/Math.max(12, Math.hypot(ne.x, ne.y)));
+  return {
+    node: g, spec: a, legDefs, legEls, hoofEls, armEls, bob, headG, shadow, headSwing, hipSpan, kneeCap: legLen*0.13,
+    H, L, D, legLen, seg, noseOffsetPx: noseOffPx,
+    update(t){
+      const strideM = a.stride[S.gait], duty = a.duty[S.gait];
+      const f  = a.speed[S.gait]/strideM;                  // gait cycles per second
+      const stridePx = Math.min(strideM*duty*M, this.legLen*0.62, this.hipSpan*0.62);
+      const lift = this.legLen*(S.gait === "run" ? 0.26 : 0.16);
+      const bobAmp = this.H*a.bob[S.gait];
+      const u0 = f*t;
+      const bobY = S.gait === "run"
+        ? -bobAmp*Math.pow(Math.max(0, Math.sin(2*Math.PI*(u0 + 0.22))), 1.4)
+        : -bobAmp*Math.abs(Math.sin(2*Math.PI*u0));
+      this.bob.setAttribute("transform", `translate(0,${bobY.toFixed(2)})`);
+      this.headG.setAttribute("transform",
+        `rotate(${(Math.sin(2*Math.PI*(u0 + 0.4))*this.headSwing*(S.gait === "run" ? 1 : 0.5)).toFixed(2)} 0 ${(-this.H).toFixed(1)})`);
+      this.legDefs.forEach((d, i) => {
+        const off = footOffset(u0 + d.phase, stridePx, lift, duty);
+        const fx = d.hx + off.x, fy = -bobY + off.y;
+        this.legEls[i].setAttribute("points", ptsStr(legPoints(d.hx, d.hy, fx, fy, this.seg, d.bend, this.kneeCap)));
+        if (this.hoofEls[i]){
+          this.hoofEls[i].setAttribute("cx", fx.toFixed(1));
+          this.hoofEls[i].setAttribute("cy", fy.toFixed(1));
+        }
+      });
+      this.armEls.forEach(am => {
+        const off = footOffset(u0 + am.phase, stridePx*0.7, 0, duty);
+        const sy = -(this.H + this.L*0.86);
+        const pts = legPoints(0, sy, off.x*0.9, sy + this.L*0.78, this.L*0.43, off.x > 0 ? -1 : 1, this.L*0.10);
+        am.el.setAttribute("points", ptsStr(pts));
+      });
+      this.shadow.setAttribute("rx", ((this.L + this.noseOffsetPx)*0.40*(1 - 0.09*(bobY/-Math.max(1, bobAmp)))).toFixed(1));
+    }
+  };
+}
+function hexPath(cx, cy, r){
+  let d = "";
+  for (let i = 0; i < 6; i++){
+    const th = (Math.PI/3)*i + 0.3;
+    d += (i ? "L" : "M") + (cx + r*Math.cos(th)).toFixed(1) + "," + (cy + r*Math.sin(th)*0.85).toFixed(1);
+  }
+  return d + "Z";
+}
+/* ==================================================================
+   FLAGS
+   ================================================================== */
+let flagA, flagB;
+function buildFlags(){
+  flagLayer.textContent = "";
+  flagA = makeFlag("A", "#e34948");
+  flagB = makeFlag("B", "#2a78d6");
+  flagLayer.appendChild(flagA.g);
+  flagLayer.appendChild(flagB.g);
+}
+function makeFlag(label, color){
+  const g = mk("g", { class:"flag", style:"cursor:ew-resize", tabindex:"0",
+    role:"slider", "aria-label":`Flag ${label} position in metres`, opacity:"0" });
+  g.appendChild(mk("line", { x1:0, y1:GROUND_Y+50, x2:0, y2:GROUND_Y-262, stroke:color,
+    "stroke-width":2.5, "stroke-dasharray":"7 5" }));
+  g.appendChild(mk("path", { d:"M0,-262 L46,-248 L0,-234 Z", fill:color,
+    transform:`translate(0,${GROUND_Y})` }));
+  const t = mk("text", { x:14, y:GROUND_Y-244, fill:"#fff", "font-size":17, "font-weight":"700",
+    "font-family":"'Poppins', system-ui, sans-serif" });
+  t.textContent = label;
+  g.appendChild(t);
+  g.appendChild(mk("circle", { cy:GROUND_Y, r:8, fill:color, stroke:"#fff", "stroke-width":2.5 }));
+  const hit = mk("rect", { x:-22, y:GROUND_Y-266, width:70, height:326, fill:"transparent" });
+  g.appendChild(hit);
+  const val = mk("text", { x:0, y:GROUND_Y+46, "text-anchor":"middle", fill:"#fff",
+    "font-size":17, "font-weight":"700", "font-family":"'Poppins', system-ui, sans-serif",
+    style:"paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-width:4px" });
+  g.appendChild(val);
+  return { g, val, color, label };
+}
+function placeFlag(flag, m){
+  if (m == null){ flag.g.setAttribute("opacity", "0"); return; }
+  flag.g.setAttribute("opacity", "1");
+  flag.g.setAttribute("transform", `translate(${(m*PPM).toFixed(1)},0)`);
+  flag.val.textContent = fmt(m, 1) + " m";
+  flag.g.setAttribute("aria-valuenow", fmt(m, 1));
+}
+/* drag + keyboard */
+function wireFlagDrag(flag, key){
+  const setFromClient = (clientX) => {
+    const r = scene.getBoundingClientRect();
+    const m = ((clientX - r.left) / r.width) * FIELD_M;
+    const cl = Math.round(Math.min(FIELD_M, Math.max(0, m))*10)/10;
+    if (!S[key]) S[key] = { x:cl, t:null }; else S[key].x = cl;
+    refreshMeasurements();
+  };
+  flag.g.addEventListener("pointerdown", (e) => {
+    if (flag.g.getAttribute("opacity") === "0") return;
+    flag.g.setPointerCapture(e.pointerId); flag.g.dataset.drag = "1"; e.preventDefault();
+  });
+  flag.g.addEventListener("pointermove", (e) => { if (flag.g.dataset.drag === "1") setFromClient(e.clientX); });
+  const stop = (e) => { flag.g.dataset.drag = "0"; try{ flag.g.releasePointerCapture(e.pointerId); }catch(_){} };
+  flag.g.addEventListener("pointerup", stop);
+  flag.g.addEventListener("pointercancel", stop);
+  flag.g.addEventListener("keydown", (e) => {
+    if (!S[key]) return;
+    const step = e.shiftKey ? 1 : 0.1;
+    const rnd1 = (n) => Math.round(n*10)/10;
+    if (e.key === "ArrowLeft"){ S[key].x = rnd1(Math.max(0, S[key].x - step)); refreshMeasurements(); e.preventDefault(); }
+    if (e.key === "ArrowRight"){ S[key].x = rnd1(Math.min(FIELD_M, S[key].x + step)); refreshMeasurements(); e.preventDefault(); }
+  });
+}
+/* ==================================================================
+   ACTOR PLACEMENT
+   ================================================================== */
+let actor = null;
+function loadActor(){
+  actorLayer.textContent = "";
+  actor = buildActor(S.animal);
+  actorLayer.appendChild(actor.node);
+}
+const nosePosM = (t) => v()*t;                     // nose starts at x = 0 m
+function renderFrame(){
+  const xNoseM = nosePosM(S.t);
+  const tx = xNoseM*PPM - actor.noseOffsetPx;
+  actor.node.setAttribute("transform", `translate(${tx.toFixed(1)},${GROUND_Y})`);
+  actor.update(S.t);
+  el("timecode").textContent = timecode(S.t);
+  el("clock").textContent = fmt(S.t, 2) + " s";
+  const sc = el("scrub");
+  if (document.activeElement !== sc) sc.value = String(S.t);
+}
+function timecode(t){
+  const s = Math.floor(t), cs = Math.round((t - s)*100);
+  return String(Math.floor(s/60)).padStart(2,"0") + ":" +
+         String(s%60).padStart(2,"0") + "." + String(Math.min(99,cs)).padStart(2,"0");
+}
+/* ==================================================================
+   PLAYBACK
+   ================================================================== */
+let raf = null, last = 0;
+function tick(now){
+  if (!S.playing) return;
+  const dt = Math.min(0.05, (now - last)/1000);
+  last = now;
+  S.t += dt*S.rate;
+  if (S.t >= durS()){ S.t = durS(); setPlaying(false); }
+  renderFrame();
+  raf = requestAnimationFrame(tick);
+}
+function setPlaying(on){
+  S.playing = on;
+  el("playBtn").innerHTML = on ? "❚❚ Pause" : "▶ Play";
+  el("recBadge").classList.toggle("paused", !on);
+  el("recTxt").textContent = on ? "REC" : "PAUSED";
+  if (on){ last = performance.now(); raf = requestAnimationFrame(tick); }
+  else if (raf){ cancelAnimationFrame(raf); raf = null; }
+}
+function seek(t){
+  S.t = Math.min(durS(), Math.max(0, t));
+  renderFrame();
+}
+function resetTake(){
+  setPlaying(false);
+  S.t = 0;
+  el("scrub").max = String(durS());
+  el("scrub").step = "0.01";
+  renderFrame();
+}
+/* ==================================================================
+   MEASUREMENT
+   ================================================================== */
+function refreshMeasurements(){
+  placeFlag(flagA, S.markA ? S.markA.x : null);
+  placeFlag(flagB, S.markB ? S.markB.x : null);
+  drawRulerMarks();
+  const x1 = S.markA ? S.markA.x : null, x2 = S.markB ? S.markB.x : null;
+  const t1 = S.markA ? S.markA.t : null, t2 = S.markB ? S.markB.t : null;
+  el("x1Out").innerHTML = x1 != null ? fmt(x1,1) + ' <small>m</small>' : '— <small>m</small>';
+  el("x2Out").innerHTML = x2 != null ? fmt(x2,1) + ' <small>m</small>' : '— <small>m</small>';
+  el("t1Out").innerHTML = t1 != null ? fmt(t1,2) + ' <small>s</small>' : '— <small>s</small>';
+  el("t2Out").innerHTML = t2 != null ? fmt(t2,2) + ' <small>s</small>' : '— <small>s</small>';
+  /* the worksheet shows the SUBSTITUTION, never the result */
+  el("fD").textContent = (x1 != null && x2 != null) ? `${fmt(x2,1)} m − ${fmt(x1,1)} m` : "x₂ − x₁";
+  el("fT").textContent = (t1 != null && t2 != null) ? `${fmt(t2,2)} s − ${fmt(t1,2)} s` : "t₂ − t₁";
+  el("fV").textContent = (S.work.d != null && S.work.t != null)
+    ? `${fmt(S.work.d,1)} m ÷ ${fmt(S.work.t,2)} s` : "d ÷ t";
+  return { x1, x2, t1, t2 };
+}
+function drawRulerMarks(){
+  rulerMarks.textContent = "";
+  [[S.markA, "#e34948", "A"], [S.markB, "#2a78d6", "B"]].forEach(([mkd, c]) => {
+    if (!mkd) return;
+    const x = mkd.x*PPM;
+    rulerMarks.appendChild(mk("path", { d:`M${x},4 l-7,-8 l14,0 Z`, fill:c }));
+    rulerMarks.appendChild(mk("line", { x1:x, y1:4, x2:x, y2:26, stroke:c, "stroke-width":2.5 }));
+  });
+}
+/* ==================================================================
+   THE WORKSHEET — three gated steps, each checked against the
+   student's own readings.  Nothing is filled in for them, and a wrong
+   answer gets a hint first; the worked number only appears on the
+   third attempt.
+   ================================================================== */
+const STEP = {
+  d: { box:"stepD", input:"ansD", verdict:"vD", tick:"tickD", next:"stepT", unit:"m",  dp:1,
+       tol:(c) => Math.max(0.12, Math.abs(c)*0.005),
+       label:"distance",
+       hint:"Take the ending position and subtract the starting position from it." },
+  t: { box:"stepT", input:"ansT", verdict:"vT", tick:"tickT", next:"stepV", unit:"s",  dp:2,
+       tol:(c) => Math.max(0.015, Math.abs(c)*0.005),
+       label:"time",
+       hint:"Subtract the start time from the end time." },
+  v: { box:"stepV", input:"ansV", verdict:"vV", tick:"tickV", next:null,   unit:"m/s", dp:1,
+       tol:(c) => Math.max(0.3, Math.abs(c)*0.05),
+       label:"speed",
+       hint:"Divide the distance by the time — not the other way round." }
+};
+function correctValue(key){
+  const m = refreshMeasurements();
+  if (key === "d") return (m.x1 != null && m.x2 != null) ? m.x2 - m.x1 : null;
+  if (key === "t") return (m.t1 != null && m.t2 != null) ? m.t2 - m.t1 : null;
+  if (key === "v") return (S.work.d != null && S.work.t != null && S.work.t > 0)
+                          ? S.work.d / S.work.t : null;
+  return null;
+}
+function checkStep(key){
+  const st = STEP[key], out = el(st.verdict);
+  const correct = correctValue(key);
+  if (correct == null){
+    out.className = "verdict no";
+    out.textContent = key === "v"
+      ? "Work out the distance and the time first."
+      : "Mark a start and an end point on the tape first.";
+    return;
+  }
+  const guess = parseFloat(el(st.input).value);
+  if (Number.isNaN(guess)){
+    out.className = "verdict";
+    out.textContent = `Type your ${st.label} in the box, then press Check.`;
+    return;
+  }
+  S.tries[key]++;
+  if (Math.abs(guess - correct) <= st.tol(correct)){
+    S.work[key] = correct;
+    el(st.tick).textContent = "✓";
+    el(st.box).classList.add("done");
+    out.className = "verdict ok";
+    out.textContent = `✓ Correct — ${fmt(correct, st.dp)} ${st.unit}.`;
+    if (st.next) el(st.next).classList.remove("locked");
+    if (key === "v") showSpeed(correct);
+    refreshMeasurements();
+    updateSaveState();
+    return;
+  }
+  /* wrong: hint, then hint + a nudge, then the worked line */
+  el(st.tick).textContent = "";
+  out.className = "verdict no";
+  if (S.tries[key] === 1){
+    out.textContent = `Not quite. ${st.hint}`;
+  } else if (S.tries[key] === 2){
+    out.textContent = `Still off. ${st.hint} Check your units and read the numbers above once more.`;
+  } else {
+    out.textContent = `${st.hint} Set it up like this: ${el(key === "d" ? "fD" : key === "t" ? "fT" : "fV").textContent}.`;
+  }
+}
+function showSpeed(v){
+  el("sMine").innerHTML = fmt(v,1) + ' <small>m/s</small>';
+  el("sConv").innerHTML = fmt(v*3.6,0) + ' <small>km/h</small> &nbsp;·&nbsp; ' +
+                          fmt(v*2.237,0) + ' <small>mph</small>';
+}
+function updateSaveState(){
+  el("logBtn").disabled = !(S.work.d != null && S.work.t != null && S.work.v != null);
+}
+/* wipe the worksheet and re-lock steps 2 and 3 */
+function resetWorksheet(){
+  S.work = { d:null, t:null, v:null };
+  S.tries = { d:0, t:0, v:0 };
+  ["d","t","v"].forEach(k => {
+    const st = STEP[k];
+    el(st.input).value = "";
+    el(st.verdict).textContent = "";
+    el(st.verdict).className = "verdict";
+    el(st.tick).textContent = "";
+    el(st.box).classList.remove("done");
+    if (st.box !== "stepD") el(st.box).classList.add("locked");
+  });
+  el("sMine").innerHTML = '— <small>m/s</small>';
+  el("sConv").innerHTML = '— <small>km/h</small>';
+  updateSaveState();
+  refreshMeasurements();
+}
+/* ==================================================================
+   TRIAL LOG + CHART
+   ================================================================== */
+function logTrial(){
+  if (S.work.d == null || S.work.t == null || S.work.v == null) return;
+  S.trials.push({ name:S.animal.name, id:S.animal.id, gait:S.gait,
+                  x1:S.markA.x, x2:S.markB.x, t1:S.markA.t, t2:S.markB.t,
+                  d:S.work.d, dt:S.work.t, measured:S.work.v });
+  el("vV").className = "verdict ok";
+  el("vV").textContent = `Saved: ${S.animal.name} (${S.gait}) at ${fmt(S.work.v,1)} m/s.`;
+  drawResults();
+}
+function drawResults(){
+  const tbody = el("logTable").querySelector("tbody");
+  tbody.textContent = "";
+  const has = S.trials.length > 0;
+  el("logTable").classList.toggle("hidden", !has);
+  el("chartEmpty").classList.toggle("hidden", has);
+  el("chart").classList.toggle("hidden", !has);
+  if (!has){ el("chart").textContent = ""; return; }
+  S.trials.forEach(tr => {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${tr.name}</td><td>${tr.gait}</td>` +
+      `<td>${fmt(tr.x1,1)}</td><td>${fmt(tr.x2,1)}</td><td>${fmt(tr.d,1)}</td>` +
+      `<td>${fmt(tr.t1,2)}</td><td>${fmt(tr.t2,2)}</td><td>${fmt(tr.dt,2)}</td>` +
+      `<td><b>${fmt(tr.measured,1)}</b></td>`;
+    tbody.appendChild(row);
+  });
+  /* ---- horizontal bar chart ---- */
+  const c = el("chart");
+  c.textContent = "";
+  const CAP = 20;
+  const rows = S.trials.slice(-CAP);
+  el("chartCap").textContent = S.trials.length > CAP
+    ? `Showing the most recent ${CAP} of ${S.trials.length} trials — the table below has them all.` : "";
+  const rowH = 33, padT = 14, padB = 30, padL = 170, padR = 74, W = 900;
+  const H = padT + rows.length*rowH + padB;
+  c.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const maxV = Math.max(...rows.map(r => r.measured)) * 1.12 || 1;
+  const plotW = W - padL - padR;
+  const x = (val) => padL + (val/maxV)*plotW;
+  /* gridlines + ticks (rounded to clean numbers) */
+  const stepGuess = maxV/4;
+  const mag = Math.pow(10, Math.floor(Math.log10(stepGuess)));
+  const step = [1,2,2.5,5,10].map(m => m*mag).find(s => s >= stepGuess) || mag*10;
+  for (let gv = 0; gv <= maxV; gv += step){
+    c.appendChild(mk("line", { x1:x(gv), y1:padT-4, x2:x(gv), y2:H-padB,
+      stroke: gv === 0 ? "var(--baseline)" : "var(--grid)", "stroke-width":1 }));
+    const tx = mk("text", { x:x(gv), y:H-padB+20, "text-anchor":"middle", fill:"var(--muted)",
+      "font-size":13, "font-family":"'Poppins', system-ui, sans-serif", "font-weight":700, style:"font-variant-numeric:tabular-nums" });
+    tx.textContent = gv % 1 === 0 ? String(gv) : gv.toFixed(1);
+    c.appendChild(tx);
+  }
+  const unit = mk("text", { x:W-padR+8, y:H-padB+20, fill:"var(--muted)", "font-size":13,
+    "font-family":"'Poppins', system-ui, sans-serif", "font-weight":700, "text-anchor":"start" });
+  unit.textContent = "m/s";
+  c.appendChild(unit);
+  rows.forEach((r, i) => {
+    const yc = padT + i*rowH + rowH/2;
+    const bh = Math.min(18, rowH - 13);                      // ≤24px, leaves air (2px+ gap)
+    const lab = mk("text", { x:padL-12, y:yc+5, "text-anchor":"end", fill:"var(--text-secondary)",
+      "font-size":14, "font-family":"'Poppins', system-ui, sans-serif", "font-weight":700 });
+    lab.textContent = `${r.name} · ${r.gait}`;
+    c.appendChild(lab);
+    const w = Math.max(2, x(r.measured) - padL);
+    c.appendChild(mk("path", { fill:"var(--series-1)",
+      d:roundedRightBar(padL, yc - bh/2, w, bh, 4) }));
+    const valT = mk("text", { x:x(r.measured) + 10, y:yc+5, fill:"var(--text-primary)",
+      "font-size":14, "font-weight":"700", "font-family":"'Poppins', system-ui, sans-serif",
+      style:"font-variant-numeric:tabular-nums" });
+    valT.textContent = fmt(r.measured, 1);
+    c.appendChild(valT);
+  });
+}
+function roundedRightBar(x0, y0, w, h, r){
+  r = Math.min(r, w, h/2);
+  return `M${x0},${y0} H${x0+w-r} a${r},${r} 0 0 1 ${r},${r} V${y0+h-r} a${r},${r} 0 0 1 ${-r},${r} H${x0} Z`;
+}
+/* ==================================================================
+   UI WIRING
+   ================================================================== */
+/* the picker shows each species at true relative size, drawn by the same renderer */
+const ICON_W = 46, ICON_H = 32;
+function chipIcon(a){
+  const svg = mk("svg", { width:ICON_W, height:ICON_H, "aria-hidden":"true",
+    style:"overflow:visible;flex:0 0 auto" });
+  const holder = mk("g");
+  svg.appendChild(holder);
+  const act = buildActor(a);
+  act.update(0);
+  holder.appendChild(act.node);
+  /* fit after layout, when getBBox() is meaningful */
+  requestAnimationFrame(() => {
+    let bb;
+    try { bb = act.node.getBBox(); } catch(_) { return; }
+    if (!bb || !bb.width || !bb.height) return;
+    const pad = 2;
+    /* fit each species to the chip, then shrink the small ones a little so the
+       picker still hints at real relative size without making a gazelle unreadable */
+    const G = geom(a);
+    const relH = (Math.max(G.H, -G.ne.y, -G.headC.y) + a.head.h*PPM*1.2) / MAX_ICON.h;
+    const rel = 0.64 + 0.36*Math.sqrt(relH);
+    const k = Math.min((ICON_W - pad*2)/bb.width, (ICON_H - pad*2)/bb.height) * rel;
+    holder.setAttribute("transform",
+      `translate(${(ICON_W - bb.width*k)/2 - bb.x*k},${ICON_H - pad - (bb.y + bb.height)*k})`
+      + ` scale(${k})`);
+  });
+  return svg;
+}
+/* the largest species sets the shared icon scale */
+const MAX_ICON = ANIMALS.reduce((m, a) => {
+  const G = geom(a);
+  const w = G.noseX - G.rump.x + Math.abs(a.tail ? a.tail.len*PPM*0.9 : 0);
+  const h = Math.max(G.H, -G.ne.y, -G.headC.y) + a.head.h*PPM*1.2;
+  return { w: Math.max(m.w, w), h: Math.max(m.h, h) };
+}, { w:1, h:1 });
+function buildChips(){
+  const box = el("chips");
+  box.textContent = "";
+  ANIMALS.forEach(a => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(a.id === S.animal.id));
+    b.appendChild(chipIcon(a));
+    b.appendChild(document.createTextNode(a.name));
+    b.onclick = () => {
+      S.animal = a;
+      [...box.children].forEach(c => c.setAttribute("aria-pressed","false"));
+      b.setAttribute("aria-pressed","true");
+      newTake();
+    };
+    box.appendChild(b);
+  });
+}
+function newTake(){
+  S.markA = S.markB = null;
+  loadActor();
+  resetTake();
+  resetWorksheet();
+}
+function setGait(g){
+  S.gait = g;
+  el("gaitWalk").setAttribute("aria-pressed", String(g === "walk"));
+  el("gaitRun").setAttribute("aria-pressed",  String(g === "run"));
+  newTake();
+}
+function mark(which){
+  const noseM = nosePosM(S.t);
+  if (noseM > FIELD_M + 0.001){
+    const out = el("vD");
+    out.className = "verdict no";
+    out.textContent = "The animal's nose has already left the frame — scrub back to a moment "
+      + "where you can still see it, then mark again.";
+    return;
+  }
+  const tR = Math.round(S.t*100)/100;          // the clock reads 2 dp …
+  seek(tR);                                     // … so park the tape exactly there
+  S[which] = { x: Math.round(Math.max(0, nosePosM(tR))*10)/10, t: tR };   // ruler reads 1 dp
+  el("vD").textContent = "";
+  el("vD").className = "verdict";
+  refreshMeasurements();
+}
+/* ---- boot ---- */
+buildScene();
+buildRuler();
+buildFlags();
+wireFlagDrag(flagA, "markA");
+wireFlagDrag(flagB, "markB");
+buildChips();
+newTake();
+drawResults();
+el("playBtn").onclick = () => {
+  if (!S.playing && S.t >= durS() - 1e-6) S.t = 0;
+  setPlaying(!S.playing);
+};
+el("rewindBtn").onclick = () => { setPlaying(false); seek(0); };
+el("b10").onclick = () => { setPlaying(false); seek(S.t - 0.10); };
+el("b01").onclick = () => { setPlaying(false); seek(S.t - 0.01); };
+el("f01").onclick = () => { setPlaying(false); seek(S.t + 0.01); };
+el("f10").onclick = () => { setPlaying(false); seek(S.t + 0.10); };
+el("scrub").addEventListener("input", (e) => { setPlaying(false); seek(parseFloat(e.target.value)); });
+el("gaitWalk").onclick = () => setGait("walk");
+el("gaitRun").onclick  = () => setGait("run");
+document.querySelectorAll("[data-rate]").forEach(b => {
+  b.onclick = () => {
+    S.rate = parseFloat(b.dataset.rate);
+    document.querySelectorAll("[data-rate]").forEach(o => o.setAttribute("aria-pressed", String(o === b)));
+  };
+});
+el("markA").onclick = () => { setPlaying(false); mark("markA"); };
+el("markB").onclick = () => { setPlaying(false); mark("markB"); };
+el("clearMarks").onclick = () => { S.markA = S.markB = null; resetWorksheet(); };
+el("resetCalc").onclick = resetWorksheet;
+["d","t","v"].forEach(k => {
+  el(STEP[k].tick.replace("tick","check")).onclick = () => checkStep(k);
+  el(STEP[k].input).addEventListener("keydown", e => { if (e.key === "Enter") checkStep(k); });
+});
+el("logBtn").onclick = logTrial;
+el("clearLog").onclick = () => { S.trials = []; drawResults(); };
+el("themeBtn").onclick = () => {
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  el("themeBtn").textContent = dark ? "🌙 Dark" : "☀️ Light";
+};
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.code === "Space"){ e.preventDefault(); el("playBtn").click(); }
+  if (e.key === "ArrowLeft"){ setPlaying(false); seek(S.t - (e.shiftKey ? 0.10 : 0.01)); }
+  if (e.key === "ArrowRight"){ setPlaying(false); seek(S.t + (e.shiftKey ? 0.10 : 0.01)); }
+});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heating water — volume vs temperature rise</title>
+
+<!--
+  ============================================================================
+  HEATING WATER LAB  (PhET-style, single file, no dependencies)
+
+  HOW TO EMBED
+  1) Easiest: upload this file and drop it in an iframe:
+       <iframe src="heating-water-lab.html"
+               style="width:100%;height:1450px;border:0" loading="lazy"
+               title="Heating water simulation"></iframe>
+  2) Or paste the style block, the cvlab div, and the script block into a page.
+     Every CSS rule is scoped under .cvlab.
+
+  THE MODEL
+     The hot plate delivers a steady 45 W into the water, so
+       Q = m c dT   ->   dT/dt = P / (m c),    c = 4.184 J/g/C
+     Volume in mL equals mass in grams for pure water, so the heating rate is
+     inversely proportional to the volume and rate x volume is a constant.
+     Solved exactly rather than integrated, so the animation and the recorded
+     numbers can never disagree.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+.cvlab{
+  --bench:#DDE0D6; --paper:#FBFBF7; --rule:#C9CFC2;
+  --ink:#1B1D1C; --ink-2:#5A5F58;
+  --blue:#1552B8; --blue-d:#0E3B87;
+  --hot:#C0392B; --glass:#DCE7E6; --water:#BFE0E4;
+  --plate:#6E7370; --plate-d:#4A4F4C; --ceramic:#EDEEE8;
+  --oak:#DDB37C; --epoxy:#22251F; --steel:#B9BEB6;
+  --tape:#E8B93C;
+  --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
+  padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
+}
+.cvlab *{box-sizing:border-box}
+.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
+.cvlab p{margin:0}
+.cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+  display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--tape);margin-bottom:2px}
+.cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
+.cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
+.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:94px}
+.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:#8C9284}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.cvlab-ro-hi .cvlab-ro-v{color:#F08B7E}
+
+.cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
+  border-radius:0 0 5px 5px;padding:10px 10px 12px}
+.cvlab canvas{display:block;width:100%}
+.cvlab-stage{display:grid;grid-template-columns:minmax(186px,.36fr) 1fr;gap:10px}
+#cvlab-scene,#cvlab-temp{height:clamp(300px,30vw,412px);border-radius:3px}
+@media (max-width:760px){
+  .cvlab-stage{grid-template-columns:1fr}
+  #cvlab-scene{height:clamp(260px,48vw,350px)}#cvlab-temp{height:clamp(200px,32vw,260px)}
+}
+.cvlab-hint{font-family:var(--font-m);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2);margin-top:6px}
+.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;
+  border-top:1px dashed var(--rule)}
+.cvlab-status{flex:1 1 240px;min-width:200px;font-size:16px;color:var(--ink-2)}
+.cvlab-status strong{color:var(--ink);font-weight:700}
+
+.cvlab-btn{font-family:var(--font-d);font-size:17px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;cursor:pointer;background:var(--paper);color:var(--ink);
+  border:1.5px solid var(--ink);border-radius:3px;padding:7px 14px;line-height:1.1;
+  transition:transform .08s ease,background .12s ease,color .12s ease}
+.cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.cvlab-btn:active:not(:disabled){transform:translateY(1px)}
+.cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
+.cvlab-btn-go{background:var(--hot);border-color:#8E2A1F;color:#fff;min-width:150px}
+.cvlab-btn-go:hover:not(:disabled){background:#8E2A1F;color:#fff}
+.cvlab-btn-sm{font-size:15px;padding:5px 10px;border-width:1px}
+
+.cvlab-grid{display:grid;gap:12px;margin-top:12px;
+  grid-template-columns:minmax(200px,.78fr) minmax(240px,1.05fr) minmax(280px,1.15fr)}
+@media (max-width:1000px){.cvlab-grid{grid-template-columns:1fr 1fr}
+  .cvlab-panel-graph{grid-column:1/-1}}
+@media (max-width:640px){.cvlab-grid{grid-template-columns:1fr}}
+.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:5px;padding:12px;
+  display:flex;flex-direction:column;gap:10px}
+.cvlab-panel h2{font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-family:var(--font-m);
+  font-weight:700;color:var(--ink);padding-bottom:7px;border-bottom:2px solid var(--ink)}
+.cvlab-note{font-size:14.5px;color:var(--ink-2)}
+.cvlab-row{display:flex;flex-wrap:wrap;gap:6px}
+
+.cvlab-vols{display:flex;gap:5px}
+.cvlab-vol{flex:1;cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:3px;
+  padding:8px 1px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-family:var(--font-m);font-size:13px;font-weight:700;color:var(--ink);
+  transition:background .12s ease,color .12s ease}
+.cvlab-vol:hover:not(:disabled){background:#EFF1E9}
+.cvlab-vol.is-on{background:var(--ink);color:#F4F5F0;border-color:var(--ink)}
+.cvlab-vol:disabled{opacity:.4;cursor:not-allowed}
+.cvlab-vol span{display:block;width:11px;height:4px;border-radius:1px}
+.cvlab-vol.has-data span{height:6px}
+
+.cvlab-locked{display:flex;align-items:center;gap:8px;background:#EFF1E9;border:1px dashed var(--rule);
+  border-radius:3px;padding:7px 9px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
+.cvlab-locked b{color:var(--ink);font-size:15px}
+
+.cvlab-field{display:flex;flex-direction:column;gap:4px}
+.cvlab-field span{font-family:var(--font-m);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-2)}
+.cvlab select{font-family:var(--font-b);font-size:15.5px;padding:6px 8px;border:1px solid var(--ink);
+  border-radius:3px;background:#fff;color:var(--ink);width:100%}
+
+.cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
+.cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
+.cvlab-opts input{margin:3px 0 0;accent-color:var(--blue);flex:none}
+
+.cvlab-tablewrap{max-height:330px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
+.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13px}
+.cvlab thead th{position:sticky;top:0;background:#EFF1E9;font-size:11px;letter-spacing:.03em;
+  font-weight:700;padding:5px 3px;text-align:right;border-bottom:1px solid var(--rule);color:var(--ink-2)}
+.cvlab thead th:first-child{text-align:left}
+.cvlab tbody td{padding:3px;text-align:right;font-variant-numeric:tabular-nums;
+  border-bottom:1px solid #EDEFE7}
+.cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
+.cvlab tbody tr:last-child td{border-bottom:0}
+.cvlab tbody tr.is-new td{background:#FCF3D9}
+.cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
+
+#cvlab-rate{height:clamp(260px,30vw,420px)}
+.cvlab-key{display:flex;flex-wrap:wrap;gap:10px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
+.cvlab-key i{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:4px}
+
+.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
+  padding:10px 14px}
+.cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
+.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
+.cvlab-notes li{margin:3px 0}
+.cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
+</style>
+</head>
+<body style="margin:0;background:#DDE0D6">
+
+<div class="cvlab" id="cvlab">
+
+  <header class="cvlab-head">
+    <div>
+      <span class="cvlab-eyebrow">Thermal lab &middot; specific heat</span>
+      <h1>Heating water &mdash; volume vs temperature</h1>
+    </div>
+    <div class="cvlab-readouts">
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Volume</span><span class="cvlab-ro-v" id="cvlab-ro-vol">100 mL</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Time</span><span class="cvlab-ro-v" id="cvlab-ro-time">0:00</span></div>
+      <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Temperature</span><span class="cvlab-ro-v" id="cvlab-ro-temp">20.0 &deg;C</span></div>
+      <div class="cvlab-ro"><span class="cvlab-ro-k">Stage</span><span class="cvlab-ro-v" id="cvlab-ro-stage">Ready</span></div>
+    </div>
+  </header>
+
+  <div class="cvlab-bench">
+    <div class="cvlab-stage">
+      <canvas id="cvlab-scene" role="img"
+        aria-label="A beaker of water on a hot plate with a thermometer clamped to a ring stand, its bulb in the water."></canvas>
+      <canvas id="cvlab-temp" role="img"
+        aria-label="Graph of water temperature against time for each volume tested."></canvas>
+    </div>
+    <p class="cvlab-hint">A reading every 10 seconds for 5 minutes &middot; hot plate setting held constant &middot; pure water, starting at room temperature</p>
+    <div class="cvlab-bar">
+      <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Turn on the hot plate</button>
+      <button class="cvlab-btn" id="cvlab-reset">Reset</button>
+      <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
+        Pour a volume into the beaker and switch the plate on. Every other thing about the setup stays the same.
+      </p>
+    </div>
+  </div>
+
+  <div class="cvlab-grid">
+
+    <section class="cvlab-panel">
+      <h2>Water in the beaker</h2>
+      <div class="cvlab-vols" id="cvlab-vols"></div>
+      <div class="cvlab-locked">
+        <span>HOT PLATE</span><b>45 W</b><span>&mdash; same dial setting every run</span>
+      </div>
+      <label class="cvlab-field" for="cvlab-speed">
+        <span>How fast to run the 5 minutes</span>
+        <select id="cvlab-speed">
+          <option value="1">Real time, 5 minutes</option>
+          <option value="10" selected>10&times; faster, 30 seconds</option>
+          <option value="60">60&times; faster, 5 seconds</option>
+        </select>
+      </label>
+      <div class="cvlab-opts">
+        <label><input type="checkbox" id="cvlab-invv">
+          <span>Plot the rate against 1 / volume, which straightens the curve</span></label>
+        <label><input type="checkbox" id="cvlab-noise">
+          <span>Add reading error, since a glass thermometer is read by eye</span></label>
+        <label><input type="checkbox" id="cvlab-loss">
+          <span>Let the beaker lose heat to the room, which bends the lines</span></label>
+      </div>
+    </section>
+
+    <section class="cvlab-panel">
+      <h2>Temperature (&deg;C) every 10 s</h2>
+      <div class="cvlab-tablewrap">
+        <table>
+          <caption class="cvlab-sr">Water temperature in degrees Celsius at each time, one column per volume</caption>
+          <thead><tr id="cvlab-thead"></tr></thead>
+          <tbody id="cvlab-tbody"></tbody>
+        </table>
+      </div>
+      <div class="cvlab-row">
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clear">Clear all runs</button>
+        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-copy">Copy data</button>
+      </div>
+      <p class="cvlab-note" id="cvlab-copynote">&nbsp;</p>
+    </section>
+
+    <section class="cvlab-panel cvlab-panel-graph">
+      <h2>Heating rate vs volume</h2>
+      <canvas id="cvlab-rate" role="img"
+        aria-label="Graph of heating rate in degrees per minute against the volume of water."></canvas>
+      <div class="cvlab-key" id="cvlab-key"></div>
+      <p class="cvlab-note">Rate is the total rise divided by the 5 minutes, the way you would work it out from the table.</p>
+    </section>
+
+  </div>
+
+  <section class="cvlab-notes">
+    <h3>How to use this simulation</h3>
+    <ol>
+      <li>Pick a <strong>volume</strong> from the buttons in the Water in the beaker panel. The hot plate always holds the same 45 W setting.</li>
+      <li>Press <strong>Turn on the hot plate</strong> and watch the water heat up on the beaker, with the thermometer and the temperature graph updating together.</li>
+      <li>Use the <strong>How fast to run the 5 minutes</strong> dropdown to watch in real time or speed things up, since a full run is 5 simulated minutes.</li>
+      <li>Each run adds a column to the <strong>Temperature every 10 s</strong> table and a line to the temperature-vs-time graph, so you can compare volumes directly.</li>
+      <li>Once you've tried a few volumes, check the <strong>Heating rate vs volume</strong> graph. Turn on <strong>Plot the rate against 1/volume</strong> to straighten the curve into a line.</li>
+      <li>Turn on <strong>Add reading error</strong> to see realistic thermometer scatter, or <strong>Let the beaker lose heat to the room</strong> to see the lines bend instead of staying straight.</li>
+      <li>Press <strong>Reset</strong> to run the current volume again, <strong>Clear all runs</strong> to wipe the table and graphs, or <strong>Copy data</strong> to copy your results for a spreadsheet.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------ constants */
+  var C_WATER  = 4.184;      // J/g/C
+  var POWER    = 45;         // W actually reaching the water
+  var T_ROOM   = 20;         // C
+  var K_LOSS   = 0.18;       // W/K, optional
+  var RUN_S    = 300;        // 5 minutes
+  var STEP_S   = 10;         // a reading every 10 s
+  var NPTS     = RUN_S/STEP_S + 1;
+  var VOLUMES  = [50,100,150,200,250];
+  var VCOLOR   = { 50:"#C0392B", 100:"#C97B23", 150:"#6E8C3A", 200:"#2A7F7A", 250:"#1552B8" };
+  var NOISE_SD = 0.3;        // C
+  var T_MIN    = 20, T_MAX = 90;
+
+  /* beaker: 400 mL, inner cross-section about 44.2 cm^2 */
+  var BEAKER_AREA = 44.2;    // cm^2, so 50 mL is 1.13 cm deep
+
+  /* ------------------------------------------------ state */
+  var vol = 100;
+  var stage = "ready";       // ready | heating | done
+  var t = 0, live = null, shown = 0;
+  var runs = {};             // keyed by volume
+  var lastFrame = null, dirty = true;
+
+  var reduceMotion = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+
+  /* ------------------------------------------------ dom */
+  function $(id){ return document.getElementById(id); }
+  var sceneC = $("cvlab-scene"), tempC = $("cvlab-temp"), rateC = $("cvlab-rate");
+  var sctx = sceneC.getContext("2d"), pctx = tempC.getContext("2d"), gctx = rateC.getContext("2d");
+  var elGo = $("cvlab-go"), elReset = $("cvlab-reset"), elStatus = $("cvlab-status");
+  var elVols = $("cvlab-vols"), elSpeed = $("cvlab-speed");
+  var elHead = $("cvlab-thead"), elBody = $("cvlab-tbody"), elKey = $("cvlab-key");
+  var elClear = $("cvlab-clear"), elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote");
+  var elInvV = $("cvlab-invv"), elNoise = $("cvlab-noise"), elLoss = $("cvlab-loss");
+  var roVol = $("cvlab-ro-vol"), roTime = $("cvlab-ro-time"),
+      roTemp = $("cvlab-ro-temp"), roStage = $("cvlab-ro-stage");
+
+  /* ------------------------------------------------ helpers */
+  function fmt(n,p){ return n.toFixed(p===undefined?1:p); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function now(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function gauss(){
+    var u=0,w=0;
+    while(u===0) u=Math.random();
+    while(w===0) w=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w);
+  }
+  function say(m){ elStatus.innerHTML = m; }
+  function monoStack(){ return '"Poppins", ui-monospace, Menlo, Consolas, monospace'; }
+  function clock(sec){
+    var mm = Math.floor(sec/60), ss = Math.floor(sec%60);
+    return mm + ":" + (ss<10 ? "0" : "") + ss;
+  }
+  function haveRuns(){
+    var out = [];
+    for(var i=0;i<VOLUMES.length;i++) if(runs[VOLUMES[i]]) out.push(runs[VOLUMES[i]]);
+    return out;
+  }
+
+  function fit(canvas, ctx){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(150, Math.round(r.width)), h = Math.max(140, Math.round(r.height));
+    if(canvas.width !== w*dpr || canvas.height !== h*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { w:w, h:h };
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+
+  /* ------------------------------------------------ the physics, solved exactly */
+  function tempAt(V, tt){
+    var m = V;                                  /* 1 mL of water is 1 g */
+    if(elLoss.checked){
+      var tau = m*C_WATER/K_LOSS;
+      return Math.min(100, T_ROOM + (POWER/K_LOSS)*(1 - Math.exp(-tt/tau)));
+    }
+    return Math.min(100, T_ROOM + POWER*tt/(m*C_WATER));
+  }
+  function idealRate(V){ return POWER*60/(V*C_WATER); }   /* C per minute */
+
+  /* ------------------------------------------------ volume buttons */
+  function buildVols(){
+    var html = "";
+    for(var i=0;i<VOLUMES.length;i++){
+      var V = VOLUMES[i];
+      html += '<button class="cvlab-vol" data-v="' + V + '" aria-label="Use ' + V + ' millilitres">'
+            + '<span style="background:' + VCOLOR[V] + '"></span>' + V + '</button>';
+    }
+    elVols.innerHTML = html;
+    elVols.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".cvlab-vol") : null;
+      if(!b || b.disabled) return;
+      vol = parseInt(b.getAttribute("data-v"),10);
+      resetRun("Beaker filled to <strong>" + vol + " mL</strong>, sitting at room temperature.");
+    });
+  }
+
+  /* ------------------------------------------------ run control */
+  function resetRun(msg){
+    stage = "ready"; t = 0; live = null; shown = 0;
+    lastFrame = null; dirty = true;
+    elGo.textContent = "Turn on the hot plate";
+    syncUI(); drawTempGraph();
+    if(msg) say(msg);
+  }
+
+  function start(){
+    if(stage === "heating") return;
+    live = [];
+    for(var i=0;i<NPTS;i++){
+      var tv = i*STEP_S;
+      var T = tempAt(vol, tv);
+      if(elNoise.checked && i > 0) T += gauss()*NOISE_SD;
+      live.push(Math.round(T*10)/10);
+    }
+    stage = "heating"; t = 0; shown = 1;
+    lastFrame = null; dirty = true;
+    elGo.textContent = "Heating\u2026";
+    say("Plate on under <strong>" + vol + " mL</strong>. First reading at 0 s, then every 10 s.");
+    renderTable(); syncUI();
+  }
+
+  function finish(){
+    stage = "done"; t = RUN_S; shown = NPTS;
+    elGo.textContent = "Run again";
+    var rate = (live[NPTS-1] - live[0])/(RUN_S/60);
+    runs[vol] = { v: vol, temps: live.slice(), rate: rate };
+    say("Five minutes up. <strong>" + vol + " mL</strong> went from " + fmt(live[0])
+        + " to " + fmt(live[NPTS-1]) + " &deg;C, a rate of <strong>" + fmt(rate,2)
+        + " &deg;C/min</strong>.");
+    renderTable(); renderKey(); drawRateGraph(); drawTempGraph(); syncUI();
+  }
+
+  /* ------------------------------------------------ readouts */
+  function syncUI(){
+    var busy = (stage === "heating");
+    roVol.textContent = vol + " mL";
+    roTime.textContent = clock(t);
+    roTemp.textContent = fmt(stage === "ready" ? T_ROOM : tempAt(vol, t)) + " \u00B0C";
+    roStage.textContent = stage === "ready" ? "Ready" : (busy ? "Heating" : "Done");
+
+    var bs = elVols.querySelectorAll(".cvlab-vol");
+    for(var i=0;i<bs.length;i++){
+      var V = parseInt(bs[i].getAttribute("data-v"),10);
+      bs[i].disabled = busy;
+      bs[i].className = "cvlab-vol" + (V === vol ? " is-on" : "") + (runs[V] ? " has-data" : "");
+    }
+    elSpeed.disabled = busy;
+    elNoise.disabled = busy; elLoss.disabled = busy;
+    elGo.disabled = busy;
+    elReset.disabled = busy || (stage === "ready" && t === 0);
+    var n = haveRuns().length;
+    elClear.disabled = n === 0;
+    elCopy.disabled = n === 0;
+  }
+
+  /* ------------------------------------------------ the data table */
+  function tableCols(){
+    var cols = [];
+    for(var i=0;i<VOLUMES.length;i++){
+      var V = VOLUMES[i];
+      if(runs[V] || (stage !== "ready" && V === vol)) cols.push(V);
+    }
+    return cols;
+  }
+  function renderTable(){
+    var cols = tableCols();
+    if(cols.length === 0){
+      elHead.innerHTML = '<th scope="col">t (s)</th><th scope="col">&deg;C</th>';
+      elBody.innerHTML = '<tr><td colspan="2"><span class="cvlab-empty">'
+        + 'No runs yet. Pick a volume and switch the plate on.</span></td></tr>';
+      return;
+    }
+    var hh = '<th scope="col">t</th>';
+    for(var c=0;c<cols.length;c++){
+      hh += '<th scope="col" style="color:' + VCOLOR[cols[c]] + '">' + cols[c] + '</th>';
+    }
+    elHead.innerHTML = hh;
+
+    var html = "";
+    for(var i=0;i<NPTS;i++){
+      var isNew = (stage === "heating" && i === shown-1);
+      html += '<tr' + (isNew ? ' class="is-new"' : '') + '><td>' + (i*STEP_S) + '</td>';
+      for(var j=0;j<cols.length;j++){
+        var V = cols[j], val = "";
+        if(V === vol && stage !== "ready" && live){
+          val = i < shown ? fmt(live[i]) : "";
+        } else if(runs[V]){
+          val = fmt(runs[V].temps[i]);
+        }
+        html += '<td>' + val + '</td>';
+      }
+      html += '</tr>';
+    }
+    elBody.innerHTML = html;
+  }
+
+  function renderKey(){
+    var list = haveRuns(), html = "";
+    for(var i=0;i<list.length;i++){
+      html += '<span><i style="background:' + VCOLOR[list[i].v] + '"></i>'
+            + list[i].v + ' mL &middot; ' + fmt(list[i].rate,2) + ' &deg;C/min</span>';
+    }
+    elKey.innerHTML = html;
+  }
+
+  /* ------------------------------------------------ scene */
+  var VIEW_W = 32, VIEW_H = 46;
+  var G = {};
+  function geometry(w,h){
+    G.w = w; G.h = h; G.compact = w < 240;
+    G.baseY = h - Math.max(10, h*0.055);
+    G.k = Math.min((w-10)/VIEW_W, (G.baseY - 8)/VIEW_H);
+    G.left = (w - VIEW_W*G.k)/2;
+  }
+  function X(cm){ return G.left + cm*G.k; }
+  function Y(cm){ return G.baseY - cm*G.k; }
+  function waterDepth(){ return vol/BEAKER_AREA; }          /* cm */
+  function curTemp(){ return stage === "ready" ? T_ROOM : tempAt(vol, t); }
+
+  function drawScene(){
+    var s = fit(sceneC, sctx), w = s.w, h = s.h;
+    geometry(w,h);
+    var ctx = sctx;
+    ctx.clearRect(0,0,w,h);
+
+    var wall = ctx.createLinearGradient(0,0,0,G.baseY);
+    wall.addColorStop(0,"#F1F2EC"); wall.addColorStop(1,"#E4E7DD");
+    ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.baseY);
+    /* the bench */
+    var top = ctx.createLinearGradient(0,G.baseY,0,h);
+    top.addColorStop(0,"#33372F"); top.addColorStop(1,"#1D201B");
+    ctx.fillStyle = top; ctx.fillRect(0,G.baseY,w,h-G.baseY);
+    ctx.fillStyle = "#575C51"; ctx.fillRect(0,G.baseY,w,1.2);
+
+    drawStand(ctx);
+    drawHotPlate(ctx);
+    drawBeaker(ctx);
+    drawThermometer(ctx);
+    drawTempCallout(ctx);
+  }
+
+  function drawStand(ctx){
+    var k = G.k, rodX = X(6.1);
+    ctx.fillStyle = "#6E736B";
+    roundRect(ctx, X(1.5), Y(0.95), 9.5*k, 0.95*k, 1.5); ctx.fill();
+    ctx.fillStyle = "#8B9088";
+    roundRect(ctx, X(1.5), Y(0.95), 9.5*k, 0.35*k, 1.5); ctx.fill();
+    var rg = ctx.createLinearGradient(rodX-0.45*k,0,rodX+0.45*k,0);
+    rg.addColorStop(0,"#7E837B"); rg.addColorStop(.4,"#B9BEB6"); rg.addColorStop(1,"#6B7068");
+    ctx.fillStyle = rg;
+    ctx.fillRect(rodX-0.45*k, Y(44), 0.9*k, Y(0.95)-Y(44));
+    /* clamp reaching over to the thermometer */
+    var cy = Y(26);
+    ctx.fillStyle = "#262924";
+    roundRect(ctx, rodX-1.1*k, cy-1.5*k, 2.2*k, 3*k, 1.5); ctx.fill();
+    ctx.fillStyle = "#3A5A3E";
+    roundRect(ctx, rodX+0.7*k, cy-0.35*k, 13.3*k, 0.7*k, 1); ctx.fill();
+    ctx.fillStyle = "#9DA3A0";
+    ctx.beginPath(); ctx.arc(rodX-1.7*k, cy, 0.75*k, 0, Math.PI*2); ctx.fill();
+    /* the jaw that grips the tube */
+    ctx.strokeStyle = "#3A5A3E"; ctx.lineWidth = Math.max(1.4, 0.28*k);
+    ctx.beginPath(); ctx.arc(X(20), cy, 0.95*k, Math.PI*0.65, Math.PI*1.9); ctx.stroke();
+  }
+
+  function drawHotPlate(ctx){
+    var k = G.k;
+    /* feet */
+    ctx.fillStyle = "#2A2D28";
+    roundRect(ctx, X(14), Y(0.7), 1.6*k, 0.75*k, 1); ctx.fill();
+    roundRect(ctx, X(24.4), Y(0.7), 1.6*k, 0.75*k, 1); ctx.fill();
+    /* body */
+    var bg = ctx.createLinearGradient(0, Y(7.4), 0, Y(0.7));
+    bg.addColorStop(0,"#7E837F"); bg.addColorStop(.45,"#636864"); bg.addColorStop(1,"#484D49");
+    ctx.fillStyle = bg;
+    roundRect(ctx, X(12.5), Y(7.4), 15*k, (7.4-0.7)*k, 0.7*k); ctx.fill();
+    ctx.strokeStyle = "#3C413D"; ctx.lineWidth = 1; ctx.stroke();
+    /* ceramic top plate on its standoffs */
+    ctx.fillStyle = "#5A5F5B";
+    roundRect(ctx, X(13.6), Y(8.0), 0.7*k, 0.7*k, 1); ctx.fill();
+    roundRect(ctx, X(25.7), Y(8.0), 0.7*k, 0.7*k, 1); ctx.fill();
+    var cg = ctx.createLinearGradient(0, Y(9.0), 0, Y(8.0));
+    cg.addColorStop(0,"#F6F7F2"); cg.addColorStop(1,"#D6D8D0");
+    ctx.fillStyle = cg;
+    roundRect(ctx, X(12.9), Y(9.0), 14.2*k, 1.0*k, 0.25*k); ctx.fill();
+    ctx.strokeStyle = "#B4B8B0"; ctx.lineWidth = 1; ctx.stroke();
+
+    /* dial, always on the same setting */
+    var dx = X(23.6), dy = Y(3.6), dr = 1.7*k;
+    ctx.fillStyle = "#8B908B";
+    ctx.beginPath(); ctx.arc(dx, dy, dr, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#A9AEA8";
+    ctx.beginPath(); ctx.arc(dx, dy, dr*0.82, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#4A4F4C"; ctx.lineWidth = Math.max(1.4, 0.16*k);
+    var ang = -Math.PI*0.72;                      /* a low to middling setting */
+    ctx.beginPath();
+    ctx.moveTo(dx, dy);
+    ctx.lineTo(dx + Math.cos(ang)*dr*0.72, dy + Math.sin(ang)*dr*0.72);
+    ctx.stroke();
+    ctx.strokeStyle = "#5C615D"; ctx.lineWidth = 1;
+    for(var i=0;i<7;i++){
+      var a = -Math.PI*1.15 + i*(Math.PI*1.3/6);
+      ctx.beginPath();
+      ctx.moveTo(dx + Math.cos(a)*dr*0.90, dy + Math.sin(a)*dr*0.90);
+      ctx.lineTo(dx + Math.cos(a)*dr*1.04, dy + Math.sin(a)*dr*1.04);
+      ctx.stroke();
+    }
+    /* indicator light, lit while the plate is on */
+    var on = (stage === "heating");
+    ctx.fillStyle = on ? "#E8564C" : "#6B4A46";
+    ctx.beginPath(); ctx.arc(X(15.2), Y(5.4), 0.45*k, 0, Math.PI*2); ctx.fill();
+    if(on){
+      ctx.fillStyle = "rgba(232,86,76,.28)";
+      ctx.beginPath(); ctx.arc(X(15.2), Y(5.4), 0.95*k, 0, Math.PI*2); ctx.fill();
+    }
+    if(!G.compact){
+      ctx.fillStyle = "#C7502F";
+      ctx.font = "700 " + Math.max(6.5, 0.85*k).toFixed(1) + "px " + monoStack();
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText("HOT PLATE", X(16.3), Y(5.4));
+    }
+    /* cord */
+    ctx.strokeStyle = "#262925"; ctx.lineWidth = Math.max(1.6, 0.3*k);
+    ctx.beginPath();
+    ctx.moveTo(X(27.5), Y(2.6));
+    ctx.quadraticCurveTo(X(30.5), Y(2.2), X(32), Y(0.4));
+    ctx.stroke();
+  }
+
+  function drawBeaker(ctx){
+    var k = G.k;
+    var x0 = X(16), x1 = X(24), yBot = Y(9.0), yTop = Y(20.0);
+    var wall = 0.22*k;
+    var inX0 = x0 + wall, inX1 = x1 - wall;
+    var floorY = yBot - 0.25*k;
+
+    /* water first, so the glass sits over it */
+    var d = waterDepth();
+    var wy = Y(9.25 + d);
+    var wg = ctx.createLinearGradient(0, wy, 0, floorY);
+    wg.addColorStop(0,"#CDE9EC"); wg.addColorStop(1,"#A9D2D8");
+    ctx.fillStyle = wg;
+    ctx.fillRect(inX0, wy, inX1-inX0, floorY - wy);
+    /* surface ellipse and meniscus */
+    ctx.fillStyle = "#B7DFE4";
+    ctx.beginPath(); ctx.ellipse((inX0+inX1)/2, wy, (inX1-inX0)/2, 0.5*k, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#7FB4BC"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse((inX0+inX1)/2, wy, (inX1-inX0)/2, 0.5*k, 0, 0, Math.PI*2); ctx.stroke();
+
+    /* bubbles once it is warm */
+    var T = curTemp();
+    if(T > 45 && !reduceMotion && stage === "heating"){
+      var nb = Math.round(clamp((T-45)/6, 1, 7));
+      for(var b=0;b<nb;b++){
+        var ph = ((now()/900) + b*0.37) % 1;
+        var bx = inX0 + ((b*37)%100)/100*(inX1-inX0);
+        var by = floorY - ph*(floorY - wy);
+        ctx.globalAlpha = 0.5*(1-ph);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath(); ctx.arc(bx, by, Math.max(1, 0.16*k), 0, Math.PI*2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    /* the glass */
+    ctx.strokeStyle = "rgba(120,150,150,.85)"; ctx.lineWidth = Math.max(1.4, wall);
+    ctx.beginPath();
+    ctx.moveTo(x0, yTop); ctx.lineTo(x0, yBot);
+    ctx.lineTo(x1, yBot); ctx.lineTo(x1, yTop);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(150,180,178,.75)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse((x0+x1)/2, yTop, (x1-x0)/2, 0.75*k, 0, 0, Math.PI*2); ctx.stroke();
+    /* the spout */
+    ctx.beginPath();
+    ctx.moveTo(x0, yTop-0.1*k);
+    ctx.quadraticCurveTo(x0-0.9*k, yTop-0.5*k, x0-0.5*k, yTop-1.1*k);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,.30)";
+    ctx.fillRect(x0+wall*1.6, yTop, 0.35*k, yBot-yTop);
+
+    /* graduations, every 50 mL */
+    /* on the left wall, keeping clear of the thermometer scale on the right */
+    ctx.strokeStyle = "rgba(90,110,110,.65)"; ctx.lineWidth = 1;
+    ctx.fillStyle = "rgba(80,100,100,.85)";
+    ctx.font = "700 " + Math.max(5.5, 0.72*k).toFixed(1) + "px " + monoStack();
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    for(var mL=50; mL<=350; mL+=50){
+      var gy = Y(9.25 + mL/BEAKER_AREA);
+      if(gy < yTop) break;
+      var long = (mL % 100 === 0);
+      ctx.beginPath();
+      ctx.moveTo(inX0, gy); ctx.lineTo(inX0 + (long ? 2.0*k : 1.2*k), gy);
+      ctx.stroke();
+      if(long && !G.compact) ctx.fillText(String(mL), inX0 + 2.3*k, gy);
+    }
+
+    /* steam once it is hot */
+    if(T > 55 && !reduceMotion){
+      ctx.strokeStyle = "rgba(190,200,205,.75)";
+      ctx.lineWidth = Math.max(1.2, 0.22*k);
+      for(var s2=0;s2<3;s2++){
+        var p2 = ((now()/1400) + s2*0.33) % 1;
+        var sx = (inX0+inX1)/2 + (s2-1)*1.9*k;
+        var sy = wy - p2*5.5*k;
+        ctx.globalAlpha = 0.55*(1-p2)*clamp((T-55)/20,0,1);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo(sx+1.0*k, sy-1.4*k, sx-0.5*k, sy-2.6*k);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawThermometer(ctx){
+    var k = G.k, cx = X(20);
+    var tw = 0.55*k;
+    /* the bulb sits just clear of the inner floor at 9.25 cm, and the scale
+       is measured from the bulb centre so the column can only rise */
+    var SB = 9.85, SPAN = 29;
+    var yTube0 = Y(40), yTube1 = Y(SB + 0.45);
+    var bulbY = Y(SB), bulbR = 0.5*k;
+    /* tube */
+    ctx.fillStyle = "rgba(246,248,246,.92)";
+    roundRect(ctx, cx-tw/2, yTube0, tw, yTube1-yTube0, tw*0.4); ctx.fill();
+    ctx.strokeStyle = "rgba(120,130,130,.9)"; ctx.lineWidth = 1;
+    roundRect(ctx, cx-tw/2, yTube0, tw, yTube1-yTube0, tw*0.4); ctx.stroke();
+    /* the red column */
+    var T = curTemp();
+    var colTop = Y(SB + (T/110)*SPAN);
+    ctx.fillStyle = "#C0392B";
+    ctx.fillRect(cx-tw*0.30, colTop, tw*0.60, bulbY - colTop);
+    ctx.beginPath(); ctx.arc(cx, bulbY, bulbR, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#8E2A1F"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, bulbY, bulbR, 0, Math.PI*2); ctx.stroke();
+    /* scale ticks up the right side */
+    ctx.strokeStyle = "rgba(70,80,80,.8)"; ctx.lineWidth = 1;
+    ctx.fillStyle = "rgba(60,70,70,.9)";
+    ctx.font = "700 " + Math.max(5.5, 0.7*k).toFixed(1) + "px " + monoStack();
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    for(var d=0; d<=100; d+=10){
+      var yy = Y(SB + (d/110)*SPAN);
+      var lng = (d % 50 === 0);
+      ctx.beginPath();
+      ctx.moveTo(cx+tw/2, yy); ctx.lineTo(cx+tw/2 + (lng ? 1.5*k : 0.9*k), yy);
+      ctx.stroke();
+      if(lng && !G.compact) ctx.fillText(String(d), cx+tw/2+1.8*k, yy);
+    }
+  }
+
+  function drawTempCallout(ctx){
+    var txt = fmt(curTemp()) + " \u00B0C";
+    var fs = G.compact ? 13 : 17;
+    ctx.font = "700 " + fs + "px " + monoStack();
+    var tw = ctx.measureText(txt).width;
+    var bw = tw + 16, bh = fs + 12;
+    var bx = clamp(X(20) + 3.5*G.k, 4, G.w - bw - 4);
+    var by = Math.max(4, Y(43));
+    ctx.fillStyle = "#1B1D1C";
+    roundRect(ctx, bx, by, bw, bh, 3); ctx.fill();
+    ctx.fillStyle = "#F08B7E"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(txt, bx + bw/2, by + bh/2);
+  }
+
+  /* ------------------------------------------------ temperature vs time */
+  function drawTempGraph(){
+    var s = fit(tempC, pctx), w = s.w, h = s.h;
+    var ctx = pctx;
+    var mL = 46, mR = 46, mT = 14, mB = 32;
+    var pw = w-mL-mR, ph = h-mT-mB;
+    var PX = function(tt){ return mL + (tt/RUN_S)*pw; };
+    var PY = function(T){ return mT + ph - ((T-T_MIN)/(T_MAX-T_MIN))*ph; };
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var T=T_MIN; T<=T_MAX; T+=5){ var y=Math.round(PY(T))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
+    for(var tt=0; tt<=RUN_S; tt+=30){ var x=Math.round(PX(tt))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
+    ctx.stroke();
+    ctx.strokeStyle = "#CCD2C4";
+    ctx.beginPath();
+    for(var T2=T_MIN; T2<=T_MAX; T2+=10){ var y2=Math.round(PY(T2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
+    for(var t2=0; t2<=RUN_S; t2+=60){ var x2=Math.round(PX(t2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
+    ctx.stroke();
+
+    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
+    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var T3=T_MIN; T3<=T_MAX; T3+=10) ctx.fillText(String(T3), mL-6, PY(T3));
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for(var t3=0; t3<=RUN_S; t3+=60) ctx.fillText(String(t3), PX(t3), mT+ph+6);
+    ctx.save();
+    ctx.translate(12, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("TEMPERATURE (\u00B0C)", 0, 0);
+    ctx.restore();
+    ctx.fillStyle = "#1B1D1C";
+    ctx.fillText("TIME (s)", mL+pw/2, mT+ph+19);
+
+    var any = false;
+    for(var i=0;i<VOLUMES.length;i++){
+      var V = VOLUMES[i];
+      var pts = null, upto = NPTS;
+      if(stage !== "ready" && V === vol && live){ pts = live; upto = shown; }
+      else if(runs[V]){ pts = runs[V].temps; }
+      if(!pts || upto < 1) continue;
+      any = true;
+      ctx.strokeStyle = VCOLOR[V]; ctx.lineWidth = 2.2; ctx.lineJoin = "round";
+      ctx.beginPath();
+      for(var j=0;j<upto;j++){
+        var qx = PX(j*STEP_S), qy = PY(clamp(pts[j], T_MIN, T_MAX));
+        if(j===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
+      }
+      ctx.stroke();
+      ctx.fillStyle = VCOLOR[V];
+      for(var m=0;m<upto;m++){
+        ctx.beginPath();
+        ctx.arc(PX(m*STEP_S), PY(clamp(pts[m], T_MIN, T_MAX)), 2.1, 0, Math.PI*2);
+        ctx.fill();
+      }
+      /* label the line at its right hand end */
+      var lastI = upto-1;
+      var lx = PX(lastI*STEP_S) + 6, ly = PY(clamp(pts[lastI], T_MIN, T_MAX));
+      ctx.font = "700 10px " + monoStack();
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText(V + " mL", Math.min(lx, w-42), ly);
+    }
+
+    if(!any){
+      ctx.fillStyle = "#8A9082";
+      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Switch the plate on and the readings plot themselves.", mL+pw/2, mT+ph/2);
+    }
+  }
+
+  /* ------------------------------------------------ rate vs volume */
+  function drawRateGraph(){
+    var s = fit(rateC, gctx), w = s.w, h = s.h;
+    var ctx = gctx;
+    var inv = elInvV.checked;
+    var xMax = inv ? 22 : 300, xStep = inv ? 5 : 50;
+    var yMax = 15;
+    var mL = 46, mR = 14, mT = 12, mB = 34;
+    var pw = w-mL-mR, ph = h-mT-mB;
+    var PX = function(a){ return mL + (a/xMax)*pw; };
+    var PY = function(r){ return mT + ph - (r/yMax)*ph; };
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var r=0; r<=yMax; r+=1){ var y=Math.round(PY(r))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
+    for(var a=0; a<=xMax; a+=xStep/2){ var x=Math.round(PX(a))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
+    ctx.stroke();
+    ctx.strokeStyle = "#CCD2C4";
+    ctx.beginPath();
+    for(var r2=0; r2<=yMax; r2+=5){ var y2=Math.round(PY(r2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
+    for(var a2=0; a2<=xMax; a2+=xStep){ var x2=Math.round(PX(a2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
+    ctx.stroke();
+
+    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
+    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for(var r3=0; r3<=yMax; r3+=5) ctx.fillText(String(r3), mL-6, PY(r3));
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for(var a3=0; a3<=xMax; a3+=xStep) ctx.fillText(String(a3), PX(a3), mT+ph+6);
+    ctx.save();
+    ctx.translate(11, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("RATE (\u00B0C/min)", 0, 0);
+    ctx.restore();
+    ctx.fillStyle = "#1B1D1C";
+    ctx.fillText(inv ? "1 / VOLUME (per litre)" : "VOLUME (mL)", mL+pw/2, mT+ph+19);
+
+    var list = haveRuns();
+    if(list.length === 0){
+      ctx.fillStyle = "#8A9082";
+      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Finish a run and its rate lands here.", mL+pw/2, mT+ph/2);
+      return;
+    }
+
+    var pts = [];
+    for(var i=0;i<list.length;i++){
+      pts.push({ x: inv ? 1000/list[i].v : list[i].v, y: list[i].rate, v: list[i].v });
+    }
+    pts.sort(function(p,q){ return p.x - q.x; });
+
+    if(inv){
+      /* a line through the origin: its slope is P/c */
+      var sxy=0, sxx=0;
+      for(var j=0;j<pts.length;j++){ sxy += pts[j].x*pts[j].y; sxx += pts[j].x*pts[j].x; }
+      var slope = sxx>0 ? sxy/sxx : 0;
+      ctx.strokeStyle = "rgba(90,95,88,.8)"; ctx.lineWidth = 1.6;
+      ctx.save(); ctx.setLineDash([6,4]);
+      var xEnd = Math.min(xMax, yMax/Math.max(slope,1e-9));
+      ctx.beginPath(); ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(xEnd), PY(slope*xEnd)); ctx.stroke();
+      ctx.restore();
+      if(pts.length >= 2){
+        var pw2 = slope*1000*C_WATER/60;
+        var lab = "slope " + slope.toFixed(3) + "  \u2192  P = " + pw2.toFixed(0) + " W";
+        ctx.font = "700 10.5px " + monoStack();
+        var lw = ctx.measureText(lab).width + 12;
+        var by = mT+ph-25;
+        ctx.fillStyle = "rgba(251,251,247,.95)";
+        roundRect(ctx, mL+pw-lw-6, by, lw, 18, 3); ctx.fill();
+        ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1;
+        roundRect(ctx, mL+pw-lw-6, by, lw, 18, 3); ctx.stroke();
+        ctx.fillStyle = "#1552B8"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(lab, mL+pw-lw/2-6, by+9);
+      }
+    } else if(pts.length >= 2){
+      /* join the points so the inverse shape is obvious */
+      ctx.strokeStyle = "rgba(90,95,88,.45)"; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for(var m=0;m<pts.length;m++){
+        var qx = PX(pts[m].x), qy = PY(Math.min(yMax, pts[m].y));
+        if(m===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
+      }
+      ctx.stroke();
+    }
+
+    for(var n=0;n<pts.length;n++){
+      var cx = PX(pts[n].x), cy = PY(Math.min(yMax, pts[n].y));
+      ctx.fillStyle = VCOLOR[pts[n].v];
+      ctx.beginPath(); ctx.arc(cx, cy, 4.6, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(cx, cy, 4.6, 0, Math.PI*2); ctx.stroke();
+    }
+  }
+
+  /* ------------------------------------------------ loop */
+  function frame(){
+    var n = now();
+    if(lastFrame === null) lastFrame = n;
+    var dt = (n - lastFrame)/1000; lastFrame = n;
+    if(dt > 0.25) dt = 0.25;
+    dt *= parseFloat(elSpeed.value) || 1;
+
+    if(stage === "heating"){
+      t = Math.min(RUN_S, t + dt);
+      var want = Math.min(NPTS, Math.floor(t/STEP_S) + 1);
+      if(want !== shown){ shown = want; renderTable(); }
+      dirty = true; syncUI(); drawTempGraph();
+      if(t >= RUN_S) finish();
+    }
+    if(dirty || (stage === "heating" && !reduceMotion)){ drawScene(); dirty = false; }
+    requestAnimationFrame(frame);
+  }
+
+  /* ------------------------------------------------ wiring */
+  elGo.addEventListener("click", function(){
+    if(stage === "done") resetRun();
+    start();
+  });
+  elReset.addEventListener("click", function(){
+    resetRun("Reset. The beaker is back at room temperature with <strong>" + vol + " mL</strong> in it.");
+  });
+  elClear.addEventListener("click", function(){
+    runs = {};
+    resetRun("All runs cleared.");
+    renderTable(); renderKey(); drawRateGraph(); drawTempGraph();
+  });
+  elCopy.addEventListener("click", function(){
+    var cols = [];
+    for(var i=0;i<VOLUMES.length;i++) if(runs[VOLUMES[i]]) cols.push(VOLUMES[i]);
+    var head = "time_s";
+    for(var c=0;c<cols.length;c++) head += "\t" + cols[c] + "mL_C";
+    var rows = [head];
+    for(var r=0;r<NPTS;r++){
+      var line = String(r*STEP_S);
+      for(var j=0;j<cols.length;j++) line += "\t" + fmt(runs[cols[j]].temps[r]);
+      rows.push(line);
+    }
+    var txt = rows.join("\n");
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = txt; ta.setAttribute("readonly","");
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); }catch(err){}
+      document.body.removeChild(ta);
+    }
+    function ok(){ elCopyNote.innerHTML = "Copied <strong>" + cols.length + "</strong> runs, "
+      + NPTS + " rows each."; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok, function(){ fallback(); ok(); });
+    } else { fallback(); ok(); }
+  });
+  elInvV.addEventListener("change", drawRateGraph);
+  elNoise.addEventListener("change", function(){
+    say(elNoise.checked
+      ? "Reading error on. Each reading will sit a few tenths either side of the true value."
+      : "Reading error off. Readings are exact.");
+  });
+  elLoss.addEventListener("change", function(){
+    runs = {};
+    resetRun(elLoss.checked
+      ? "Heat loss on, and earlier runs cleared so the sets stay comparable. Lines will bend now."
+      : "Heat loss off, and earlier runs cleared. Lines will be straight again.");
+    renderTable(); renderKey(); drawRateGraph(); drawTempGraph();
+  });
+
+  var rt;
+  window.addEventListener("resize", function(){
+    clearTimeout(rt);
+    rt = setTimeout(function(){ dirty = true; drawScene(); drawTempGraph(); drawRateGraph(); }, 120);
+  });
+  if(window.ResizeObserver){
+    var ro = new ResizeObserver(function(){
+      dirty = true; drawScene(); drawTempGraph(); drawRateGraph();
+    });
+    ro.observe(sceneC.parentNode); ro.observe(rateC.parentNode);
+  }
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){
+      dirty = true; drawScene(); drawTempGraph(); drawRateGraph();
+    });
+  }
+
+  buildVols();
+  renderTable();
+  renderKey();
+  resetRun();
+  drawRateGraph();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

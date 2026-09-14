@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inertia Car Lab</title>
+<style>*,*::before,*::after{box-sizing:border-box;}html{-webkit-text-size-adjust:100%;}body{margin:0;}img,svg,canvas{display:block;max-width:100%;}</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#EDF1F6;
+  --card:#FFFFFF;
+  --card-2:#F4F8FC;
+  --card-3:#E7EEF7;
+  --ink:#0F1A26;
+  --ink-2:#42586F;
+  --ink-3:#78899D;
+  --line:#D2DDEA;
+  --line-2:#BECCDD;
+  --accent:#1F6FD0;
+  --accent-deep:#134A8F;
+  --accent-soft:#E1EDFC;
+  --amber:#A96908;
+  --amber-soft:#FBEFD8;
+  --red:#C13029;
+  --red-soft:#FBE6E4;
+  --green:#0C7A52;
+  --green-soft:#DFF2EA;
+  --bench:#C9AE88;
+  --bench-2:#B0906A;
+  --bench-edge:#8E7150;
+  --shadow:0 1px 2px rgba(15,26,38,.06), 0 8px 24px rgba(15,26,38,.07);
+  --shadow-lift:0 2px 4px rgba(15,26,38,.08), 0 14px 38px rgba(15,26,38,.12);
+  --focus:#0F63C8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D141D;
+    --card:#17212E;
+    --card-2:#1D2938;
+    --card-3:#243244;
+    --ink:#E9F0F8;
+    --ink-2:#A8BACE;
+    --ink-3:#7C8DA2;
+    --line:#2B3949;
+    --line-2:#3A4B5F;
+    --accent:#5EA5F2;
+    --accent-deep:#8CC1FA;
+    --accent-soft:#152B44;
+    --amber:#E9A947;
+    --amber-soft:#3A2B10;
+    --red:#F0736A;
+    --red-soft:#3B1B19;
+    --green:#3FBE8E;
+    --green-soft:#0F3128;
+    --bench:#7A6449;
+    --bench-2:#5F4C36;
+    --bench-edge:#453626;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    --shadow-lift:0 2px 4px rgba(0,0,0,.45), 0 14px 38px rgba(0,0,0,.5);
+    --focus:#7FBAFF;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D141D;
+  --card:#17212E;
+  --card-2:#1D2938;
+  --card-3:#243244;
+  --ink:#E9F0F8;
+  --ink-2:#A8BACE;
+  --ink-3:#7C8DA2;
+  --line:#2B3949;
+  --line-2:#3A4B5F;
+  --accent:#5EA5F2;
+  --accent-deep:#8CC1FA;
+  --accent-soft:#152B44;
+  --amber:#E9A947;
+  --amber-soft:#3A2B10;
+  --red:#F0736A;
+  --red-soft:#3B1B19;
+  --green:#3FBE8E;
+  --green-soft:#0F3128;
+  --bench:#7A6449;
+  --bench-2:#5F4C36;
+  --bench-edge:#453626;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.45), 0 14px 38px rgba(0,0,0,.5);
+  --focus:#7FBAFF;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight:700;
+  font-size:clamp(15px,1.02vw,17px);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric:tabular-nums;}
+
+.wrap{
+  max-width:min(1900px, 97vw);
+  margin:0 auto;
+  padding:clamp(18px,2.2vw,34px) clamp(14px,1.8vw,28px) 64px;
+  display:flex;
+  flex-direction:column;
+  gap:clamp(16px,1.6vw,24px);
+}
+
+/* ---------- header ---------- */
+.masthead{
+  display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
+  gap:16px 28px;
+  padding-bottom:clamp(12px,1.2vw,18px);
+  border-bottom:3px solid var(--ink);
+}
+.eyebrow{
+  font-size:clamp(11px,.78vw,13px);
+  font-weight:800;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin:0 0 6px;
+}
+h1{
+  margin:0;
+  font-size:clamp(27px,3.1vw,44px);
+  font-weight:800;
+  letter-spacing:-.02em;
+  line-height:1.03;
+  text-wrap:balance;
+}
+.deck{
+  margin:8px 0 0;
+  max-width:62ch;
+  font-weight:500;
+  font-size:clamp(14px,1.02vw,17px);
+  color:var(--ink-2);
+}
+.qbox{
+  flex:0 0 auto;
+  background:var(--accent-soft);
+  border:2px solid var(--accent);
+  border-radius:12px;
+  padding:12px 18px;
+  max-width:32ch;
+}
+.qbox .lab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-deep);font-weight:800;}
+.qbox p{margin:2px 0 0;font-size:clamp(15px,1.15vw,19px);font-weight:800;line-height:1.25;}
+
+/* ---------- cards ---------- */
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+}
+.card-hd{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 18px;
+  border-bottom:1px solid var(--line);
+}
+.card-hd h2{
+  margin:0;font-size:clamp(13px,.95vw,15px);font-weight:800;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-2);
+}
+
+/* ---------- main grid ---------- */
+.bench-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:clamp(14px,1.4vw,22px);
+  align-items:start;
+}
+@media (min-width:1120px){
+  .bench-grid{grid-template-columns:minmax(0,1.95fr) minmax(330px,.85fr);}
+}
+
+/* stage */
+.stage{overflow:hidden;}
+.canvas-hold{
+  position:relative;
+  background:linear-gradient(180deg,var(--card-2) 0%, var(--card-3) 100%);
+  border-bottom:1px solid var(--line);
+}
+canvas{display:block;width:100%;height:auto;}
+.stage-tag{
+  position:absolute;top:12px;left:14px;
+  display:flex;gap:8px;flex-wrap:wrap;
+}
+.pill{
+  font-size:clamp(10px,.72vw,12px);font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 11px;border-radius:999px;border:1.5px solid var(--line-2);
+  background:var(--card);color:var(--ink-2);
+}
+.pill.live{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-deep);}
+.pill.good{border-color:var(--green);background:var(--green-soft);color:var(--green);}
+.pill.warn{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);}
+
+.readbar{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:1px;
+  background:var(--line);
+}
+.read{
+  background:var(--card);
+  padding:12px 16px 13px;
+}
+.read .k{
+  font-size:clamp(10px,.72vw,11.5px);font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.read .v{
+  font-size:clamp(22px,2.1vw,30px);font-weight:800;line-height:1.1;margin-top:2px;
+  font-family:"JetBrains Mono", ui-monospace, monospace;font-variant-numeric:tabular-nums;
+}
+.read .u{font-size:.5em;font-weight:700;color:var(--ink-3);margin-left:3px;}
+.read.car .v{color:var(--accent);}
+.read.chip .v{color:var(--red);}
+
+/* ---------- control rail ---------- */
+.rail{display:flex;flex-direction:column;gap:clamp(14px,1.4vw,22px);}
+.pad{padding:16px 18px 20px;}
+.grp+.grp{margin-top:20px;}
+.glabel{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  font-size:clamp(11px,.78vw,12.5px);font-weight:800;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:9px;
+}
+.glabel .hint{letter-spacing:0;text-transform:none;font-weight:600;color:var(--ink-3);font-size:12px;}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.seg.three{grid-template-columns:repeat(3,1fr);}
+button{font-family:inherit;}
+.opt{
+  appearance:none;cursor:pointer;
+  background:var(--card-2);
+  border:2px solid var(--line-2);
+  color:var(--ink-2);
+  border-radius:11px;
+  padding:11px 8px;
+  font-size:clamp(12px,.86vw,13.5px);
+  font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  transition:background .14s, border-color .14s, color .14s, transform .08s;
+}
+.opt:hover{border-color:var(--accent);color:var(--ink);}
+.opt:active{transform:translateY(1px);}
+.opt[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;}
+:root[data-theme="dark"] .opt[aria-pressed="true"]{color:#08131F;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .opt[aria-pressed="true"]{color:#08131F;}}
+
+/* force slider */
+.force-row{display:flex;align-items:center;gap:14px;}
+.force-num{
+  font-family:"JetBrains Mono", ui-monospace, monospace;
+  font-size:clamp(30px,3vw,42px);font-weight:800;color:var(--amber);line-height:1;
+  min-width:2.1ch;text-align:center;
+}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;background:transparent;margin:0;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:12px;border-radius:99px;
+  background:linear-gradient(90deg,var(--accent-soft),var(--amber));
+  border:1.5px solid var(--line-2);
+}
+input[type=range]::-moz-range-track{
+  height:12px;border-radius:99px;
+  background:linear-gradient(90deg,var(--accent-soft),var(--amber));
+  border:1.5px solid var(--line-2);
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+  background:var(--card);border:4px solid var(--amber);margin-top:-9px;cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.22);
+}
+input[type=range]::-moz-range-thumb{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--card);border:4px solid var(--amber);cursor:pointer;
+}
+input[type=range]:focus-visible{outline:3px solid var(--focus);outline-offset:4px;border-radius:99px;}
+.force-word{
+  margin-top:9px;font-size:clamp(13px,.95vw,15px);font-weight:800;color:var(--amber);
+}
+.force-word span{font-weight:600;color:var(--ink-3);}
+
+.go{
+  width:100%;margin-top:6px;
+  background:var(--ink);color:var(--paper);
+  border:none;border-radius:12px;cursor:pointer;
+  padding:15px 12px;
+  font-size:clamp(14px,1.05vw,17px);font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  transition:transform .08s, opacity .14s;
+}
+.go:hover{opacity:.88;}
+.go:active{transform:translateY(1px);}
+.go[disabled]{opacity:.4;cursor:not-allowed;}
+.ghost{
+  width:100%;margin-top:9px;background:transparent;color:var(--ink-2);
+  border:2px solid var(--line-2);border-radius:12px;cursor:pointer;padding:11px;
+  font-size:12.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+}
+.ghost:hover{border-color:var(--ink-2);color:var(--ink);}
+button:focus-visible, summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px;}
+
+/* result panel */
+.result{padding:16px 18px 18px;}
+.result .verdict{
+  font-size:clamp(16px,1.35vw,21px);font-weight:800;line-height:1.25;margin:0;text-wrap:balance;
+}
+.result .why{
+  margin:9px 0 0;font-weight:500;font-size:clamp(13.5px,.98vw,15.5px);color:var(--ink-2);
+  line-height:1.6;max-width:78ch;
+}
+.result .verdict{max-width:46ch;}
+.result .why strong{font-weight:800;color:var(--ink);}
+.predict-back{
+  margin-top:13px;padding-top:12px;border-top:1px dashed var(--line-2);
+  font-size:13px;font-weight:700;color:var(--ink-2);
+}
+.tick{color:var(--green);font-weight:800;}
+.cross{color:var(--red);font-weight:800;}
+
+/* ---------- details ---------- */
+.folds{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(12px,1.2vw,18px);}
+@media (min-width:1120px){.folds{grid-template-columns:repeat(2,minmax(0,1fr));}}
+details.fold{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+  overflow:hidden;
+}
+details.fold summary{
+  cursor:pointer;list-style:none;
+  display:flex;align-items:center;gap:12px;
+  padding:16px 18px;
+  font-size:clamp(14px,1.08vw,17.5px);font-weight:800;letter-spacing:-.01em;
+}
+details.fold summary::-webkit-details-marker{display:none;}
+.chev{
+  flex:0 0 auto;width:26px;height:26px;border-radius:8px;
+  background:var(--accent-soft);color:var(--accent-deep);
+  display:grid;place-items:center;font-size:14px;font-weight:800;
+  transition:transform .2s ease;
+}
+details[open] .chev{transform:rotate(90deg);}
+.sumtag{
+  margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.fold-body{padding:2px 18px 20px;border-top:1px solid var(--line);}
+.fold-body>*:first-child{margin-top:16px;}
+.fold-body p{font-weight:500;color:var(--ink-2);line-height:1.62;margin:0 0 12px;max-width:70ch;}
+.fold-body p strong, .fold-body li strong{font-weight:800;color:var(--ink);}
+.fold-body h3{
+  margin:20px 0 8px;font-size:clamp(12px,.82vw,13px);font-weight:800;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--accent);
+}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:11px;}
+ol.steps li{
+  counter-increment:s;position:relative;padding-left:40px;
+  font-weight:500;color:var(--ink-2);line-height:1.55;max-width:70ch;
+}
+ol.steps li::before{
+  content:counter(s);position:absolute;left:0;top:-1px;
+  width:27px;height:27px;border-radius:8px;
+  background:var(--ink);color:var(--paper);
+  display:grid;place-items:center;
+  font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:800;
+}
+ul.plain{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
+ul.plain li{
+  font-weight:500;color:var(--ink-2);line-height:1.55;padding-left:18px;position:relative;max-width:70ch;
+}
+ul.plain li::before{
+  content:"";position:absolute;left:0;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--accent);
+}
+.vocab{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+.vterm{
+  border-left:4px solid var(--accent);background:var(--card-2);
+  border-radius:0 10px 10px 0;padding:10px 14px;
+}
+.vterm b{display:block;font-size:15px;font-weight:800;}
+.vterm span{font-weight:500;font-size:14px;color:var(--ink-2);line-height:1.5;}
+.callout{
+  background:var(--amber-soft);border:1.5px solid var(--amber);border-radius:12px;
+  padding:13px 16px;margin:14px 0 0;
+}
+.callout p{margin:0;color:var(--ink);font-weight:600;}
+.callout .ct{
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);
+  font-weight:800;margin-bottom:4px;
+}
+
+/* ---------- table ---------- */
+.tbl-wrap{overflow-x:auto;}
+table{border-collapse:collapse;width:100%;min-width:760px;}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;}
+th{
+  font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);
+  background:var(--card-2);position:sticky;top:0;
+}
+td{font-weight:700;font-size:14px;}
+td.num{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}
+tbody tr:nth-child(even) td{background:var(--card-2);}
+.badge{
+  display:inline-block;padding:3px 9px;border-radius:6px;font-size:11.5px;font-weight:800;
+  letter-spacing:.04em;text-transform:uppercase;
+}
+.badge.rode{background:var(--green-soft);color:var(--green);}
+.badge.slip{background:var(--amber-soft);color:var(--amber);}
+.badge.left{background:var(--red-soft);color:var(--red);}
+.badge.front{background:var(--accent-soft);color:var(--accent-deep);}
+.badge.rear{background:var(--amber-soft);color:var(--amber);}
+.empty{padding:26px 18px;color:var(--ink-3);font-weight:600;text-align:center;}
+
+.model-note{
+  font-size:12.5px;font-weight:500;color:var(--ink-3);line-height:1.6;
+  border-top:1px solid var(--line);padding-top:14px;margin-top:18px;max-width:80ch;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important;}
+  .chev{transition:none !important;}
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">Motion Lab &middot; Quick Lab 1</p>
+      <h1>Describing Inertia</h1>
+      <p class="deck">A poker chip is taped to the front deck of a rolling car. A second, loose chip rests on top of it. Tap the car and watch what the loose chip does.</p>
+    </div>
+    <div class="qbox">
+      <div class="lab">Lab question</div>
+      <p>What is inertia?</p>
+    </div>
+  </header>
+
+  <div class="bench-grid">
+
+   <div class="rail">
+    <!-- STAGE -->
+    <section class="card stage" aria-label="Simulation bench">
+      <div class="canvas-hold">
+        <canvas id="cv" width="1640" height="340" role="img"
+          aria-label="Side view of a lab bench. A blue rolling car sits on the bench with a taped poker chip and a loose poker chip stacked on its front deck."></canvas>
+        <div class="stage-tag">
+          <span class="pill" id="phasePill">Ready</span>
+          <span class="pill" id="speedPill">Slow motion &times;&frac14;</span>
+        </div>
+      </div>
+      <div class="readbar">
+        <div class="read car">
+          <div class="k">Car speed</div>
+          <div class="v" id="rCar">0.00<span class="u">m/s</span></div>
+        </div>
+        <div class="read chip">
+          <div class="k">Loose chip speed</div>
+          <div class="v" id="rChip">0.00<span class="u">m/s</span></div>
+        </div>
+        <div class="read">
+          <div class="k">Chip slip on car</div>
+          <div class="v" id="rSlip">0.0<span class="u">cm</span></div>
+        </div>
+        <div class="read">
+          <div class="k">Clock</div>
+          <div class="v" id="rTime">0.000<span class="u">s</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-live="polite" aria-label="Result">
+      <div class="card-hd"><h2>What happened</h2></div>
+      <div class="result">
+        <p class="verdict" id="verdict">Set your force, make a prediction, then tap the car.</p>
+        <p class="why" id="why">The taped chip cannot move &mdash; it is stuck to the tape. Only the loose chip on top is free to slide.</p>
+        <div class="predict-back" id="pBack" hidden></div>
+      </div>
+    </section>
+   </div>
+
+    <!-- CONTROLS -->
+    <div class="rail">
+
+      <section class="card pad" aria-label="Controls">
+        <div class="grp">
+          <div class="glabel">1 &middot; Choose the test</div>
+          <div class="seg">
+            <button class="opt" id="btnRear" aria-pressed="true">Rear&#8209;end tap</button>
+            <button class="opt" id="btnFront" aria-pressed="false">Front&#8209;end tap</button>
+          </div>
+          <p class="force-word" style="color:var(--ink-3);font-weight:600;font-size:13px;" id="testHint">Your hand taps the back bumper. The car jumps forward.</p>
+        </div>
+
+        <div class="grp">
+          <div class="glabel">2 &middot; How hard is the tap? <span class="hint">1&ndash;10</span></div>
+          <div class="force-row">
+            <span class="force-num mono" id="fNum">6</span>
+            <input type="range" id="force" min="1" max="10" step="1" value="6"
+                   aria-label="Tap strength from 1 to 10">
+          </div>
+          <div class="force-word" id="fWord">Hard tap <span>&mdash; 3.7 m/s&sup2; of push</span></div>
+        </div>
+
+        <div class="grp">
+          <div class="glabel">3 &middot; Predict first <span class="hint">optional</span></div>
+          <div class="seg">
+            <button class="opt" id="pRide" aria-pressed="false">Chip rides along</button>
+            <button class="opt" id="pStay" aria-pressed="false">Chip gets left</button>
+          </div>
+        </div>
+
+        <div class="grp">
+          <div class="glabel">4 &middot; Playback speed</div>
+          <div class="seg three">
+            <button class="opt" data-sp="1" aria-pressed="false">Real</button>
+            <button class="opt" data-sp="0.25" aria-pressed="true">Slow</button>
+            <button class="opt" data-sp="0.08" aria-pressed="false">Super&nbsp;slow</button>
+          </div>
+        </div>
+
+        <button class="go" id="run">Tap the car</button>
+        <button class="ghost" id="reset">Reload the chip &amp; reset</button>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- FOLDS -->
+  <div class="folds">
+
+    <details class="fold" open>
+      <summary><span class="chev">&#9656;</span> Lab directions <span class="sumtag">Do this</span></summary>
+      <div class="fold-body">
+        <h3>Part A &middot; Rear-end tap</h3>
+        <ol class="steps">
+          <li>The bottom chip is already stuck to the double&#8209;sided tape on the front deck of the car. Without disturbing it, a second chip is resting on top with the grooves lined up.</li>
+          <li><strong>Predict:</strong> when the loaded car is tapped from behind, what will the loose chip do? Pick your prediction in the panel before you run it.</li>
+          <li>Choose <strong>Rear&#8209;end tap</strong>, set your force, and tap the car. Record what actually happened in your data table.</li>
+          <li>Run it again at a <strong>gentle</strong> force and again at a <strong>hard</strong> force. Look for the point where the result changes.</li>
+        </ol>
+        <h3>Part B &middot; Front-end tap</h3>
+        <ol class="steps" style="counter-reset:s 4;">
+          <li>Reset to reload the chip on the car.</li>
+          <li><strong>Predict:</strong> when the loaded car is tapped on the front end &mdash; the same thing that happens when a rolling car runs into your hand &mdash; what will the loose chip do?</li>
+          <li>Choose <strong>Front&#8209;end tap</strong>, run it, and record the result.</li>
+        </ol>
+        <h3>Follow up &middot; answer in a complete sentence</h3>
+        <ul class="plain">
+          <li>Which object did you apply a force to &mdash; the car, the chip, or both?</li>
+          <li>How could that force explain the difference between the car&rsquo;s motion and the chip&rsquo;s motion?</li>
+          <li><strong>Claim:</strong> The poker chip will move ________ your hand when a force is applied to the car. (Use your data from <em>both</em> tests to fill in the blank.)</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="chev">&#9656;</span> The science behind it <span class="sumtag">Read after</span></summary>
+      <div class="fold-body">
+        <p><strong>Inertia</strong> is an object&rsquo;s resistance to a change in its motion. An object at rest stays at rest, and an object that is moving keeps moving the same way, <em>until an unbalanced force acts on it</em>. That sentence is <strong>Newton&rsquo;s First Law of Motion</strong>.</p>
+
+        <p>Here is the key move in this lab: <strong>you never touch the loose chip.</strong> Your hand pushes on the <em>car</em>. The car changes its motion right away because the force is applied directly to it. The chip only feels one sideways force &mdash; <strong>friction</strong> from the chip taped underneath it. Friction is a weak grip, so when the car changes speed too quickly, friction is not strong enough to drag the chip along with it. The chip keeps doing what it was already doing, and the car slides out from under it.</p>
+
+        <h3>Why the force setting changes the answer</h3>
+        <p>A <strong>gentle</strong> tap changes the car&rsquo;s speed slowly. Friction between the two chips is strong enough to keep up, so the chip rides along and nothing seems to happen. A <strong>hard</strong> tap changes the car&rsquo;s speed very quickly. Friction cannot keep up, the chip slips, and it slides right off. Same setup, different force &mdash; and that is what makes this a fair test.</p>
+
+        <p>In this model there are three things that can happen, and you can find all three with the slider:</p>
+        <ul class="plain">
+          <li>Below about <span class="mono">2.4 m/s&sup2;</span> friction never loses its grip. The chip and the car move as <strong>one object</strong>.</li>
+          <li>Above that, the chip <strong>slips</strong>. If the car slows down again quickly enough, the chip catches up and friction grabs it before it reaches the edge &mdash; so it stays on, just out of place.</li>
+          <li>Slip past about <span class="mono">2.1 cm</span> and the chip runs out of chip to sit on. It <strong>tips off and lands on the bench</strong>, and the car keeps rolling without it.</li>
+        </ul>
+
+        <h3>Both tests, one answer</h3>
+        <ul class="plain">
+          <li><strong>Rear-end tap:</strong> your hand is behind the car. The car jumps forward, the chip stays put, so the chip ends up <em>behind</em> the car &mdash; on your hand&rsquo;s side.</li>
+          <li><strong>Front-end tap:</strong> your hand is in front of the car. The car is pushed backward, the chip stays put, so the chip ends up <em>in front of</em> the car &mdash; again on your hand&rsquo;s side.</li>
+          <li>The chip never really &ldquo;flies&rdquo; anywhere. It mostly <strong>stays where it was</strong> while the car moves away from it. That is inertia you can see.</li>
+        </ul>
+
+        <div class="callout">
+          <div class="ct">Connect it to your life</div>
+          <p>This is exactly why your backpack slides off the seat when a car brakes hard, and why you get pressed into the seat when it speeds up fast. The seat changes its motion. You, and your backpack, do not &mdash; until something pushes on you.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="chev">&#9656;</span> Words to know <span class="sumtag">Vocabulary</span></summary>
+      <div class="fold-body">
+        <div class="vocab">
+          <div class="vterm"><b>Inertia</b><span>An object&rsquo;s resistance to any change in its motion. More mass means more inertia.</span></div>
+          <div class="vterm"><b>Force</b><span>A push or a pull on an object. Measured in newtons (N).</span></div>
+          <div class="vterm"><b>Unbalanced force</b><span>When forces on an object do not cancel out. Only an unbalanced force can change an object&rsquo;s motion.</span></div>
+          <div class="vterm"><b>Acceleration</b><span>How quickly an object&rsquo;s speed or direction changes. A hard tap gives a big acceleration.</span></div>
+          <div class="vterm"><b>Friction</b><span>A force that resists sliding between two touching surfaces. Here it is the only thing holding the loose chip to the taped chip.</span></div>
+          <div class="vterm"><b>Newton&rsquo;s First Law</b><span>An object at rest stays at rest, and an object in motion stays in motion at the same speed and direction, unless an unbalanced force acts on it.</span></div>
+          <div class="vterm"><b>Mass</b><span>The amount of matter in an object. It is what gives an object inertia.</span></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="chev">&#9656;</span> How to use this simulation <span class="sumtag">Controls</span></summary>
+      <div class="fold-body">
+        <ol class="steps">
+          <li>Pick <strong>Rear&#8209;end tap</strong> or <strong>Front&#8209;end tap</strong>. This chooses which side your hand taps.</li>
+          <li>Drag the <strong>force slider</strong> from 1 to 10 to set how hard you tap. The words under the slider tell you how hard that is.</li>
+          <li>Choose a <strong>prediction</strong> if your teacher asks you to. The simulation will tell you afterward whether you were right.</li>
+          <li>Set the <strong>playback speed</strong>. The real event takes less than a tenth of a second, so start on <strong>Slow</strong> or <strong>Super slow</strong> so you can actually see the chip slip.</li>
+          <li>Press <strong>Tap the car</strong>. Watch the arrows: the blue arrow is the car&rsquo;s speed, the red arrow is the chip&rsquo;s speed.</li>
+          <li>Read the four numbers under the bench. <strong>Chip slip on car</strong> tells you how far the loose chip has slid across the taped chip &mdash; once it passes about 2.1 cm, it tips off.</li>
+          <li>Press <strong>Reload the chip &amp; reset</strong> to set the car back up, then change one thing and try again. Every run is saved in the trial log below.</li>
+        </ol>
+      </div>
+    </details>
+
+  </div>
+
+  <!-- DATA -->
+  <section class="card" aria-label="Trial log">
+    <div class="card-hd">
+      <h2>Trial log</h2>
+      <button class="ghost" id="clear" style="width:auto;margin:0;padding:8px 14px;font-size:11px;">Clear</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Test</th><th>Force</th><th>Car&rsquo;s top speed</th>
+            <th>Car&rsquo;s acceleration</th><th>Chip&rsquo;s top speed</th><th>Result</th><th>Chip ended up</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="8" class="empty">No trials yet &mdash; run the simulation to fill this in.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:0 18px 18px;">
+      <div class="model-note">
+        <strong style="color:var(--ink-2);">How this model works:</strong> the car is 13&nbsp;cm long with low&#8209;friction wheels. Chips are 39&nbsp;mm across. The grip between the two chips is modeled with a static friction coefficient of 0.24 and a sliding coefficient of 0.20; the wheels use a rolling coefficient of 0.07. The loose chip tips off once it slides about 2.1&nbsp;cm across the taped chip, then keeps its sideways speed while it falls &mdash; which is why it lands a little past where it tipped. Air resistance is ignored.
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+
+  /* ---------- theme-aware colors ---------- */
+  var C = {};
+  function readColors(){
+    var s = getComputedStyle(document.documentElement);
+    ['ink','ink-2','ink-3','line','line-2','card','card-2','card-3','accent','accent-deep',
+     'amber','red','green','bench','bench-2','bench-edge','paper'].forEach(function(n){
+      C[n] = s.getPropertyValue('--'+n).trim();
+    });
+  }
+  readColors();
+  if(window.matchMedia){
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if(mq.addEventListener) mq.addEventListener('change', function(){ readColors(); draw(); });
+  }
+  new MutationObserver(function(){ readColors(); draw(); })
+    .observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+
+  /* ---------- world / physics constants (SI) ---------- */
+  var G = 9.81;
+  var VIEW_W = 0.820;      // metres of bench shown
+  var PX = cv.width / VIEW_W;         // px per metre
+  var BENCH_Y = 0.107;                // world y of bench surface, measured DOWN from top
+  var MU_S = 0.24, MU_K = 0.20, MU_ROLL = 0.07, MU_TABLE = 0.34;
+  var SLIP_LIMIT = 0.0215;            // chip tips off after this much slide
+  var CAR_L = 0.130, CAR_BODY_H = 0.037, WHEEL_R = 0.0135;
+  var DECK_Y = 0.045;                 // height of car deck above bench
+  var CHIP_D = 0.039, CHIP_T = 0.0068;
+  var CHIP_OFFSET = 0.036;            // chip centre relative to car centre (front deck)
+  var CAR_START = 0.410;
+  var TAPE_T = 0.0022;
+  var H_ON_CAR = DECK_Y + TAPE_T + CHIP_T + CHIP_T/2;   // loose-chip centre height above bench
+  var H_LANDED = CHIP_T/2;
+
+  function dv(f){ return 0.16 + 0.0556*(f-1); }
+  function tau(f){ return 0.165 - 0.0125*(f-1); }
+  function accel(f){ return dv(f)/tau(f); }
+  function forceWord(f){
+    if(f<=2) return 'Gentle nudge';
+    if(f<=4) return 'Light tap';
+    if(f<=6) return 'Firm tap';
+    if(f<=8) return 'Hard tap';
+    return 'Sharp flick';
+  }
+
+  /* ---------- state ---------- */
+  var S = {
+    test:'rear', force:6, speed:0.25, predict:null,
+    phase:'ready',            // ready | tap | roll | done
+    t:0, tapDir:1,
+    car:{x:CAR_START, v:0},
+    chip:{x:CAR_START+CHIP_OFFSET, h:H_ON_CAR, v:0, vy:0, riding:true, onCar:true, landed:false},
+    peakCar:0, peakChip:0, maxSlip:0, trial:0, handT:-1
+  };
+  var rows = [];
+
+  function reset(){
+    S.phase='ready'; S.t=0; S.handT=-1;
+    S.car.x=CAR_START; S.car.v=0;
+    S.chip.x=CAR_START+CHIP_OFFSET; S.chip.h=H_ON_CAR; S.chip.v=0; S.chip.vy=0;
+    S.chip.riding=true; S.chip.onCar=true; S.chip.landed=false;
+    S.peakCar=0; S.peakChip=0; S.maxSlip=0;
+    setPhasePill('Ready');
+    document.getElementById('run').disabled=false;
+    updateReadouts();
+    draw();
+  }
+
+  /* ---------- physics ---------- */
+  function step(dt){
+    var f=S.force, a_tap=accel(f), dir=S.tapDir;
+    var carA;
+
+    if(S.phase==='tap'){
+      carA = dir*a_tap;
+    } else {
+      carA = (Math.abs(S.car.v) > 1e-5) ? -Math.sign(S.car.v)*MU_ROLL*G : 0;
+      if(Math.abs(S.car.v) < 0.004 && Math.abs(carA) > 0){ S.car.v=0; carA=0; }
+    }
+
+    // ---- loose chip ----
+    if(S.chip.onCar){
+      if(S.chip.riding){
+        // does friction have enough grip to carry the chip?
+        if(Math.abs(carA) > MU_S*G){
+          S.chip.riding=false;
+        }else{
+          S.chip.v = S.car.v + carA*dt;   // moves as one with the car
+        }
+      }
+      if(!S.chip.riding){
+        var rel = S.car.v - S.chip.v;     // car moving relative to chip
+        var fa = (Math.abs(rel) > 1e-6 ? Math.sign(rel) : 0) * MU_K*G;
+        var nv = S.chip.v + fa*dt;
+        if(rel !== 0 && Math.sign(S.car.v-nv) !== Math.sign(rel)){
+          nv = S.car.v; S.chip.riding = true;   // speeds matched: grip returns
+        }
+        S.chip.v = nv;
+      }
+    }
+
+    // ---- integrate ----
+    S.car.v += carA*dt;
+    S.car.x += S.car.v*dt;
+
+    if(S.chip.onCar){
+      S.chip.x += S.chip.v*dt;
+      var slip = S.chip.x - (S.car.x + CHIP_OFFSET);
+      S.maxSlip = Math.max(S.maxSlip, Math.abs(slip));
+      if(Math.abs(slip) > SLIP_LIMIT && !S.chip.riding){
+        S.chip.onCar=false; S.chip.vy=0;      // tips off, keeps its sideways speed
+      }
+    }else if(!S.chip.landed){
+      S.chip.vy += G*dt;                       // vy is downward speed
+      S.chip.h  -= S.chip.vy*dt;               // h is height above the bench
+      S.chip.x  += S.chip.v*dt;                // sideways speed is kept during the fall
+      if(S.chip.h <= H_LANDED){
+        S.chip.h = H_LANDED; S.chip.landed=true; S.chip.vy=0;
+        S.chip.v *= 0.55;                      // energy lost on landing
+      }
+    }else{
+      var ta = (Math.abs(S.chip.v)>1e-5) ? -Math.sign(S.chip.v)*MU_TABLE*G : 0;
+      S.chip.v += ta*dt;
+      if(Math.abs(S.chip.v) < 0.004) S.chip.v=0;
+      S.chip.x += S.chip.v*dt;
+    }
+
+    S.peakCar = Math.max(S.peakCar, Math.abs(S.car.v));
+    S.peakChip = Math.max(S.peakChip, Math.abs(S.chip.v));
+
+    // clamp to bench
+    var lim = VIEW_W - CAR_L/2 - 0.004;
+    if(S.car.x < CAR_L/2+0.004){ S.car.x = CAR_L/2+0.004; S.car.v=0; }
+    if(S.car.x > lim){ S.car.x = lim; S.car.v=0; }
+    if(S.chip.x < 0.012){ S.chip.x=0.012; S.chip.v=0; }
+    if(S.chip.x > VIEW_W-0.012){ S.chip.x=VIEW_W-0.012; S.chip.v=0; }
+
+    S.t += dt;
+    if(S.phase==='tap' && S.t >= tau(f)){ S.phase='roll'; setPhasePill('Rolling…'); }
+
+    var settled = Math.abs(S.car.v)<0.006 && Math.abs(S.chip.v)<0.006 &&
+                  (S.chip.onCar || S.chip.landed);
+    if(S.phase==='roll' && settled && S.t > tau(f)+0.05) finish();
+  }
+
+  /* ---------- drawing ---------- */
+  function X(m){ return m*PX; }
+  function Y(m){ return m*PX; }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    var rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);
+    ctx.moveTo(x+rr,y);
+    ctx.lineTo(x+w-rr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
+    ctx.lineTo(x+w,y+h-rr); ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+    ctx.lineTo(x+rr,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
+    ctx.lineTo(x,y+rr); ctx.quadraticCurveTo(x,y,x+rr,y);
+    ctx.closePath();
+  }
+
+  function drawBench(){
+    var by = Y(BENCH_Y);
+    ctx.fillStyle = C['card-2'];
+    ctx.fillRect(0,0,cv.width,by);
+
+    // counter slab
+    var g = ctx.createLinearGradient(0,by,0,cv.height);
+    g.addColorStop(0, C['bench']); g.addColorStop(1, C['bench-2']);
+    ctx.fillStyle=g; ctx.fillRect(0,by,cv.width,cv.height-by);
+    ctx.fillStyle=C['bench-edge']; ctx.fillRect(0,by,cv.width,Y(0.0022));
+
+    // printed centimetre ruler on the counter face
+    var top = by + Y(0.020);
+    ctx.strokeStyle = C['bench-edge']; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0,top); ctx.lineTo(cv.width,top); ctx.stroke();
+    ctx.font='700 17px "JetBrains Mono", monospace';
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    for(var cm=0; cm<=82; cm++){
+      var px=X(cm/100);
+      var big = (cm%10===0), mid=(cm%5===0);
+      ctx.beginPath();
+      ctx.lineWidth = big?2.5:1.5;
+      ctx.strokeStyle = C['bench-edge'];
+      ctx.moveTo(px,top); ctx.lineTo(px, top + (big?16:mid?11:7));
+      ctx.stroke();
+      if(big && cm>0 && cm<82){
+        ctx.fillStyle=C['bench-edge'];
+        ctx.fillText(String(cm), px, top+19);
+      }
+    }
+    ctx.textAlign='left';
+    ctx.fillStyle=C['bench-edge'];
+    ctx.font='800 15px Poppins, sans-serif';
+    ctx.fillText('CENTIMETRES', 8, top+19);
+  }
+
+  // side view of a poker chip
+  function chip(cxpx, cypx, w, h, base, stripe){
+    ctx.save();
+    roundRect(cxpx-w/2, cypx-h/2, w, h, h*0.34);
+    ctx.fillStyle=base; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.45)'; ctx.stroke();
+    ctx.clip();
+    ctx.fillStyle=stripe;
+    for(var i=-2;i<=2;i++){
+      var sx = cxpx + i*(w/5.2) - w*0.032;
+      ctx.fillRect(sx, cypx-h/2, w*0.064, h);
+    }
+    ctx.restore();
+    ctx.save();
+    roundRect(cxpx-w/2, cypx-h/2, w, h, h*0.34);
+    ctx.clip();
+    ctx.fillStyle='rgba(255,255,255,.28)';
+    ctx.fillRect(cxpx-w/2, cypx-h/2, w, h*0.3);
+    ctx.restore();
+  }
+
+  function drawCar(){
+    var by=Y(BENCH_Y);
+    var cx=X(S.car.x), L=X(CAR_L), H=Y(CAR_BODY_H), wr=Y(WHEEL_R);
+    var bodyBottom = by - wr*0.62;
+    var bodyTop = bodyBottom - H;
+
+    // wheels
+    [-0.040, 0.040].forEach(function(o){
+      var wx=cx+X(o), wy=by-wr;
+      ctx.beginPath(); ctx.arc(wx,wy,wr,0,6.2832);
+      ctx.fillStyle='#171A1F'; ctx.fill();
+      ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(wx,wy,wr*0.34,0,6.2832);
+      ctx.fillStyle='#6E7580'; ctx.fill();
+    });
+
+    // shadow
+    ctx.save();
+    ctx.fillStyle='rgba(0,0,0,.18)';
+    ctx.beginPath(); ctx.ellipse(cx, by+Y(0.0035), L*0.48, Y(0.004), 0,0,6.2832); ctx.fill();
+    ctx.restore();
+
+    // body
+    var gg=ctx.createLinearGradient(0,bodyTop,0,bodyBottom);
+    gg.addColorStop(0,'#5AA7EC'); gg.addColorStop(0.45,'#2C7FD4'); gg.addColorStop(1,'#1A5DA8');
+    roundRect(cx-L/2, bodyTop, L, H, Y(0.008));
+    ctx.fillStyle=gg; ctx.fill();
+    ctx.lineWidth=2.5; ctx.strokeStyle='#134A8F'; ctx.stroke();
+
+    // open bed at the rear
+    var bedW=L*0.40, bedX=cx-L/2+L*0.12;
+    roundRect(bedX, bodyTop+Y(0.004), bedW, H*0.52, Y(0.004));
+    ctx.fillStyle='#0F4884'; ctx.fill();
+    ctx.strokeStyle='#0B3767'; ctx.lineWidth=2; ctx.stroke();
+
+    // small side tabs from the reference car
+    ctx.fillStyle='#1A5DA8';
+    ctx.fillRect(cx-L*0.30, bodyBottom-Y(0.006), X(0.008), Y(0.011));
+    ctx.fillRect(cx+L*0.26, bodyBottom-Y(0.006), X(0.008), Y(0.011));
+
+    // "FRONT" marker
+    ctx.font='800 15px Poppins, sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.85)';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('FRONT', cx+L*0.30, bodyTop+H*0.72);
+
+    return {top:bodyTop, cx:cx, L:L};
+  }
+
+  function drawChips(carGeo){
+    var by=Y(BENCH_Y);
+    var deckTop = by - Y(DECK_Y);
+    var cw=X(CHIP_D), ch=Y(CHIP_T);
+    var tapeX = X(S.car.x + CHIP_OFFSET);
+
+    // double-sided tape
+    roundRect(tapeX-cw*0.56, deckTop-Y(0.0022), cw*1.12, Y(0.0025), 1.5);
+    ctx.fillStyle='#E8C86B'; ctx.fill();
+    ctx.strokeStyle='rgba(120,95,20,.55)'; ctx.lineWidth=1.5; ctx.stroke();
+
+    // secured chip (taped down)
+    var y1 = deckTop - Y(0.0022) - ch/2;
+    chip(tapeX, y1, cw, ch, '#C13029', '#F4EFE6');
+
+    // loose chip
+    var lx = X(S.chip.x);
+    var ly = S.chip.onCar ? (y1 - ch) : (by - Y(S.chip.h));
+    chip(lx, ly, cw, ch, '#1D2C3E', '#EDEFF2');
+
+    return {looseX:lx, looseY:ly, securedY:y1, deckTop:deckTop};
+  }
+
+  function arrow(x1,y,len,color,label){
+    if(Math.abs(len)<4) return;
+    var x2=x1+len;
+    ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x2-Math.sign(len)*10,y); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x2,y); ctx.lineTo(x2-Math.sign(len)*16, y-9); ctx.lineTo(x2-Math.sign(len)*16, y+9);
+    ctx.closePath(); ctx.fill();
+    if(label){
+      ctx.font='800 17px Poppins, sans-serif';
+      ctx.textAlign = len>0?'left':'right'; ctx.textBaseline='bottom';
+      ctx.fillText(label, x1 - (len>0?0:0), y-13);
+    }
+  }
+
+  function drawHand(){
+    if(S.handT<0) return;
+    var by=Y(BENCH_Y), wr=Y(WHEEL_R);
+    var L=X(CAR_L), cx=X(S.car.x);
+    var side = S.tapDir>0 ? -1 : 1;              // hand is on the side that pushes
+    var hx = cx + side*(L/2 + X(0.012));
+    var hy = by - wr*0.62 - Y(CAR_BODY_H)*0.55;
+    var w=X(0.026), h=Y(0.030);
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, S.handT));
+    roundRect(hx - (side<0?w:0), hy-h/2, w, h, Y(0.006));
+    ctx.fillStyle='#D9A882'; ctx.fill();
+    ctx.strokeStyle='#A97A54'; ctx.lineWidth=2; ctx.stroke();
+    // impact lines
+    ctx.strokeStyle=C['red']; ctx.lineWidth=3.5; ctx.lineCap='round';
+    for(var i=-1;i<=1;i++){
+      var yy=hy+i*Y(0.008);
+      ctx.beginPath();
+      ctx.moveTo(hx + side*X(0.004), yy);
+      ctx.lineTo(hx + side*X(0.014), yy + i*Y(0.005));
+      ctx.stroke();
+    }
+    ctx.font='800 17px Poppins, sans-serif';
+    ctx.fillStyle=C['red']; ctx.textAlign=side<0?'right':'left'; ctx.textBaseline='middle';
+    ctx.fillText('FORCE', hx + side*X(0.020), hy - Y(0.022));
+    ctx.restore();
+  }
+
+  function drawGap(){
+    if(S.phase!=='done' || S.chip.onCar) return;
+    var by=Y(BENCH_Y);
+    var a=X(S.chip.x), b=X(S.car.x);
+    var y=by+Y(0.006);
+    ctx.save();
+    ctx.strokeStyle=C['ink-3']; ctx.lineWidth=2; ctx.setLineDash([6,5]);
+    ctx.beginPath(); ctx.moveTo(a,y-Y(0.016)); ctx.lineTo(a,y+Y(0.004)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(b,y-Y(0.034)); ctx.lineTo(b,y+Y(0.004)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(a,y); ctx.lineTo(b,y); ctx.stroke();
+    var d=Math.abs(S.chip.x-S.car.x)*100;
+    ctx.font='800 18px "JetBrains Mono", monospace';
+    ctx.fillStyle=C['ink-2']; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    var midx=(a+b)/2;
+    var tw=ctx.measureText(d.toFixed(1)+' cm').width+14;
+    ctx.fillStyle=C['card']; ctx.fillRect(midx-tw/2, y-19, tw, 20);
+    ctx.fillStyle=C['ink-2']; ctx.fillText(d.toFixed(1)+' cm', midx, y-2);
+    ctx.restore();
+  }
+
+  function legend(){
+    var items=[['#1D2C3E','#EDEFF2','Loose chip — free to slide'],
+               ['#C13029','#F4EFE6','Taped chip — stuck down']];
+    var x=cv.width-18, y=21;
+    ctx.font='800 16px Poppins, sans-serif';
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    items.forEach(function(it,i){
+      var yy=y+i*27;
+      ctx.fillStyle=C['ink-3'];
+      ctx.fillText(it[2], x-50, yy);
+      chip(x-21, yy, 42, 13, it[0], it[1]);
+    });
+  }
+
+  // dotted reference line at the loose chip's starting spot — the whole point of the lab
+  function startMark(){
+    var x=X(CAR_START+CHIP_OFFSET), by=Y(BENCH_Y);
+    ctx.save();
+    ctx.strokeStyle=C['ink-3']; ctx.globalAlpha=.55; ctx.lineWidth=2; ctx.setLineDash([4,7]);
+    ctx.beginPath(); ctx.moveTo(x, 44); ctx.lineTo(x, by); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha=1;
+    ctx.font='800 15px Poppins, sans-serif';
+    ctx.fillStyle=C['ink-3']; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText('chip started here', x, 38);
+    ctx.restore();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    drawBench();
+    startMark();
+    if(!S.chip.onCar){
+      var by=Y(BENCH_Y), deckTop=by-Y(DECK_Y);
+      var cw=X(CHIP_D), ch=Y(CHIP_T);
+      chip(X(S.chip.x), by-Y(S.chip.h), cw, ch, '#1D2C3E', '#EDEFF2');
+      drawCar();
+      var tapeX=X(S.car.x+CHIP_OFFSET);
+      roundRect(tapeX-cw*0.56, deckTop-Y(0.0022), cw*1.12, Y(0.0025), 1.5);
+      ctx.fillStyle='#E8C86B'; ctx.fill();
+      ctx.strokeStyle='rgba(120,95,20,.55)'; ctx.lineWidth=1.5; ctx.stroke();
+      chip(tapeX, deckTop-Y(0.0022)-ch/2, cw, ch, '#C13029', '#F4EFE6');
+    }else{
+      drawChips(drawCar());
+    }
+    drawHand();
+    drawGap();
+
+    if(S.phase==='tap'||S.phase==='roll'){
+      var by2=Y(BENCH_Y), scale=190;
+      arrow(X(S.car.x), by2-Y(0.062), S.car.v*scale, C['accent'], 'car');
+      if(Math.abs(S.chip.v)>0.02)
+        arrow(X(S.chip.x), by2-Y(0.086), S.chip.v*scale, C['red'], 'chip');
+    }
+    legend();
+  }
+
+  /* ---------- run loop ---------- */
+  var raf=null, last=0;
+  function loop(ts){
+    if(!last) last=ts;
+    var real=Math.min(0.05,(ts-last)/1000); last=ts;
+    var simDt = real*S.speed;
+    var n=Math.max(1, Math.ceil(simDt/0.0004));
+    for(var i=0;i<n && S.phase!=='done';i++) step(simDt/n);
+    if(S.handT>=0) S.handT -= real*(S.speed<0.2?1.2:3.0);
+    updateReadouts(); draw();
+    if(S.phase!=='done') raf=requestAnimationFrame(loop);
+    else raf=null;
+  }
+
+  function run(){
+    if(S.phase==='tap'||S.phase==='roll') return;
+    reset();
+    S.tapDir = (S.test==='rear') ? 1 : -1;
+    S.phase='tap'; S.t=0; S.handT=1;
+    setPhasePill('Tapping…');
+    document.getElementById('run').disabled=true;
+    last=0; raf=requestAnimationFrame(loop);
+  }
+
+  function finish(){
+    S.phase='done';
+    setPhasePill('Finished');
+    document.getElementById('run').disabled=false;
+    var rode = S.chip.onCar;
+    var slipped = rode && S.maxSlip > 0.0015;
+    var f=S.force;
+    var vEl=document.getElementById('verdict'), wEl=document.getElementById('why');
+    var side = S.tapDir>0 ? 'behind' : 'in front of';
+    var gap = Math.abs(S.chip.x - S.car.x)*100;
+
+    if(rode && !slipped){
+      vEl.textContent = 'The chip rode along. Nothing slipped.';
+      wEl.innerHTML = 'A force of <strong>'+f+'</strong> changed the car’s speed at only <strong>'
+        + accel(f).toFixed(1) + ' m/s²</strong>. Friction between the two chips could grip that hard, so the chip and the car moved as <strong>one object</strong>. Turn the force up until the chip can no longer keep up.';
+    }else if(rode){
+      vEl.textContent = 'The chip slipped ' + (S.maxSlip*100).toFixed(1) + ' cm — but it stayed on the car.';
+      wEl.innerHTML = 'At <strong>'+accel(f).toFixed(1)+' m/s²</strong> the car changed speed faster than friction could keep up, so the chip <strong>lost its grip and fell behind</strong> for a moment. Then the car slowed down, the chip caught up, and friction grabbed hold again before the chip reached the edge. Watch the <strong>chip slip</strong> readout during the run — it climbs, then stops. Add more force and the slip will pass <strong>2.1 cm</strong> and the chip will tip right off.';
+    }else{
+      vEl.textContent = 'The chip got left behind — it ended up ' + side + ' the car.';
+      wEl.innerHTML = 'You pushed on the <strong>car</strong>, not the chip. The car’s speed changed at <strong>'
+        + accel(f).toFixed(1) + ' m/s²</strong>, which is more grip than friction could supply, so the chip kept doing what it was doing — its top speed only reached <strong>'
+        + S.peakChip.toFixed(2) + ' m/s</strong> while the car hit <strong>' + S.peakCar.toFixed(2)
+        + ' m/s</strong>. It finished <strong>' + gap.toFixed(1) + ' cm</strong> ' + side + ' the car, on the same side your hand tapped.';
+    }
+
+    var pb=document.getElementById('pBack');
+    if(S.predict){
+      var right = (S.predict==='ride') === rode;
+      pb.hidden=false;
+      pb.innerHTML = 'Your prediction: <strong>'+(S.predict==='ride'?'chip rides along':'chip gets left')
+        +'</strong> &nbsp;&middot;&nbsp; Actual: <strong>'+(rode?'chip rode along':'chip got left')+'</strong> &nbsp;'
+        + (right?'<span class="tick">&#10003; Match</span>':'<span class="cross">&#10007; Not a match &mdash; why not?</span>');
+    }else{ pb.hidden=true; }
+
+    logRow(rode, slipped, gap);
+  }
+
+  /* ---------- UI ---------- */
+  function setPhasePill(t){
+    var p=document.getElementById('phasePill');
+    p.textContent=t;
+    p.className='pill'+((t==='Tapping…'||t==='Rolling…')?' warn':t==='Finished'?' good':'');
+  }
+  function updateReadouts(){
+    document.getElementById('rCar').innerHTML = Math.abs(S.car.v).toFixed(2)+'<span class="u">m/s</span>';
+    document.getElementById('rChip').innerHTML = Math.abs(S.chip.v).toFixed(2)+'<span class="u">m/s</span>';
+    var slipEl = document.getElementById('rSlip');
+    if(S.chip.onCar){
+      slipEl.innerHTML = (Math.abs(S.chip.x-(S.car.x+CHIP_OFFSET))*100).toFixed(1)+'<span class="u">cm</span>';
+    }else{
+      slipEl.innerHTML = 'tipped<span class="u">off</span>';
+    }
+    document.getElementById('rTime').innerHTML = S.t.toFixed(3)+'<span class="u">s</span>';
+  }
+  function logRow(rode, slipped, gap){
+    S.trial++;
+    rows.unshift({
+      n:S.trial,
+      test:S.test,
+      f:S.force,
+      vcar:S.peakCar.toFixed(2),
+      acc:accel(S.force).toFixed(1),
+      vchip:S.peakChip.toFixed(2),
+      state: rode ? (slipped?'slip':'rode') : 'left',
+      where: rode
+        ? (slipped ? ('still on the car, '+(S.maxSlip*100).toFixed(1)+' cm out of place') : 'still on the car, right where it started')
+        : (gap.toFixed(1)+' cm ' + (S.tapDir>0?'behind':'in front of') + ' the car')
+    });
+    renderRows();
+  }
+  function renderRows(){
+    var tb=document.getElementById('tbody');
+    if(!rows.length){
+      tb.innerHTML='<tr><td colspan="8" class="empty">No trials yet &mdash; run the simulation to fill this in.</td></tr>';
+      return;
+    }
+    tb.innerHTML = rows.map(function(r){
+      return '<tr>'
+        +'<td class="num">'+r.n+'</td>'
+        +'<td><span class="badge '+(r.test==='rear'?'rear':'front')+'">'+(r.test==='rear'?'Rear-end':'Front-end')+'</span></td>'
+        +'<td class="num">'+r.f+'</td>'
+        +'<td class="num">'+r.vcar+' m/s</td>'
+        +'<td class="num">'+r.acc+' m/s&sup2;</td>'
+        +'<td class="num">'+r.vchip+' m/s</td>'
+        +'<td><span class="badge '+r.state+'">'+
+          (r.state==='rode'?'Rode along':r.state==='slip'?'Slipped, stayed on':'Left behind')+'</span></td>'
+        +'<td>'+r.where+'</td>'
+        +'</tr>';
+    }).join('');
+  }
+
+  function press(el,on){ el.setAttribute('aria-pressed', on?'true':'false'); }
+
+  var bR=document.getElementById('btnRear'), bF=document.getElementById('btnFront');
+  var hint=document.getElementById('testHint');
+  bR.addEventListener('click',function(){
+    S.test='rear'; press(bR,true); press(bF,false);
+    hint.textContent='Your hand taps the back bumper. The car jumps forward.'; reset();
+  });
+  bF.addEventListener('click',function(){
+    S.test='front'; press(bF,true); press(bR,false);
+    hint.textContent='Your hand taps the front end — the same as a rolling car running into your hand.'; reset();
+  });
+
+  var fs=document.getElementById('force');
+  function syncForce(){
+    S.force=+fs.value;
+    document.getElementById('fNum').textContent=S.force;
+    document.getElementById('fWord').innerHTML = forceWord(S.force)
+      + ' <span>&mdash; ' + accel(S.force).toFixed(1) + ' m/s&sup2; of push</span>';
+  }
+  fs.addEventListener('input',syncForce); syncForce();
+
+  var pRide=document.getElementById('pRide'), pStay=document.getElementById('pStay');
+  pRide.addEventListener('click',function(){
+    S.predict = S.predict==='ride'?null:'ride';
+    press(pRide,S.predict==='ride'); press(pStay,false);
+  });
+  pStay.addEventListener('click',function(){
+    S.predict = S.predict==='stay'?null:'stay';
+    press(pStay,S.predict==='stay'); press(pRide,false);
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-sp]'),function(b){
+    b.addEventListener('click',function(){
+      S.speed=+b.dataset.sp;
+      Array.prototype.forEach.call(document.querySelectorAll('[data-sp]'),function(o){press(o,o===b);});
+      var lbl = S.speed===1?'Real time':(S.speed===0.25?'Slow motion ×¼':'Super slow ×1⁄12');
+      document.getElementById('speedPill').textContent=lbl;
+    });
+  });
+
+  document.getElementById('run').addEventListener('click',run);
+  document.getElementById('reset').addEventListener('click',function(){ if(raf){cancelAnimationFrame(raf);raf=null;} reset(); });
+  document.getElementById('clear').addEventListener('click',function(){ rows=[]; S.trial=0; renderRows(); });
+
+  reset();
+})();
+</script>
+
+</body>
+</html>

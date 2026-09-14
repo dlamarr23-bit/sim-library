@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>String Accelerometer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#e6e2d9;
+  --panel:#fbfaf7;
+  --panel-2:#f1eee6;
+  --line:#cdc7ba;
+  --line-soft:#e0dbd0;
+  --ink:#191a1c;
+  --ink-2:#57534a;
+  --ink-3:#847f73;
+  --paper:#faf7f0;
+  --paper-edge:#ded7c8;
+  --pencil:#1e1f22;
+  --tape:#2a2a2d;
+  --pos:#0b6b5e;
+  --pos-soft:rgba(11,107,94,.16);
+  --neg:#b03d28;
+  --neg-soft:rgba(176,61,40,.16);
+  --steady:#7d766a;
+  --lat:#6d4bb0;
+  --accent:#0b6b5e;
+  --shadow:0 1px 0 rgba(25,26,28,.04), 0 10px 26px -18px rgba(25,26,28,.55);
+  --stage:#d9d5cb;
+  --stage-2:#cfcabf;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+  --ground:#131416;
+  --panel:#1c1e21;
+  --panel-2:#232629;
+  --line:#33373b;
+  --line-soft:#292d31;
+  --ink:#edeae3;
+  --ink-2:#a7a49c;
+  --ink-3:#7c7970;
+  --paper:#f4f1e8;
+  --paper-edge:#c9c2b2;
+  --pos:#3fbfa6;
+  --pos-soft:rgba(63,191,166,.18);
+  --neg:#e2705a;
+  --neg-soft:rgba(226,112,90,.18);
+  --steady:#9a958a;
+  --lat:#a487e8;
+  --accent:#3fbfa6;
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 14px 30px -20px rgba(0,0,0,.9);
+  --stage:#26292c;
+  --stage-2:#1e2124;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131416;
+  --panel:#1c1e21;
+  --panel-2:#232629;
+  --line:#33373b;
+  --line-soft:#292d31;
+  --ink:#edeae3;
+  --ink-2:#a7a49c;
+  --ink-3:#7c7970;
+  --paper:#f4f1e8;
+  --paper-edge:#c9c2b2;
+  --pos:#3fbfa6;
+  --pos-soft:rgba(63,191,166,.18);
+  --neg:#e2705a;
+  --neg-soft:rgba(226,112,90,.18);
+  --steady:#9a958a;
+  --lat:#a487e8;
+  --accent:#3fbfa6;
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 14px 30px -20px rgba(0,0,0,.9);
+  --stage:#26292c;
+  --stage-2:#1e2124;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Poppins", system-ui, sans-serif; font-weight:700;
+  font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:min(1900px,97vw); margin:0 auto; padding:clamp(18px,2.2vw,34px) 0 64px;}
+h1,h2,h3{margin:0; text-wrap:balance;}
+.eyebrow{
+  font-size:clamp(11px,.85vw,13px); font-weight:800; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--ink-3);
+}
+header.masthead{
+  display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
+  gap:16px 28px; padding-bottom:16px; margin-bottom:clamp(16px,1.6vw,26px);
+  border-bottom:2px solid var(--ink);
+}
+header.masthead h1{font-size:clamp(26px,3vw,42px); font-weight:800; letter-spacing:-.02em; line-height:1.08;}
+header.masthead .q{
+  font-family:"Caveat", "Poppins", cursive; font-weight:700;
+  font-size:clamp(20px,1.7vw,27px); color:var(--accent); line-height:1.2;
+  max-width:34ch;
+}
+.grid-main{
+  display:grid; grid-template-columns:minmax(0,1.5fr) minmax(340px,.95fr);
+  gap:clamp(14px,1.3vw,22px); align-items:start;
+}
+.panel{
+  background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  box-shadow:var(--shadow); overflow:hidden;
+}
+.panel-head{
+  display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+  padding:12px 16px; border-bottom:1px solid var(--line-soft); background:var(--panel-2);
+}
+.panel-head h2{font-size:15px; font-weight:800; letter-spacing:.14em; text-transform:uppercase;}
+.panel-head .hint{font-size:13px; font-weight:600; color:var(--ink-3); letter-spacing:.01em;}
+.stage{
+  background:
+    radial-gradient(120% 90% at 50% 0%, var(--stage) 0%, var(--stage-2) 100%);
+  display:block; width:100%; height:auto;
+}
+.side{display:flex; flex-direction:column; gap:clamp(14px,1.3vw,22px);}
+.readout{padding:14px 16px 16px; display:flex; flex-direction:column; gap:12px;}
+.status-row{display:flex; align-items:center; gap:14px;}
+.sign{
+  width:76px; height:76px; flex:none; border-radius:6px; border:3px solid currentColor;
+  display:grid; place-items:center; font-size:44px; font-weight:800; line-height:1;
+  color:var(--steady); transition:color .18s ease, background .18s ease;
+}
+.sign.pos{color:var(--pos); background:var(--pos-soft);}
+.sign.neg{color:var(--neg); background:var(--neg-soft);}
+.sign.lat{color:var(--lat); background:rgba(109,75,176,.14); font-size:34px;}
+.status-text .label{font-size:clamp(19px,1.5vw,25px); font-weight:800; line-height:1.15; letter-spacing:-.01em;}
+.status-text .sub{font-size:14px; font-weight:600; color:var(--ink-2); margin-top:2px;}
+.meters{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
+.meter{background:var(--panel-2); border:1px solid var(--line-soft); border-radius:6px; padding:8px 10px;}
+.meter .k{font-size:10.5px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3);}
+.meter .v{font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:2px;}
+.meter.fb .v{color:var(--pos)} .meter.fb.neg .v{color:var(--neg)} .meter.fb.zero .v{color:var(--ink)}
+.meter.lr .v{color:var(--lat)} .meter.lr.zero .v{color:var(--ink)}
+.controls{padding:14px 16px 18px; display:flex; flex-direction:column; gap:14px;}
+.controlbar{
+  padding:13px 16px 16px; border-top:1px solid var(--line-soft); background:var(--panel);
+  display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+}
+.controlbar .trials{flex:1 1 460px;}
+.bar-actions{display:flex; gap:8px; flex:0 0 auto;}
+.trials{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px;}
+button{font-family:inherit; font-weight:800; cursor:pointer; color:inherit;}
+button:focus-visible, [tabindex]:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
+.trial-btn{
+  position:relative; text-align:left; padding:11px 12px 10px; border-radius:6px;
+  border:1.5px solid var(--line); background:var(--panel-2); color:var(--ink);
+  font-size:14.5px; line-height:1.2; transition:border-color .15s, background .15s, transform .06s;
+}
+.trial-btn .n{display:block; font-size:10.5px; letter-spacing:.14em; color:var(--ink-3); margin-bottom:3px;}
+.trial-btn:hover{border-color:var(--accent);}
+.trial-btn:active{transform:translateY(1px);}
+.trial-btn.running{border-color:var(--accent); background:var(--pos-soft); color:var(--ink);}
+.trial-btn.done .n::after{content:" ✓"; color:var(--pos);}
+.trial-btn .bar{
+  position:absolute; left:0; bottom:0; height:3px; width:0%; background:var(--accent);
+  border-radius:0 3px 3px 0;
+}
+.free{display:flex; flex-direction:column; gap:11px;}
+.free-head{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.free-head .t{font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);}
+.slider-row label{display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; color:var(--ink-2); margin-bottom:3px;}
+.slider-row label b{color:var(--ink); font-variant-numeric:tabular-nums;}
+input[type=range]{width:100%; accent-color:var(--accent); height:26px; cursor:pointer;}
+.btn-row{display:flex; gap:8px; flex-wrap:wrap;}
+.mini{
+  padding:8px 13px; border-radius:5px; border:1.5px solid var(--line); background:var(--panel);
+  font-size:12.5px; letter-spacing:.06em; text-transform:uppercase;
+}
+.mini:hover{border-color:var(--accent); color:var(--accent);}
+.mini.solid{background:var(--ink); color:var(--panel); border-color:var(--ink);}
+.mini.solid:hover{background:var(--accent); border-color:var(--accent); color:#fff;}
+.mini[disabled]{opacity:.4; cursor:not-allowed; border-color:var(--line-soft);}
+.mini[disabled]:hover{color:inherit; border-color:var(--line-soft);}
+section.block{margin-top:clamp(16px,1.6vw,26px);}
+.table-head{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:10px 18px; padding:12px 16px; border-bottom:1px solid var(--line-soft); background:var(--panel-2);}
+.table-head h2{font-size:15px; font-weight:800; letter-spacing:.14em; text-transform:uppercase;}
+.table-head p{margin:0; font-size:13.5px; font-weight:600; color:var(--ink-2);}
+.obs{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
+.cell{border-right:1px solid var(--line-soft); padding:12px 12px 14px; display:flex; flex-direction:column; gap:9px; min-width:0;}
+.cell:last-child{border-right:none;}
+.cell h3{font-size:14.5px; font-weight:800; text-align:center; line-height:1.25; min-height:2.5em; display:grid; place-items:center;}
+.cell .diagram{width:100%; height:auto; display:block; background:var(--paper); border:1px solid var(--paper-edge); border-radius:4px; cursor:crosshair; touch-action:none;}
+.cell .cell-btns{display:flex; gap:6px; flex-wrap:wrap; justify-content:center;}
+.cell .tiny{font-size:11px; padding:6px 9px; border-radius:5px; border:1.5px solid var(--line); background:var(--panel); letter-spacing:.05em; text-transform:uppercase;}
+.cell .tiny:hover{border-color:var(--accent); color:var(--accent);}
+.cell .tiny[disabled]{opacity:.38; cursor:not-allowed;}
+.cell .tiny.on{background:var(--lat); border-color:var(--lat); color:#fff;}
+@keyframes nudge{0%,100%{box-shadow:0 0 0 0 var(--pos-soft)} 50%{box-shadow:0 0 0 7px var(--pos-soft)}}
+.cell .tiny.ready{border-color:var(--pos); color:var(--pos); animation:nudge 1.5s ease-in-out infinite;}
+.two-col{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:clamp(14px,1.3vw,22px); align-items:start;}
+.prose{padding:16px 20px 20px; font-weight:600; font-size:15.5px; color:var(--ink);}
+.prose ol{margin:0; padding-left:1.35em; display:flex; flex-direction:column; gap:9px; max-width:70ch;}
+.prose li::marker{font-weight:800; color:var(--accent);}
+.prose p{margin:0 0 11px; max-width:66ch;}
+.prose p:last-child{margin-bottom:0;}
+.prose strong{font-weight:800;}
+.eq{
+  font-family:"Caveat","Poppins",cursive; font-weight:700; font-size:27px; color:var(--accent);
+  background:var(--panel-2); border:1px dashed var(--line); border-radius:6px;
+  padding:8px 16px; display:inline-block; margin:4px 0 12px;
+}
+.legend{display:flex; flex-direction:column; gap:8px; margin-top:12px;}
+.legend div{display:flex; gap:10px; align-items:flex-start; font-size:14.5px; font-weight:600;}
+.legend span.key{
+  flex:none; width:30px; height:30px; border-radius:5px; border:2.5px solid currentColor;
+  display:grid; place-items:center; font-size:18px; font-weight:800; line-height:1;
+}
+.k-pos{color:var(--pos); background:var(--pos-soft);}
+.k-neg{color:var(--neg); background:var(--neg-soft);}
+.k-lat{color:var(--lat); background:rgba(109,75,176,.14); font-size:15px;}
+.k-zero{color:var(--steady);}
+footer.note{margin-top:22px; font-size:13px; font-weight:600; color:var(--ink-3); text-align:center;}
+@media (max-width:1080px){
+  .grid-main{grid-template-columns:minmax(0,1fr);}
+  .controlbar .trials{flex:1 1 100%;}
+  .two-col{grid-template-columns:minmax(0,1fr);}
+  .obs{grid-template-columns:1fr 1fr;}
+  .cell:nth-child(2){border-right:none;}
+  .cell:nth-child(1),.cell:nth-child(2){border-bottom:1px solid var(--line-soft);}
+}
+@media (max-width:620px){
+  .obs{grid-template-columns:1fr;}
+  .cell{border-right:none; border-bottom:1px solid var(--line-soft);}
+  .trials{grid-template-columns:1fr 1fr;}
+  .meters{grid-template-columns:1fr 1fr;}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important; transition:none !important;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">Motion Lab &middot; Mini Lab</p>
+      <h1>Describing Acceleration<br>Using an Accelerometer</h1>
+    </div>
+    <p class="q">When does an object accelerate?</p>
+  </header>
+
+  <div class="grid-main">
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>The Accelerometer</h2>
+        <p class="hint">Solid line = the string &middot; Dashed line = what the half-circle measures</p>
+      </div>
+      <canvas id="card" class="stage" width="1200" height="1080" role="img"
+              aria-label="Close-up of the paper accelerometer card with a string hanging from the top."></canvas>
+      <div class="controlbar">
+        <div class="trials">
+          <button class="trial-btn" data-trial="speedUp"><span class="n">STEP 2</span>Speeding Up<span class="bar"></span></button>
+          <button class="trial-btn" data-trial="slowDown"><span class="n">STEP 3</span>Slowing Down<span class="bar"></span></button>
+          <button class="trial-btn" data-trial="steady"><span class="n">STEP 4</span>Steady Pace<span class="bar"></span></button>
+          <button class="trial-btn" data-trial="leftTurn"><span class="n">STEP 5</span>Left Turn<span class="bar"></span></button>
+        </div>
+        <div class="bar-actions">
+          <button class="mini" id="btn-stop">Stop</button>
+          <button class="mini solid" id="btn-reset">Reset everything</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="side">
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Reading</h2>
+          <p class="hint" id="mode-tag">Free walk</p>
+        </div>
+        <div class="readout">
+          <div class="status-row">
+            <div class="sign" id="sign" aria-hidden="true">0</div>
+            <div class="status-text">
+              <div class="label" id="status-label">Standing still</div>
+              <div class="sub" id="status-sub">The string hangs straight down.</div>
+            </div>
+          </div>
+          <div class="meters">
+            <div class="meter fb zero" id="m-fb">
+              <div class="k">Front / back</div>
+              <div class="v" id="v-fb">0&deg;</div>
+            </div>
+            <div class="meter lr zero" id="m-lr">
+              <div class="k">Sideways</div>
+              <div class="v" id="v-lr">0&deg;</div>
+            </div>
+            <div class="meter">
+              <div class="k">Walking speed</div>
+              <div class="v" id="v-speed">0.0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Overhead View</h2>
+          <p class="hint">Looking down at yourself</p>
+        </div>
+        <canvas id="top" class="stage" width="900" height="760" role="img"
+                aria-label="Top-down view of the walker's path, walking direction, and the direction the string swings."></canvas>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Walk It Yourself</h2>
+          <p class="hint">Free mode</p>
+        </div>
+        <div class="controls">
+          <div class="slider-row">
+            <label for="throttle"><span>Slow down &nbsp;&larr;&nbsp; Speed up</span><b id="throttle-val">0.0 m/s&sup2;</b></label>
+            <input type="range" id="throttle" min="-3" max="3" step="0.1" value="0">
+          </div>
+          <div class="slider-row">
+            <label for="steer"><span>Turn right &nbsp;&larr;&nbsp; Turn left</span><b id="steer-val">Straight</b></label>
+            <input type="range" id="steer" min="-1" max="1" step="0.05" value="0">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <section class="block panel">
+    <div class="table-head">
+      <h2>Movement of String</h2>
+      <p>Run a trial, then draw the string on that diagram &mdash; click inside the half-circle, or press <strong>Stamp</strong> to copy what the sim showed.</p>
+      <button class="mini" id="btn-clear-all">Clear all diagrams</button>
+    </div>
+    <div class="obs" id="obs"></div>
+  </section>
+
+  <section class="block two-col">
+    <div class="panel">
+      <div class="panel-head"><h2>How to use this simulation</h2></div>
+      <div class="prose">
+        <ol>
+          <li>Look at the card first. The string hangs from the tape at the top, the half-circle is the scale you read it against, and the arrow at the bottom shows which way you are walking.</li>
+          <li>Press a trial button &mdash; <strong>Speeding Up</strong>, <strong>Slowing Down</strong>, <strong>Steady Pace</strong>, or <strong>Left Turn</strong>. Each one walks for you and matches a step in the lab procedure.</li>
+          <li>Watch which side of the card the string swings to. The <strong>+</strong> side means positive acceleration, the <strong>&minus;</strong> side means negative acceleration, and straight down means no acceleration at all.</li>
+          <li>Check the <strong>Reading</strong> box while the trial runs. <em>Front / back</em> is the angle the half-circle measures; <em>Sideways</em> is the string swinging out of the card, which only happens when you turn.</li>
+          <li>Use the <strong>Overhead View</strong> for the turn. It shows your path from above and the direction the string swings compared to the way you are walking.</li>
+          <li>Record what you saw in <strong>Movement of String</strong>. Click inside a diagram to draw the string yourself, or press <strong>Stamp</strong> to copy the biggest swing from that trial.</li>
+          <li>Try <strong>Walk it yourself</strong>. Push the top slider forward to speed up, pull it back to slow down, and use the bottom slider to turn. <strong>Reset everything</strong> starts over.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Why the string moves</h2></div>
+      <div class="prose">
+        <p>The washer at the end of the string keeps doing what it was already doing. When you speed up, the card moves ahead and the washer lags behind &mdash; so the string swings <strong>backward</strong>, to the <strong>+</strong> side. When you slow down, the washer keeps going and swings <strong>forward</strong>, to the <strong>&minus;</strong> side. The string always leans opposite the acceleration.</p>
+        <p>The size of the lean depends on how hard you accelerate:</p>
+        <div class="eq">tan(angle) = acceleration &divide; 9.8 m/s&sup2;</div>
+        <div class="legend">
+          <div><span class="key k-pos">+</span><span>Speeding up &mdash; string swings back toward the <strong>+</strong> mark.</span></div>
+          <div><span class="key k-neg">&minus;</span><span>Slowing down &mdash; string swings ahead toward the <strong>&minus;</strong> mark.</span></div>
+          <div><span class="key k-zero">0</span><span>Steady pace in a straight line &mdash; string hangs straight down. No acceleration.</span></div>
+          <div><span class="key k-lat">&perp;</span><span>Turning &mdash; the string swings <strong>out of the card</strong>, toward the outside of the turn. Changing direction is acceleration too, even when your speed never changes.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="note">Motion Lab &middot; string accelerometer &middot; angles from tan&thinsp;&theta;&nbsp;=&nbsp;a/g, with the string modeled as a damped pendulum.</footer>
+</div>
+<script>
+(function(){
+"use strict";
+
+/* ---------- constants ---------- */
+var G = 9.81;
+var L = 0.125;                 // string length (m)
+var W0 = Math.sqrt(G / L);     // pendulum natural frequency
+var ZETA = 0.42;               // damping ratio -> a little swing, then settles
+var CDAMP = 2 * ZETA * W0;
+var KOUT = 0.62;               // how much out-of-card swing shifts on screen
+var MAXV = 3.6;
+var TURN_R = 1.15;             // tightest free-mode turn radius (m)
+var DEG = 180 / Math.PI;
+
+/* ---------- state ---------- */
+var S = {
+  v: 0, aCmd: 0, aEff: 0, aLat: 0, omega: 0,
+  heading: Math.PI / 2, X: 0, Y: 0, trail: [],
+  thfb: 0, vfb: 0, thlr: 0, vlr: 0,
+  trial: null, trialT: 0, peaks: {},
+  throttle: 0, steer: 0, last: 0
+};
+
+var TRIALS = {
+  speedUp:  { label: "Speeding Up",              v0: 0,   dur: 6.0,
+              drive: function(t){ return { a: (t > 1.0 && t < 2.8) ? 2.4 : 0 }; } },
+  slowDown: { label: "Slowing Down",             v0: 2.6, dur: 6.0,
+              drive: function(t){ return { a: (t > 1.2 && t < 2.7) ? -2.0 : 0 }; } },
+  steady:   { label: "Walking at a Steady Pace", v0: 1.5, dur: 5.5,
+              drive: function(){ return { a: 0 }; } },
+  leftTurn: { label: "Making a Left Turn",       v0: 1.5, dur: 7.0,
+              drive: function(t){ return { a: 0, r: (t > 1.6 && t < 2.95) ? 1.25 : 0 }; } }
+};
+var ORDER = ["speedUp", "slowDown", "steady", "leftTurn"];
+
+/* ---------- element refs ---------- */
+var $ = function(id){ return document.getElementById(id); };
+var cardCv = $("card"), topCv = $("top");
+var cardCtx = cardCv.getContext("2d"), topCtx = topCv.getContext("2d");
+var signEl = $("sign"), labelEl = $("status-label"), subEl = $("status-sub");
+var vfbEl = $("v-fb"), vlrEl = $("v-lr"), vspEl = $("v-speed");
+var mfbEl = $("m-fb"), mlrEl = $("m-lr"), modeTag = $("mode-tag");
+var throttleEl = $("throttle"), steerEl = $("steer");
+var throttleVal = $("throttle-val"), steerVal = $("steer-val");
+
+/* ---------- physics ---------- */
+function reset(keepMarks){
+  S.v = 0; S.aCmd = 0; S.aEff = 0; S.aLat = 0; S.omega = 0;
+  S.heading = Math.PI / 2; S.X = 0; S.Y = 0; S.trail = [];
+  S.thfb = 0; S.vfb = 0; S.thlr = 0; S.vlr = 0;
+  S.trial = null; S.trialT = 0; S.throttle = 0; S.steer = 0;
+  throttleEl.value = 0; steerEl.value = 0;
+  if (!keepMarks) S.peaks = {};
+  syncSliderLabels();
+  document.querySelectorAll(".trial-btn").forEach(function(b){
+    b.classList.remove("running");
+    if (!keepMarks) b.classList.remove("done");
+    b.querySelector(".bar").style.width = "0%";
+  });
+  if (!keepMarks) refreshStampButtons();
+}
+
+function startTrial(key){
+  reset(true);
+  var T = TRIALS[key];
+  S.trial = key; S.trialT = 0; S.v = T.v0;
+  S.peaks[key] = { fb: 0, lr: 0 };
+  document.querySelectorAll(".trial-btn").forEach(function(b){
+    b.classList.toggle("running", b.dataset.trial === key);
+  });
+  modeTag.textContent = "Trial: " + T.label;
+}
+
+function endTrial(){
+  var key = S.trial;
+  S.trial = null; S.aCmd = 0; S.omega = 0;
+  var btn = document.querySelector('.trial-btn[data-trial="' + key + '"]');
+  if (btn){ btn.classList.remove("running"); btn.classList.add("done"); btn.querySelector(".bar").style.width = "0%"; }
+  modeTag.textContent = "Free walk";
+  refreshStampButtons(key);
+}
+
+function step(dt){
+  var r = 0;
+  if (S.trial){
+    var T = TRIALS[S.trial];
+    S.trialT += dt;
+    var d = T.drive(S.trialT, S.v);
+    S.aCmd = d.a || 0;
+    r = d.r || 0;
+    var btn = document.querySelector('.trial-btn[data-trial="' + S.trial + '"]');
+    if (btn) btn.querySelector(".bar").style.width = Math.min(100, (S.trialT / T.dur) * 100) + "%";
+    if (S.trialT >= T.dur) endTrial();
+  } else {
+    S.aCmd = S.throttle;
+    if (Math.abs(S.steer) > 0.02){
+      var rmin = Math.max(TURN_R, S.v * S.v / 4.0);   // cap sideways accel near 4 m/s²
+      r = (rmin / Math.abs(S.steer)) * (S.steer > 0 ? 1 : -1);
+    } else r = 0;
+  }
+
+  // forward motion
+  var a = S.aCmd;
+  if (S.v <= 0 && a < 0){ S.v = 0; a = 0; }
+  S.v += a * dt;
+  if (S.v < 0){ S.v = 0; a = 0; }
+  if (S.v > MAXV){ S.v = MAXV; if (a > 0) a = 0; }
+  S.aEff = a;
+
+  // turning: positive r = left turn
+  S.omega = (r !== 0 && S.v > 0.05) ? (S.v / r) : 0;
+  S.heading += S.omega * dt;
+  S.aLat = S.v * S.omega;              // + = acceleration toward the walker's left
+
+  S.X += Math.cos(S.heading) * S.v * dt;
+  S.Y += Math.sin(S.heading) * S.v * dt;
+  var n = S.trail.length;
+  if (!n || Math.hypot(S.X - S.trail[n-1][0], S.Y - S.trail[n-1][1]) > 0.04){
+    S.trail.push([S.X, S.Y]);
+    if (S.trail.length > 1400) S.trail.shift();
+  }
+
+  // string = damped pendulum chasing the effective-gravity direction
+  var tFb = Math.atan2(S.aEff, G);     // + = string swings back, toward the "+" mark
+  var tLr = Math.atan2(S.aLat, G);     // + = string swings to the walker's right (out of the card)
+  S.vfb += (-W0 * W0 * (S.thfb - tFb) - CDAMP * S.vfb) * dt;
+  S.thfb += S.vfb * dt;
+  S.vlr += (-W0 * W0 * (S.thlr - tLr) - CDAMP * S.vlr) * dt;
+  S.thlr += S.vlr * dt;
+
+  if (S.trial && S.peaks[S.trial]){
+    var p = S.peaks[S.trial];
+    if (Math.abs(S.thfb) > Math.abs(p.fb)) p.fb = S.thfb;
+    if (Math.abs(S.thlr) > Math.abs(p.lr)) p.lr = S.thlr;
+  }
+}
+
+/* ---------- canvas helpers ---------- */
+function fit(cv, ctx, lw, lh){
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var w = Math.max(280, Math.round(cv.clientWidth * dpr));
+  var h = Math.round(w * lh / lw);
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  ctx.setTransform(w / lw, 0, 0, w / lw, 0, 0);
+  ctx.clearRect(0, 0, lw, lh);
+}
+var TOKENS = ["--pencil","--paper","--paper-edge","--pos","--neg","--lat","--ink","--ink-3",
+              "--tape","--accent","--panel","--pos-soft","--neg-soft","--stage"];
+var TOK = {};
+function readTokens(){
+  var cs = getComputedStyle(document.documentElement);
+  TOKENS.forEach(function(t){ TOK[t] = cs.getPropertyValue(t).trim(); });
+}
+function css(name){ return TOK[name] || "#888"; }
+readTokens();
+if (window.matchMedia){
+  var mq = window.matchMedia("(prefers-color-scheme: dark)");
+  if (mq.addEventListener) mq.addEventListener("change", readTokens);
+}
+if (window.MutationObserver){
+  new MutationObserver(readTokens).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+}
+function dirTag(ctx, text, x, y, ux, uy, color, size){
+  // place a label just past a point, biased along (ux,uy) in screen terms
+  var sx = x + ux * 24, sy = y - uy * 24;
+  var align = Math.abs(ux) > 0.35 ? (ux > 0 ? "left" : "right") : "center";
+  var base  = Math.abs(uy) > 0.35 ? (uy > 0 ? "bottom" : "top") : "middle";
+  tag(ctx, text, sx, sy, align, base, color, size);
+}
+function tag(ctx, text, x, y, align, baseline, color, size){
+  ctx.save();
+  ctx.font = "800 " + (size || 15) + "px Poppins, sans-serif";
+  ctx.textAlign = align; ctx.textBaseline = baseline;
+  ctx.lineJoin = "round"; ctx.lineWidth = 6;
+  ctx.strokeStyle = css("--stage"); ctx.globalAlpha = 0.92;
+  ctx.strokeText(text, x, y);
+  ctx.globalAlpha = 1; ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+function line(ctx, x1, y1, x2, y2){ ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+function arrow(ctx, x1, y1, x2, y2, head){
+  line(ctx, x1, y1, x2, y2);
+  var a = Math.atan2(y2 - y1, x2 - x1);
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - head * Math.cos(a - 0.42), y2 - head * Math.sin(a - 0.42));
+  ctx.lineTo(x2 - head * Math.cos(a + 0.42), y2 - head * Math.sin(a + 0.42));
+  ctx.closePath(); ctx.fill();
+}
+
+/* ---------- the card ---------- */
+var CW = 1200, CH = 1080, PX = 3520, CX = 600, CY = 208;
+var CARD = { l: -0.152, r: 0.152, t: 0.042, b: -0.222 }, RAD = 0.133;
+function mx(x){ return CX + x * PX; }
+function my(z){ return CY - z * PX; }
+
+function drawCard(){
+  var ctx = cardCtx;
+  fit(cardCv, ctx, CW, CH);
+  var ink = css("--pencil"), paper = css("--paper"), edge = css("--paper-edge");
+  var pos = css("--pos"), neg = css("--neg"), lat = css("--lat");
+
+  // paper
+  var x0 = mx(CARD.l), x1 = mx(CARD.r), y0 = my(CARD.t), y1 = my(CARD.b);
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,.34)"; ctx.shadowBlur = 34; ctx.shadowOffsetY = 16;
+  ctx.fillStyle = paper;
+  ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+  ctx.restore();
+  ctx.strokeStyle = edge; ctx.lineWidth = 2;
+  ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+
+  var R = RAD * PX, px = mx(0), py = my(0);
+
+  // tinted sector for the in-plane reading
+  var th = S.thfb;
+  if (Math.abs(th) > 0.012){
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(px, py);
+    ctx.arc(px, py, R, Math.PI / 2, Math.PI / 2 + th, th < 0);
+    ctx.closePath();
+    ctx.fillStyle = th > 0 ? css("--pos-soft") : css("--neg-soft");
+    ctx.globalAlpha = 0.95; ctx.fill();
+    ctx.restore();
+  }
+
+  // protractor
+  ctx.strokeStyle = ink; ctx.lineCap = "round";
+  ctx.lineWidth = 3.4;
+  ctx.beginPath(); ctx.arc(px, py, R, 0, Math.PI); ctx.stroke();
+  ctx.lineWidth = 2.6;
+  line(ctx, px - R, py, px + R, py);
+  ctx.lineWidth = 2.2;
+  for (var d = -60; d <= 60; d += 30){
+    var a = d * Math.PI / 180;
+    line(ctx, px, py, px + R * Math.sin(a), py + R * Math.cos(a));
+  }
+  ctx.lineWidth = 1.6; ctx.globalAlpha = 0.55;
+  for (var t2 = -80; t2 <= 80; t2 += 10){
+    if (t2 % 30 === 0) continue;
+    var b = t2 * Math.PI / 180;
+    line(ctx, px + (R - 16) * Math.sin(b), py + (R - 16) * Math.cos(b),
+              px + R * Math.sin(b), py + R * Math.cos(b));
+  }
+  ctx.globalAlpha = 1;
+
+  // hand marks: + on the back side (left), - on the forward side (right)
+  var markY = my(-0.152), plusX = mx(-0.113), minusX = mx(0.113), s = 26;
+  ctx.lineWidth = 5; ctx.strokeStyle = pos;
+  line(ctx, plusX - s, markY, plusX + s, markY);
+  line(ctx, plusX, markY - s, plusX, markY + s);
+  ctx.strokeStyle = neg;
+  ctx.strokeRect(minusX - s - 12, markY - s + 4, (s + 12) * 2, (s - 4) * 2);
+  ctx.lineWidth = 5;
+  line(ctx, minusX - s + 2, markY, minusX + s - 2, markY);
+
+  ctx.font = '700 32px Caveat, Poppins, cursive';
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.fillStyle = pos; ctx.fillText("speeding up", plusX, markY + 40);
+  ctx.fillStyle = neg; ctx.fillText("slowing down", minusX, markY + 46);
+
+  // walk-this-way arrow
+  var wy = my(-0.196), wx = mx(0.006);
+  ctx.fillStyle = ink; ctx.strokeStyle = ink; ctx.lineWidth = 3;
+  ctx.font = '700 36px Caveat, Poppins, cursive';
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  ctx.fillText("walk this way", wx, wy);
+  arrow(ctx, wx + 16, wy, mx(0.132), wy, 18);
+
+  // tape + pivot
+  ctx.fillStyle = css("--tape");
+  ctx.fillRect(mx(-0.050), my(0.040), 0.100 * PX, 0.019 * PX);
+  ctx.fillRect(mx(-0.009), my(0.021), 0.018 * PX, 0.023 * PX);
+
+  // string: dashed in-plane shadow, then the real string
+  var sfb = Math.sin(S.thfb), slr = Math.sin(S.thlr);
+  var bx = -L * sfb, by = -L * slr;
+  var bz = -Math.sqrt(Math.max(L * L - bx * bx - by * by, 0));
+  var ipz = -Math.sqrt(Math.max(L * L - bx * bx, 0));
+  var sx = mx(bx + KOUT * (-by)), sy = my(bz);
+  var ix = mx(bx), iy = my(ipz);
+  var out = Math.abs(S.thlr) > 0.02;
+
+  ctx.save();
+  ctx.setLineDash([9, 9]); ctx.lineWidth = 3; ctx.strokeStyle = ink; ctx.globalAlpha = out ? 0.55 : 0.9;
+  line(ctx, px, py, ix, iy);
+  ctx.restore();
+  ctx.save();
+  ctx.globalAlpha = out ? 0.5 : 0.85;
+  ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(ix, iy, 10, 0, 6.2832); ctx.fill();
+  ctx.restore();
+
+  ctx.strokeStyle = out ? lat : ink;
+  ctx.lineWidth = 6.5;
+  line(ctx, px, py, sx, sy);
+  ctx.fillStyle = out ? lat : ink;
+  ctx.beginPath(); ctx.arc(sx, sy, 20, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = paper;
+  ctx.beginPath(); ctx.arc(sx, sy, 7.5, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = ink;
+  ctx.beginPath(); ctx.arc(px, py, 8, 0, 6.2832); ctx.fill();
+
+  if (out){
+    ctx.strokeStyle = lat; ctx.fillStyle = lat; ctx.lineWidth = 3;
+    ctx.save(); ctx.setLineDash([6, 7]);
+    line(ctx, ix, iy, sx, sy);
+    ctx.restore();
+    var lx = S.thlr > 0 ? sx + 30 : sx - 30;
+    var la = S.thlr > 0 ? "left" : "right";
+    ctx.save();
+    ctx.textAlign = la; ctx.lineJoin = "round"; ctx.lineWidth = 9; ctx.strokeStyle = paper;
+    ctx.textBaseline = "alphabetic";
+    ctx.font = '800 23px Poppins, sans-serif';
+    ctx.strokeText("OUT OF THE CARD", lx, sy - 46);
+    ctx.fillText("OUT OF THE CARD", lx, sy - 46);
+    ctx.font = '700 30px Caveat, Poppins, cursive';
+    ctx.strokeText(S.thlr > 0 ? "toward your right" : "toward your left", lx, sy - 18);
+    ctx.fillText(S.thlr > 0 ? "toward your right" : "toward your left", lx, sy - 18);
+    ctx.restore();
+  }
+
+  // caption under the card
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.font = '800 21px Poppins, sans-serif';
+  ctx.fillStyle = css("--ink-3");
+  ctx.fillText("HOLD IT LEVEL · ARROW POINTING AHEAD OF YOU", CX, my(CARD.b) + 22);
+}
+
+/* ---------- overhead ---------- */
+var TW = 900, TH = 760, TSC = 104, TX = 450, TY = 452;
+function drawTop(){
+  var ctx = topCtx;
+  fit(topCv, ctx, TW, TH);
+  var ink = css("--ink"), ink3 = css("--ink-3");
+
+  // ground grid, anchored to the world so motion is visible
+  ctx.save();
+  ctx.strokeStyle = ink3; ctx.globalAlpha = 0.22; ctx.lineWidth = 1;
+  var g = 1;
+  var ox = ((-S.X % g) + g) % g, oy = ((-S.Y % g) + g) % g;
+  for (var i = -9; i <= 9; i++){
+    var gx = TX + (ox + i * g) * TSC;
+    line(ctx, gx, 0, gx, TH);
+    var gy = TY - (oy + i * g) * TSC;
+    line(ctx, 0, gy, TW, gy);
+  }
+  ctx.restore();
+
+  // path
+  if (S.trail.length > 1){
+    ctx.strokeStyle = css("--accent"); ctx.lineWidth = 4; ctx.globalAlpha = 0.45;
+    ctx.beginPath();
+    for (var k = 0; k < S.trail.length; k++){
+      var p = S.trail[k];
+      var X = TX + (p[0] - S.X) * TSC, Y = TY - (p[1] - S.Y) * TSC;
+      if (k === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.stroke(); ctx.globalAlpha = 1;
+  }
+
+  var hx = Math.cos(S.heading), hy = Math.sin(S.heading);
+  var lx = -hy, ly = hx;                       // walker's left
+  function sc(fx, fy){ return [TX + fx * TSC, TY - fy * TSC]; }
+
+  // the card, seen edge-on from above (held in the left hand)
+  ctx.strokeStyle = ink; ctx.lineWidth = 6; ctx.lineCap = "round";
+  var c1 = sc(hx * -0.17 + lx * 0.40, hy * -0.17 + ly * 0.40);
+  var c2 = sc(hx * 0.17 + lx * 0.40, hy * 0.17 + ly * 0.40);
+  line(ctx, c1[0], c1[1], c2[0], c2[1]);
+  var cm = sc(lx * 0.40 - hx * 0.46, ly * 0.40 - hy * 0.46);
+  tag(ctx, "CARD", cm[0], cm[1], "center", "middle", ink3, 12);
+
+  // walking direction
+  ctx.strokeStyle = ink; ctx.fillStyle = ink; ctx.lineWidth = 5;
+  var vlen = 0.62 + S.v * 0.34;
+  var tip = sc(hx * vlen, hy * vlen);
+  arrow(ctx, TX, TY, tip[0], tip[1], 16);
+  dirTag(ctx, "WALKING", tip[0], tip[1], hx, hy, ink, 15);
+
+  // walker
+  ctx.fillStyle = css("--panel"); ctx.beginPath(); ctx.arc(TX, TY, 17, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle = ink; ctx.lineWidth = 4.5; ctx.stroke();
+
+  // acceleration, and the string leaning opposite to it
+  var ax = hx * S.aEff + lx * S.aLat, ay = hy * S.aEff + ly * S.aLat;
+  var mag = Math.hypot(ax, ay);
+  if (mag > 0.12){
+    var col = Math.abs(S.aLat) > Math.abs(S.aEff) ? css("--lat") : (S.aEff > 0 ? css("--pos") : css("--neg"));
+    var ux = ax / mag, uy = ay / mag, len = Math.min(0.55 + mag * 0.20, 1.25);
+    var qx = -uy * 0.30, qy = ux * 0.30;      // shift the pair off the walking axis
+
+    var a0 = sc(qx, qy), a1 = sc(qx + ux * len, qy + uy * len);
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 6;
+    arrow(ctx, a0[0], a0[1], a1[0], a1[1], 16);
+    dirTag(ctx, "ACCELERATION", a1[0], a1[1], ux, uy, col, 14);
+
+    var s0 = sc(-qx, -qy), s1 = sc(-qx - ux * len, -qy - uy * len);
+    ctx.save(); ctx.setLineDash([9, 8]); ctx.lineWidth = 5;
+    arrow(ctx, s0[0], s0[1], s1[0], s1[1], 15);
+    ctx.restore();
+    dirTag(ctx, "STRING SWINGS", s1[0], s1[1], -ux, -uy, col, 14);
+    ctx.setLineDash([]);
+  } else {
+    tag(ctx, S.v > 0.05 ? "NO ACCELERATION \u00B7 THE STRING HANGS STRAIGHT DOWN" : "STANDING STILL",
+        TX, TH - 24, "center", "bottom", ink3, 15);
+  }
+
+  // scale bar
+  ctx.strokeStyle = ink3; ctx.lineWidth = 3; ctx.globalAlpha = 0.8;
+  line(ctx, 28, TH - 30, 28 + TSC, TH - 30);
+  line(ctx, 28, TH - 38, 28, TH - 22);
+  line(ctx, 28 + TSC, TH - 38, 28 + TSC, TH - 22);
+  ctx.globalAlpha = 1;
+  tag(ctx, "1 METER", 28 + TSC / 2, TH - 42, "center", "bottom", ink3, 12);
+}
+
+/* ---------- readouts ---------- */
+function fmt(rad){
+  var d = rad * DEG;
+  if (Math.abs(d) < 0.5) return "0°";
+  return (d > 0 ? "+" : "−") + Math.abs(d).toFixed(0) + "°";
+}
+function updateReadout(){
+  var fb = S.thfb * DEG, lr = S.thlr * DEG;
+  vfbEl.textContent = fmt(S.thfb);
+  vlrEl.textContent = fmt(S.thlr);
+  vspEl.textContent = S.v.toFixed(1);
+  mfbEl.classList.toggle("neg", fb < -0.5);
+  mfbEl.classList.toggle("zero", Math.abs(fb) <= 0.5);
+  mlrEl.classList.toggle("zero", Math.abs(lr) <= 0.5);
+
+  var a = S.aEff, al = S.aLat, sign = "0", cls = "", label, sub;
+  var turning = Math.abs(al) > 0.2, speeding = a > 0.2, slowing = a < -0.2;
+
+  if (speeding){ sign = "+"; cls = "pos"; label = "Speeding up"; }
+  else if (slowing){ sign = "−"; cls = "neg"; label = "Slowing down"; }
+  else if (turning){ sign = "⊥"; cls = "lat"; label = al > 0 ? "Turning left" : "Turning right"; }
+  else if (S.v > 0.05){ label = "Steady pace"; }
+  else { label = "Standing still"; }
+
+  if (turning && (speeding || slowing)) label += al > 0 ? " and turning left" : " and turning right";
+
+  if (speeding) sub = "The washer lags behind — the string leans back to the + side.";
+  else if (slowing) sub = "The washer keeps going — the string leans ahead to the − side.";
+  else if (turning) sub = "The string swings out of the card, to the outside of the turn.";
+  else if (S.v > 0.05) sub = "Constant speed, straight line — no acceleration.";
+  else sub = "The string hangs straight down.";
+
+  signEl.textContent = sign;
+  signEl.className = "sign" + (cls ? " " + cls : "");
+  labelEl.textContent = label;
+  subEl.textContent = sub;
+}
+
+/* ---------- observation table ---------- */
+var CELL = { cx: 120, cy: 26, r: 106 };
+var marks = {};
+function cellSVG(key){
+  var c = CELL, parts = [];
+  parts.push('<svg class="diagram" viewBox="0 0 240 196" data-key="' + key + '" role="img" aria-label="Half-circle diagram for ' + TRIALS[key].label + '">');
+  parts.push('<path d="M ' + (c.cx - c.r) + ' ' + c.cy + ' A ' + c.r + ' ' + c.r + ' 0 0 0 ' + (c.cx + c.r) + ' ' + c.cy + '" fill="none" stroke="#1e1f22" stroke-width="2.4"/>');
+  parts.push('<line x1="' + (c.cx - c.r) + '" y1="' + c.cy + '" x2="' + (c.cx + c.r) + '" y2="' + c.cy + '" stroke="#1e1f22" stroke-width="2"/>');
+  for (var d = -60; d <= 60; d += 30){
+    var a = d * Math.PI / 180;
+    parts.push('<line x1="' + c.cx + '" y1="' + c.cy + '" x2="' + (c.cx + c.r * Math.sin(a)).toFixed(1) +
+               '" y2="' + (c.cy + c.r * Math.cos(a)).toFixed(1) + '" stroke="#1e1f22" stroke-width="1.5" opacity=".55"/>');
+  }
+  parts.push('<text x="12" y="' + (c.cy + 26) + '" font-family="Poppins,sans-serif" font-size="26" font-weight="800" fill="#0b6b5e">+</text>');
+  parts.push('<line x1="206" y1="' + (c.cy + 15) + '" x2="228" y2="' + (c.cy + 15) + '" stroke="#b03d28" stroke-width="4.5"/>');
+  parts.push('<text x="120" y="190" text-anchor="middle" font-family="Caveat,cursive" font-size="17" font-weight="700" fill="#847f73">walk this way &#8594;</text>');
+  parts.push('<g class="answer"></g>');
+  parts.push('<circle cx="' + c.cx + '" cy="' + c.cy + '" r="4" fill="#1e1f22"/>');
+  parts.push("</svg>");
+  return parts.join("");
+}
+function drawMark(key){
+  var svg = document.querySelector('svg[data-key="' + key + '"]');
+  if (!svg) return;
+  var g = svg.querySelector(".answer"), m = marks[key], c = CELL;
+  while (g.firstChild) g.removeChild(g.firstChild);
+  if (!m) return;
+  var a = m.ang * Math.PI / 180;
+  var ex = c.cx - c.r * 0.93 * Math.sin(a), ey = c.cy + c.r * 0.93 * Math.cos(a);
+  var ns = "http://www.w3.org/2000/svg";
+  var ln = document.createElementNS(ns, "line");
+  ln.setAttribute("x1", c.cx); ln.setAttribute("y1", c.cy);
+  ln.setAttribute("x2", ex.toFixed(1)); ln.setAttribute("y2", ey.toFixed(1));
+  ln.setAttribute("stroke", "#b03d28"); ln.setAttribute("stroke-width", "4"); ln.setAttribute("stroke-linecap", "round");
+  g.appendChild(ln);
+  var dot = document.createElementNS(ns, "circle");
+  dot.setAttribute("cx", ex.toFixed(1)); dot.setAttribute("cy", ey.toFixed(1));
+  dot.setAttribute("r", "6"); dot.setAttribute("fill", "#b03d28");
+  g.appendChild(dot);
+  if (m.out){
+    var ell = document.createElementNS(ns, "path");
+    var s = m.outDir >= 0 ? 1 : -1;
+    ell.setAttribute("d", "M " + (ex - 26 * s) + " " + (ey + 12) + " Q " + (ex + 4 * s) + " " + (ey + 30) + " " + (ex + 30 * s) + " " + (ey + 10));
+    ell.setAttribute("fill", "none"); ell.setAttribute("stroke", "#6d4bb0");
+    ell.setAttribute("stroke-width", "3"); ell.setAttribute("stroke-dasharray", "5 5");
+    g.appendChild(ell);
+    var tx = document.createElementNS(ns, "text");
+    tx.setAttribute("x", 120); tx.setAttribute("y", 172); tx.setAttribute("text-anchor", "middle");
+    tx.setAttribute("font-family", "Poppins,sans-serif"); tx.setAttribute("font-size", "12");
+    tx.setAttribute("font-weight", "800"); tx.setAttribute("fill", "#6d4bb0");
+    tx.textContent = "OUT OF THE CARD";
+    g.appendChild(tx);
+  }
+}
+function buildTable(){
+  var host = $("obs"), html = "";
+  ORDER.forEach(function(key){
+    html += '<div class="cell" data-key="' + key + '">' +
+              "<h3>" + TRIALS[key].label + "</h3>" +
+              cellSVG(key) +
+              '<div class="cell-btns">' +
+                '<button class="tiny stamp" data-key="' + key + '" disabled>Stamp</button>' +
+                '<button class="tiny out" data-key="' + key + '">&#8869; Out of card</button>' +
+                '<button class="tiny clear" data-key="' + key + '">Clear</button>' +
+              "</div>" +
+            "</div>";
+  });
+  host.innerHTML = html;
+
+  host.querySelectorAll("svg.diagram").forEach(function(svg){
+    function place(ev){
+      var r = svg.getBoundingClientRect();
+      var px = (ev.clientX - r.left) / r.width * 240;
+      var py = (ev.clientY - r.top) / r.height * 196;
+      var dx = px - CELL.cx, dy = Math.max(py - CELL.cy, 1);
+      var ang = -Math.atan2(dx, dy) * DEG;
+      ang = Math.max(-90, Math.min(90, ang));
+      var key = svg.dataset.key;
+      marks[key] = marks[key] || { ang: 0, out: false, outDir: 1 };
+      marks[key].ang = ang;
+      drawMark(key);
+    }
+    svg.addEventListener("pointerdown", function(ev){
+      ev.preventDefault();
+      place(ev);
+      try { svg.setPointerCapture(ev.pointerId); } catch (e) { /* not capturable — fine */ }
+    });
+    svg.addEventListener("pointermove", function(ev){
+      if (ev.buttons) place(ev);
+    });
+  });
+
+  host.querySelectorAll(".stamp").forEach(function(b){
+    b.addEventListener("click", function(){
+      var key = b.dataset.key, p = S.peaks[key];
+      if (!p) return;
+      marks[key] = { ang: p.fb * DEG, out: Math.abs(p.lr * DEG) > 2, outDir: p.lr >= 0 ? 1 : -1 };
+      drawMark(key);
+      b.classList.remove("ready");
+      var o = document.querySelector('.out[data-key="' + key + '"]');
+      if (o) o.classList.toggle("on", marks[key].out);
+    });
+  });
+  host.querySelectorAll(".out").forEach(function(b){
+    b.addEventListener("click", function(){
+      var key = b.dataset.key;
+      marks[key] = marks[key] || { ang: 0, out: false, outDir: 1 };
+      marks[key].out = !marks[key].out;
+      b.classList.toggle("on", marks[key].out);
+      drawMark(key);
+    });
+  });
+  host.querySelectorAll(".clear").forEach(function(b){
+    b.addEventListener("click", function(){
+      var key = b.dataset.key;
+      delete marks[key];
+      drawMark(key);
+      var o = document.querySelector('.out[data-key="' + key + '"]');
+      if (o) o.classList.remove("on");
+    });
+  });
+}
+function refreshStampButtons(justRan){
+  document.querySelectorAll(".stamp").forEach(function(b){
+    var has = !!S.peaks[b.dataset.key];
+    b.disabled = !has;
+    b.classList.toggle("ready", has && b.dataset.key === justRan);
+  });
+}
+
+/* ---------- controls ---------- */
+function syncSliderLabels(){
+  var a = parseFloat(throttleEl.value);
+  throttleVal.textContent = (a >= 0 ? "+" : "−") + Math.abs(a).toFixed(1) + " m/s²";
+  var s = parseFloat(steerEl.value);
+  steerVal.textContent = Math.abs(s) < 0.05 ? "Straight" :
+    (s > 0 ? "Left " : "Right ") + Math.round(Math.abs(s) * 100) + "%";
+}
+document.querySelectorAll(".trial-btn").forEach(function(b){
+  b.addEventListener("click", function(){ startTrial(b.dataset.trial); });
+});
+throttleEl.addEventListener("input", function(){
+  if (S.trial) endTrial();
+  S.throttle = parseFloat(throttleEl.value); syncSliderLabels();
+});
+steerEl.addEventListener("input", function(){
+  if (S.trial) endTrial();
+  S.steer = parseFloat(steerEl.value); syncSliderLabels();
+});
+$("btn-stop").addEventListener("click", function(){
+  if (S.trial) endTrial();
+  S.v = 0; S.throttle = 0; S.steer = 0;
+  throttleEl.value = 0; steerEl.value = 0; syncSliderLabels();
+});
+$("btn-reset").addEventListener("click", function(){
+  reset(false); modeTag.textContent = "Free walk";
+});
+$("btn-clear-all").addEventListener("click", function(){
+  marks = {};
+  ORDER.forEach(drawMark);
+  document.querySelectorAll(".out").forEach(function(b){ b.classList.remove("on"); });
+});
+
+/* ---------- loop ---------- */
+function frame(ts){
+  if (!S.last) S.last = ts;
+  var dt = Math.min((ts - S.last) / 1000, 0.05);
+  S.last = ts;
+  step(dt);
+  drawCard();
+  drawTop();
+  updateReadout();
+  requestAnimationFrame(frame);
+}
+
+buildTable();
+syncSliderLabels();
+requestAnimationFrame(frame);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ drawCard(); drawTop(); });
+window.addEventListener("resize", function(){ drawCard(); drawTop(); });
+})();
+
+</script>
+</body>
+</html>
