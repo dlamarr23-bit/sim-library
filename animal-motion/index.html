@@ -282,7 +282,7 @@ footer.note{color:var(--muted);font-size:12.5px;margin-top:8px}
         <li>Pause where the animal is fully in view, then press <b>Mark start</b> — flag <b>A</b> lands on its nose.</li>
         <li>Scrub forward and press <b>Mark end</b> to drop flag <b>B</b>.</li>
         <li>Read the four numbers below off the ruler and the clock. The sim will not do the arithmetic for you.</li>
-        <li>You can also <b>drag either flag</b> to line it up by eye.</li>
+        <li>You can also <b>drag either flag</b> to line it up by eye — the clock reading travels with it, and <b>B</b> can never slide back behind <b>A</b>.</li>
       </ol>
       <div class="markrow" style="margin-top:12px">
         <button class="btn" id="markA">🚩 Mark start (A)</button>
@@ -933,14 +933,62 @@ function placeFlag(flag, m){
   flag.val.textContent = fmt(m, 1) + " m";
   flag.g.setAttribute("aria-valuenow", fmt(m, 1));
 }
+/* ------------------------------------------------------------------
+   A flag carries a place AND a moment.  The nose sits at x = v·t, so a
+   flag dragged to a new metre mark has to take the matching clock
+   reading with it — otherwise the ruler moves and the stopwatch lies.
+   A and B also keep their order: B is the end of the run, so it can
+   never sit at or behind A.
+
+   The gap between them has to be wide enough that BOTH readings move:
+   one tick of the ruler (0.1 m) and five ticks of the clock (0.05 s).
+   A cheetah covers 0.1 m in 0.003 s, which the 2 dp clock cannot show —
+   hold the gap at one ruler tick and t₂ − t₁ reads 0.00 s, which marks
+   step 2 right for an answer of nothing and then strands step 3 on a
+   division by zero.
+   ------------------------------------------------------------------ */
+const MIN_GAP_S = 0.05;
+const minGapM = () => Math.max(0.1, Math.ceil(v()*MIN_GAP_S*10)/10);
+function markRange(key){
+  const other = key === "markA" ? S.markB : S.markA;
+  if (!other) return { lo:0, hi:FIELD_M };
+  const gap = minGapM();
+  return key === "markA"
+    ? { lo:0, hi:Math.max(0, other.x - gap) }
+    : { lo:Math.min(FIELD_M, other.x + gap), hi:FIELD_M };
+}
+/* returns true when the flag actually moved */
+function setMarkX(key, xM){
+  const { lo, hi } = markRange(key);
+  if (hi < lo) return false;                       // no legal room — stay put
+  const x = Math.round(Math.min(hi, Math.max(lo, xM))*10)/10;
+  const t = Math.round((x / v())*100)/100;
+  const was = S[key];
+  if (was && was.x === x && was.t === t) return false;
+  S[key] = { x, t };
+  return true;
+}
+/* A flag that moves invalidates every answer underneath it, so the ticks
+   come off and steps 2 and 3 re-lock. */
+function onMarksMoved(){
+  /* a drag fires this on every pointermove, so the note has to survive the
+     moves that follow the one which actually threw the answers away */
+  const hadWork = S.work.d != null || S.work.t != null || S.work.v != null;
+  const alreadyWarned = el("vD").dataset.stale === "1";
+  resetWorksheet();
+  if (hadWork || alreadyWarned){
+    const out = el("vD");
+    out.className = "verdict";
+    out.textContent = "The flags moved, so the four readings changed — work the three steps out again.";
+    out.dataset.stale = "1";
+  }
+}
 /* drag + keyboard */
 function wireFlagDrag(flag, key){
   const setFromClient = (clientX) => {
     const r = scene.getBoundingClientRect();
     const m = ((clientX - r.left) / r.width) * FIELD_M;
-    const cl = Math.round(Math.min(FIELD_M, Math.max(0, m))*10)/10;
-    if (!S[key]) S[key] = { x:cl, t:null }; else S[key].x = cl;
-    refreshMeasurements();
+    if (setMarkX(key, m)) onMarksMoved();
   };
   flag.g.addEventListener("pointerdown", (e) => {
     if (flag.g.getAttribute("opacity") === "0") return;
@@ -953,9 +1001,11 @@ function wireFlagDrag(flag, key){
   flag.g.addEventListener("keydown", (e) => {
     if (!S[key]) return;
     const step = e.shiftKey ? 1 : 0.1;
-    const rnd1 = (n) => Math.round(n*10)/10;
-    if (e.key === "ArrowLeft"){ S[key].x = rnd1(Math.max(0, S[key].x - step)); refreshMeasurements(); e.preventDefault(); }
-    if (e.key === "ArrowRight"){ S[key].x = rnd1(Math.min(FIELD_M, S[key].x + step)); refreshMeasurements(); e.preventDefault(); }
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight"){
+      const dir = e.key === "ArrowLeft" ? -1 : 1;
+      if (setMarkX(key, S[key].x + dir*step)) onMarksMoved();
+      e.preventDefault();
+    }
   });
 }
 /* ==================================================================
@@ -1129,6 +1179,7 @@ function resetWorksheet(){
     el(st.input).value = "";
     el(st.verdict).textContent = "";
     el(st.verdict).className = "verdict";
+    delete el(st.verdict).dataset.stale;
     el(st.tick).textContent = "";
     el(st.box).classList.remove("done");
     if (st.box !== "stepD") el(st.box).classList.add("locked");
@@ -1295,11 +1346,25 @@ function mark(which){
     return;
   }
   const tR = Math.round(S.t*100)/100;          // the clock reads 2 dp …
+  const xR = Math.round(Math.max(0, nosePosM(tR))*10)/10;                 // ruler reads 1 dp
+  /* A is the start and B is the end — refuse a mark that would swap them */
+  const other = which === "markA" ? S.markB : S.markA;
+  if (other){
+    const gap = minGapM();
+    const tooLate  = which === "markA" && xR > other.x - gap + 1e-9;
+    const tooEarly = which === "markB" && xR < other.x + gap - 1e-9;
+    if (tooLate || tooEarly){
+      const out = el("vD");
+      out.className = "verdict no";
+      out.textContent = which === "markA"
+        ? `Flag A is the start, so it has to sit before flag B at ${fmt(other.x,1)} m. Scrub back to an earlier moment, or press Clear and start the take again.`
+        : `Flag B is the end, so it has to sit after flag A at ${fmt(other.x,1)} m. Scrub forward past it, or press Clear and start the take again.`;
+      return;
+    }
+  }
   seek(tR);                                     // … so park the tape exactly there
-  S[which] = { x: Math.round(Math.max(0, nosePosM(tR))*10)/10, t: tR };   // ruler reads 1 dp
-  el("vD").textContent = "";
-  el("vD").className = "verdict";
-  refreshMeasurements();
+  S[which] = { x: xR, t: tR };
+  onMarksMoved();
 }
 /* ---- boot ---- */
 buildScene();
