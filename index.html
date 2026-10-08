@@ -495,5 +495,14 @@
   });
 })();
 </script>
+<script>
+/* Shown inside the textbook's Sims page: tell that page which sim is open, so its address can name the sim. */
+(function(){
+  if (window.parent === window) return;
+  window.addEventListener('pageshow', function(){
+    try { window.parent.postMessage({ simLibrary: { path: location.pathname, title: document.title } }, '*'); } catch (e) {}
+  });
+})();
+</script>
 </body>
 </html>
