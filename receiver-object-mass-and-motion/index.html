@@ -23,9 +23,9 @@
      slides to a stop against rolling resistance.
        v_pair = m_s * v_hit / (m_s + M_receiver)
        d      = v_pair^2 / (2 * mu * g)        mu = 0.06, g = 980 cm/s^2
-     0 cm on the meter stick is the base of the ramp, and the BACK of the
-     source car is the reference: it starts at 0 cm, so its final reading is
-     the distance travelled.
+     The ramp meets the bench one car length behind 0 cm. The receiver car's
+     BACK BUMPER starts on 0 cm, so its final reading is the distance it
+     travelled. At contact the source car's front bumper touches it there.
   ============================================================================
 -->
 
@@ -34,14 +34,46 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-.cvlab{
+:root{
   --bench:#DDE0D6;
   --paper:#FBFBF7;
   --rule:#C9CFC2;
   --ink:#1B1D1C;
   --ink-2:#5A5F58;
+  --ink-3:#33362F;
+  --panel-2:#EFF1E9;
+  --row-line:#E8EAE1;
+  --row-new:#FCF3D9;
+  --head-bg:#1B1D1C;
   --blue:#1552B8;
   --blue-d:#0E3B87;
+  --g-bg:#FDFDF9; --g-grid:#E4E8DC; --g-grid2:#CCD2C4; --g-axis:#1B1D1C; --g-lab:#5A5F58;
+  --g-curve:#A9AFA2; --g-dot:#1552B8; --g-empty:#8A9082;
+  --wall-1:#F1F2EC; --wall-2:#E2E5DC;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bench:#121411; --paper:#1C1F1B; --rule:#353A32; --ink:#ECEEE6; --ink-2:#AEB4A8; --ink-3:#D4D8CD;
+    --panel-2:#252923; --row-line:#2B2F28; --row-new:#3A3320; --head-bg:#0A0B0A;
+    --blue:#5B9BFF; --blue-d:#3F7FE6;
+    --g-bg:#171A16; --g-grid:#262A24; --g-grid2:#353A32; --g-axis:#D4D8CD; --g-lab:#AEB4A8;
+    --g-curve:#7D8478; --g-dot:#6FA8FF; --g-empty:#8A9082;
+    --wall-1:#3A3E37; --wall-2:#2E322C;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bench:#121411; --paper:#1C1F1B; --rule:#353A32; --ink:#ECEEE6; --ink-2:#AEB4A8; --ink-3:#D4D8CD;
+  --panel-2:#252923; --row-line:#2B2F28; --row-new:#3A3320; --head-bg:#0A0B0A;
+  --blue:#5B9BFF; --blue-d:#3F7FE6;
+  --g-bg:#171A16; --g-grid:#262A24; --g-grid2:#353A32; --g-axis:#D4D8CD; --g-lab:#AEB4A8;
+  --g-curve:#7D8478; --g-dot:#6FA8FF; --g-empty:#8A9082;
+  --wall-1:#3A3E37; --wall-2:#2E322C;
+  color-scheme:dark;
+}
+body{margin:0;background:var(--bench)}
+.cvlab{
   --car:#1E7FC8;          /* the blue Eisco car */
   --car-d:#12598F;
   --epoxy:#22251F;        /* black bench top */
@@ -61,16 +93,20 @@
 .cvlab p{margin:0}
 .cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+.cvlab-head{background:var(--head-bg);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
   display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
-.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
+.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:13px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--tape);margin-bottom:2px}
-.cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
-.cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
+.cvlab-head h1{font-size:clamp(24px,3vw,34px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
+.cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.cvlab-theme{width:44px;height:44px;border-radius:50%;border:1.5px solid #4A4F45;background:#000;color:var(--tape);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;align-self:center;flex:none;padding:0}
+.cvlab-theme:hover{border-color:var(--tape)}
+.cvlab-theme svg{width:20px;height:20px}
 .cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:96px}
-.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
+.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.14em;
   text-transform:uppercase;color:#8C9284}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:22px;font-weight:700;color:#DDE3D2;
   font-variant-numeric:tabular-nums;white-space:nowrap}
 .cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
 
@@ -78,11 +114,11 @@
   border-radius:0 0 5px 5px;padding:10px 10px 12px}
 .cvlab canvas{display:block;width:100%}
 #cvlab-scene{height:clamp(220px,26vw,360px);border-radius:3px}
-.cvlab-hint{font-family:var(--font-m);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+.cvlab-hint{font-family:var(--font-m);font-size:13.5px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--ink-2);margin-top:6px}
 .cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;
   border-top:1px dashed var(--rule)}
-.cvlab-status{flex:1 1 240px;min-width:200px;font-size:16px;color:var(--ink-2)}
+.cvlab-status{flex:1 1 240px;min-width:200px;font-size:16.5px;color:var(--ink-2)}
 .cvlab-status strong{color:var(--ink);font-weight:700}
 
 .cvlab-btn{font-family:var(--font-d);font-size:17px;font-weight:700;letter-spacing:.05em;
@@ -105,12 +141,12 @@
   display:flex;flex-direction:column;gap:10px}
 .cvlab-panel h2{font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-family:var(--font-m);
   font-weight:700;color:var(--ink);padding-bottom:7px;border-bottom:2px solid var(--ink)}
-.cvlab-note{font-size:14.5px;color:var(--ink-2)}
+.cvlab-note{font-size:15.5px;color:var(--ink-2)}
 .cvlab-row{display:flex;flex-wrap:wrap;gap:6px}
 
-.cvlab-locked{display:flex;align-items:center;gap:8px;background:#EFF1E9;border:1px dashed var(--rule);
-  border-radius:3px;padding:7px 9px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
-.cvlab-locked b{color:var(--ink);font-size:15px}
+.cvlab-locked{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px dashed var(--rule);
+  border-radius:3px;padding:7px 9px;font-family:var(--font-m);font-size:14px;color:var(--ink-2)}
+.cvlab-locked b{color:var(--ink);font-size:16px}
 
 .cvlab-tray{background:linear-gradient(180deg,#2364CE,#1552B8 55%,#0E3B87);border-radius:4px;
   padding:10px 8px 8px;display:flex;gap:5px;align-items:flex-end;justify-content:space-between;
@@ -120,44 +156,59 @@
 .cvlab-mass:hover:not(:disabled) .cvlab-mass-ico{transform:translateY(-4px)}
 .cvlab-mass:disabled{opacity:.4;cursor:not-allowed}
 .cvlab-mass-ico{display:block;transition:transform .12s ease;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
-.cvlab-mass-lab{font-family:var(--font-m);font-size:12.5px;font-weight:700;color:#fff}
-.cvlab-count{font-family:var(--font-m);font-size:12px;color:var(--tape);min-height:13px}
+.cvlab-mass-lab{font-family:var(--font-m);font-size:14px;font-weight:700;color:#fff}
+.cvlab-count{font-family:var(--font-m);font-size:13px;color:var(--tape);min-height:13px}
 
-.cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
+.cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15.5px;color:var(--ink-2)}
 .cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
 .cvlab-opts input{margin:3px 0 0;accent-color:var(--blue);flex:none}
 
 .cvlab-tablewrap{max-height:300px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
-.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:14px}
-.cvlab thead th{position:sticky;top:0;background:#EFF1E9;font-size:11px;letter-spacing:.06em;
+.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:15px}
+.cvlab thead th{position:sticky;top:0;background:var(--panel-2);font-size:12.5px;letter-spacing:.06em;
   text-transform:uppercase;font-weight:700;padding:6px 6px;text-align:right;
   border-bottom:1px solid var(--rule);color:var(--ink-2)}
 .cvlab thead th:first-child{text-align:left}
 .cvlab tbody td{padding:4px 6px;text-align:right;font-variant-numeric:tabular-nums;
-  border-bottom:1px solid #E8EAE1}
+  border-bottom:1px solid var(--row-line)}
 .cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
 .cvlab tbody tr:last-child td{border-bottom:0}
-.cvlab tbody tr.is-new td{background:#FCF3D9}
-.cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
+.cvlab tbody tr.is-new td{background:var(--row-new)}
+.cvlab-empty{padding:14px 10px;font-size:15.5px;color:var(--ink-2);font-family:var(--font-b)}
 
 #cvlab-graph{height:clamp(260px,30vw,420px)}
-.cvlab-key{display:flex;flex-wrap:wrap;gap:12px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
+.cvlab-key{display:flex;flex-wrap:wrap;gap:12px;font-family:var(--font-m);font-size:14px;color:var(--ink-2)}
 .cvlab-key i{display:inline-block;width:16px;height:0;border-top-width:3px;border-top-style:solid;
   vertical-align:middle;margin-right:5px}
 .cvlab-key b{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);
   vertical-align:middle;margin-right:5px}
 
-.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
-  padding:10px 14px}
-.cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
-.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
-.cvlab-notes li{margin:3px 0}
+.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px}
+.cvlab-notes summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:12px 16px;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--ink)}
+.cvlab-notes summary::-webkit-details-marker{display:none}
+.cvlab-notes summary .cvlab-chev{width:18px;height:18px;flex:none;transition:transform .18s ease}
+.cvlab-notes[open] summary .cvlab-chev{transform:rotate(180deg)}
+.cvlab-notes[open] summary{border-bottom:2px solid var(--ink)}
+.cvlab-notes-body{padding:10px 16px 14px}
+.cvlab-notes p,.cvlab-notes li{font-size:16px;color:var(--ink-3);font-weight:500}
+.cvlab-notes strong{font-weight:800;color:var(--ink)}
+.cvlab-notes p+p{margin-top:8px}
+.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:22px}
+.cvlab-notes li{margin:5px 0}
+.cvlab-eq{font-family:var(--font-m);font-weight:700;background:var(--panel-2);border-radius:3px;padding:2px 6px;color:var(--ink)}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
+<script>
+(function(){
+  var t = null;
+  try { t = localStorage.getItem("motionlab-theme"); } catch (e) {}
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#DDE0D6">
+<body>
 
 <div class="cvlab" id="cvlab">
 
@@ -171,13 +222,14 @@
       <div class="cvlab-ro"><span class="cvlab-ro-k">Pair speed</span><span class="cvlab-ro-v" id="cvlab-ro-speed">0 cm/s</span></div>
       <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Distance</span><span class="cvlab-ro-v" id="cvlab-ro-dist">0.0 cm</span></div>
       <div class="cvlab-ro"><span class="cvlab-ro-k">Stage</span><span class="cvlab-ro-v" id="cvlab-ro-stage">Ready</span></div>
+      <button class="cvlab-theme" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
     </div>
   </header>
 
   <div class="cvlab-bench">
     <canvas id="cvlab-scene" role="img"
-      aria-label="A ramp clamped to a ring stand. The source car waits at a fixed release point, the receiver car sits at the base of the ramp beside a meter stick reading 0 to 100 centimetres."></canvas>
-    <p class="cvlab-hint">Release point fixed &middot; 0 cm at the ramp base &middot; the back of the source car is the reference</p>
+      aria-label="A ramp clamped to a ring stand. The source car waits at a fixed release point. The receiver car sits just past the bottom of the ramp with its back bumper on the 0 centimetre mark of a meter stick."></canvas>
+    <p class="cvlab-hint">Release point fixed &middot; the receiver car's back bumper starts on 0 cm &middot; its back bumper is the reference</p>
     <div class="cvlab-bar">
       <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Release car</button>
       <button class="cvlab-btn" id="cvlab-reset">Reset cars</button>
@@ -236,24 +288,41 @@
         aria-label="Graph of distance travelled in centimetres against receiver mass in grams."></canvas>
       <div class="cvlab-key">
         <span><b></b>Your trials</span>
-        <span><i style="border-color:#A9AFA2;border-top-style:dashed"></i>Predicted curve</span>
+        <span><i style="border-color:var(--g-curve);border-top-style:dashed"></i>Predicted curve</span>
       </div>
     </section>
 
   </div>
 
-  <section class="cvlab-notes">
-    <h3>How to use this simulation</h3>
+  <details class="cvlab-notes" open>
+    <summary>How to use this simulation <svg class="cvlab-chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="cvlab-notes-body">
     <ol>
-      <li>Tap a hooked mass in the <strong>Receiver car load</strong> tray to drop it in the receiver car. Use <strong>Remove top mass</strong> or <strong>Clear masses</strong> to change the load. The source car always stays at 60 g and starts from the same release point.</li>
-      <li>Press <strong>Release car</strong>. The source car always reaches the bottom of the ramp at 200 cm/s, no matter how much mass is loaded on the receiver &mdash; only the collision and slide change with the load.</li>
-      <li>Watch the two cars couple and slide together, leaving a chalk mark where they stop.</li>
-      <li>Read the distance off the meter stick: 0 cm sits at the base of the ramp, and the back edge of the source car (the reference point at the moment of collision) is what the final reading measures.</li>
-      <li>Each run is saved as a row in the <strong>Trials</strong> table and a point on the <strong>Distance vs receiver mass</strong> graph, so you can compare loads.</li>
-      <li>Turn on <strong>Show the predicted curve</strong> to compare your data with the model, or <strong>Add measurement error</strong> so repeated trials don't land on the exact same number. Use <strong>Half speed</strong> to slow the collision down and watch it closely.</li>
-      <li>Press <strong>Reset cars</strong> to send the source car back to the release point, <strong>Clear trials</strong> to wipe the table and graph, or <strong>Copy data</strong> to copy your results for a spreadsheet.</li>
+      <li>Tap a hooked mass in the <strong>Receiver car load</strong> tray. It drops into the receiver car. Use <strong>Remove top mass</strong> or <strong>Clear masses</strong> to change the load.</li>
+      <li>The <strong>source car</strong> is always 60 g. It always starts from the same spot at the top of the ramp.</li>
+      <li>Press <strong>Release car</strong>. The source car rolls down and hits the receiver car at 200 cm/s every time.</li>
+      <li>The two cars hook together and slide until they stop. A chalk mark shows where they stopped.</li>
+      <li>Read the <strong>Distance</strong>. The receiver car's back bumper starts on 0 cm. Wherever its back bumper stops is how far it moved.</li>
+      <li>Each run adds a row to the <strong>Trials</strong> table and a dot on the graph. Try many different loads.</li>
+      <li>Press <strong>Reset cars</strong> to try again. Use <strong>Clear trials</strong> to start over, or <strong>Copy data</strong> to paste your results into a spreadsheet.</li>
     </ol>
-  </section>
+    </div>
+  </details>
+
+  <details class="cvlab-notes">
+    <summary>Why does a heavier car slide a shorter distance? <svg class="cvlab-chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="cvlab-notes-body">
+      <p>Every moving object has <strong>momentum</strong>. Momentum is mass times speed. When the cars hit and hook together, their total momentum stays the same.</p>
+      <p>The source car brings the same momentum every time. After the hit, that momentum is shared by both cars. If the receiver car is heavier, the pair has more mass to move. So the pair moves slower.</p>
+      <p>A slower pair stops sooner. <strong>Rolling resistance</strong> is a small force from the wheels and floor that slows the cars down. It slows them at the same rate each time, so a slower start means a shorter slide.</p>
+      <p>Here is the math the sim uses:</p>
+      <ul>
+        <li>Speed after the hit: <span class="cvlab-eq">v = (60 g &times; 200 cm/s) &divide; (60 g + receiver mass)</span></li>
+        <li>Slide distance: <span class="cvlab-eq">d = v&sup2; &divide; (2 &times; 58.8 cm/s&sup2;)</span></li>
+      </ul>
+      <p>Look at your graph. Doubling the receiver mass does <strong>not</strong> cut the distance in half. The curve bends because distance depends on speed <em>squared</em>.</p>
+    </div>
+  </details>
 </div>
 
 <script>
@@ -279,14 +348,15 @@
   var CAR_H      = 4.4;     // cm, body
   var WHEEL_R    = 1.5;     // cm
   var ROD_TOP    = 46;      // cm above the bench
-  var X0         = -74, X1 = 108;   // world window, cm
+  var RAMP_BASE  = -CAR_L;  // cm, the ramp meets the bench one car length behind 0
+  var X0         = -86, X1 = 108;   // world window, cm
   var NOISE_SD   = 0.4;     // cm
 
   /* ------------------------------------------------ state */
   var masses = [];
   var stage = "ready";      // ready | rolling | sliding | stopped
   var tau = 0;              // seconds inside the current stage
-  var backX = -RAMP_RUN;    // cm, back edge of the source car along the bench axis
+  var backX = RAMP_BASE - RAMP_RUN;  // cm, back edge of the source car along the bench axis
   var backY = RAMP_RISE;    // cm above the bench
   var carAng = RAMP_ANG;
   var vPair = 0, dTarget = 0, travel = 0;
@@ -323,6 +393,7 @@
     return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
   }
   function say(msg){ elStatus.innerHTML = msg; }
+  function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function monoStack(){ return '"Poppins", ui-monospace, Menlo, Consolas, monospace'; }
 
   function fit(canvas, ctx){
@@ -380,7 +451,7 @@
   /* ------------------------------------------------ run control */
   function resetCars(msg){
     stage = "ready"; tau = 0; travel = 0; vPair = 0; dTarget = 0;
-    backX = -RAMP_RUN; backY = RAMP_RISE; carAng = RAMP_ANG;
+    backX = RAMP_BASE - RAMP_RUN; backY = RAMP_RISE; carAng = RAMP_ANG;
     elGo.textContent = "Release car";
     dirty = true; lastFrame = null;
     syncUI();
@@ -398,7 +469,7 @@
 
   function collide(){
     stage = "sliding"; tau = 0;
-    backX = 0; backY = 0; carAng = 0;
+    backX = RAMP_BASE; backY = 0; carAng = 0;   /* front bumper touches the receiver's back bumper at 0 cm */
     vPair = pairSpeed();
     dTarget = vPair*vPair/(2*A_BENCH);
     travel = 0;
@@ -408,7 +479,7 @@
   }
 
   function stopSlide(){
-    stage = "stopped"; travel = dTarget; backX = dTarget; vPair = 0;
+    stage = "stopped"; travel = dTarget; backX = RAMP_BASE + dTarget; vPair = 0;
     elGo.textContent = "Release again";
     var shown = elNoise.checked ? Math.max(0, dTarget + gauss()*NOISE_SD) : dTarget;
     shown = Math.round(shown*10)/10;
@@ -425,7 +496,7 @@
     var a = added(), busy = (stage === "rolling" || stage === "sliding");
     roMass.textContent = recvMass() + " g";
     roSpeed.textContent = fmt(stage === "sliding" ? curV() : (stage === "stopped" ? 0 : 0)) + " cm/s";
-    roDist.textContent = fmt(stage === "ready" ? 0 : Math.max(0, backX)) + " cm";
+    roDist.textContent = fmt(recvBack()) + " cm";
     roStage.textContent = stage === "ready" ? "Ready"
       : (stage === "rolling" ? "Rolling" : (stage === "sliding" ? "Sliding" : "Stopped"));
 
@@ -451,6 +522,7 @@
     elClearTrials.disabled = trials.length === 0;
     elCopy.disabled = trials.length === 0;
   }
+  function recvBack(){ return (stage === "sliding" || stage === "stopped") ? Math.max(0, travel) : 0; }
   function curV(){ return Math.max(0, vPair - A_BENCH*tau); }
 
   /* ------------------------------------------------ table */
@@ -498,7 +570,7 @@
 
     /* wall */
     var wall = ctx.createLinearGradient(0,0,0,G.benchY);
-    wall.addColorStop(0,"#F1F2EC"); wall.addColorStop(1,"#E2E5DC");
+    wall.addColorStop(0,css("--wall-1")); wall.addColorStop(1,css("--wall-2"));
     ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.benchY);
 
     /* black backsplash, then the epoxy bench top */
@@ -523,7 +595,7 @@
 
   /* ring stand: base plate, rod, right-angle clamp */
   function drawStand(ctx){
-    var rodX = X(-RAMP_RUN - 8), k = G.k;
+    var rodX = X(RAMP_BASE - RAMP_RUN - 8), k = G.k;
     /* base plate */
     ctx.fillStyle = "#6E736B";
     roundRect(ctx, rodX - 13*k, G.benchY - 1.6*k, 26*k, 1.8*k, 1.5); ctx.fill();
@@ -546,10 +618,10 @@
     ctx.fillRect(rodX - 2.6*k, cy - 0.35*k, 2.2*k, 0.7*k);
   }
 
-  /* the wooden ramp, clamped high and resting on the bench at 0 cm */
+  /* the wooden ramp, clamped high and resting on the bench one car length behind 0 cm */
   function drawRamp(ctx){
     var k = G.k, th = 1.6*k;
-    var ax = X(-RAMP_RUN), ay = Y(RAMP_RISE), bx = X(0), by = Y(0);
+    var ax = X(RAMP_BASE - RAMP_RUN), ay = Y(RAMP_RISE), bx = X(0);
     ctx.save();
     ctx.translate(ax, ay); ctx.rotate(RAMP_ANG);
     var len = RAMP_LEN*k;
@@ -570,16 +642,16 @@
     ctx.restore();
     if(!G.compact){
       ctx.fillStyle = "#8A7024";
-      ctx.font = "700 9.5px " + monoStack();
+      ctx.font = "700 11px " + monoStack();
       ctx.textAlign = "left"; ctx.textBaseline = "bottom";
       ctx.fillText("RELEASE POINT \u2014 FIXED", ax + 4, Y(ROD_TOP) + 2);
     }
-    /* the base of the ramp is 0 cm */
+    /* 0 cm: where the receiver car's back bumper starts */
     ctx.strokeStyle = "#E8B93C"; ctx.lineWidth = 1.4;
     ctx.beginPath(); ctx.moveTo(bx, G.benchY - 3); ctx.lineTo(bx, G.benchY + G.stickH + 6); ctx.stroke();
   }
 
-  /* one meter stick, 0 cm at the ramp base */
+  /* one meter stick, 0 cm at the receiver car's back bumper */
   function drawStick(ctx){
     var y = G.benchY + 4, hh = G.stickH, k = G.k;
     var g = ctx.createLinearGradient(0,y,0,y+hh);
@@ -599,9 +671,12 @@
     ctx.stroke();
     var labStep = k >= 3.4 ? 10 : (k >= 1.8 ? 20 : 50);
     ctx.fillStyle = "#3A2E17";
-    ctx.font = "700 " + (G.compact?8.5:10) + "px " + monoStack();
+    ctx.font = "700 " + (G.compact?9:11.5) + "px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-    for(var c=0; c<=STICK_CM; c+=labStep) ctx.fillText(String(c), X(c), y+hh-1.5);
+    for(var c=0; c<=STICK_CM; c+=labStep){
+      ctx.textAlign = c === 0 ? "left" : (c === STICK_CM ? "right" : "center");
+      ctx.fillText(String(c), X(c) + (c === 0 ? 3 : (c === STICK_CM ? -3 : 0)), y+hh-1.5);
+    }
   }
 
   /* chalk marks left on the bench at each stopping point */
@@ -619,7 +694,7 @@
       ctx.stroke();
       if(!G.compact){
         ctx.fillStyle = "#E7E9DF";
-        ctx.font = "700 9px " + monoStack();
+        ctx.font = "700 10.5px " + monoStack();
         ctx.textAlign = "center"; ctx.textBaseline = "bottom";
         ctx.fillText(m.M + "g", mx, G.benchY - (4 + 5*(i%3))*k*0.55*age - 4);
       }
@@ -700,28 +775,26 @@
     drawCar(ctx, X(backX) + th*Math.sin(RAMP_ANG), Y(backY) - th*Math.cos(RAMP_ANG), carAng, null);
   }
   function drawReceiver(ctx){
-    var rBack = Math.max(CAR_L, backX + CAR_L);
-    drawCar(ctx, X(rBack), Y(0), 0, masses);
+    drawCar(ctx, X(recvBack()), Y(0), 0, masses);
   }
 
-  /* in the ready state, show where the source car will be at the moment of contact */
+  /* in the ready state, point out that the receiver's back bumper starts on 0 cm */
   function drawLandingZone(ctx){
-    var k = G.k, hgt = (CAR_H + WHEEL_R*2)*k;
+    var k = G.k, top = G.benchY - (CAR_H + WHEEL_R*2)*k - 6.5*k;
     ctx.save();
-    ctx.setLineDash([4,3]); ctx.strokeStyle = "rgba(232,185,60,.75)"; ctx.lineWidth = 1.2;
-    ctx.strokeRect(X(0)+0.5, G.benchY - hgt, CAR_L*k, hgt);
+    ctx.setLineDash([4,3]); ctx.strokeStyle = "rgba(232,185,60,.85)"; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(X(0)+0.5, top); ctx.lineTo(X(0)+0.5, G.benchY); ctx.stroke();
     ctx.restore();
     if(!G.compact){
       ctx.fillStyle = "#C8A33A";
-      ctx.font = "700 8.5px " + monoStack();
-      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-      ctx.fillText("BACK EDGE ON 0 cm", X(CAR_L/2), G.benchY - hgt - 3);
-      ctx.fillText("SOURCE CAR AT CONTACT", X(CAR_L/2), G.benchY - hgt - 12);
+      ctx.font = "700 10px " + monoStack();
+      ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      ctx.fillText("RECEIVER BACK BUMPER ON 0 cm", X(0) + 4, top + 2);
     }
   }
 
   function drawFlash(ctx){
-    var k = G.k, cx = X(CAR_L), cy = Y(CAR_H*0.5 + WHEEL_R);
+    var k = G.k, cx = X(0), cy = Y(CAR_H*0.5 + WHEEL_R);
     var f = 1 - (flashUntil - now())/260;
     ctx.save();
     ctx.globalAlpha = 0.85*(1-f);
@@ -737,10 +810,10 @@
     ctx.restore();
   }
 
-  /* the live distance reading, measured from the back of the source car */
+  /* the live distance reading, measured at the receiver car's back bumper */
   function drawReadoutLine(ctx){
-    if(stage === "ready") return;
-    var k = G.k, px = X(Math.max(0, backX));
+    if(stage !== "sliding" && stage !== "stopped") return;
+    var k = G.k, px = X(recvBack());
     var col = "#7FC0F2";
     ctx.save();
     ctx.setLineDash([4,4]); ctx.strokeStyle = col; ctx.lineWidth = 1.2;
@@ -749,8 +822,8 @@
     ctx.stroke();
     ctx.restore();
 
-    var txt = fmt(Math.max(0, backX)) + " cm";
-    var fs = G.compact ? 10 : 12.5;
+    var txt = fmt(recvBack()) + " cm";
+    var fs = G.compact ? 11 : 14;
     ctx.font = "700 " + fs + "px " + monoStack();
     var tw = ctx.measureText(txt).width;
     var lx = clamp(px + 7, 4, G.w - tw - 12);
@@ -768,46 +841,50 @@
   function drawGraph(){
     var s = fit(graphC, gctx), w = s.w, h = s.h;
     var ctx = gctx;
-    var mL = 48, mR = 14, mT = 12, mB = 34;
+    var mL = 56, mR = 14, mT = 12, mB = 40;
     var pw = w - mL - mR, ph = h - mT - mB;
     var px = function(M){ return mL + (M/M_MAX)*pw; };
     var py = function(d){ return mT + ph - (d/D_MAX)*ph; };
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL, mT, pw, ph);
+    var C = { bg:css("--g-bg"), grid:css("--g-grid"), grid2:css("--g-grid2"), axis:css("--g-axis"),
+              lab:css("--g-lab"), curve:css("--g-curve"), dot:css("--g-dot"), empty:css("--g-empty") };
+    ctx.fillStyle = C.bg; ctx.fillRect(mL, mT, pw, ph);
 
-    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var d=0; d<=D_MAX; d+=10){ var y=Math.round(py(d))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
     for(var M=0; M<=M_MAX; M+=25){ var x=Math.round(px(M))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
     ctx.stroke();
-    ctx.strokeStyle = "#CCD2C4";
+    ctx.strokeStyle = C.grid2;
     ctx.beginPath();
     for(var d2=0; d2<=D_MAX; d2+=20){ var y2=Math.round(py(d2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
     for(var M2=0; M2<=M_MAX; M2+=100){ var x2=Math.round(px(M2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
     ctx.stroke();
 
-    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = C.axis; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5, mT); ctx.lineTo(mL+0.5, mT+ph); ctx.lineTo(mL+pw, mT+ph);
     ctx.stroke();
-    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = C.lab; ctx.font = "700 12px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var d3=0; d3<=D_MAX; d3+=20) ctx.fillText(String(d3), mL-7, py(d3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var M3=0; M3<=M_MAX; M3+=100) ctx.fillText(String(M3), px(M3), mT+ph+6);
     ctx.save();
-    ctx.translate(12, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = C.axis; ctx.font = "700 12px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("DISTANCE (cm)", 0, 0);
     ctx.restore();
-    ctx.fillText("RECEIVER MASS (g)", mL+pw/2, mT+ph+19);
+    ctx.fillStyle = C.axis; ctx.font = "700 12px " + monoStack();
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.fillText("RECEIVER MASS (g)", mL+pw/2, mT+ph+22);
 
     /* the predicted curve */
     if(elCurve.checked){
       ctx.save();
-      ctx.setLineDash([7,5]); ctx.strokeStyle = "#A9AFA2"; ctx.lineWidth = 2;
+      ctx.setLineDash([7,5]); ctx.strokeStyle = C.curve; ctx.lineWidth = 2;
       ctx.beginPath();
       for(var i=0;i<=120;i++){
         var Mi = M_CAR + (M_MAX - M_CAR)*i/120;
@@ -829,14 +906,14 @@
       ctx.stroke();
       for(var m=0;m<pts.length;m++){
         var bx = px(pts[m].M), byy = py(Math.min(D_MAX, pts[m].d));
-        ctx.fillStyle = "#1552B8";
+        ctx.fillStyle = C.dot;
         ctx.beginPath(); ctx.arc(bx, byy, 4.2, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.4;
+        ctx.strokeStyle = C.bg; ctx.lineWidth = 1.4;
         ctx.beginPath(); ctx.arc(bx, byy, 4.2, 0, Math.PI*2); ctx.stroke();
       }
     } else {
-      ctx.fillStyle = "#8A9082";
-      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.fillStyle = C.empty;
+      ctx.font = '700 14px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Run a trial and the first point lands here.", mL+pw/2, mT+ph/2);
     }
@@ -856,7 +933,7 @@
       if(tau >= tEnd){ collide(); }
       else {
         var sAlong = 0.5*A_RAMP*tau*tau;
-        backX = -RAMP_RUN + Math.cos(RAMP_ANG)*sAlong;
+        backX = RAMP_BASE - RAMP_RUN + Math.cos(RAMP_ANG)*sAlong;
         backY = Math.max(0, RAMP_RISE - Math.sin(RAMP_ANG)*sAlong);
         var lead = RAMP_LEN - sAlong;                    /* cm of ramp left under the car */
         carAng = RAMP_ANG * clamp(lead/CAR_L, 0, 1);     /* level off coming onto the bench */
@@ -866,7 +943,7 @@
       tau += dt;
       var tStop = vPair/A_BENCH;
       if(tau >= tStop){ stopSlide(); }
-      else { travel = vPair*tau - 0.5*A_BENCH*tau*tau; backX = travel; }
+      else { travel = vPair*tau - 0.5*A_BENCH*tau*tau; backX = RAMP_BASE + travel; }
       dirty = true; syncUI();
     }
 
@@ -933,6 +1010,33 @@
   if(document.fonts && document.fonts.ready){
     document.fonts.ready.then(function(){ dirty = true; drawScene(); drawGraph(); });
   }
+
+  /* ------------------------------------------------ light / dark toggle */
+  var elTheme = $("cvlab-theme");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  function isDark(){
+    var t = document.documentElement.getAttribute("data-theme");
+    if(t) return t === "dark";
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function paintToggle(){
+    var d = isDark();
+    elTheme.innerHTML = d ? SUN : MOON;
+    elTheme.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+  }
+  elTheme.addEventListener("click", function(){
+    var next = isDark() ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    paintToggle(); dirty = true; drawScene(); drawGraph();
+  });
+  if(window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if(!document.documentElement.getAttribute("data-theme")){ paintToggle(); dirty = true; drawScene(); drawGraph(); } };
+    if(mq.addEventListener) mq.addEventListener("change", onSys); else if(mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
   buildTray();
   renderTable();
