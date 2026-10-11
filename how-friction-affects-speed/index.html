@@ -8,8 +8,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
-  // apply a saved light/dark choice before the page paints
-  try{ var t0 = localStorage.getItem('frictionLabTheme'); if (t0 === 'light' || t0 === 'dark') document.documentElement.setAttribute('data-theme', t0); }catch(e){}
+  // apply a light/dark choice before the page paints: the page showing this sim in a frame can name one (?theme=light or dark, so both sides match), else the saved one
+  var t0 = null;
+  try{ t0 = new URLSearchParams(location.search).get('theme'); }catch(e){}
+  if (t0 !== 'light' && t0 !== 'dark'){ try{ t0 = localStorage.getItem('frictionLabTheme'); }catch(e){} }
+  if (t0 === 'light' || t0 === 'dark') document.documentElement.setAttribute('data-theme', t0);
 </script>
 <style>
   :root{
@@ -1333,11 +1336,23 @@ function updateToggleUI(theme){
   themeToggle.querySelector('.label').textContent = dark ? 'Light mode' : 'Dark mode';
   themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
 }
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  updateToggleUI(theme); draw(); renderChart();
+}
+const inFrame = window.parent !== window;
 themeToggle.addEventListener('click', () => {
   const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
+  applyTheme(next);
   try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
-  updateToggleUI(next); draw(); renderChart();
+  // shown in a frame (the lab's questions page): tell that page, so it switches too
+  if (inFrame) try{ window.parent.postMessage({ simTheme: next }, '*'); }catch(e){}
+});
+// the page around this sim switched its light/dark mode: follow it (not saved, so the sim on its own keeps its own choice)
+window.addEventListener('message', (e) => {
+  if (!inFrame || e.source !== window.parent) return;
+  const t = e.data && e.data.simTheme;
+  if ((t === 'light' || t === 'dark') && t !== effectiveTheme()) applyTheme(t);
 });
 if (mq){
   const onSystemChange = () => { updateToggleUI(effectiveTheme()); draw(); renderChart(); };
