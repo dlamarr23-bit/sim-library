@@ -357,11 +357,11 @@
   <div class="card">
     <div id="sceneWrap">
       <canvas id="scene" width="1160" height="470" role="img"
-              aria-label="Side view of a wooden ramp clamped to a ring stand. A blue car waits at the top. The ramp ends on a lab counter with distance marks at 15, 30, 45, 60 and 75 centimeters."></canvas>
+              aria-label="Side view of a wooden ramp clamped to a ring stand. A blue car waits at its release point on the ramp. The ramp ends on a lab counter with distance marks at 15, 30, 45, 60 and 75 centimeters."></canvas>
       <div class="readout" aria-live="polite">
         <div class="lbl">Timer</div>
         <div class="clock armed" id="clock"><span id="clockNum">0.000</span><span class="u">s</span></div>
-        <div class="sub" id="clocksub">Ready · car at the top of the ramp</div>
+        <div class="sub" id="clocksub">Ready · car at the release point</div>
         <div class="pips" id="pips"><span class="pl">Trial</span><span class="pip">1</span><span class="pip">2</span><span class="pip">3</span></div>
       </div>
     </div>
@@ -384,6 +384,12 @@
       </div>
 
       <div class="ctlgroup">
+        <label class="lbl" for="rSlider">Release point <span class="val" id="rVal"></span></label>
+        <input type="range" id="rSlider" min="10" max="87" step="1" value="87">
+        <div class="rangeval" style="margin-top:4px">Where the car is let go, measured along the ramp from the bottom.</div>
+      </div>
+
+      <div class="ctlgroup">
         <label class="lbl" for="tsSlider">Playback <span class="val" id="tsVal"></span></label>
         <input type="range" id="tsSlider" min="5" max="100" step="5" value="25">
         <div class="rangeval" style="margin-top:4px">Slow motion only. The timer always shows real seconds.</div>
@@ -393,7 +399,6 @@
         <span class="lbl">Run the test</span>
         <div class="btnrow">
           <button class="btn primary" id="release" type="button">&#9654; Release car (3 trials)</button>
-          <button class="btn" id="runAll" type="button">Test all 4 surfaces</button>
           <button class="btn" id="stopBtn" type="button" disabled>&#9632; Stop</button>
           <button class="btn" id="clearBtn" type="button">Clear data</button>
         </div>
@@ -402,6 +407,7 @@
 
     <div class="facts">
       <div class="fact"><div class="k">Car mass</div><div class="v">60 <span class="u">g</span></div></div>
+      <div class="fact"><div class="k">Height of the release point</div><div class="v" id="fRelH"></div></div>
       <div class="fact"><div class="k">Speed at the bottom</div><div class="v" id="fSpeed">—</div></div>
       <div class="fact"><div class="k">Kinetic energy at the bottom</div><div class="v" id="fKE">—</div></div>
       <div class="fact"><div class="k">Friction force on this surface</div><div class="v" id="fFric">—</div></div>
@@ -459,10 +465,11 @@
     <ol>
       <li><strong>Pick a surface.</strong> Click one of the four buttons under "Surface on the counter." That surface covers the counter at the bottom of the ramp.</li>
       <li><strong>Set the ramp height.</strong> Drag the Ramp height slider. The clamp slides up or down the ring stand. Pick one height and keep it the same for every surface. That keeps the test fair.</li>
-      <li><strong>Press Release car.</strong> The blue car always starts at the top of the ramp. It rolls down three times in a row: Trial 1, Trial 2 and Trial 3.</li>
+      <li><strong>Choose the release point.</strong> Drag the Release point slider. It sets where the car is let go, measured along the ramp from the bottom. The green marker on the ramp shows it. All the way up is the top of the ramp. Pick one release point and keep it the same for every surface.</li>
+      <li><strong>Press Release car.</strong> The blue car starts at the release point. It rolls down three times in a row: Trial 1, Trial 2 and Trial 3.</li>
       <li><strong>Watch the timer.</strong> The timer starts when the car reaches the bottom of the ramp. It records a time each time the car passes a mark (15, 30, 45, 60 and 75 cm).</li>
       <li><strong>Read the data table.</strong> Each surface gets three trials and an <strong>average</strong>. The three times are close but not exactly the same, just like in a real lab. Your car and surfaces are also a tiny bit different from everyone else's, like real lab equipment, so your times won't match a classmate's. "Stopped" means the car stopped before it reached that mark.</li>
-      <li><strong>Test every surface.</strong> Do them one at a time, or press <strong>Test all 4 surfaces</strong>. The graph draws one line for each surface using the average times.</li>
+      <li><strong>Test every surface.</strong> Pick the next surface and press <strong>Release car</strong> again. Do all four, one at a time. The graph draws one line for each surface using the average times.</li>
       <li><strong>Change the speed or start over.</strong> The Playback slider makes the car move slower or faster on screen. <strong>Stop</strong> ends a run. <strong>Clear data</strong> erases the table and the graph (click it twice).</li>
     </ol>
   </div>
@@ -488,7 +495,7 @@
       <div><dt>Trial and average</dt><dd>A trial is one run of the test. To find the average, add the three times, then divide by 3.</dd></div>
     </dl>
     <p><strong>Why do three trials?</strong> Real measurements change a little every time. The car may be let go a tiny bit differently. The surface may have a small bump. One odd result could fool you. Doing three trials and using the average gives you a result you can trust more.</p>
-    <p><strong>Why keep the ramp height the same?</strong> A taller ramp gives the car more speed at the bottom. If you change the height and the surface at the same time, you can't tell which one changed the result.</p>
+    <p><strong>Why keep the ramp height and the release point the same?</strong> A taller ramp, or a release point higher up the ramp, gives the car more speed at the bottom. If you change one of them and the surface at the same time, you can't tell which one changed the result.</p>
   </div>
 </details>
 
@@ -502,15 +509,15 @@
     <span class="chev" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
   </summary>
   <div class="dropdown-body prose">
-    <p><strong>Speed at the bottom of the ramp.</strong> A taller ramp means a faster car. The 0.88 means the ramp's own friction takes away a little of the car's energy on the way down.</p>
-    <div class="formula">v = &radic;(2 &times; g &times; h &times; 0.88)</div>
+    <p><strong>Speed at the bottom of the ramp.</strong> The higher the release point, the faster the car. Here h is how high the release point is above the counter (the box "Height of the release point" shows it). It depends on both the ramp height and how far up the ramp the car starts. The 0.96 means the ramp's own friction takes away a little of the car's energy on the way down.</p>
+    <div class="formula">v = &radic;(2 &times; g &times; h &times; 0.96)</div>
     <p><strong>Slowing down on the surface.</strong> Friction slows the car at a steady rate, a. A grabbier surface (bigger &mu;) slows it faster.</p>
     <div class="formula">a = &mu; &times; g</div>
     <p><strong>Time to reach a mark.</strong> The time t to roll a distance d after leaving the ramp:</p>
     <div class="formula">t = (v &minus; &radic;(v&sup2; &minus; 2ad)) &divide; a</div>
     <p><strong>The &mu; for each surface</strong> (typical values for a rolling toy car):</p>
     <table class="mu-table" id="muTable"></table>
-    <p><strong>Trial-to-trial wobble.</strong> Each trial changes the launch speed by about 1% and the friction by up to about 3%. That is why the three trials are close but not the same. Every computer also gets its own car and surfaces: the launch speed is up to 3% different, and each surface's friction is up to 3% different. They stay the same on that computer. That is why your times are a little different from a classmate's. Here g = 980 cm/s&sup2; and h is the ramp height in cm.</p>
+    <p><strong>Trial-to-trial wobble.</strong> Each trial changes the launch speed by about 1% and the friction by up to about 3%. That is why the three trials are close but not the same. Every computer also gets its own car and surfaces: the launch speed is up to 3% different, and each surface's friction is up to 3% different. They stay the same on that computer. That is why your times are a little different from a classmate's. Here g = 980 cm/s&sup2; and h is the height of the release point in cm.</p>
   </div>
 </details>
 
@@ -523,7 +530,8 @@
    PHYSICS
    ============================================================ */
 const G = 980;            // cm/s^2
-const RAMP_EFF = 0.88;    // fraction of ramp energy that survives to the bottom
+const RAMP_EFF = 0.96;    // fraction of the release point's energy that survives to the bottom (0.96 with the release point's own height
+                          // gives the same speeds as the old 0.88 with the full ramp height, for a car let go at the top of a 38 cm ramp)
 const MASS_KG = 0.060;    // 60 g
 const GATES = [15, 30, 45, 60, 75];
 const TRIALS = 3;
@@ -539,9 +547,9 @@ const SURFACES = [
 let rampH   = 38;    // cm
 let timeScale = 0.25;
 let current = SURFACES[0];
-const data  = {};    // id -> {h, trials:[[t15, t30, ...], ...]}
+const data  = {};    // id -> {h: ramp height, r: release point (cm up the ramp), trials:[[t15, t30, ...], ...]}
 
-const launchSpeed = h => Math.sqrt(2 * G * h * RAMP_EFF);        // cm/s
+const launchSpeed = hr => Math.sqrt(2 * G * hr * RAMP_EFF);      // cm/s, from the release point's height hr above the counter
 const decel       = mu => mu * G;                                 // cm/s^2
 const stopDist    = (v, mu) => (v*v) / (2 * decel(mu));           // cm
 function timeToReach(v, mu, d){
@@ -615,10 +623,19 @@ const font = (w, px) => w + ' ' + (px * FS).toFixed(1) + 'px Poppins, system-ui,
 const STAND_X = -88;   // the ring stand's rod
 const ROD_H   = 70;    // the rod is always this tall; only the clamp moves
 const BOARD_T = 2.0;   // thickness of the wooden ramp
-const START_S = 8;     // the car is let go this far down the board from the clamp
+const START_S = 8;     // the highest release point (the top) is this far down the board from the clamp
+const REL_MIN = 10;    // the lowest release point, in cm up the ramp from the bottom
 const BEVEL   = 2;     // the front edge of a surface layer slopes up over this distance
 const rampLen = h => Math.hypot(STAND_X, h);
 const rampAng = h => Math.atan2(h, -STAND_X);
+
+// The release point: how far up the ramp the car is let go, in cm along the board from the bottom. relTop = the top (the default).
+let relTop = true, relCm = 0;
+const relMax    = h => rampLen(h) - START_S;                            // the top, in cm up the ramp
+const relNow    = () => relTop ? relMax(rampH) : Math.min(relCm, relMax(rampH));
+const relStartS = () => rampLen(rampH) - relNow();                      // the same point, in cm down the board from the clamp
+const relHeight = () => relNow() * rampH / rampLen(rampH);              // its height above the counter
+const relText   = () => Math.round(relNow()) + ' cm up the ramp' + (relTop ? ' (the top)' : '');
 
 // world (cm) -> screen (px). One fixed scale, so nothing grows or shrinks when the ramp moves.
 const VIEW = {xmin:-108, xmax:97, ymin:-8, ymax:ROD_H + 3};
@@ -791,6 +808,31 @@ function drawRamp(){
   ctx.restore();
 }
 
+// marks along the ramp every 10 cm up from the bottom (numbered every 20), and a green marker under the release point
+function drawReleaseMarks(){
+  const Lr = rampLen(rampH), ang = rampAng(rampH), T = BOARD_T*SC, s0 = relStartS();
+  const good = cssVar('--good'), muted = cssVar('--text-muted');
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, CW, sy(0)); ctx.clip();
+  ctx.translate(sx(STAND_X), sy(rampH)); ctx.rotate(ang);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.font = font(700, 10);
+  for (let d = 10; d < Lr - 3; d += 10){
+    const x = (Lr - d)*SC;
+    ctx.strokeStyle = 'rgba(90,55,20,.7)'; ctx.lineWidth = d % 20 ? 1 : 1.6;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, T*(d % 20 ? 0.4 : 0.65)); ctx.stroke();
+    if (!(d % 20) && Math.abs(Lr - d - s0) > 12){ ctx.fillStyle = muted; ctx.fillText(d, x, T + 3); }
+  }
+  const xr = s0*SC;
+  ctx.strokeStyle = good; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(xr, 0); ctx.lineTo(xr, T); ctx.stroke();
+  ctx.fillStyle = good;
+  ctx.beginPath(); ctx.moveTo(xr, T + 1); ctx.lineTo(xr - 5, T + 10); ctx.lineTo(xr + 5, T + 10); ctx.closePath(); ctx.fill();
+  ctx.font = font(800, 10); ctx.fillText('RELEASE ' + Math.round(relNow()) + ' cm', xr, T + 12);
+  ctx.restore();
+  ctx.textBaseline = 'alphabetic';
+}
+
 // a plain metal clamp holds the board to the rod
 function drawClamp(){
   const x = sx(STAND_X), yc = sy(rampH - 0.9);
@@ -918,6 +960,7 @@ function draw(){
   drawStand();
   drawHeightMark();
   drawRamp();
+  drawReleaseMarks();
   drawClamp();
   drawGates();
   drawSurfaceTag();
@@ -960,7 +1003,7 @@ function cancelRun(){
 
 function carToTop(keepSplits){
   cancelAnimationFrame(state.raf);
-  state.phase = 'idle'; state.s = START_S; state.v = 0;
+  state.phase = 'idle'; state.s = relStartS(); state.v = 0;
   state.x = 0; state.t = 0; state.roll = 0;
   if (!keepSplits) state.splits = GATES.map(() => null);
   draw();
@@ -972,7 +1015,7 @@ function setClock(t, cls, sub){
   if (sub != null) document.getElementById('clocksub').textContent = sub;
 }
 const setSub = sub => { document.getElementById('clocksub').textContent = sub; };
-const readyClock = () => setClock(0, 'armed', 'Ready · car at the top of the ramp');
+const readyClock = () => setClock(0, 'armed', 'Ready · car at the release point, ' + relText());
 
 // trial pips in the timer: filled = recorded, outlined = rolling now
 function updatePips(active){
@@ -984,11 +1027,11 @@ function updatePips(active){
 
 // one trial: roll down from the top, then across the surface past the marks
 function release(tr, n, tok, done){
-  const h = rampH, Lr = rampLen(h);
-  const v0 = launchSpeed(h) * tr.vF * KIT.v, mu = current.mu * tr.muF * KIT.mu[current.id], a = decel(mu);
-  const aRamp = v0*v0 / (2*(Lr - START_S));    // speeds up evenly to v0 at the bottom
+  const h = rampH, Lr = rampLen(h), s0 = relStartS();   // s0: the release point, in cm down the board from the clamp
+  const v0 = launchSpeed(relHeight()) * tr.vF * KIT.v, mu = current.mu * tr.muF * KIT.mu[current.id], a = decel(mu);
+  const aRamp = v0*v0 / (2*(Lr - s0));    // speeds up evenly to v0 at the bottom
   const tag = current.name + ' · Trial ' + n + ' of ' + TRIALS;
-  Object.assign(state, {phase:'ramp', s:START_S, v:0, x:0, t:0, roll:0,
+  Object.assign(state, {phase:'ramp', s:s0, v:0, x:0, t:0, roll:0,
                         splits:GATES.map(() => null), nextGate:0, last:performance.now()});
   setClock(0, 'armed', tag + ' · rolling down the ramp…');
 
@@ -1003,17 +1046,17 @@ function release(tr, n, tok, done){
       if (state.s >= Lr){
         state.phase = 'track'; state.s = Lr; state.v = v0; state.t = 0; state.x = 0;
       }
-      state.roll = state.s - START_S;
+      state.roll = state.s - s0;
     } else if (state.phase === 'track'){
       state.t += dt;
       const nv = v0 - a*state.t;
       if (nv <= 0){                                   // car stopped
         state.x = stopDist(v0, mu); state.v = 0;
-        state.roll = Lr - START_S + state.x;
+        state.roll = Lr - s0 + state.x;
         finishTrial(v0, mu, n, tag, done); return;
       }
       state.x = posAt(v0, mu, state.t); state.v = nv;
-      state.roll = Lr - START_S + state.x;
+      state.roll = Lr - s0 + state.x;
       while (state.nextGate < GATES.length && state.x >= GATES[state.nextGate]){
         state.splits[state.nextGate] = timeToReach(v0, mu, GATES[state.nextGate]);
         state.nextGate++;
@@ -1051,7 +1094,7 @@ function runSurfaces(list){
   const nextSurface = () => {
     if (si >= list.length){ endRun(list.length); return; }
     current = list[si++];
-    data[current.id] = {h:rampH, trials:[]};
+    data[current.id] = {h:rampH, r:Math.round(relNow()), trials:[]};
     const trials = makeTrials();
     syncPicker(); updateFacts(); renderTable(); renderChart();
     let n = 0;
@@ -1059,7 +1102,7 @@ function runSurfaces(list){
       if (n >= TRIALS){ later(nextSurface, 700); return; }
       const tr = trials[n++];
       carToTop(false); updatePips(n - 1);
-      setClock(0, 'armed', current.name + ' · Trial ' + n + ' of ' + TRIALS + ' · car at the top');
+      setClock(0, 'armed', current.name + ' · Trial ' + n + ' of ' + TRIALS + ' · car at the release point');
       later(() => release(tr, n, tok, () => later(nextTrial, 900)), 500);
     };
     nextTrial();
@@ -1071,16 +1114,16 @@ function endRun(count){
   setBusy(false);
   const msg = count > 1 ? 'All ' + count + ' surfaces done ✓'
                         : current.name + ' · ' + TRIALS + ' trials done ✓';
-  later(() => { carToTop(true); setSub(msg + ' · car back at the top'); }, 1000);
+  later(() => { carToTop(true); setSub(msg + ' · car back at the release point'); }, 1000);
 }
 
 function setBusy(b){
   document.getElementById('release').disabled = b;
-  document.getElementById('runAll').disabled = b;
   document.getElementById('clearBtn').disabled = b;
   document.getElementById('stopBtn').disabled = !b;
   document.querySelectorAll('#surfacePicker button').forEach(x => x.disabled = b);
   document.getElementById('hSlider').disabled = b;
+  document.getElementById('rSlider').disabled = b;
 }
 
 /* ============================================================
@@ -1105,17 +1148,31 @@ function syncPicker(){
 }
 
 const hSlider = document.getElementById('hSlider');
-hSlider.oninput = () => { cancelRun(); rampH = +hSlider.value; updateFacts(); carToTop(false); readyClock(); };
+hSlider.oninput = () => { cancelRun(); rampH = +hSlider.value; syncRelSlider(); updateFacts(); carToTop(false); readyClock(); };
+// the release point slider runs from REL_MIN up to the top of the ramp (which moves with the ramp height); all the way up = the top
+const rSlider = document.getElementById('rSlider');
+function syncRelSlider(){
+  rSlider.max = Math.floor(relMax(rampH));
+  if (!relTop && relCm >= +rSlider.max) relTop = true;   // a shorter ramp: the point is now past the top, so it is the top
+  rSlider.value = relTop ? rSlider.max : Math.min(relCm, +rSlider.max);
+}
+rSlider.oninput = () => {
+  cancelRun();
+  relTop = +rSlider.value >= +rSlider.max;
+  relCm = +rSlider.value;
+  updateFacts(); carToTop(false); readyClock();
+};
+rSlider.min = REL_MIN;
+syncRelSlider();
 const tsSlider = document.getElementById('tsSlider');
 tsSlider.oninput = () => { timeScale = +tsSlider.value/100; updateFacts(); };
 
 document.getElementById('release').onclick = () => runSurfaces([current]);
-document.getElementById('runAll').onclick = () => runSurfaces(SURFACES.slice());
 document.getElementById('stopBtn').onclick = () => {
   cancelRun();
   if (data[current.id] && !data[current.id].trials.length) delete data[current.id];
   setBusy(false); carToTop(false);
-  setClock(0, 'armed', 'Stopped · car back at the top');
+  setClock(0, 'armed', 'Stopped · car back at the release point');
   updatePips(-1); syncPicker(); renderTable(); renderChart();
 };
 
@@ -1140,8 +1197,10 @@ clearBtn.onclick = () => {
 };
 
 function updateFacts(){
-  const v = launchSpeed(rampH), mu = current.mu;
+  const v = launchSpeed(relHeight()), mu = current.mu;
   document.getElementById('hVal').textContent = rampH + ' cm';
+  document.getElementById('rVal').textContent = Math.round(relNow()) + ' cm' + (relTop ? ' (top)' : '');
+  document.getElementById('fRelH').innerHTML = relHeight().toFixed(1) + ' <span class="u">cm</span>';
   document.getElementById('tsVal').textContent = timeScale >= 1 ? 'real time' : (timeScale*100).toFixed(0) + '% speed';
   document.getElementById('fSpeed').innerHTML = (v/100).toFixed(2) + ' <span class="u">m/s</span>';
   document.getElementById('fKE').innerHTML = (0.5*MASS_KG*Math.pow(v/100,2)).toFixed(3) + ' <span class="u">J</span>';
@@ -1197,14 +1256,18 @@ function renderTable(fresh){
   const recs = SURFACES.map(s => data[s.id]).filter(r => r && r.trials.length);
   const full = recs.filter(r => r.trials.length >= TRIALS).length;
   const heights = [...new Set(recs.map(r => r.h))].sort((a, b) => a - b);
+  const points = [...new Set(recs.map(r => r.r))].sort((a, b) => a - b);
   document.getElementById('tableNote').textContent = recs.length === 0
     ? 'No trials yet. Press Release car to start.'
     : full + ' of ' + SURFACES.length + ' surfaces done (3 trials each) · car 60 g · ramp height ' + heights.join(', ') + ' cm' +
+      ' · released ' + points.join(', ') + ' cm up the ramp' +
       (anyPartial ? ' · * only some trials reached this mark, so the average uses just those trials' : '');
-  const warn = document.getElementById('tableWarn');
-  warn.hidden = heights.length < 2;
-  warn.textContent = '⚠ The ramp height changed between surfaces (' + heights.join(', ') +
-    ' cm). Clear the data and keep the ramp at one height so the test is fair.';
+  const warn = document.getElementById('tableWarn'), changed = [];
+  if (heights.length > 1) changed.push('ramp height (' + heights.join(', ') + ' cm)');
+  if (points.length > 1) changed.push('release point (' + points.join(', ') + ' cm up the ramp)');
+  warn.hidden = !changed.length;
+  warn.textContent = '⚠ The ' + changed.join(' and the ') + ' changed between surfaces. ' +
+    'Clear the data and keep the ramp height and the release point the same so the test is fair.';
 }
 
 /* ============================================================
