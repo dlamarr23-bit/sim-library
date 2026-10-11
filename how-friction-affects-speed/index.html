@@ -461,7 +461,7 @@
       <li><strong>Set the ramp height.</strong> Drag the Ramp height slider. The clamp slides up or down the ring stand. Pick one height and keep it the same for every surface. That keeps the test fair.</li>
       <li><strong>Press Release car.</strong> The blue car always starts at the top of the ramp. It rolls down three times in a row: Trial 1, Trial 2 and Trial 3.</li>
       <li><strong>Watch the timer.</strong> The timer starts when the car reaches the bottom of the ramp. It records a time each time the car passes a mark (15, 30, 45, 60 and 75 cm).</li>
-      <li><strong>Read the data table.</strong> Each surface gets three trials and an <strong>average</strong>. The three times are close but not exactly the same, just like in a real lab. "Stopped" means the car stopped before it reached that mark.</li>
+      <li><strong>Read the data table.</strong> Each surface gets three trials and an <strong>average</strong>. The three times are close but not exactly the same, just like in a real lab. Your car and surfaces are also a tiny bit different from everyone else's, like real lab equipment, so your times won't match a classmate's. "Stopped" means the car stopped before it reached that mark.</li>
       <li><strong>Test every surface.</strong> Do them one at a time, or press <strong>Test all 4 surfaces</strong>. The graph draws one line for each surface using the average times.</li>
       <li><strong>Change the speed or start over.</strong> The Playback slider makes the car move slower or faster on screen. <strong>Stop</strong> ends a run. <strong>Clear data</strong> erases the table and the graph (click it twice).</li>
     </ol>
@@ -510,7 +510,7 @@
     <div class="formula">t = (v &minus; &radic;(v&sup2; &minus; 2ad)) &divide; a</div>
     <p><strong>The &mu; for each surface</strong> (typical values for a rolling toy car):</p>
     <table class="mu-table" id="muTable"></table>
-    <p><strong>Trial-to-trial wobble.</strong> Each trial changes the launch speed by about 1% and the friction by up to about 3%. That is why the three trials are close but not the same. Here g = 980 cm/s&sup2; and h is the ramp height in cm.</p>
+    <p><strong>Trial-to-trial wobble.</strong> Each trial changes the launch speed by about 1% and the friction by up to about 3%. That is why the three trials are close but not the same. Every computer also gets its own car and surfaces: the launch speed is up to 3% different, and each surface's friction is up to 3% different. They stay the same on that computer. That is why your times are a little different from a classmate's. Here g = 980 cm/s&sup2; and h is the ramp height in cm.</p>
   </div>
 </details>
 
@@ -560,6 +560,23 @@ function makeTrials(){
   return k.map(n => ({vF: 1 + n*0.011 + (Math.random() - 0.5)*0.006,
                       muF: 1 + (Math.random() - 0.5)*0.06}));
 }
+
+// Every computer also gets its own car and its own patch of each surface, like real lab kits: launch speed up to ±3%,
+// each surface's friction up to ±3%. That moves the averages too, so two students' tables never come out the same,
+// while the surfaces stay in the same order (and at the usual 38 cm ramp, even the slowest sand trial still passes 75 cm).
+// It is kept on this computer, so reloading partway through a lab changes nothing.
+const KIT_KEY = 'frictionLabKit';
+const KIT = (function(){
+  let k = null;
+  try{ k = JSON.parse(localStorage.getItem(KIT_KEY)); }catch(e){ k = null; }
+  const near1 = x => typeof x === 'number' && Math.abs(x - 1) <= 0.03;
+  if (!(k && near1(k.v) && k.mu && SURFACES.every(s => near1(k.mu[s.id])))){
+    k = {v: 1 + (Math.random() - 0.5)*0.06, mu: {}};
+    SURFACES.forEach(s => { k.mu[s.id] = 1 + (Math.random() - 0.5)*0.06; });
+    try{ localStorage.setItem(KIT_KEY, JSON.stringify(k)); }catch(e){}
+  }
+  return k;
+})();
 
 // average of the trials that reached each mark; partial = some trials stopped short of it
 function averages(rec){
@@ -968,7 +985,7 @@ function updatePips(active){
 // one trial: roll down from the top, then across the surface past the marks
 function release(tr, n, tok, done){
   const h = rampH, Lr = rampLen(h);
-  const v0 = launchSpeed(h) * tr.vF, mu = current.mu * tr.muF, a = decel(mu);
+  const v0 = launchSpeed(h) * tr.vF * KIT.v, mu = current.mu * tr.muF * KIT.mu[current.id], a = decel(mu);
   const aRamp = v0*v0 / (2*(Lr - START_S));    // speeds up evenly to v0 at the bottom
   const tag = current.name + ' · Trial ' + n + ' of ' + TRIALS;
   Object.assign(state, {phase:'ramp', s:START_S, v:0, x:0, t:0, roll:0,
