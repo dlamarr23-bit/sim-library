@@ -6,115 +6,223 @@
 <title>Coaster Creator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --pe:#d94a3d;        /* potential  - red */
-    --ke:#3f9e4d;        /* kinetic    - green */
-    --th:#e8912a;        /* thermal    - orange */
-    --ink:#12202e;
-    --ink-2:#465a6e;
-    --line:#c9d6e2;
-    --panel:#ffffff;
-    --bg:#eef3f7;
-    --accent:#12507e;
-    --accent-2:#1b6fa8;
-    --ok:#1d7a4a;
-    --bad:#c0392b;
+    --pe:#d94a3d; --ke:#3fae4d; --th:#f0962a;
+    --ink:#12202e; --ink-2:#465a6e; --line:#c9d6e2;
+    --panel:#ffffff; --bg:#eef3f7;
+    --accent:#12507e; --accent-2:#1b6fa8;
+    --ok:#1d7a4a; --bad:#c0392b;
     --font-b:"Poppins", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    --font-comic:"Bangers", "Poppins", system-ui, sans-serif;
+    --field:#ffffff; --hover:#f0f5f9; --tile:#f5f8fb;
+    --crumb-bg:#2b2f36; --crumb-ink:#8d939c; --crumb-on:#ffffff;
+    --band:#e7e2c6; --band-line:#bdb48c;
+    --eq-bg:#fbf7e2; --eq-line:#8a7d50; --eq-box:#ffffff; --eq-box-line:#6d6440;
+    --btn-top:#f2f3f5; --btn-bot:#b9bec6; --btn-line:#5d636c; --btn-ink:#22262c;
+    --floor:#cfd1ef;
+    --ok-bg:#eaf7f0; --ok-line:#a9d9bf; --bad-bg:#fdeeec; --bad-line:#f0c3bd;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#e6edf4; --ink-2:#a3b4c5; --line:#2e4256; --panel:#16212d; --bg:#0d151e;
+      --accent:#2f86c9; --accent-2:#4a9be0; --ok:#5fd08f; --bad:#ff7a6b;
+      --field:#1c2a38; --hover:#22344a; --tile:#1b2834;
+      --crumb-bg:#080c11; --crumb-ink:#6f7a86; --crumb-on:#ffffff;
+      --band:#1d2632; --band-line:#334356;
+      --eq-bg:#121c27; --eq-line:#3f5266; --eq-box:#0c141c; --eq-box-line:#4b6177;
+      --btn-top:#3a4656; --btn-bot:#232c38; --btn-line:#0b1016; --btn-ink:#e6edf4;
+      --floor:#1e2244;
+      --ok-bg:#12301f; --ok-line:#2c6a48; --bad-bg:#3a1a17; --bad-line:#7a3a33;
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e6edf4; --ink-2:#a3b4c5; --line:#2e4256; --panel:#16212d; --bg:#0d151e;
+    --accent:#2f86c9; --accent-2:#4a9be0; --ok:#5fd08f; --bad:#ff7a6b;
+    --field:#1c2a38; --hover:#22344a; --tile:#1b2834;
+    --crumb-bg:#080c11; --crumb-ink:#6f7a86; --crumb-on:#ffffff;
+    --band:#1d2632; --band-line:#334356;
+    --eq-bg:#121c27; --eq-line:#3f5266; --eq-box:#0c141c; --eq-box-line:#4b6177;
+    --btn-top:#3a4656; --btn-bot:#232c38; --btn-line:#0b1016; --btn-ink:#e6edf4;
+    --floor:#1e2244;
+    --ok-bg:#12301f; --ok-line:#2c6a48; --bad-bg:#3a1a17; --bad-line:#7a3a33;
+    color-scheme:dark;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
-  body{
-    background:var(--bg);
-    color:var(--ink);
-    font:700 17px/1.5 var(--font-b);
-    -webkit-text-size-adjust:100%;
-  }
+  body{background:var(--bg);color:var(--ink);font:700 17px/1.5 var(--font-b);-webkit-text-size-adjust:100%}
   .wrap{max-width:min(1900px,97vw);margin:0 auto;padding:14px 14px 40px}
-  header{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin-bottom:12px}
-  h1{font-size:clamp(26px,3vw,38px);font-weight:800;margin:0;letter-spacing:.2px;text-transform:uppercase;font-family:var(--font-b)}
-  h1 small{display:block;font-size:14px;font-weight:600;color:var(--ink-2);letter-spacing:0;max-width:70ch;text-transform:none}
-  .namebox{margin-left:auto;display:flex;align-items:center;gap:8px}
-  .namebox label{font-size:14px;font-weight:700;color:var(--ink-2);white-space:nowrap}
-  input[type=text]{
-    font:inherit;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:#fff;
-    min-width:190px;color:var(--ink)
-  }
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px}
+  h1{font-size:clamp(26px,3vw,38px);font-weight:800;margin:0;letter-spacing:.2px;text-transform:uppercase}
+  h1 small{display:block;font-size:clamp(14px,1.1vw,16px);font-weight:600;color:var(--ink-2);letter-spacing:0;max-width:75ch;text-transform:none}
+  .theme-btn{margin-left:auto;width:48px;height:48px;min-height:48px;padding:0;border-radius:50%;display:grid;place-items:center}
+  .theme-btn svg{width:22px;height:22px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(18,32,46,.06)}
-  .card>h2{font-family:var(--font-b);font-weight:800;font-size:16px;margin:0 0 10px}
-  .stage{padding:10px;margin-bottom:12px}
-  /* on very narrow screens the track stays big enough to touch and pans sideways instead */
-  .scroller{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;border-radius:8px}
-  canvas{
-    display:block;width:100%;min-width:660px;height:auto;aspect-ratio:200/48;border-radius:8px;
-    touch-action:none;cursor:grab;background:#cfe6f5;outline:none
-  }
-  canvas:focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
 
-  /* ---------- energy bar ---------- */
-  .energy{padding:12px 14px 14px;margin-bottom:12px}
-  .energy h2{font-family:var(--font-b);font-weight:800;font-size:14px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-2)}
-  .bar{display:flex;height:36px;border-radius:8px;overflow:hidden;border:1px solid #b9c7d4;background:#f4f7fa}
-  .bar span{display:block;height:100%}
-  .seg-pe{background:var(--pe)} .seg-ke{background:var(--ke)} .seg-th{background:var(--th)}
-  /* grid (not flex-wrap) so a value's width changing every animation frame can never
-     shift how many items fit per row -- that row-count flicker is what read as "shaking" */
-  .legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 18px;margin-top:10px;font-size:15px;align-items:center}
-  .legend>div{display:flex;align-items:center;gap:7px;min-width:0}
-  .sw{width:14px;height:14px;border-radius:3px;flex:0 0 auto}
-  .legend b{
-    font-variant-numeric:tabular-nums;font-weight:800;
-    display:inline-block;min-width:5.5ch;text-align:left
+  /* ---------- buttons ---------- */
+  button,select,input[type=text]{font:inherit}
+  button{
+    font-weight:700;padding:10px 16px;border-radius:9px;border:2px solid var(--line);
+    background:var(--field);color:var(--ink);cursor:pointer;min-height:44px
   }
+  button:hover{background:var(--hover)}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
+  button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+  /* chunky bevelled game buttons (Back / Next / Reset / Play) */
+  .bevel{
+    background:linear-gradient(var(--btn-top),var(--btn-bot));border:2px solid var(--btn-line);color:var(--btn-ink);
+    border-radius:10px;box-shadow:inset 0 2px 0 rgba(255,255,255,.55),0 3px 0 rgba(0,0,0,.28);
+    font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:clamp(14px,1.1vw,17px);
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:8px 18px
+  }
+  .bevel:hover{filter:brightness(1.05);background:linear-gradient(var(--btn-top),var(--btn-bot))}
+  .bevel:active{box-shadow:inset 0 2px 4px rgba(0,0,0,.25);transform:translateY(2px)}
+  .bevel svg{width:20px;height:20px;flex:0 0 auto}
+  .bevel.go{background:linear-gradient(#7fe07a,#2f9a3a);border-color:#1d5e25;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+  .bevel.go:hover{background:linear-gradient(#8ce887,#36a842)}
+  select{font-weight:700;padding:9px 10px;border-radius:9px;border:2px solid var(--line);background:var(--field);min-height:44px;color:var(--ink)}
+  input[type=text]{padding:9px 12px;border:2px solid var(--line);border-radius:9px;background:var(--field);color:var(--ink);font-weight:700;min-width:0}
+  input[type=range]{width:220px;height:34px;accent-color:var(--accent-2)}
+  output{font-variant-numeric:tabular-nums;font-weight:800}
+
+  /* ---------- the game frame ---------- */
+  .app{overflow:hidden;margin-bottom:12px}
+  .crumbs{background:var(--crumb-bg);display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;padding:6px 14px}
+  .crumbs button{
+    background:none;border:0;min-height:32px;padding:4px 6px;color:var(--crumb-ink);
+    font-size:clamp(12px,.95vw,14px);font-weight:800;letter-spacing:.1em;text-transform:uppercase;border-radius:6px
+  }
+  .crumbs button:hover:not(:disabled){color:#cfd5dc;background:rgba(255,255,255,.06)}
+  .crumbs button[aria-current=step]{color:var(--crumb-on)}
+  .crumbs button:disabled{opacity:.45}
+  .crumbs .sep{color:var(--crumb-ink);font-weight:800}
+  .toolbar{
+    background:var(--band);border-bottom:2px solid var(--band-line);
+    display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 14px
+  }
+  .eq{
+    justify-self:center;background:var(--eq-bg);border:2px solid var(--eq-line);border-radius:12px;
+    display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 22px;padding:6px 16px
+  }
+  .eq .part{display:flex;align-items:flex-start;gap:6px}
+  .eq .lbl{font-size:clamp(20px,1.6vw,26px);font-weight:800;line-height:44px}
+  .eq .lbl.pe{color:var(--pe)} .eq .lbl.ke{color:var(--ke)}
+  .eq .op{font-size:clamp(17px,1.3vw,21px);line-height:44px;color:var(--ink);white-space:nowrap}
+  .eq .op i{font-style:italic;font-weight:800}
+  .eq .half{display:inline-flex;flex-direction:column;align-items:center;font-size:14px;line-height:1;margin-top:9px}
+  .eq .half span:first-child{border-bottom:2px solid currentColor;padding:0 2px}
+  .eq .box{display:flex;flex-direction:column;align-items:center}
+  .eq .box b{
+    display:block;min-width:92px;padding:4px 10px;text-align:center;border:2px solid var(--eq-box-line);border-radius:10px;
+    background:var(--eq-box);font-size:clamp(15px,1.15vw,18px);font-weight:800;font-variant-numeric:tabular-nums;min-height:36px;line-height:24px;white-space:nowrap
+  }
+  .eq .box b.hot{background:#e9573f;border-color:#9b2d1d;color:#fff}
+  .eq .box small{font-size:12px;font-weight:700;color:var(--ink-2);line-height:1.4}
+  .eq .sq{font-size:13px;margin-left:-2px;line-height:20px}
+  .eq .res{font-size:clamp(14px,1.05vw,16px);line-height:44px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .stage{position:relative;background:var(--floor)}
+  .scroller{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+  canvas#cv{display:block;width:100%;min-width:660px;height:auto;aspect-ratio:200/86;touch-action:none;outline:none}
+  canvas#cv:focus-visible{outline:3px solid var(--accent-2);outline-offset:-3px}
+  canvas#cv.edit{cursor:crosshair}
+  .ebar{
+    position:absolute;left:50%;top:2.2%;transform:translateX(-50%);width:min(52%,720px);
+    display:none;height:clamp(30px,2.6vw,42px);border:2px solid #3a3f47;border-radius:6px;overflow:hidden;
+    background:#f1f3f6;box-shadow:0 2px 6px rgba(0,0,0,.25);pointer-events:none
+  }
+  .ebar.show{display:flex}
+  .ebar span{
+    display:flex;align-items:center;height:100%;padding-left:8px;overflow:hidden;white-space:nowrap;
+    font-weight:800;font-size:clamp(14px,1.2vw,20px);color:rgba(0,0,0,.55);
+    background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 55%,rgba(0,0,0,.08));
+  }
+  .ebar .s-pe{background-color:var(--pe)} .ebar .s-ke{background-color:var(--ke)} .ebar .s-th{background-color:var(--th)}
+
+  .bottom{
+    background:var(--band);border-top:2px solid var(--band-line);
+    display:grid;grid-template-columns:minmax(260px,1.1fr) minmax(0,2fr) auto;gap:14px;align-items:center;padding:12px 14px
+  }
+  .guide{display:flex;align-items:center;gap:10px;min-width:0}
+  .guide .avatar{flex:0 0 auto;width:58px;height:58px}
+  .bubble{
+    position:relative;flex:1;min-width:0;background:var(--field);border:2px solid var(--eq-box-line);border-radius:14px;
+    padding:9px 13px;font-size:15px;font-weight:600;line-height:1.4;min-height:58px;display:flex;flex-direction:column;justify-content:center
+  }
+  .bubble::before{content:"";position:absolute;left:-11px;top:50%;margin-top:-9px;border:9px solid transparent;border-right-color:var(--eq-box-line);border-left:0}
+  .bubble::after{content:"";position:absolute;left:-7px;top:50%;margin-top:-7px;border:7px solid transparent;border-right-color:var(--field);border-left:0}
+  .bubble b,.bubble strong{font-weight:800}
+  .bubble.ok{border-color:var(--ok-line);background:var(--ok-bg);color:var(--ok)}
+  .bubble.ok::after{border-right-color:var(--ok-bg)} .bubble.ok::before{border-right-color:var(--ok-line)}
+  .bubble.bad{border-color:var(--bad-line);background:var(--bad-bg);color:var(--bad)}
+  .bubble.bad::after{border-right-color:var(--bad-bg)} .bubble.bad::before{border-right-color:var(--bad-line)}
+  .bubble small{display:block;font-weight:600;font-size:14px;color:var(--ink);margin-top:3px}
+
+  .stepctl{display:none;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;min-width:0}
+  .stepctl.on{display:flex}
+  .grp{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .grp>label,.grp>.glabel{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .swatches{display:grid;grid-template-columns:repeat(3,34px);gap:5px}
+  .swatches button{width:34px;height:34px;min-height:34px;padding:0;border-radius:8px;border:2px solid rgba(0,0,0,.35);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.45),inset 0 -3px 0 rgba(0,0,0,.18)}
+  .swatches button[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:2px;background-image:none}
+  .patterns{display:grid;grid-template-columns:repeat(3,64px);gap:6px}
+  .patterns button{width:64px;height:40px;min-height:40px;padding:0;border-radius:8px;overflow:hidden;border:2px solid rgba(0,0,0,.35)}
+  .patterns button[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:2px}
+  .patterns canvas{display:block;width:100%;height:100%}
+  .actions{display:flex;gap:10px;align-items:center;justify-content:flex-end}
+  .nodeinfo{font-size:15px;font-weight:700;min-width:13ch}
 
   /* ---------- readouts ---------- */
-  .readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin-top:12px}
-  .ro{background:#f5f8fb;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .energy{padding:12px 14px 14px;margin-bottom:12px}
+  .energy h2{font-weight:800;font-size:14px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-2)}
+  .legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 18px;font-size:15px;align-items:center}
+  .legend>div{display:flex;align-items:center;gap:7px;min-width:0}
+  .sw{width:14px;height:14px;border-radius:3px;flex:0 0 auto}
+  .legend b{font-variant-numeric:tabular-nums;font-weight:800;display:inline-block;min-width:6ch}
+  .note{font-size:14px;color:var(--ink-2)}
+  .readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px;margin-top:12px}
+  .ro{background:var(--tile);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
   .ro span{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
   .ro b{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}
   .ro.warn b{color:var(--bad)}
 
-  /* ---------- controls ---------- */
-  .controls{padding:12px 14px;display:flex;flex-wrap:wrap;gap:16px 22px;align-items:flex-end;margin-bottom:12px}
-  .grp{display:flex;flex-direction:column;gap:6px}
-  .grp>label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
-  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  button{
-    font:inherit;font-weight:700;padding:10px 16px;border-radius:9px;border:2px solid var(--line);
-    background:#fff;color:var(--ink);cursor:pointer;min-height:44px
-  }
-  button:hover{background:#f0f5f9}
-  button:active{transform:translateY(1px)}
-  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  button.primary:hover{background:var(--accent-2)}
-  button.tiny{min-height:40px;padding:8px 13px}
-  button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
-  select{font:inherit;font-weight:700;padding:9px 10px;border-radius:9px;border:2px solid var(--line);background:#fff;min-height:44px;color:var(--ink)}
-  input[type=range]{width:172px;height:34px}
-  output{font-variant-numeric:tabular-nums;font-weight:800}
-  .chk{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600}
-  input[type=checkbox]{width:20px;height:20px}
+  /* ---------- collapsible text ---------- */
+  details.card{margin-bottom:12px;overflow:hidden}
+  details.card>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:14px 16px;
+    font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--ink)}
+  details.card>summary::-webkit-details-marker{display:none}
+  details.card>summary::after{content:"";margin-left:auto;width:10px;height:10px;border-right:3px solid var(--ink-2);border-bottom:3px solid var(--ink-2);
+    transform:rotate(45deg);transition:transform .2s;margin-top:-4px}
+  details[open].card>summary::after{transform:rotate(-135deg);margin-top:4px}
+  details.card>summary:focus-visible{outline:3px solid var(--accent-2);outline-offset:-3px}
+  details.card .body{padding:0 16px 16px}
+  details.card .body p{font-size:15px;margin:0 0 10px;font-weight:600}
+  details.card ol{margin:0;padding-left:24px}
+  details.card li{margin-bottom:8px;font-size:15px;font-weight:600}
+  details.card li strong,details.card p strong{font-weight:800}
+  kbd{font:700 13px/1 ui-monospace,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:3px 6px;background:var(--tile)}
 
-  /* ---------- outcome ---------- */
-  .outcome{
-    padding:12px 14px;border-radius:12px;margin-bottom:12px;font-weight:700;font-size:16px;
-    border:1px solid var(--line);background:#fff;display:none
+  @media (max-width:1100px){
+    .bottom{grid-template-columns:1fr}
+    .actions{justify-content:flex-start}
   }
-  .outcome.show{display:block}
-  .outcome.ok{border-color:#a9d9bf;background:#eaf7f0;color:var(--ok)}
-  .outcome.bad{border-color:#f0c3bd;background:#fdeeec;color:var(--bad)}
-  .outcome small{display:block;font-weight:500;font-size:14.5px;color:var(--ink-2);margin-top:4px}
-
-  .help{padding:14px 14px 16px;margin-bottom:12px}
-  .help ol{margin:0;padding-left:24px}
-  .help li{margin-bottom:8px;font-size:15px;color:var(--ink)}
-  .help li strong{font-weight:800}
-  .note{font-size:14px;color:var(--ink-2);margin-top:10px}
-  kbd{font:700 13px/1 ui-monospace,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:3px 6px;background:#f5f8fb}
-  @media (max-width:660px){
-    .namebox{margin-left:0;width:100%}
-    input[type=text]{flex:1;min-width:0}
+  @media (max-width:760px){
+    .toolbar{grid-template-columns:1fr 1fr}
+    .eq{grid-column:1 / -1;grid-row:1}
+    .toolbar #btnBack{justify-self:start}
+    .toolbar #btnNext{justify-self:end}
+    .eq{padding:6px 8px;gap:4px 10px}
+    .eq .part{gap:4px}
+    .eq .box b{min-width:58px;padding:4px 6px;font-size:14px}
+    .eq .lbl{font-size:18px}
+    .eq .res{display:none}
     .ro b{font-size:18px}
   }
 </style>
@@ -124,392 +232,702 @@
 
   <header>
     <h1>Coaster Creator
-      <small>Drag the black nodes to shape a track, then launch. The train is released from rest at the first
-        node &mdash; that height is all the energy it will ever get.</small>
+      <small>Design your carts, build a track with hills and loops, then test it. The chain lift gives the train all
+        the energy it will ever get &mdash; can your coaster make it to the end?</small>
     </h1>
-    <div class="namebox">
-      <label for="cname">Coaster name</label>
-      <input id="cname" type="text" value="The Screaming Eagle" maxlength="34">
-    </div>
+    <button id="themeBtn" class="theme-btn" type="button" aria-label="Switch to dark mode" title="Light / dark mode"></button>
   </header>
 
-  <div class="card stage">
-   <div class="scroller">
-    <canvas id="cv" tabindex="0" role="application"
-      aria-label="Roller coaster track editor. Tap or click a black node to select it, then use the arrow keys to move it. Press space to launch."></canvas>
-   </div>
-  </div>
+  <section class="card app" aria-label="Coaster Creator">
+    <nav class="crumbs" aria-label="Steps">
+      <button data-step="0">Cart Design</button><span class="sep" aria-hidden="true">&gt;</span>
+      <button data-step="1">Cart Length</button><span class="sep" aria-hidden="true">&gt;</span>
+      <button data-step="2">Track Design</button><span class="sep" aria-hidden="true">&gt;</span>
+      <button data-step="3">Coaster Test</button>
+    </nav>
 
-  <div id="outcome" class="outcome" role="status" aria-live="polite"></div>
+    <div class="toolbar">
+      <button id="btnBack" class="bevel" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 5 10l8 7z" fill="currentColor"/></svg>Back</button>
+      <div class="eq" aria-live="off">
+        <div class="part">
+          <span class="lbl pe">PE&nbsp;=</span>
+          <span class="box"><b id="eqM1">&nbsp;</b><small>Mass</small></span>
+          <span class="op">&times; <i>g</i> &times;</span>
+          <span class="box"><b id="eqH">&nbsp;</b><small>Height</small></span>
+          <span class="res" id="eqPE"></span>
+        </div>
+        <div class="part">
+          <span class="lbl ke">KE&nbsp;=</span>
+          <span class="half" aria-label="one half"><span>1</span><span>2</span></span>
+          <span class="op">&times;</span>
+          <span class="box"><b id="eqM2">&nbsp;</b><small>Mass</small></span>
+          <span class="op">&times;</span>
+          <span class="box"><b id="eqV">&nbsp;</b><small>Velocity</small></span><span class="sq">2</span>
+          <span class="res" id="eqKE"></span>
+        </div>
+      </div>
+      <button id="btnNext" class="bevel" type="button">Next<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 3 8 7-8 7z" fill="currentColor"/></svg></button>
+    </div>
 
-  <div class="card energy">
+    <div class="stage">
+      <div class="scroller">
+        <canvas id="cv" tabindex="0" role="application" aria-label="Coaster scene"></canvas>
+      </div>
+      <div class="ebar" id="ebar" role="img" aria-label="Energy bar: potential, kinetic and thermal energy">
+        <span class="s-pe" id="segPE">PE</span><span class="s-ke" id="segKE">KE</span><span class="s-th" id="segTH">TE</span>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="guide">
+        <svg class="avatar" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="31" fill="#2f86c9"/>
+          <circle cx="32" cy="38" r="15" fill="#f2c9a0"/>
+          <path d="M14 32a18 18 0 0 1 36 0z" fill="#f5c400" stroke="#8a6d00" stroke-width="2"/>
+          <rect x="11" y="30" width="42" height="5" rx="2.5" fill="#f5c400" stroke="#8a6d00" stroke-width="2"/>
+          <circle cx="26.5" cy="40" r="2.2" fill="#1b2430"/><circle cx="37.5" cy="40" r="2.2" fill="#1b2430"/>
+          <path d="M26 46q6 5 12 0" stroke="#1b2430" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="bubble" id="guide" role="status" aria-live="polite"></div>
+      </div>
+
+      <!-- step 0: cart design -->
+      <div class="stepctl" data-for="0">
+        <div class="grp" style="min-width:230px;flex:1">
+          <label for="cname">Name your coaster</label>
+          <input id="cname" type="text" maxlength="30" value="The Screaming Eagle">
+        </div>
+        <div class="grp"><span class="glabel">Pattern</span><div class="patterns" id="patterns"></div></div>
+        <div class="grp"><span class="glabel">Main color</span><div class="swatches" id="swMain"></div></div>
+        <div class="grp"><span class="glabel">Detail color</span><div class="swatches" id="swDetail"></div></div>
+      </div>
+
+      <!-- step 1: cart length -->
+      <div class="stepctl" data-for="1">
+        <div class="grp">
+          <label for="cars">Cars in the train &mdash; <output id="carsOut">3 cars</output></label>
+          <input id="cars" type="range" min="1" max="8" step="1" value="3">
+        </div>
+        <div class="grp">
+          <span class="glabel">Train mass</span>
+          <span class="nodeinfo" id="massInfo">1500 kg</span>
+        </div>
+        <div class="grp"><span class="note">Each car plus its riders has a mass of 500 kg.</span></div>
+      </div>
+
+      <!-- step 2: track design -->
+      <div class="stepctl" data-for="2">
+        <div class="grp">
+          <span class="glabel">Selected node</span>
+          <span class="nodeinfo" id="nodeInfo">&ndash;</span>
+        </div>
+        <div class="grp">
+          <span class="glabel">Loop</span>
+          <div class="row">
+            <button id="btnLoop" type="button">Add loop</button>
+            <select id="loopSize" aria-label="Loop size">
+              <option value="1">Small loop</option>
+              <option value="2" selected>Medium loop</option>
+              <option value="3">Large loop</option>
+              <option value="4">Giant loop</option>
+            </select>
+          </div>
+        </div>
+        <div class="grp">
+          <span class="glabel">Track</span>
+          <div class="row">
+            <button id="btnDel" type="button">Delete node</button>
+            <select id="preset" aria-label="Load a design">
+              <option value="">Load a design&hellip;</option>
+              <option value="classic">Classic drop &amp; loop</option>
+              <option value="double">Double loop</option>
+              <option value="camel">Camelback hills (airtime)</option>
+              <option value="family">Gentle family coaster</option>
+              <option value="toohigh">Second hill too tall</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- step 3: coaster test -->
+      <div class="stepctl" data-for="3">
+        <div class="grp">
+          <label for="fric">Track friction</label>
+          <select id="fric">
+            <option value="0.005">Low &mdash; new, greased rails</option>
+            <option value="0.012" selected>Medium &mdash; typical</option>
+            <option value="0.025">High &mdash; old, rusty rails</option>
+          </select>
+        </div>
+        <div class="grp">
+          <span class="glabel">View</span>
+          <div class="row">
+            <button id="btnCam" type="button" aria-pressed="false">Whole track</button>
+            <button id="btnSlow" type="button" aria-pressed="false">Slow motion</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="btnReset" class="bevel" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 1-7.4 5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="M3 3v7h7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="resetTxt">Reset</span></button>
+        <button id="btnRun" class="bevel go" type="button"><svg viewBox="0 0 20 20" aria-hidden="true" id="runIcon"><path d="M5 3l12 7-12 7z" fill="currentColor"/></svg><span id="runTxt">Play</span></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card energy" aria-label="Energy and motion readouts">
     <h2>Energy in the system</h2>
-    <div class="bar" role="img" aria-label="Energy bar showing potential, kinetic and thermal energy">
-      <span class="seg-pe" id="segPE" style="width:100%"></span>
-      <span class="seg-ke" id="segKE" style="width:0%"></span>
-      <span class="seg-th" id="segTH" style="width:0%"></span>
-    </div>
     <div class="legend">
-      <div><i class="sw" style="background:var(--pe)"></i> Potential (height) &mdash; <b id="vPE">0 J</b></div>
-      <div><i class="sw" style="background:var(--ke)"></i> Kinetic (motion) &mdash; <b id="vKE">0 J</b></div>
-      <div><i class="sw" style="background:var(--th)"></i> Thermal (friction) &mdash; <b id="vTH">0 J</b></div>
-      <div class="note">Total never changes: <b id="vTOT">0 J</b></div>
+      <div><i class="sw" style="background:var(--pe)"></i> PE &middot; Potential (height) &mdash; <b id="vPE">0 J</b></div>
+      <div><i class="sw" style="background:var(--ke)"></i> KE &middot; Kinetic (motion) &mdash; <b id="vKE">0 J</b></div>
+      <div><i class="sw" style="background:var(--th)"></i> TE &middot; Thermal (friction) &mdash; <b id="vTH">0 J</b></div>
+      <div class="note">Total after the lift: <b id="vTOT">&ndash;</b></div>
     </div>
-
     <div class="readouts">
       <div class="ro"><span>Height</span><b id="rHeight">0 m</b></div>
       <div class="ro"><span>Speed</span><b id="rSpeed">0 m/s</b></div>
+      <div class="ro"><span>Speed (km/h)</span><b id="rKmh">0</b></div>
       <div class="ro"><span>Force on riders</span><b id="rG">1.0 g</b></div>
       <div class="ro"><span>Top speed</span><b id="rVmax">0 m/s</b></div>
       <div class="ro"><span>Distance</span><b id="rDist">0 m</b></div>
       <div class="ro"><span>Train mass</span><b id="rMass">1500 kg</b></div>
-      <div class="ro"><span>Start height</span><b id="rH0">0 m</b></div>
+      <div class="ro"><span>Lift hill height</span><b id="rH0">0 m</b></div>
     </div>
-  </div>
+  </section>
 
-  <div class="card controls">
-    <div class="grp">
-      <label>Run the coaster</label>
-      <div class="row">
-        <button id="btnRun" class="primary">Launch</button>
-        <button id="btnReset">Reset train</button>
-        <button id="btnSlow" aria-pressed="false" title="Slower playback for observing">Slow motion</button>
-      </div>
+  <details class="card" open>
+    <summary>How to use this simulation</summary>
+    <div class="body">
+      <ol>
+        <li><strong>Cart Design.</strong> Give your coaster a name. Pick a pattern, a main color and a detail color.
+          Press <strong>Next</strong>.</li>
+        <li><strong>Cart Length.</strong> Use the slider to choose how many cars are in the train. Watch the mass change in
+          the PE and KE equations at the top.</li>
+        <li><strong>Track Design.</strong> The first hill is the <strong>chain lift</strong>. Click to the right of the last
+          node to add more track. Drag any black node to make hills and valleys. Select a node and press
+          <strong>Add loop</strong> to build a loop there. Keep going until your track reaches <strong>COASTER END</strong>.</li>
+        <li><strong>Coaster Test.</strong> Press <strong>Play</strong>. The chain pulls the train up the first hill, then
+          lets it go. Watch the bar: <span style="color:var(--pe);font-weight:800">red PE</span> is potential energy,
+          <span style="color:var(--ke);font-weight:800">green KE</span> is kinetic energy, and
+          <span style="color:var(--th);font-weight:800">orange TE</span> is thermal energy made by friction and air.</li>
+        <li><strong>Read the numbers.</strong> The equations at the top fill in with the train's mass, height and speed
+          as it moves. Press <strong>Whole track</strong> to see the full ride at once.</li>
+        <li><strong>Fix and try again.</strong> If the train stalls or crashes, press <strong>Back</strong>, change the
+          track, and test it again.</li>
+        <li><strong>Keyboard:</strong> in Track Design, click the picture, then use <kbd>Tab</kbd> to pick a node,
+          arrow keys to move it (hold <kbd>Shift</kbd> for bigger steps), <kbd>L</kbd> for a loop and
+          <kbd>Delete</kbd> to remove it. In Coaster Test, <kbd>Space</kbd> plays and pauses.</li>
+      </ol>
     </div>
+  </details>
 
-    <div class="grp">
-      <label for="cars">Cars in the train &mdash; <output id="carsOut">3 cars &middot; 1500 kg</output></label>
-      <input id="cars" type="range" min="1" max="6" step="1" value="3">
+  <details class="card">
+    <summary>The science behind it</summary>
+    <div class="body">
+      <p><strong>Potential energy (PE)</strong> is energy stored by height. A heavier train, or a higher train, stores more:
+        <i>PE = m &middot; g &middot; h</i>. Here <i>g</i> is 9.81 m/s&sup2;, the pull of gravity.</p>
+      <p><strong>Kinetic energy (KE)</strong> is energy of motion: <i>KE = &frac12; &middot; m &middot; v&sup2;</i>. Speed is
+        squared, so going twice as fast means four times the kinetic energy.</p>
+      <p>The <strong>chain lift</strong> does work on the train. It pulls it up the first hill and gives it all of its
+        energy. After that, nothing adds energy. As the train drops, PE turns into KE. As it climbs, KE turns back into PE.</p>
+      <p><strong>Thermal energy (TE)</strong> is heat. Friction in the wheels and air rubbing on the train slowly turn some
+        energy into heat. That energy is not destroyed, but it can't move the train anymore. So no hill after the lift
+        can be as tall as the lift hill.</p>
+      <p>A <strong>loop</strong> needs speed. At the top, the train is upside down. It must be moving fast enough to stay
+        pressed against the track. Big loops need more speed than small ones.</p>
+      <p><strong>Force on riders</strong> is measured in <i>g</i>. At 1 g you feel your normal weight. At the bottom of a
+        drop or loop you feel heavier. Over a hilltop you can feel weightless (airtime). Real coasters stay under about
+        5 g. This sim calls anything over 6 g a crash.</p>
     </div>
+  </details>
 
-    <div class="grp">
-      <label for="fric">Track friction</label>
-      <select id="fric">
-        <option value="0.008">Low &mdash; new, greased rails</option>
-        <option value="0.022" selected>Medium &mdash; typical</option>
-        <option value="0.045">High &mdash; old, rusty rails</option>
-      </select>
+  <details class="card">
+    <summary>The model (details)</summary>
+    <div class="body">
+      <p>The track is a smooth curve through your nodes. Loops are teardrop-shaped, like real ones. Their curve starts
+        gently and gets tightest at the top, so riders aren't slammed at the bottom. The chain lift moves the train at a
+        steady 3 m/s, so the energy at the top of the lift is <i>mgh + &frac12;mv&sup2;</i>. After the lift, rolling friction
+        (&mu; &times; the force between the wheels and track) and air drag turn energy into heat. Friction grows with mass
+        but air drag does not, so a heavier train coasts a little farther. The train is tracked by its front car.</p>
     </div>
-
-    <div class="grp">
-      <label>Track shape</label>
-      <div class="row">
-        <button class="tiny" id="btnAdd">+ Node</button>
-        <button class="tiny" id="btnDel">&minus; Node</button>
-        <select id="preset">
-          <option value="">Load a design&hellip;</option>
-          <option value="classic">Classic first drop</option>
-          <option value="double">Double big hill</option>
-          <option value="bunny">Bunny hops (airtime)</option>
-          <option value="toolow">Starts too low</option>
-          <option value="ramp">Gentle ramp (build your own)</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="grp">
-      <label>Display</label>
-      <div class="row">
-        <span class="chk"><input type="checkbox" id="trail" checked><label for="trail">Energy trail</label></span>
-        <span class="chk"><input type="checkbox" id="grid" checked><label for="grid">Height lines</label></span>
-      </div>
-    </div>
-  </div>
-
-  <div class="help card">
-    <h2>How to use this simulation</h2>
-    <ol>
-      <li><strong>Design the track.</strong> Drag any black node to shape hills and valleys. Nodes keep their
-        left-to-right order, so the track can never cross itself.</li>
-      <li><strong>Predict first.</strong> Before launching, think about where potential, kinetic and thermal
-        energy will be greatest. The box at the first node shows the starting energy, <i>PE = mgh</i>.</li>
-      <li><strong>Launch and watch the bar.</strong>
-        <span style="color:var(--pe);font-weight:800">Red</span> is potential energy,
-        <span style="color:var(--ke);font-weight:800">green</span> is kinetic,
-        <span style="color:var(--th);font-weight:800">orange</span> is thermal energy lost to friction and air.
-        The bar's total width never changes &mdash; energy is only converted, never created or destroyed.</li>
-      <li><strong>Iterate.</strong> If the train stalls or crashes, change the track and run it again. Notice
-        what changed and why it helped.</li>
-      <li><strong>Keyboard controls:</strong> click the picture, then <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd>
-        to step between nodes, <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> to move the
-        selected node (hold <kbd>Shift</kbd> for bigger steps), <kbd>Space</kbd> to launch.</li>
-    </ol>
-    <p class="note"><b>The model:</b> the train starts at rest, so its total energy is <i>mgh</i> at the first node.
-      Rolling friction (&mu; &times; the normal force, which grows in valleys) and air drag steadily convert that
-      into thermal energy. Because friction scales with mass but air drag does not, a heavier train coasts slightly
-      farther &mdash; compare 1 car with 6. Real coasters keep the force on riders under about 5 g; above 6 g this
-      simulation calls it a crash.</p>
-  </div>
+  </details>
 
 </div>
 
+<script>
+/* ---------- light / dark toggle ---------- */
+(function(){
+  const root=document.documentElement, btn=document.getElementById('themeBtn');
+  const MOON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>';
+  let saved=null; try{ saved=localStorage.getItem('motionlab-theme'); }catch(e){}
+  if(saved==='light'||saved==='dark') root.setAttribute('data-theme',saved);
+  const isDark=()=>{ const t=root.getAttribute('data-theme'); return t ? t==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+  const paint=()=>{ const d=isDark(); btn.innerHTML=d?SUN:MOON; btn.setAttribute('aria-label',d?'Switch to light mode':'Switch to dark mode'); };
+  btn.addEventListener('click',()=>{ const next=isDark()?'light':'dark'; root.setAttribute('data-theme',next); try{ localStorage.setItem('motionlab-theme',next); }catch(e){} paint(); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',paint);
+  window.__isDark=isDark; paint();
+})();
+</script>
 <script>
 "use strict";
 (function(){
 
 /* ============================ constants ============================ */
-const W_WORLD = 200, H_WORLD = 48;      // metres of world shown
+const W_WORLD = 200;                    // metres across the editor
+const Y_BOT = -8, Y_TOP = 78;           // metres shown, bottom (floor strip) to top
+const H_WORLD = Y_TOP - Y_BOT;
+const START_BAND = 7, END_BAND = 193;   // striped COASTER START / COASTER END bands
+const END_REACH = 186;                  // last node must reach this x for the track to be complete
 const G = 9.81;
-const MASS_PER_CAR = 500;               // kg (car + riders)
-const CAR_LEN = 5.0, CAR_GAP = 0.7;     // metres
-const DRAG_K = 0.5 * 1.2 * 0.9 * 2.0;   // ½·rho·Cd·A — frontal area is the same however many cars
-const SUBSTEPS = 12;
-const G_LIMIT = 6.0, G_TIME = 0.08;     // crash: too much force on riders
-const AIR_LIMIT = -2.2, AIR_TIME = 0.25;// crash: upstop wheels torn off the rails
-const AIRTIME_G = 0.15;                 // below this the riders feel weightless
-const MIN_GAP = 9;                      // minimum horizontal spacing between nodes, metres
-const Y_MIN = 2.5, Y_MAX = H_WORLD - 3;
-const HIT_PX = 22, NODE_PX = 9;         // node hit / draw radius, CSS pixels
+const MASS_PER_CAR = 500;
+const CAR_LEN = 4.2, CAR_GAP = 0.5;
+const DRAG_K = 0.5 * 1.2 * 0.7 * 1.3;   // ½·air density·drag coefficient·frontal area (same for any number of cars)
+const V_LIFT = 3.0;                     // chain lift speed, m/s
+const SUBSTEPS = 14;
+const G_LIMIT = 6.0, G_TIME = 0.08;
+const AIR_LIMIT = -2.2, AIR_TIME = 0.25;
+const MIN_GAP = 8;
+const Y_MAX = 72, LIFT_MIN = 8;
+const LOOP_H = [0, 12, 18, 24, 30];     // loop heights, metres
+const LOOP_NAMES = ['', 'Small', 'Medium', 'Large', 'Giant'];
+const LOOP_A = 0.8;                     // loop curvature profile: 1 - A*cos(2*pi*u); 1 would be a pure teardrop
+const DS = 0.2;                         // track resolution, metres
+const HIT_PX = 20, NODE_PX = 9;
+const FOLLOW_VIEW_H = 38;               // metres of height visible in follow-cam
 
-/* Geometries checked by simulation at 1, 3 and 6 cars and at every friction setting:
-   each finishes (or stalls, for "toolow") with the force on riders under 5 g. */
+const COLORS = ['#e0412f','#f39a1e','#f5d431','#3cae4a','#3d6fd8','#9b4fd1','#9aa3ad','#23b5c2','#f0b48a'];
+const COLOR_NAMES = ['red','orange','yellow','green','blue','purple','gray','teal','peach'];
+const PATTERNS = ['plain','stripes','flames','stars','dots','zigzag'];
+const PATTERN_NAMES = ['Plain','Racing stripes','Flames','Stars','Polka dots','Lightning'];
+
+/* Presets, checked headlessly at 1, 4 and 8 cars: all finish at medium friction (the "too tall"
+   one always stalls). At the friction extremes a loop can fail, which is worth exploring. */
 const PRESETS = {
-  classic:[[6,36],[36,13],[70,6],[104,24],[136,9],[162,18],[182,7],[196,4]],
-  double :[[6,38],[46,8],[90,28],[130,10],[162,20],[182,9],[196,5]],
-  bunny  :[[6,30],[30,8],[54,18],[78,7],[102,16],[126,6],[152,12],[196,3]],
-  toolow :[[6,12],[34,5],[62,16],[92,6],[122,20],[150,8],[176,14],[196,4]],
-  ramp   :[[6,22],[34,19],[62,16],[90,13],[118,10],[146,7],[172,5],[196,3]]
+  classic:[[10,0],[32,44],[76,2,3],[150,20],[172,6],[190,3]],
+  double :[[10,0],[32,46],[78,2,3],[124,2,3],[190,3]],
+  camel  :[[10,0],[30,40],[66,4],[100,24],[130,5],[160,15],[190,3]],
+  family :[[10,0],[30,24],[60,5],[88,15],[116,5],[142,10],[166,4],[190,2]],
+  toohigh:[[10,0],[30,30],[64,4],[104,34],[140,6],[166,12],[190,3]]
 };
 
 /* ============================ dom ============================ */
 const $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d');
-const segPE=$('segPE'), segKE=$('segKE'), segTH=$('segTH');
-const vPE=$('vPE'), vKE=$('vKE'), vTH=$('vTH'), vTOT=$('vTOT');
-const rHeight=$('rHeight'), rSpeed=$('rSpeed'), rG=$('rG'), rVmax=$('rVmax'),
-      rDist=$('rDist'), rMass=$('rMass'), rH0=$('rH0'), gTile=rG.parentElement;
-const outcomeEl=$('outcome'), btnRun=$('btnRun');
+const guideEl = $('guide');
+const btnRun = $('btnRun'), btnBack = $('btnBack'), btnNext = $('btnNext');
+const crumbs = [...document.querySelectorAll('.crumbs button')];
 
 /* ============================ state ============================ */
-let nodes = PRESETS.classic.map(p=>({x:p[0],y:p[1]}));
+let step = 0, maxStep = 0;
+let nodes = PRESETS.classic.map(p=>({x:p[0], y:p[1], loop:p[2]||0}));
+let selected = 1, dragging = -1, hover = null;
+let cars = 3, mu = 0.012;
+let design = {name:'The Screaming Eagle', pattern:'flames', main:2, detail:0};
+let running = false, slow = false, follow = true;
 let track = null;
-let selected = 0, dragging = -1;
-let running = false, slow = false;
-let cars = 3, mu = 0.022;
-let showTrail = true, showGrid = true;
+const cart = {s:0, v:0, thermal:0, gForce:1, gTimer:0, airTimer:0, dist:0, vmax:0, released:false, E0:0};
+let runTime = 0, done = null, maxS = 0, lastProgressT = 0, justReleased = false;
+let popups = [];
+let popState = {scream:-9, air:-9, g:-9, lastS:0};
+let cam = {x:100, y:30};
+const mass = () => cars*MASS_PER_CAR;
 
-const cart = {s:0, v:0, thermal:0, gForce:1, gTimer:0, airTimer:0, dist:0, vmax:0};
-let runTime = 0, done = null, trailUpTo = 0, maxS = 0, lastProgressT = 0;
-const mass = () => cars * MASS_PER_CAR;
+/* -------- per-viewer save (convenience only) -------- */
+const SAVE_KEY = 'coaster-creator-v2';
+function save(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({design, cars, nodes:nodes.map(n=>[n.x,n.y,n.loop])})); }catch(e){}
+}
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
+    if(!d) return;
+    if(d.design && typeof d.design.name==='string') design = Object.assign(design, d.design);
+    if(d.cars>=1 && d.cars<=8) cars = d.cars|0;
+    if(Array.isArray(d.nodes) && d.nodes.length>=2) nodes = d.nodes.map(p=>({x:+p[0], y:+p[1], loop:+p[2]||0}));
+  }catch(e){}
+}
 
-/* ============================ track: monotone cubic (PCHIP) y = f(x) ============================
-   Fritsch-Carlson monotone interpolation. Unlike a natural cubic spline it cannot overshoot, so the
-   track always stays between the heights of the two nodes it runs between - a steep drop next to a
-   flat stretch can never dive below ground. Because x increases monotonically along the track it can
-   also never cross itself. Curvature is smoothed over a few metres, which is what a real track's
-   transition curves do, and keeps the force on the riders from stepping abruptly at a node. */
-const KAP_SMOOTH = 10;     // samples either side; a few metres of track at PER = 90
-const PER = 90;            // samples per span between nodes
+/* ============================ track ============================
+   Monotone cubic (Fritsch-Carlson / PCHIP) through the nodes, so hills never overshoot.
+   A node with a loop becomes two control points a footprint apart, joined by a teardrop loop
+   whose curvature rises from gentle at the bottom to tightest at the top (like a real clothoid loop).
+   The finished path is resampled every DS metres; tangent angle and curvature are then
+   computed numerically and lightly smoothed. */
+let LOOP_UNIT = null;
+function loopUnit(){
+  if(LOOP_UNIT) return LOOP_UNIT;
+  const N=720, pts=[{x:0,y:0}]; let x=0,y=0;
+  for(let k=0;k<N;k++){
+    const sm=(k+0.5)/N, th=2*Math.PI*sm - LOOP_A*Math.sin(2*Math.PI*sm);
+    x+=Math.cos(th)/N; y+=Math.sin(th)/N; pts.push({x,y});
+  }
+  const H=Math.max(...pts.map(p=>p.y));
+  LOOP_UNIT={pts, H, dx:x};
+  return LOOP_UNIT;
+}
+function loopD(h){ const U=loopUnit(); return U.dx*h/U.H; }   // horizontal footprint of a loop
+function loopPoints(x0,y0,h){
+  const U=loopUnit(), sc=h/U.H;
+  return U.pts.map(p=>({x:x0+p.x*sc, y:y0+p.y*sc}));
+}
+
+/* Between a crest and a valley (both flat) a cubic would bend hardest right at the bottom, where
+   the train is fastest. Real drops are built instead from a tighter arc over the crest, a straight
+   section, and a wider arc for the pull-out. This draws that shape (CREST_TO_VALLEY sets the ratio
+   of the two radii). Steeper than 45 degrees on average, the straight part is vertical. */
+const CREST_TO_VALLEY = 1.6;
+function biarc(out, x0, y0, H, Dy){
+  const h=Math.abs(Dy), sg=Dy<0?-1:1;
+  let th, Rsum, L;
+  if(h<=H){ th=2*Math.atan(h/H); Rsum=H/Math.sin(th); L=0; }
+  else { th=Math.PI/2; Rsum=H; L=h-H; }
+  const r=CREST_TO_VALLEY, Rc=Rsum/(1+r), Rv=Rsum*r/(1+r);
+  const R1 = sg<0 ? Rc : Rv, R2 = sg<0 ? Rv : Rc;   // going down: crest arc first; going up: valley arc first
+  const l1=R1*th, l2=R2*th, tot=l1+L+l2;
+  const N=Math.max(20, Math.ceil(tot/0.25)), ds=tot/N;
+  const head=s=> s<l1 ? sg*th*(s/l1) : s<l1+L ? sg*th : sg*th*(1-(s-l1-L)/l2);
+  let x=x0, y=y0;
+  const pts=[{x,y}];
+  for(let k=0;k<N;k++){
+    const a=head((k+0.5)*ds);
+    x+=Math.cos(a)*ds; y+=Math.sin(a)*ds; pts.push({x,y});
+  }
+  const ex=x0+H-x, ey=y0+Dy-y;                    // remove tiny integration drift
+  for(let k=0;k<N;k++){ const f=k/N; out.push({x:pts[k].x+ex*f, y:pts[k].y+ey*f}); }
+}
 
 function buildTrack(){
-  const n = nodes.length;
-  const X = nodes.map(p=>p.x), Y = nodes.map(p=>p.y);
+  const CP=[];
+  nodes.forEach((n,i)=>{
+    CP.push({x:n.x, y:n.y, flat:!!n.loop, node:i, loopOut:!!n.loop});
+    if(n.loop) CP.push({x:n.x+loopD(LOOP_H[n.loop]), y:n.y, flat:true, node:i, loopEnd:true});
+  });
+  const n=CP.length, X=CP.map(p=>p.x), Y=CP.map(p=>p.y);
   const h=[], del=[];
   for(let i=0;i<n-1;i++){ h.push(Math.max(X[i+1]-X[i],1e-6)); del.push((Y[i+1]-Y[i])/h[i]); }
-
-  // node slopes
-  const d = new Array(n).fill(0);
+  const d=new Array(n).fill(0);
   for(let i=1;i<n-1;i++){
-    if(del[i-1]*del[i] <= 0) d[i]=0;                        // local max or min -> flat crest / trough
-    else{
-      const w1=2*h[i]+h[i-1], w2=h[i]+2*h[i-1];
-      d[i]=(w1+w2)/(w1/del[i-1]+w2/del[i]);                 // weighted harmonic mean
-    }
+    if(CP[i].flat || del[i-1]*del[i]<=0) d[i]=0;
+    else{ const w1=2*h[i]+h[i-1], w2=h[i]+2*h[i-1]; d[i]=(w1+w2)/(w1/del[i-1]+w2/del[i]); }
   }
-  const endSlope=(dEnd,dA,dB,hA,hB)=>{
+  const endSlope=(dA,dB,hA,hB)=>{
     let v=((2*hA+hB)*dA-hA*dB)/(hA+hB);
-    if(v*dA<=0) v=dA;                                       // never flatten the ends: the train must start rolling
-    else if(dA*dB<0 && Math.abs(v)>3*Math.abs(dA)) v=3*dA;
+    if(v*dA<=0) v=dA; else if(dA*dB<0 && Math.abs(v)>3*Math.abs(dA)) v=3*dA;
     return v;
   };
-  if(n>2){
-    d[0]   = endSlope(0, del[0], del[1], h[0], h[1]);
-    d[n-1] = endSlope(0, del[n-2], del[n-3], h[n-2], h[n-3]);
-  } else { d[0]=d[1]=del[0]; }
+  if(n>2){ d[0]=endSlope(del[0],del[1],h[0],h[1]); d[n-1]=endSlope(del[n-2],del[n-3],h[n-2],h[n-3]); }
+  else { d[0]=d[n-1]=del[0]||0; }
+  if(CP[n-1].flat) d[n-1]=0;
 
-  // dense sampling with analytic slope and curvature
-  const pts=[], slope=[], kap=[];
+  // dense raw path
+  const raw=[], cpIdx=[], loops=[];
   for(let i=0;i<n-1;i++){
-    const H=h[i], D=Y[i+1]-Y[i], di=d[i], dj=d[i+1];
-    const c2=3*D-H*(2*di+dj), c3=-2*D+H*(di+dj);
-    const steps = PER + (i===n-2?1:0);
-    for(let k=0;k<steps;k++){
-      const s0=k/PER;
-      const y  = Y[i] + H*di*s0 + c2*s0*s0 + c3*s0*s0*s0;
-      const y1 = (H*di + 2*c2*s0 + 3*c3*s0*s0)/H;
-      const y2 = (2*c2 + 6*c3*s0)/(H*H);
-      pts.push({x:X[i]+H*s0, y});
-      slope.push(y1);
-      kap.push(y2/Math.pow(1+y1*y1,1.5));
+    cpIdx[i]=raw.length;
+    if(CP[i].loopOut){
+      const lp=loopPoints(X[i],Y[i],LOOP_H[nodes[CP[i].node].loop]);
+      const L={rawA:raw.length, node:CP[i].node};
+      for(let k=0;k<lp.length-1;k++) raw.push(lp[k]);
+      L.rawB=raw.length; loops.push(L);
+      continue;
+    }
+    const H=h[i], Dy=Y[i+1]-Y[i], di=d[i], dj=d[i+1];
+    if(di===0 && dj===0 && Math.abs(Dy)>0.05){ biarc(raw, X[i], Y[i], H, Dy); continue; }
+    const c2=3*Dy-H*(2*di+dj), c3=-2*Dy+H*(di+dj);
+    const K=Math.max(20, Math.ceil(H/0.25));
+    for(let k=0;k<K;k++){
+      const t=k/K;
+      raw.push({x:X[i]+H*t, y:Y[i]+H*di*t+c2*t*t+c3*t*t*t});
     }
   }
+  cpIdx[n-1]=raw.length;
+  raw.push({x:X[n-1], y:Y[n-1]});
 
-  // smooth curvature (box blur, applied twice -> triangular window)
-  let ks=kap;
+  const rs=[0];
+  for(let i=1;i<raw.length;i++) rs.push(rs[i-1]+Math.hypot(raw[i].x-raw[i-1].x, raw[i].y-raw[i-1].y));
+  const len=rs[rs.length-1];
+
+  // uniform resample
+  const M=Math.max(2,Math.floor(len/DS)+1), P=new Array(M);
+  let j=0;
+  for(let k=0;k<M;k++){
+    const s=Math.min(k*DS,len);
+    while(j<rs.length-2 && rs[j+1]<s) j++;
+    const f=(s-rs[j])/((rs[j+1]-rs[j])||1e-9);
+    P[k]={x:raw[j].x+(raw[j+1].x-raw[j].x)*f, y:raw[j].y+(raw[j+1].y-raw[j].y)*f};
+  }
+  // tangent angle (unwrapped)
+  const TH=new Array(M);
+  for(let k=0;k<M;k++){
+    const a=P[Math.max(k-1,0)], b=P[Math.min(k+1,M-1)];
+    TH[k]=Math.atan2(b.y-a.y, b.x-a.x);
+    if(k>0){ while(TH[k]-TH[k-1]>Math.PI) TH[k]-=2*Math.PI; while(TH[k]-TH[k-1]<-Math.PI) TH[k]+=2*Math.PI; }
+  }
+  // curvature, smoothed (two box passes, ~1.6 m each side)
+  let K=new Array(M);
+  for(let k=0;k<M;k++){
+    const a=Math.max(k-1,0), b=Math.min(k+1,M-1);
+    K[k]=(TH[b]-TH[a])/((b-a)*DS||DS);
+  }
+  const W=8;
   for(let pass=0;pass<2;pass++){
-    const src=ks, out=new Array(src.length);
-    for(let i=0;i<src.length;i++){
-      let sum=0,cnt=0;
-      for(let j=i-KAP_SMOOTH;j<=i+KAP_SMOOTH;j++){
-        const q=Math.min(Math.max(j,0),src.length-1);
-        sum+=src[q]; cnt++;
-      }
-      out[i]=sum/cnt;
+    const src=K, out=new Array(M);
+    let acc=0;
+    for(let q=-W;q<=W;q++) acc+=src[Math.min(Math.max(q,0),M-1)];
+    for(let k=0;k<M;k++){
+      out[k]=acc/(2*W+1);
+      acc+=src[Math.min(k+W+1,M-1)]-src[Math.max(k-W,0)];
     }
-    ks=out;
+    K=out;
   }
-
-  const s=[0];
-  for(let i=1;i<pts.length;i++) s.push(s[i-1]+Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y));
-  track={pts, slope, kap:ks, s, len:s[s.length-1]};
+  const sOfRaw=i=>rs[Math.min(i,rs.length-1)];
+  const nodeS=nodes.map((nd,i)=>{ const c=CP.findIndex(p=>p.node===i); return sOfRaw(cpIdx[c]); });
+  const loopRanges=loops.map(L=>({s0:sOfRaw(L.rawA), s1:sOfRaw(L.rawB), node:L.node}));
+  track={P, TH, K, len:(M-1)*DS, nodeS, loopRanges, liftS:nodeS[1]};
 }
 
 function sampleAt(sv){
-  const s=track.s;
   sv=Math.min(Math.max(sv,0),track.len);
-  let lo=0, hi=s.length-1;
-  while(hi-lo>1){ const mid=(lo+hi)>>1; if(s[mid]<=sv) lo=mid; else hi=mid; }
-  const f=(sv-s[lo])/((s[hi]-s[lo])||1e-9);
-  const p=track.pts;
-  const y1=track.slope[lo]+(track.slope[hi]-track.slope[lo])*f;
-  const inv=1/Math.sqrt(1+y1*y1);
-  return {
-    x:p[lo].x+(p[hi].x-p[lo].x)*f,
-    y:p[lo].y+(p[hi].y-p[lo].y)*f,
-    ux:inv, uy:y1*inv,                                   // unit tangent, pointing along +s
-    k:track.kap[lo]+(track.kap[hi]-track.kap[lo])*f      // +ve in a valley, -ve over a hill
-  };
+  const fi=sv/DS, i=Math.min(Math.floor(fi), track.P.length-2), f=fi-i;
+  const a=track.P[i], b=track.P[i+1];
+  const th=track.TH[i]+(track.TH[i+1]-track.TH[i])*f;
+  return {x:a.x+(b.x-a.x)*f, y:a.y+(b.y-a.y)*f, th, ux:Math.cos(th), uy:Math.sin(th), k:track.K[i]+(track.K[i+1]-track.K[i])*f};
 }
+const inLoop = s => track.loopRanges.find(L=>s>=L.s0 && s<=L.s1);
+const trackComplete = () => nodes[nodes.length-1].x >= END_REACH;
 
 /* ============================ physics ============================ */
+function startS(){
+  // the train waits at the station with its last car at the foot of the lift
+  return Math.min((cars-1)*(CAR_LEN+CAR_GAP)+1, track.liftS*0.5);
+}
 function resetCart(){
-  cart.s=0; cart.v=0; cart.thermal=0; cart.gForce=1;
-  cart.gTimer=0; cart.airTimer=0; cart.dist=0; cart.vmax=0;
-  runTime=0; done=null; trailUpTo=0; maxS=0; lastProgressT=0;
-  running=false; btnRun.textContent='Launch';
-  setOutcome(null); refreshUI();
+  cart.s=startS(); cart.v=0; cart.thermal=0; cart.gForce=1; cart.gTimer=0; cart.airTimer=0;
+  cart.dist=0; cart.vmax=0; cart.released=false; cart.E0=0;
+  runTime=0; done=null; maxS=cart.s; lastProgressT=0;
+  running=false; popups=popups.filter(p=>p.edit);
+  popState={scream:-9, air:-9, g:-9, lastS:cart.s};
+  setRunBtn();
+  refreshUI();
 }
 
-function step(dt){
+function step_(dt){
   const m=mass();
   for(let i=0;i<SUBSTEPS;i++){
     const h=dt/SUBSTEPS;
     const p=sampleAt(cart.s);
-
-    // perpendicular to the track:  N = m·v²·kappa + m·g·ux
-    const N = m*cart.v*cart.v*p.k + m*G*p.ux;
+    if(!cart.released){
+      // chain lift: a motor pulls the train at constant speed (it supplies the energy)
+      cart.v=V_LIFT; cart.gForce=(m*cart.v*cart.v*p.k + m*G*p.ux)/(m*G);
+      cart.s+=V_LIFT*h; cart.dist+=V_LIFT*h; runTime+=h;
+      if(cart.s>=track.liftS){
+        cart.released=true;
+        const q=sampleAt(cart.s);
+        cart.E0=m*G*q.y + 0.5*m*cart.v*cart.v;
+        maxS=cart.s; lastProgressT=runTime;
+        justReleased=true;
+      }
+      continue;
+    }
+    const N = m*cart.v*cart.v*p.k + m*G*p.ux;     // force from the track, perpendicular to it
     cart.gForce = N/(m*G);
-
     const dir = cart.v>=0 ? 1 : -1;
-    const fFric = mu*Math.abs(N);
-    const fDrag = DRAG_K*cart.v*cart.v;
+    const fFric = mu*Math.abs(N), fDrag = DRAG_K*cart.v*cart.v;
     const aT = -G*p.uy - dir*(fFric+fDrag)/m;
-
     const v0=cart.v;
     cart.v += aT*h;
     const ds = 0.5*(v0+cart.v)*h;
     cart.s += ds;
-    cart.thermal += (fFric+fDrag)*Math.abs(ds);   // keeps the energy books exact
+    cart.thermal += (fFric+fDrag)*Math.abs(ds);
     cart.dist += Math.abs(ds);
     cart.vmax = Math.max(cart.vmax, Math.abs(cart.v));
     runTime += h;
-
     if(cart.s<=0){ cart.s=0; if(cart.v<0) cart.v=0; }
     if(cart.s>=track.len){ cart.s=track.len; return finish('ok'); }
     if(cart.s>maxS+0.4){ maxS=cart.s; lastProgressT=runTime; }
-
-    // riders can hang weightless (the upstop wheels hold the train down); only a violent
-    // negative load tears the train off the rails
-    if(cart.gForce < AIR_LIMIT){ cart.airTimer+=h; if(cart.airTimer>AIR_TIME) return finish('air'); }
-    else cart.airTimer=0;
-
-    if(cart.gForce > G_LIMIT){ cart.gTimer+=h; if(cart.gTimer>G_TIME) return finish('gforce'); }
-    else cart.gTimer=0;
+    if(cart.gForce < AIR_LIMIT){ cart.airTimer+=h; if(cart.airTimer>AIR_TIME) return finish('air'); } else cart.airTimer=0;
+    if(cart.gForce > G_LIMIT){ cart.gTimer+=h; if(cart.gTimer>G_TIME) return finish('gforce'); } else cart.gTimer=0;
   }
-
-  // stalled?  it has not reached any new point on the track for 5 s
-  if(runTime-lastProgressT > 5 || runTime > 75) finish('stuck');
+  if(cart.released && (runTime-lastProgressT > 5 || runTime > 90)) finish('stuck');
 }
 
 function finish(kind){
-  running=false; btnRun.textContent='Launch again';
-  const p=sampleAt(cart.s);
-  const name=$('cname').value.trim()||'Your coaster';
-  const kmh=v=>' ('+(v*3.6).toFixed(0)+' km/h)';
+  running=false; done=kind;
+  const name=(design.name||'').trim()||'Your coaster';
+  const kmh=v=>(v*3.6).toFixed(0)+' km/h';
   if(kind==='ok'){
-    done='ok';
-    setOutcome('ok','Success! '+name+' finished the track.',
-      'It crossed the finish line at '+Math.abs(cart.v).toFixed(1)+' m/s'+kmh(Math.abs(cart.v))+
-      ', top speed '+cart.vmax.toFixed(1)+' m/s. Of the starting energy, '+fmtJ(cart.thermal)+
-      ' ended up as thermal energy in the wheels, rails and air.');
-  } else if(kind==='stuck' && maxS<1.5){
-    done='stuck';
-    setOutcome('bad',name+' never started moving.',
-      'A train released from rest can only be pulled along by gravity, so the track has to head downhill from the '+
-      'first node. Drag the first node higher than the one after it.');
+    say('ok','<b>Success! '+esc(name)+' made it to the end!</b>',
+      'Top speed '+cart.vmax.toFixed(1)+' m/s ('+kmh(cart.vmax)+'). '+fmtJ(cart.thermal)+' of the energy turned into thermal energy.');
+    addPop('WOO-HOO!', sampleAt(cart.s), '#1d7a4a');
   } else if(kind==='stuck'){
-    done='stuck';
-    const hi=sampleAt(maxS);
-    setOutcome('bad',name+' stalled &mdash; it got '+maxS.toFixed(0)+' m along the track and no further.',
-      'It ran out of energy '+hi.y.toFixed(1)+' m up that hill and rolled back. Raise the first node, lower the hill '+
-      'it could not climb, or choose lower friction.');
+    const L=inLoop(maxS), hi=sampleAt(maxS);
+    if(L) say('bad','<b>'+esc(name)+' didn’t make it around the loop.</b>',
+      'It was too slow near the top and rolled back. Try a smaller loop, a taller lift hill, or put the loop lower.');
+    else say('bad','<b>'+esc(name)+' stalled '+hi.y.toFixed(1)+' m up a hill.</b>',
+      'It ran out of energy and rolled back. Make that hill lower, make the lift hill taller, or choose less friction.');
   } else if(kind==='air'){
-    done='air';
-    setOutcome('bad',name+' was ripped off the rails &mdash; '+cart.gForce.toFixed(1)+' g lifting the train.',
-      'A little airtime is the fun part, but the train came over that crest so fast that the wheels holding it down '+
-      'could not take the load. Round the top of the hill off more gently, or make it taller so the train is slower '+
-      'when it gets there.');
+    say('bad','<b>Crash! The train flew off the rails.</b>',
+      cart.gForce.toFixed(1)+' g lifted the train over a hilltop. Round that hill off more gently, or slow the train down before it.');
   } else {
-    done='gforce';
-    setOutcome('bad',name+' crashed &mdash; '+Math.abs(cart.gForce).toFixed(1)+' g on the riders.',
-      'That valley is too tight for the speed the train reached. Spread it out into a wider curve, or reduce the '+
-      'drop above it. Real coasters stay under about 5 g.');
+    say('bad','<b>Crash! '+Math.abs(cart.gForce).toFixed(1)+' g on the riders.</b>',
+      'A curve was too tight for that speed. Spread the valley out, or lower the drop above it. Real coasters stay under about 5 g.');
   }
-  refreshUI();
+  setRunBtn(); refreshUI();
+}
+
+/* ============================ comic pop-ups ============================ */
+function addPop(text, at, color, edit){
+  popups.push({text, x:at.x, y:at.y, t0:performance.now(), color:color||'#14181e', edit:!!edit, life:edit?1300:1500});
+  if(popups.length>8) popups.shift();
+}
+function checkPops(){
+  if(!cart.released) return;
+  const p=sampleAt(cart.s), t=runTime, s=cart.s, last=popState.lastS;
+  const loop=inLoop(s);
+  if(p.uy<-0.55 && Math.abs(cart.v)>14 && t-popState.scream>3){ popState.scream=t; addPop('SCREAM!', {x:p.x+5,y:p.y-4}); }
+  if(!loop && cart.gForce<0.2 && cart.v>4 && t-popState.air>2.5){ popState.air=t; addPop('AIRTIME!', {x:p.x,y:p.y+8}, '#1b6fa8'); }
+  if(cart.gForce>4 && t-popState.g>2.5){ popState.g=t; addPop('WHOA! '+cart.gForce.toFixed(1)+' g', {x:p.x+4,y:p.y+6}, '#c0392b'); }
+  for(const L of track.loopRanges) if(last<L.s1 && s>=L.s1) addPop('COOL LOOP!', {x:p.x+6,y:p.y+10});
+  for(let i=2;i<nodes.length-1;i++){
+    const ns=track.nodeS[i], nd=nodes[i];
+    if(!nd.loop && last<ns && s>=ns && nd.y>nodes[i-1].y && nd.y>nodes[i+1].y) addPop('SWEET HILL!', {x:nd.x+6,y:nd.y+9});
+  }
+  popState.lastS=s;
 }
 
 /* ============================ ui ============================ */
-function fmtJ(j){
-  if(j>=1e6) return (j/1e6).toFixed(2)+' MJ';
-  if(j>=1000) return (j/1000).toFixed(1)+' kJ';
-  return Math.round(j)+' J';
+function esc(t){ return t.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtJ(j){ if(j>=1e6) return (j/1e6).toFixed(2)+' MJ'; if(j>=1000) return (j/1000).toFixed(1)+' kJ'; return Math.round(j)+' J'; }
+function say(tone, title, sub){
+  guideEl.className='bubble'+(tone?' '+tone:'');
+  guideEl.innerHTML=title+(sub?'<small>'+sub+'</small>':'');
 }
-function setOutcome(cls,title,sub){
-  if(!cls){ outcomeEl.className='outcome'; outcomeEl.innerHTML=''; return; }
-  outcomeEl.className='outcome show '+cls;
-  outcomeEl.innerHTML=title+(sub?'<small>'+sub+'</small>':'');
+function setRunBtn(){
+  const icon=$('runIcon');
+  if(running){ $('runTxt').textContent='Pause'; icon.innerHTML='<rect x="4" y="3" width="4.5" height="14" rx="1" fill="currentColor"/><rect x="11.5" y="3" width="4.5" height="14" rx="1" fill="currentColor"/>'; }
+  else { $('runTxt').textContent = done ? 'Again' : (track && cart.s>startS()+0.01 ? 'Resume' : 'Play'); icon.innerHTML='<path d="M5 3l12 7-12 7z" fill="currentColor"/>'; }
 }
+
+const eqM1=$('eqM1'), eqM2=$('eqM2'), eqH=$('eqH'), eqV=$('eqV'), eqPE=$('eqPE'), eqKE=$('eqKE');
 function refreshUI(){
-  const m=mass(), p=sampleAt(cart.s), h0=nodes[0].y;
-  const E0=Math.max(m*G*h0,1);
+  const m=mass();
+  eqM1.textContent=eqM2.textContent=m+' kg';
+  eqH.classList.remove('hot');
+  if(step<2){ eqH.innerHTML='&nbsp;'; eqV.innerHTML='&nbsp;'; eqPE.textContent=''; eqKE.textContent=''; }
+  else if(step===2){
+    const nd=nodes[selected];
+    eqH.textContent=nd.y.toFixed(1)+' m'; eqH.classList.add('hot');
+    eqV.innerHTML='&nbsp;'; eqPE.textContent='= '+fmtJ(m*G*nd.y); eqKE.textContent='';
+  }
+  if(!track) return;
+  const p=sampleAt(cart.s);
   const PE=m*G*Math.max(p.y,0), KE=0.5*m*cart.v*cart.v, TH=cart.thermal;
-  const tot=PE+KE+TH, k = tot>E0 ? E0/tot : 1;   // guard against tiny numerical overshoot
-  const pct=v=>(100*v*k/E0).toFixed(2)+'%';
-  segPE.style.width=pct(PE); segKE.style.width=pct(KE); segTH.style.width=pct(TH);
-  vPE.textContent=fmtJ(PE); vKE.textContent=fmtJ(KE); vTH.textContent=fmtJ(TH); vTOT.textContent=fmtJ(E0);
-
-  rHeight.textContent=Math.max(p.y,0).toFixed(1)+' m';
-  rSpeed.textContent=Math.abs(cart.v).toFixed(1)+' m/s';
-  rG.textContent=cart.gForce.toFixed(1)+' g';
-  gTile.classList.toggle('warn', Math.abs(cart.gForce)>5);
-  rVmax.textContent=cart.vmax.toFixed(1)+' m/s';
-  rDist.textContent=cart.dist.toFixed(0)+' m';
-  rMass.textContent=m+' kg';
-  rH0.textContent=h0.toFixed(1)+' m';
-  $('carsOut').textContent=cars+(cars===1?' car':' cars')+' · '+m+' kg';
+  if(step===3){
+    eqH.textContent=Math.max(p.y,0).toFixed(1)+' m';
+    eqV.textContent=Math.abs(cart.v).toFixed(1)+' m/s';
+    eqPE.textContent='= '+fmtJ(PE); eqKE.textContent='= '+fmtJ(KE);
+  }
+  const tot=Math.max(PE+KE+TH,1);
+  for(const [id,v] of [['segPE',PE],['segKE',KE],['segTH',TH]]){
+    const el=$(id), pc=100*v/tot;
+    el.style.width=pc.toFixed(2)+'%';
+    el.style.paddingLeft = pc<4 ? '0' : '';
+    el.style.color = pc<7 ? 'transparent' : '';
+  }
+  $('vPE').textContent=fmtJ(PE); $('vKE').textContent=fmtJ(KE); $('vTH').textContent=fmtJ(TH);
+  $('vTOT').textContent=cart.released?fmtJ(cart.E0):'–';
+  $('rHeight').textContent=Math.max(p.y,0).toFixed(1)+' m';
+  $('rSpeed').textContent=Math.abs(cart.v).toFixed(1)+' m/s';
+  $('rKmh').textContent=(Math.abs(cart.v)*3.6).toFixed(0);
+  $('rG').textContent=cart.gForce.toFixed(1)+' g';
+  $('rG').parentElement.classList.toggle('warn', Math.abs(cart.gForce)>5);
+  $('rVmax').textContent=cart.vmax.toFixed(1)+' m/s';
+  $('rDist').textContent=cart.dist.toFixed(0)+' m';
+  $('rMass').textContent=m+' kg';
+  $('rH0').textContent=nodes[1].y.toFixed(1)+' m';
 }
 
-/* ============================ drawing ============================ */
-let scale=1, u=1;                    // scale: backing px per metre;  u: backing px per CSS px
+function refreshNodeUI(){
+  const nd=nodes[selected], i=selected;
+  let label;
+  if(i===0) label='Station (start)';
+  else if(i===1) label='Lift hill top · '+nd.y.toFixed(1)+' m';
+  else label='Node '+(i+1)+' · '+nd.y.toFixed(1)+' m'+(nd.loop?' · '+LOOP_NAMES[nd.loop]+' loop':'');
+  $('nodeInfo').textContent=label;
+  const canLoop = i>=2 && i<nodes.length-1;
+  $('btnLoop').disabled=!canLoop;
+  $('btnLoop').textContent=nd.loop?'Remove loop':'Add loop';
+  $('loopSize').disabled=!canLoop;
+  if(nd.loop) $('loopSize').value=String(nd.loop);
+  $('btnDel').disabled = i<=1 || nodes.length<=3;
+  refreshUI();
+}
+
+function trackGuide(){
+  if(!trackComplete()) say('','<b>Keep building!</b>','Click to the right of the last node to add track. Reach <b>COASTER END</b> to unlock the test.');
+  else say('','<b>Your track reaches the end!</b>','Drag nodes to change hills, add a loop, or press <b>Next</b> to test it.');
+}
+
+/* ============================ steps ============================ */
+const STEP_GUIDE = [
+  ()=>say('','<b>Give your coaster a theme!</b>','Name it, then pick a pattern and two colors.'),
+  ()=>say('','<b>How long is your train?</b>','More cars means more mass. Watch <i>m</i> change in both equations.'),
+  trackGuide,
+  ()=>say('','<b>Ready to ride?</b>','Press <b>Play</b>. The chain lift pulls the train to the top of the first hill.')
+];
+function setStep(n){
+  if(n===3 && !trackComplete()){ say('bad','<b>The track isn’t finished.</b>','Add nodes until the track reaches <b>COASTER END</b>.'); return; }
+  running=false;
+  step=n; maxStep=Math.max(maxStep,n);
+  crumbs.forEach((b,i)=>{
+    if(i===n) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current');
+    b.disabled = i>maxStep && !(i===maxStep+1 && i<3) || (i===3 && !trackComplete());
+  });
+  document.querySelectorAll('.stepctl').forEach(el=>el.classList.toggle('on', +el.dataset.for===n));
+  btnBack.disabled = n===0;
+  btnNext.disabled = n===3 || (n===2 && !trackComplete());
+  btnNext.style.visibility = n===3 ? 'hidden' : '';
+  btnRun.style.display = n===3 ? '' : 'none';
+  $('btnReset').style.display = n>=2 ? '' : 'none';
+  $('resetTxt').textContent = n===2 ? 'Clear' : 'Reset';
+  $('ebar').classList.toggle('show', n===3);
+  cv.classList.toggle('edit', n===2);
+  cv.setAttribute('aria-label', [
+    'Preview of your coaster carts.',
+    'Preview of your coaster train.',
+    'Track editor. Click to the right of the last node to add track. Tab selects a node, arrow keys move it, L adds a loop, Delete removes it.',
+    'Coaster test. Press space to play or pause.'][n]);
+  popups=[];
+  if(n===3){ resetCart(); const p=sampleAt(cart.s); cam.x=p.x; cam.y=p.y; }
+  STEP_GUIDE[n]();
+  if(n===2) refreshNodeUI(); else refreshUI();
+  setRunBtn();
+}
+crumbs.forEach((b,i)=>b.addEventListener('click',()=>setStep(i)));
+btnBack.onclick=()=>setStep(Math.max(0,step-1));
+btnNext.onclick=()=>setStep(Math.min(3,step+1));
+
+function trackChanged(){
+  buildTrack(); resetCart(); save();
+  btnNext.disabled = step===2 && !trackComplete();
+  crumbs[3].disabled = !trackComplete();
+  if(step===2) refreshNodeUI();
+}
+
+/* ============================ drawing helpers ============================ */
+let u=1, ppm0=1;
 function fit(){
-  const cssW=cv.clientWidth||1000;
+  const cssW=cv.clientWidth||1100;
   const dpr=Math.min(window.devicePixelRatio||1,2);
   cv.width=Math.round(cssW*dpr);
   cv.height=Math.round(cssW*(H_WORLD/W_WORLD)*dpr);
-  scale=cssW*dpr/W_WORLD;
-  u=dpr*Math.max(cssW/1000,0.62);    // UI sizes shrink a little on very narrow screens
+  ppm0=cv.width/W_WORLD;
+  u=dpr*Math.max(cssW/1100,0.62);
 }
-const PX=x=>x*scale, PY=y=>(H_WORLD-y)*scale;
+// view: world -> screen
+let V={x0:0, y1:Y_TOP, ppm:1};
+const SX=x=>(x-V.x0)*V.ppm, SY=y=>(V.y1-y)*V.ppm;
+function editorView(){ V={x0:0, y1:Y_TOP, ppm:ppm0}; }
 
 if(!CanvasRenderingContext2D.prototype.roundRect){
   CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
@@ -517,183 +935,431 @@ if(!CanvasRenderingContext2D.prototype.roundRect){
     this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath(); return this;
   };
 }
+const hash=n=>{ const s=Math.sin(n*127.1+311.7)*43758.5453; return s-Math.floor(s); };
 
-function draw(){
-  const w=cv.width, h=cv.height;
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.clearRect(0,0,w,h);
-  ctx.lineJoin=ctx.lineCap='round';
+const PAL_LIGHT={lav:'#a8abe2', lavStripe:'rgba(255,255,255,.28)', floor:'#cfd1ef', hatchA:'#c9cbf0', hatchB:'#9599d6', bandTxt:'#5a5fa8',
+  trackW:'#ffffff', trackDash:'rgba(120,124,170,.55)', node:'#15181d', nodeHi:'#6b7280', lbl:'#14181e', ghost:'rgba(80,84,96,.45)', sel:'#7cc243',
+  hLine:'rgba(255,255,255,.35)', hTxt:'rgba(40,44,90,.55)',
+  sky:['#9fb8e8','#c9d6f2','#e8ecf6'], cloud:'rgba(255,255,255,.85)', mtn:['#f5f7fb','#c3c8dc'], forestFar:'#7f9a88', forestNear:'#3f6b4c', forestNear2:'#2f5a3c',
+  fog:'rgba(235,240,248,', ground:'#4f6e4f', rail:'#e9ecf1', railEdge:'#8d939e', support:'#d9dde4', supportEdge:'#9aa1ac', chain:'#3b3f46',
+  previewBg:'#a8abe2', title:'#14181e'};
+const PAL_DARK={lav:'#2b3068', lavStripe:'rgba(255,255,255,.08)', floor:'#1e2244', hatchA:'#323872', hatchB:'#232857', bandTxt:'#9aa0e8',
+  trackW:'#e6e9ff', trackDash:'rgba(120,124,200,.6)', node:'#c9cff0', nodeHi:'#ffffff', lbl:'#e6edf4', ghost:'rgba(200,205,230,.35)', sel:'#8fd65a',
+  hLine:'rgba(255,255,255,.12)', hTxt:'rgba(220,225,255,.55)',
+  sky:['#0c1630','#1d2d55','#3a4a72'], cloud:'rgba(190,200,230,.25)', mtn:['#9aa3c2','#323b58'], forestFar:'#2b4038', forestNear:'#1a3326', forestNear2:'#13281d',
+  fog:'rgba(40,52,80,', ground:'#1d2f22', rail:'#cfd5df', railEdge:'#5d6573', support:'#a9b1be', supportEdge:'#55606e', chain:'#0d0f12',
+  previewBg:'#2b3068', title:'#e6edf4'};
+let PAL=PAL_LIGHT;
 
-  const sky=ctx.createLinearGradient(0,0,0,PY(0));
-  sky.addColorStop(0,'#a4d5f2'); sky.addColorStop(.7,'#d6ebf8'); sky.addColorStop(1,'#eaf5fb');
-  ctx.fillStyle=sky; ctx.fillRect(0,0,w,PY(0));
-  ctx.fillStyle='#f7ecae'; ctx.beginPath(); ctx.arc(PX(148),PY(40),PX(3.2),0,7); ctx.fill();
-
-  ctx.fillStyle='#c2dcc8';
-  ctx.beginPath(); ctx.moveTo(0,PY(0));
-  for(let x=0;x<=W_WORLD;x+=3) ctx.lineTo(PX(x),PY(5+2.8*Math.sin(x/21)+1.8*Math.sin(x/8+1)));
-  ctx.lineTo(PX(W_WORLD),PY(0)); ctx.closePath(); ctx.fill();
-
-  if(showGrid){
-    ctx.lineWidth=Math.max(1,u); ctx.font=(11*u)+'px system-ui,sans-serif';
-    for(let y=10;y<H_WORLD;y+=10){
-      ctx.strokeStyle='rgba(18,32,46,.13)';
-      ctx.beginPath(); ctx.moveTo(0,PY(y)); ctx.lineTo(w,PY(y)); ctx.stroke();
-      ctx.fillStyle='rgba(18,32,46,.5)'; ctx.fillText(y+' m',4*u,PY(y)-4*u);
-    }
-  }
-
-  ctx.fillStyle='#93c29c'; ctx.fillRect(0,PY(0),w,h-PY(0));
-  ctx.strokeStyle='#5f9a70'; ctx.lineWidth=Math.max(1,1.6*u);
-  ctx.beginPath(); ctx.moveTo(0,PY(0)); ctx.lineTo(w,PY(0)); ctx.stroke();
-
-  const pts=track.pts;
-
-  ctx.strokeStyle='#8a7663'; ctx.lineWidth=Math.max(1,2*u);
-  for(let i=0;i<pts.length;i+=22){
-    if(pts[i].y>1){ ctx.beginPath(); ctx.moveTo(PX(pts[i].x),PY(pts[i].y)); ctx.lineTo(PX(pts[i].x),PY(0)); ctx.stroke(); }
-  }
-
-  ctx.strokeStyle='#3c4c5c'; ctx.lineWidth=Math.max(2,4.4*u);
-  ctx.beginPath(); ctx.moveTo(PX(pts[0].x),PY(pts[0].y));
-  for(let i=1;i<pts.length;i++) ctx.lineTo(PX(pts[i].x),PY(pts[i].y));
-  ctx.stroke();
-
-  if(showTrail && trailUpTo>0.5){
-    const m=mass(), E0=Math.max(m*G*nodes[0].y,1);
-    ctx.lineWidth=Math.max(1.5,2.2*u);
-    const N=220, top=Math.min(trailUpTo,track.len);
-    for(let i=0;i<N;i++){
-      const a=sampleAt(top*i/N), b=sampleAt(top*(i+1)/N);
-      ctx.strokeStyle = (m*G*Math.max(a.y,0))/E0 > 0.5 ? 'rgba(217,74,61,.95)' : 'rgba(63,158,77,.95)';
-      ctx.beginPath(); ctx.moveTo(PX(a.x),PY(a.y)); ctx.lineTo(PX(b.x),PY(b.y)); ctx.stroke();
-    }
-  }
-
-  ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=Math.max(1,.9*u);
-  for(let i=0;i<pts.length;i+=8){
-    const y1=track.slope[i], inv=1/Math.sqrt(1+y1*y1);
-    const nx=-y1*inv*0.9, ny=inv*0.9;
-    ctx.beginPath();
-    ctx.moveTo(PX(pts[i].x-nx),PY(pts[i].y-ny));
-    ctx.lineTo(PX(pts[i].x+nx),PY(pts[i].y+ny));
-    ctx.stroke();
-  }
-
-  // finish flag
-  const end=pts[pts.length-1];
-  ctx.strokeStyle='#12202e'; ctx.lineWidth=Math.max(1,1.8*u);
-  ctx.beginPath(); ctx.moveTo(PX(end.x),PY(end.y)); ctx.lineTo(PX(end.x),PY(end.y+7)); ctx.stroke();
-  ctx.fillStyle='#c0392b';
-  ctx.beginPath(); ctx.moveTo(PX(end.x),PY(end.y+7)); ctx.lineTo(PX(end.x-6),PY(end.y+5.7));
-  ctx.lineTo(PX(end.x),PY(end.y+4.4)); ctx.closePath(); ctx.fill();
-
-  // nodes
-  for(let i=0;i<nodes.length;i++){
-    const px=PX(nodes[i].x), py=PY(nodes[i].y);
-    if(i===selected){
-      ctx.strokeStyle='#1b6fa8'; ctx.lineWidth=Math.max(2,2.6*u);
-      ctx.beginPath(); ctx.arc(px,py,(NODE_PX+5)*u,0,7); ctx.stroke();
-    }
-    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(px,py,NODE_PX*u,0,7); ctx.fill();
-    ctx.fillStyle='#12202e'; ctx.beginPath(); ctx.arc(px,py,(NODE_PX-2.6)*u,0,7); ctx.fill();
-  }
-
-  drawEquation();
-
-  for(let c=cars-1;c>=0;c--){
-    const sc=cart.s-c*(CAR_LEN+CAR_GAP);
-    if(sc<-CAR_LEN) continue;
-    drawCar(sampleAt(Math.max(sc,0)), c===0);
-  }
-
-  // weightless moment
-  if(running && cart.gForce<AIRTIME_G){
-    const p=sampleAt(cart.s);
-    ctx.font='700 '+(12*u)+'px system-ui,sans-serif';
-    const label='AIRTIME!', tw=ctx.measureText(label).width;
-    const bx=PX(p.x)-tw/2-7*u, by=PY(p.y)-34*u;
-    ctx.fillStyle='rgba(27,111,168,.94)';
-    ctx.beginPath(); ctx.roundRect(bx,by,tw+14*u,19*u,9.5*u); ctx.fill();
-    ctx.fillStyle='#fff'; ctx.fillText(label,bx+7*u,by+13.5*u);
-  }
-
-  const nm=$('cname').value.trim();
-  if(nm){
-    ctx.font='700 '+(17*u)+'px system-ui,sans-serif';
-    ctx.textAlign='right';
-    ctx.lineWidth=4*u; ctx.strokeStyle='rgba(255,255,255,.85)';
-    ctx.lineJoin='round'; ctx.strokeText(nm,w-10*u,24*u);   // halo, so track behind it stays legible
-    ctx.fillStyle='rgba(18,32,46,.72)'; ctx.fillText(nm,w-10*u,24*u);
-    ctx.textAlign='left';
-  }
-}
-
-function drawCar(p,isFront){
+function comicText(text, x, y, size, color, alpha, scale){
   ctx.save();
-  ctx.translate(PX(p.x),PY(p.y));
-  ctx.rotate(-Math.atan2(p.uy,p.ux));
-  const l=PX(CAR_LEN), hh=PX(2.6), lift=PX(1.15);
-  ctx.fillStyle='#2c3a48';
-  ctx.beginPath(); ctx.arc(-l*0.3,-lift,PX(0.62),0,7); ctx.fill();
-  ctx.beginPath(); ctx.arc( l*0.3,-lift,PX(0.62),0,7); ctx.fill();
-  const y=-lift-hh;
-  const grd=ctx.createLinearGradient(0,y,0,y+hh);
-  grd.addColorStop(0,isFront?'#f4c650':'#e05548'); grd.addColorStop(1,isFront?'#d69a17':'#a8322a');
-  ctx.fillStyle=grd;
-  ctx.beginPath(); ctx.roundRect(-l/2,y,l,hh,PX(0.8)); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.78)';
-  ctx.beginPath(); ctx.arc(-l*0.16,y+hh*0.34,PX(0.5),0,7); ctx.fill();
-  ctx.beginPath(); ctx.arc( l*0.16,y+hh*0.34,PX(0.5),0,7); ctx.fill();
+  ctx.globalAlpha=alpha;
+  ctx.translate(x,y); ctx.scale(scale,scale); ctx.rotate(-0.05);
+  ctx.font=Math.round(size)+'px Bangers, Poppins, system-ui, sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.lineJoin='round'; ctx.lineWidth=size*0.22; ctx.strokeStyle='rgba(255,255,255,.92)';
+  ctx.strokeText(text,0,0);
+  ctx.fillStyle=color; ctx.fillText(text,0,0);
   ctx.restore();
 }
-
-// Pick a spot for the equation box that does not sit on top of the track or the coaster name.
-function placeBox(bw,bh){
-  const ax=PX(nodes[0].x), ay=PY(nodes[0].y), W=cv.width, H=cv.height, pad=8*u;
-  const cands=[
-    [ax+20*u, ay-bh/2], [ax+20*u, ay+16*u], [ax+20*u, ay-bh-16*u],
-    [ax-bw-20*u, ay-bh/2], [pad, H-bh-pad], [W-bw-pad, H-bh-pad], [pad, pad]
-  ];
-  let best=null, bestScore=Infinity;
-  for(const c of cands){
-    const bx=c[0], by=c[1];
-    if(bx<pad-1 || by<pad-1 || bx+bw>W-pad+1 || by+bh>H-pad+1) continue;
-    let score=0;
-    for(let i=0;i<track.pts.length;i+=4){
-      const px=PX(track.pts[i].x), py=PY(track.pts[i].y);
-      if(px>bx-6*u && px<bx+bw+6*u && py>by-6*u && py<by+bh+6*u) score++;
-    }
-    if(by<36*u && bx+bw>W*0.6) score+=60;          // keep clear of the coaster name
-    if(score===0) return c;
-    if(score<bestScore){ bestScore=score; best=c; }
+function drawPopups(){
+  const now=performance.now();
+  popups=popups.filter(p=>now-p.t0<p.life);
+  for(const p of popups){
+    const t=(now-p.t0)/p.life;
+    const sc=t<0.12 ? 0.6+0.4*(t/0.12)+0.12*Math.sin(t/0.12*Math.PI) : 1;
+    const a=t>0.7 ? 1-(t-0.7)/0.3 : 1;
+    const half=p.text.length*8.5*u;     // keep the word on screen
+    const X=Math.min(Math.max(SX(p.x), half+8*u), cv.width-half-8*u);
+    const Y=Math.min(Math.max(SY(p.y)-24*u*t, 30*u), cv.height-24*u);
+    comicText(p.text, X, Y, 32*u, p.color, a, sc);
   }
-  return best || [pad,pad];
 }
 
-function drawEquation(){
-  if(running || cart.s>0.5) return;
-  const m=mass(), h0=nodes[0].y, E=m*G*h0;
-  const lines=['Energy at the start  (PE = m · g · h)',
-               m+' kg · 9.81 m/s² · '+h0.toFixed(1)+' m',
-               'PE = '+fmtJ(E)];
-  const fs=13*u, pad=10*u, lh=fs*1.38;
-  ctx.font=fs+'px system-ui,sans-serif';
-  let bw=0; for(const t of lines) bw=Math.max(bw,ctx.measureText(t).width);
-  bw+=pad*2;
-  const bh=lh*lines.length+pad*1.3;
-  const pos=placeBox(bw,bh), bx=pos[0], by=pos[1];
+/* ---------- cart art (original designs) ---------- */
+function bodyPath(c, L, Hh, front){
+  // car-local: x from -L/2 (back) to +L/2 (front); up is negative y
+  c.beginPath();
+  c.moveTo(-L/2, -Hh*0.15);
+  c.lineTo(-L/2, -Hh*0.92);
+  c.quadraticCurveTo(-L/2, -Hh, -L/2+Hh*0.12, -Hh);
+  c.lineTo(-L*0.08, -Hh);
+  c.lineTo(L*0.02, -Hh*0.7);
+  c.lineTo(L*0.24, -Hh*0.7);
+  if(front){
+    c.lineTo(L*0.36, -Hh*1.08);
+    c.quadraticCurveTo(L*0.5, -Hh*1.0, L*0.62, -Hh*0.45);
+    c.quadraticCurveTo(L*0.64, -Hh*0.05, L*0.5, 0);
+  } else {
+    c.lineTo(L*0.34, -Hh*1.0);
+    c.lineTo(L/2-Hh*0.12, -Hh);
+    c.quadraticCurveTo(L/2, -Hh, L/2, -Hh*0.88);
+    c.lineTo(L/2, -Hh*0.15);
+    c.quadraticCurveTo(L/2, 0, L/2-Hh*0.15, 0);
+  }
+  c.lineTo(-L/2+Hh*0.15, 0);
+  c.quadraticCurveTo(-L/2, 0, -L/2, -Hh*0.15);
+  c.closePath();
+}
+function drawPattern(c, kind, color, L, Hh, seed){
+  c.fillStyle=color; c.strokeStyle=color;
+  if(kind==='stripes'){
+    c.fillRect(-L, -Hh*0.62, 2*L, Hh*0.14);
+    c.fillRect(-L, -Hh*0.40, 2*L, Hh*0.14);
+  } else if(kind==='flames'){
+    c.beginPath(); c.moveTo(-L, 0);
+    const n=5;
+    for(let i=0;i<=n;i++){
+      const x=-L/2+L*(i/n), tip=-Hh*(0.55+0.3*((i+seed)%2));
+      c.quadraticCurveTo(x-L*0.06, -Hh*0.25, x+L*0.04, tip);
+      c.quadraticCurveTo(x+L*0.02, -Hh*0.3, x+L*0.1, -Hh*0.12);
+    }
+    c.lineTo(L, 0); c.closePath(); c.fill();
+  } else if(kind==='stars'){
+    const pts=[[-.3,-.45,.2],[.05,-.3,.15],[.25,-.55,.12],[-.05,-.72,.1]];
+    for(const [px,py,r] of pts){
+      c.beginPath();
+      for(let k=0;k<10;k++){
+        const a=-Math.PI/2+k*Math.PI/5, rr=(k%2?0.45:1)*r*Hh;
+        c.lineTo(px*L+Math.cos(a)*rr, py*Hh+Math.sin(a)*rr);
+      }
+      c.closePath(); c.fill();
+    }
+  } else if(kind==='dots'){
+    for(let i=0;i<7;i++){
+      const px=-L*0.42+i*L*0.14, py=-Hh*(i%2?0.32:0.62);
+      c.beginPath(); c.arc(px,py,Hh*0.11,0,7); c.fill();
+    }
+  } else if(kind==='zigzag'){
+    c.lineWidth=Hh*0.13; c.lineJoin='miter';
+    c.beginPath(); c.moveTo(-L*0.55, -Hh*0.5);
+    for(let i=0;i<8;i++) c.lineTo(-L*0.55+(i+1)*L*0.15, -Hh*(i%2?0.5:0.22));
+    c.stroke();
+  }
+}
+const HAIR=['#3b2416','#e3b23c','#9a3b1c','#1c1c1c','#6b4a2f','#c96f2c'];
+const SHIRT=['#3d6fd8','#e0412f','#3cae4a','#9b4fd1','#f39a1e','#23b5c2'];
+function drawCarLocal(c, ppm, idx, front, opts){
+  const L=CAR_LEN*ppm, Hh=1.55*ppm, lift=0.72*ppm, wr=0.36*ppm;
+  const main=COLORS[design.main], detail=COLORS[design.detail];
+  const lw=Math.max(1,0.09*ppm);
+  // riders (behind the body)
+  for(let r=0;r<2;r++){
+    const rx=-L*0.3+r*L*0.36, ry=-lift-Hh*0.72;
+    const k=(idx*2+r)%6;
+    if(opts && opts.scream){
+      c.strokeStyle='#f0c19a'; c.lineWidth=0.16*ppm; c.lineCap='round';
+      c.beginPath(); c.moveTo(rx-0.15*ppm, ry-0.5*ppm); c.lineTo(rx-0.35*ppm, ry-1.15*ppm); c.moveTo(rx+0.15*ppm, ry-0.5*ppm); c.lineTo(rx+0.35*ppm, ry-1.15*ppm); c.stroke();
+    }
+    c.fillStyle=SHIRT[k]; c.beginPath(); c.roundRect(rx-0.28*ppm, ry-0.6*ppm, 0.56*ppm, 0.7*ppm, 0.18*ppm); c.fill();
+    c.fillStyle='#f0c19a'; c.beginPath(); c.arc(rx, ry-0.82*ppm, 0.3*ppm, 0, 7); c.fill();
+    c.fillStyle=HAIR[k]; c.beginPath(); c.arc(rx, ry-0.9*ppm, 0.31*ppm, Math.PI*1.05, Math.PI*1.95); c.fill();
+  }
+  // lap-bar posts
+  c.strokeStyle='#c0392b'; c.lineWidth=0.14*ppm; c.lineCap='round';
+  for(let r=0;r<2;r++){ const rx=-L*0.18+r*L*0.36; c.beginPath(); c.moveTo(rx, -lift-Hh*0.6); c.lineTo(rx+0.25*ppm, -lift-Hh*1.15); c.stroke(); }
+  // wheels
+  for(const wx of [-L*0.32, L*0.32]){
+    c.fillStyle='#2c3138'; c.beginPath(); c.arc(wx, -wr, wr, 0, 7); c.fill();
+    c.fillStyle='#9aa1ab'; c.beginPath(); c.arc(wx, -wr, wr*0.45, 0, 7); c.fill();
+  }
+  // body
+  c.save(); c.translate(0,-lift);
+  bodyPath(c, L, Hh, front);
+  c.fillStyle=main; c.fill();
+  c.save(); c.clip();
+  drawPattern(c, design.pattern, detail, L, Hh, idx);
+  const sh=c.createLinearGradient(0,-Hh,0,0); sh.addColorStop(0,'rgba(255,255,255,.28)'); sh.addColorStop(.5,'rgba(255,255,255,0)'); sh.addColorStop(1,'rgba(0,0,0,.18)');
+  c.fillStyle=sh; c.fillRect(-L,-Hh*1.2,2*L,Hh*1.3);
+  c.restore();
+  bodyPath(c, L, Hh, front);
+  c.strokeStyle='#14181e'; c.lineWidth=lw*1.6; c.lineJoin='round'; c.stroke();
+  if(front){ // headlight
+    c.fillStyle='#fff8c8'; c.strokeStyle='#14181e'; c.lineWidth=lw;
+    c.beginPath(); c.arc(L*0.47, -Hh*0.55, Hh*0.12, 0, 7); c.fill(); c.stroke();
+  }
+  c.restore();
+}
 
-  // leader line back to the first node
-  ctx.strokeStyle='rgba(18,32,46,.35)'; ctx.lineWidth=Math.max(1,u);
-  ctx.beginPath(); ctx.moveTo(PX(nodes[0].x),PY(nodes[0].y));
-  ctx.lineTo(bx+bw/2<PX(nodes[0].x)?bx+bw:bx, by+bh/2); ctx.stroke();
+/* ---------- scenic background (test step) ---------- */
+function drawScenery(w,h){
+  const gY=SY(0);
+  const sky=ctx.createLinearGradient(0,0,0,h);
+  sky.addColorStop(0,PAL.sky[0]); sky.addColorStop(.6,PAL.sky[1]); sky.addColorStop(1,PAL.sky[2]);
+  ctx.fillStyle=sky; ctx.fillRect(0,0,w,h);
+  const off=V.x0*V.ppm;
+  // clouds
+  ctx.fillStyle=PAL.cloud;
+  const cs=420*u, co=off*0.15;
+  for(let k=Math.floor(co/cs)-1;k<=Math.floor((co+w)/cs)+1;k++){
+    const x=k*cs-co+hash(k)*cs*0.5, y=h*0.1+hash(k+9)*h*0.18, r=40*u+hash(k+3)*30*u;
+    ctx.beginPath(); ctx.ellipse(x,y,r*1.8,r*0.55,0,0,7); ctx.ellipse(x+r*0.9,y-r*0.25,r,r*0.5,0,0,7); ctx.ellipse(x-r*0.8,y+r*0.05,r*0.9,r*0.4,0,0,7); ctx.fill();
+  }
+  // mountains
+  const base=Math.min(h*0.62, gY-40*u) + (gY-h)*0.25;
+  const mo=off*0.3;
+  const mg=ctx.createLinearGradient(0,base-260*u,0,base);
+  mg.addColorStop(0,PAL.mtn[0]); mg.addColorStop(.45,PAL.mtn[0]); mg.addColorStop(1,PAL.mtn[1]);
+  ctx.fillStyle=mg; ctx.beginPath(); ctx.moveTo(0,h);
+  for(let x=0;x<=w+8*u;x+=8*u){
+    const X=(x+mo)/u;
+    ctx.lineTo(x, base-(120+70*Math.sin(X/230)+55*Math.sin(X/97+1.3)+25*Math.sin(X/41+.4))*u);
+  }
+  ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+  // forests: two parallax rows of simple fir trees, with mist
+  const forest=(par, spacing, hMin, hVar, col, col2, yBase)=>{
+    const fo=off*par;
+    for(let k=Math.floor(fo/spacing)-2;k<=Math.floor((fo+w)/spacing)+2;k++){
+      const x=k*spacing-fo+hash(k*1.7+par)*spacing*0.6, th=(hMin+hash(k+par*10)*hVar)*u, tw=th*0.42;
+      ctx.fillStyle=hash(k+5)>0.5?col:col2;
+      ctx.beginPath(); ctx.moveTo(x,yBase-th); ctx.lineTo(x+tw/2,yBase); ctx.lineTo(x-tw/2,yBase); ctx.closePath(); ctx.fill();
+    }
+  };
+  const fy1=base+18*u+(gY-base)*0.25, fy2=base+60*u+(gY-base)*0.55;
+  forest(0.5, 15*u, 50, 40, PAL.forestFar, PAL.forestFar, fy1);
+  ctx.fillStyle=PAL.forestFar; ctx.fillRect(0,fy1-2,w,h);
+  let fg=ctx.createLinearGradient(0,fy1-90*u,0,fy1+20*u); fg.addColorStop(0,PAL.fog+'0)'); fg.addColorStop(1,PAL.fog+'.55)');
+  ctx.fillStyle=fg; ctx.fillRect(0,fy1-90*u,w,h);
+  forest(0.75, 19*u, 70, 55, PAL.forestNear, PAL.forestNear2, fy2);
+  ctx.fillStyle=PAL.forestNear; ctx.fillRect(0,fy2-1,w,h);
+  fg=ctx.createLinearGradient(0,fy2-100*u,0,fy2+30*u); fg.addColorStop(0,PAL.fog+'0)'); fg.addColorStop(1,PAL.fog+'.35)');
+  ctx.fillStyle=fg; ctx.fillRect(0,fy2-100*u,w,h);
+  if(gY<h){ ctx.fillStyle=PAL.ground; ctx.fillRect(0,gY,w,h-gY); }
+}
 
-  ctx.fillStyle='rgba(255,255,255,.96)'; ctx.strokeStyle='#c9d6e2'; ctx.lineWidth=Math.max(1,u);
-  ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,8*u); ctx.fill(); ctx.stroke();
-  ctx.fillStyle='#465a6e'; ctx.fillText(lines[0],bx+pad,by+pad+fs*0.9);
-  ctx.font='700 '+fs+'px system-ui,sans-serif'; ctx.fillStyle='#12202e';
-  for(let i=1;i<lines.length;i++) ctx.fillText(lines[i],bx+pad,by+pad+fs*0.9+lh*i);
+function drawRealTrack(){
+  const P=track.P, ppm=V.ppm, w=cv.width, hgt=cv.height;
+  const vis=(x,y)=>{ const X=SX(x), Y=SY(y); return X>-200*u && X<w+200*u && Y>-200*u && Y<hgt+200*u; };
+  // supports
+  const sStep=Math.round(6/DS);
+  ctx.lineWidth=Math.max(1,0.08*ppm);
+  for(let i=0;i<P.length;i+=sStep){
+    const p=P[i]; if(p.y<1 || !vis(p.x,p.y)) continue;
+    if(track.loopRanges.some(L=>i*DS>L.s0+1 && i*DS<L.s1-1)) continue;
+    const X=SX(p.x), w2=Math.max(2,0.45*ppm);
+    ctx.fillStyle=PAL.support; ctx.strokeStyle=PAL.supportEdge;
+    ctx.beginPath(); ctx.rect(X-w2/2, SY(p.y)+0.2*ppm, w2, SY(0)-SY(p.y)); ctx.fill(); ctx.stroke();
+  }
+  for(const L of track.loopRanges){   // one column holds up each loop
+    const a=sampleAt(L.s0), top=sampleAt((L.s0+L.s1)/2);
+    const X=SX(top.x), w2=Math.max(3,0.6*ppm);
+    ctx.fillStyle=PAL.support; ctx.strokeStyle=PAL.supportEdge;
+    ctx.beginPath(); ctx.rect(X-w2/2, SY(top.y), w2, SY(0)-SY(top.y)); ctx.fill(); ctx.stroke();
+    if(a.y>1){ const XA=SX(a.x+loopD(LOOP_H[nodes[L.node].loop])/2); ctx.beginPath(); ctx.rect(XA-w2/2, SY(a.y)+0.2*ppm, w2, SY(0)-SY(a.y)); ctx.fill(); ctx.stroke(); }
+  }
+  // rail: pale band with darker edges, ties hanging underneath
+  const path=(off)=>{
+    ctx.beginPath();
+    for(let i=0;i<P.length;i+=2){
+      const th=track.TH[i], nx=-Math.sin(th)*off, ny=Math.cos(th)*off;
+      const X=SX(P[i].x+nx), Y=SY(P[i].y+ny);
+      if(i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y);
+    }
+  };
+  ctx.lineJoin=ctx.lineCap='round';
+  ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(1.5,0.22*ppm);
+  const tStep=Math.round(1.4/DS);
+  for(let i=0;i<P.length;i+=tStep){
+    const p=P[i]; if(!vis(p.x,p.y)) continue;
+    const th=track.TH[i], nx=-Math.sin(th), ny=Math.cos(th);
+    ctx.beginPath(); ctx.moveTo(SX(p.x-nx*0.2),SY(p.y-ny*0.2)); ctx.lineTo(SX(p.x-nx*0.95),SY(p.y-ny*0.95)); ctx.stroke();
+  }
+  path(-0.95); ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(1,0.3*ppm); ctx.stroke();
+  path(0); ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(3,0.95*ppm); ctx.stroke();
+  path(0); ctx.strokeStyle=PAL.rail; ctx.lineWidth=Math.max(2,0.7*ppm); ctx.stroke();
+  // chain on the lift
+  ctx.strokeStyle=PAL.chain; ctx.lineWidth=Math.max(1,0.14*ppm); ctx.setLineDash([0.35*ppm,0.3*ppm]);
+  ctx.beginPath();
+  for(let i=0;i*DS<=track.liftS;i+=2){ const p=P[i]; if(i===0) ctx.moveTo(SX(p.x),SY(p.y)); else ctx.lineTo(SX(p.x),SY(p.y)); }
+  ctx.stroke(); ctx.setLineDash([]);
+  // station platform and finish flag
+  const s0=P[0];
+  ctx.fillStyle='#8a5a3a'; ctx.fillRect(SX(-40), SY(s0.y)+1*ppm, SX(s0.x+2)-SX(-40), 0.7*ppm);
+  const e=P[P.length-1];
+  ctx.strokeStyle='#14181e'; ctx.lineWidth=Math.max(1,0.15*ppm);
+  ctx.beginPath(); ctx.moveTo(SX(e.x),SY(e.y)); ctx.lineTo(SX(e.x),SY(e.y+7)); ctx.stroke();
+  for(let r=0;r<3;r++) for(let c=0;c<4;c++){
+    ctx.fillStyle=(r+c)%2?'#ffffff':'#14181e';
+    ctx.fillRect(SX(e.x)+c*0.7*ppm, SY(e.y+7)+r*0.7*ppm, 0.7*ppm, 0.7*ppm);
+  }
+}
+
+function drawTrain(){
+  const sp=CAR_LEN+CAR_GAP;
+  const scream = running && cart.released && Math.abs(cart.v)>12;
+  for(let c=cars-1;c>=0;c--){
+    const sc=cart.s-c*sp;
+    let x,y,th;
+    if(sc>=0){ const p=sampleAt(sc); x=p.x; y=p.y; th=p.th; }
+    else { const p=sampleAt(0); x=p.x+sc; y=p.y; th=0; }   // still in the station
+    ctx.save(); ctx.translate(SX(x),SY(y)); ctx.rotate(-th);
+    drawCarLocal(ctx, V.ppm, c, c===0, {scream});
+    ctx.restore();
+  }
+}
+
+function drawMinimap(){
+  const w=cv.width, mw=230*u, mh=mw*H_WORLD/W_WORLD*0.8, x0=w-mw-12*u, y0=12*u;
+  ctx.fillStyle='rgba(20,24,30,.55)'; ctx.beginPath(); ctx.roundRect(x0,y0,mw,mh,8*u); ctx.fill();
+  const k=mw/W_WORLD, MX=x=>x0+x*k, MY=y=>y0+(Y_TOP-y)*k*0.8;
+  ctx.strokeStyle='#ffffff'; ctx.lineWidth=Math.max(1,1.6*u); ctx.beginPath();
+  for(let i=0;i<track.P.length;i+=4){ const p=track.P[i]; if(i===0) ctx.moveTo(MX(p.x),MY(p.y)); else ctx.lineTo(MX(p.x),MY(p.y)); }
+  ctx.stroke();
+  const p=sampleAt(cart.s);
+  ctx.fillStyle='#ff5a3c'; ctx.beginPath(); ctx.arc(MX(p.x),MY(p.y),4.5*u,0,7); ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=Math.max(1,1.2*u); ctx.stroke();
+}
+
+function drawTest(){
+  const w=cv.width, h=cv.height;
+  if(follow){
+    const p=sampleAt(cart.s);
+    const ppm=h/FOLLOW_VIEW_H, vw=w/ppm;
+    const tx=p.x+vw*0.12, ty=p.y+2;           // lead a little in the direction of travel
+    cam.x+=(tx-cam.x)*0.12; cam.y+=(ty-cam.y)*0.12;
+    let x0=cam.x-vw/2, y1=cam.y+FOLLOW_VIEW_H/2;
+    x0=Math.min(Math.max(x0,-6), W_WORLD+6-vw);
+    y1=Math.min(Math.max(y1, Y_BOT+4+FOLLOW_VIEW_H), Y_TOP+6);
+    V={x0, y1, ppm};
+  } else editorView();
+  drawScenery(w,h);
+  drawRealTrack();
+  drawTrain();
+  drawPopups();
+  if(follow) drawMinimap();
+  const nm=(design.name||'').trim();
+  if(nm){
+    ctx.font='800 '+(18*u)+'px Poppins,system-ui,sans-serif'; ctx.textAlign='left';
+    ctx.lineWidth=4*u; ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineJoin='round';
+    ctx.strokeText(nm,14*u,h-16*u); ctx.fillStyle='#14181e'; ctx.fillText(nm,14*u,h-16*u);
+  }
+}
+
+/* ---------- blueprint editor ---------- */
+function hatchBand(x0,x1,label){
+  const X0=SX(x0), X1=SX(x1), top=SY(Y_TOP), bot=SY(0);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(X0,top,X1-X0,bot-top); ctx.clip();
+  ctx.fillStyle=PAL.hatchA; ctx.fillRect(X0,top,X1-X0,bot-top);
+  ctx.strokeStyle=PAL.hatchB; ctx.lineWidth=7*u;
+  for(let y=top-200*u;y<bot+200*u;y+=20*u){ ctx.beginPath(); ctx.moveTo(X0,y); ctx.lineTo(X1,y-(X1-X0)); ctx.stroke(); }
+  ctx.translate((X0+X1)/2,(top+bot)/2); ctx.rotate(-Math.PI/2);
+  ctx.font='800 '+(12*u)+'px Poppins,system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(const dy of [-(bot-top)*0.25,(bot-top)*0.25]){
+    const tw=ctx.measureText(label).width+12*u;
+    ctx.fillStyle=PAL.hatchA; ctx.beginPath(); ctx.roundRect(dy-tw/2,-9*u,tw,18*u,9*u); ctx.fill();
+    ctx.fillStyle=PAL.bandTxt; ctx.fillText(label,dy,0);
+  }
+  ctx.restore();
+}
+function nodeBall(X,Y,r,fixed){
+  const g=ctx.createRadialGradient(X-r*0.35,Y-r*0.4,r*0.1,X,Y,r);
+  g.addColorStop(0,PAL.nodeHi); g.addColorStop(.55,PAL.node); g.addColorStop(1,PAL.node);
+  ctx.fillStyle=g; ctx.beginPath();
+  if(fixed) ctx.roundRect(X-r,Y-r,2*r,2*r,r*0.3); else ctx.arc(X,Y,r,0,7);
+  ctx.fill();
+}
+function drawEditor(){
+  editorView();
+  const w=cv.width, h=cv.height;
+  ctx.fillStyle=PAL.floor; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle=PAL.lav; ctx.fillRect(0,0,w,SY(0));
+  for(let x=10;x<W_WORLD;x+=10){ ctx.fillStyle=PAL.lavStripe; ctx.fillRect(SX(x)-1.5*u,0,3*u,SY(0)); }
+  ctx.font='700 '+(11*u)+'px Poppins,system-ui,sans-serif'; ctx.textAlign='right';
+  for(let y=10;y<Y_TOP;y+=10){
+    ctx.strokeStyle=PAL.hLine; ctx.lineWidth=Math.max(1,u); ctx.setLineDash([6*u,6*u]);
+    ctx.beginPath(); ctx.moveTo(SX(START_BAND),SY(y)); ctx.lineTo(SX(END_BAND),SY(y)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=PAL.hTxt; ctx.fillText(y+' m',SX(END_BAND)-5*u,SY(y)-4*u);
+  }
+  ctx.textAlign='left';
+  hatchBand(0,START_BAND,'COASTER START');
+  hatchBand(END_BAND,W_WORLD,'COASTER END');
+
+  // track: thick white line with a dotted texture
+  const P=track.P;
+  const line=()=>{ ctx.beginPath(); ctx.moveTo(SX(P[0].x),SY(P[0].y)); for(let i=2;i<P.length;i+=2) ctx.lineTo(SX(P[i].x),SY(P[i].y)); ctx.lineTo(SX(P[P.length-1].x),SY(P[P.length-1].y)); };
+  ctx.lineJoin=ctx.lineCap='round';
+  line(); ctx.strokeStyle=PAL.trackW; ctx.lineWidth=Math.max(3,5.5*u); ctx.stroke();
+  line(); ctx.strokeStyle=PAL.trackDash; ctx.lineWidth=Math.max(1,1.4*u); ctx.setLineDash([2*u,7*u]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle=PAL.chain; ctx.lineWidth=Math.max(1,2*u); ctx.setLineDash([3*u,4*u]);
+  ctx.beginPath(); for(let i=0;i*DS<=track.liftS;i+=2){ const p=P[i]; if(i===0) ctx.moveTo(SX(p.x),SY(p.y)); else ctx.lineTo(SX(p.x),SY(p.y)); }
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // ghost preview of the next piece of track
+  if(hover && dragging<0){
+    const g=ghostFor(hover);
+    if(g){
+      ctx.strokeStyle=PAL.ghost; ctx.lineWidth=Math.max(3,7*u);
+      ctx.beginPath(); ctx.moveTo(SX(g.a.x),SY(g.a.y)); ctx.lineTo(SX(g.x),SY(g.y));
+      if(g.b) ctx.lineTo(SX(g.b.x),SY(g.b.y));
+      ctx.stroke();
+      ctx.fillStyle=PAL.ghost; ctx.beginPath(); ctx.arc(SX(g.x),SY(g.y),NODE_PX*u,0,7); ctx.fill();
+    }
+  }
+
+  // nodes + height labels
+  ctx.font='800 '+(12*u)+'px Poppins,system-ui,sans-serif'; ctx.textAlign='center';
+  nodes.forEach((n,i)=>{
+    const X=SX(n.x), Y=SY(n.y);
+    if(i===selected){
+      if(i>0){
+        ctx.strokeStyle=PAL.lbl; ctx.fillStyle=PAL.lbl; ctx.globalAlpha=.55; ctx.lineWidth=Math.max(1,1.6*u);
+        const a=26*u;
+        ctx.beginPath(); ctx.moveTo(X-a,Y); ctx.lineTo(X+a,Y); ctx.moveTo(X,Y-a); ctx.lineTo(X,Y+a); ctx.stroke();
+        const tri=(x,y,dx,dy)=>{ ctx.beginPath(); ctx.moveTo(x+dx*6*u,y+dy*6*u); ctx.lineTo(x-dy*4*u,y+dx*4*u); ctx.lineTo(x+dy*4*u,y-dx*4*u); ctx.closePath(); ctx.fill(); };
+        tri(X+a,Y,1,0); tri(X-a,Y,-1,0); tri(X,Y-a,0,-1); tri(X,Y+a,0,1);
+        ctx.globalAlpha=1;
+      }
+      ctx.strokeStyle=PAL.sel; ctx.lineWidth=Math.max(2,3*u);
+      ctx.beginPath(); ctx.arc(X,Y,(NODE_PX+5)*u,0,7); ctx.stroke();
+    }
+    nodeBall(X,Y,NODE_PX*u,i===0);
+    ctx.fillStyle=PAL.lbl;
+    ctx.fillText(n.y.toFixed(1)+'m', X, Y-(NODE_PX+9)*u);
+  });
+  ctx.textAlign='left';
+  drawPopups();
+}
+
+/* ---------- cart design / length previews ---------- */
+function drawPreview(viewH){
+  const w=cv.width, h=cv.height, ppm=h/viewH;
+  ctx.fillStyle=PAL.previewBg; ctx.fillRect(0,0,w,h);
+  for(let x=0;x<w;x+=10*ppm){ ctx.fillStyle=PAL.lavStripe; ctx.fillRect(x,0,3*u,h); }
+  const ty=h*0.62;
+  ctx.fillStyle=PAL.support; ctx.strokeStyle=PAL.supportEdge; ctx.lineWidth=Math.max(1,0.06*ppm);
+  ctx.fillRect(w/2-0.5*ppm,ty,1*ppm,h); ctx.strokeRect(w/2-0.5*ppm,ty,1*ppm,h);
+  for(let x=(w/2)%(4*ppm); x<w; x+=4*ppm){
+    ctx.beginPath(); ctx.moveTo(x-0.35*ppm,ty+0.4*ppm); ctx.lineTo(x+0.35*ppm,ty+0.4*ppm); ctx.lineTo(x+0.2*ppm,ty+2.1*ppm); ctx.lineTo(x-0.2*ppm,ty+2.1*ppm); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x,ty+2.2*ppm,0.35*ppm,0.18*ppm,0,0,7); ctx.fill(); ctx.stroke();
+  }
+  ctx.fillStyle=PAL.rail; ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(1,0.08*ppm);
+  ctx.beginPath(); ctx.rect(-10,ty,w+20,0.45*ppm); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.rect(-10,ty+1.1*ppm,w+20,0.3*ppm); ctx.fill(); ctx.stroke();
+  const sp=(CAR_LEN+CAR_GAP)*ppm, total=cars*sp;
+  for(let c=0;c<cars;c++){
+    const X=w/2+total/2-sp/2-c*sp;
+    ctx.save(); ctx.translate(X,ty); drawCarLocal(ctx, ppm, c, c===0, null); ctx.restore();
+  }
+  const nm=(design.name||'').trim();
+  ctx.font='800 '+Math.round(Math.min(40*u, w/22))+'px Poppins,system-ui,sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle=PAL.title;
+  ctx.fillText(nm||'Name your coaster', w/2, h*0.14);
+  if(step===1){
+    ctx.font='700 '+Math.round(22*u)+'px Poppins,system-ui,sans-serif';
+    ctx.fillText(cars+(cars===1?' car':' cars')+'  ·  m = '+mass()+' kg', w/2, h*0.25);
+  }
+  ctx.textAlign='left';
+}
+
+function draw(){
+  PAL = (window.__isDark&&window.__isDark()) ? PAL_DARK : PAL_LIGHT;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if(step===0) drawPreview(13);
+  else if(step===1) drawPreview(Math.max(13, cars*(CAR_LEN+CAR_GAP)*0.62));
+  else if(step===2) drawEditor();
+  else drawTest();
 }
 
 /* ============================ loop ============================ */
@@ -702,133 +1368,222 @@ function frame(ts){
   if(!last) last=ts;
   let dt=(ts-last)/1000; last=ts;
   dt=Math.min(dt,1/30);
-  if(running){
-    step(dt*(slow?0.35:1));
-    trailUpTo=Math.max(trailUpTo,cart.s);
+  if(running && step===3){
+    step_(dt*(slow?0.35:1));
+    if(justReleased){ justReleased=false;
+      if(!done) say('','<b>Here we go!</b>','The chain let go. From here on, no new energy is added. Watch PE turn into KE and back.'); }
+    checkPops();
     refreshUI();
+    if(!running) setRunBtn();
   }
   draw();
   requestAnimationFrame(frame);
 }
 
-/* ============================ interaction ============================ */
+/* ============================ track editing ============================ */
+function exitX(i){ const n=nodes[i]; return n.x + (n.loop ? loopD(LOOP_H[n.loop]) : 0); }
 function toWorld(ev){
-  const r=cv.getBoundingClientRect(), pxPerM=r.width/W_WORLD;
-  return {x:(ev.clientX-r.left)/pxPerM, y:H_WORLD-(ev.clientY-r.top)/pxPerM, pxPerM};
+  const r=cv.getBoundingClientRect(), k=r.width/W_WORLD;
+  return {x:(ev.clientX-r.left)/k, y:Y_TOP-(ev.clientY-r.top)/k, k};
 }
 function clampNode(i,x,y){
-  const lo = i===0 ? 2 : nodes[i-1].x+MIN_GAP;
-  const hi = i===nodes.length-1 ? W_WORLD-2 : nodes[i+1].x-MIN_GAP;
-  nodes[i].x=Math.min(Math.max(x,lo),Math.max(lo,hi));
-  nodes[i].y=Math.min(Math.max(y,Y_MIN),Y_MAX);
-  buildTrack();
+  if(i===0) return;
+  const lo=exitX(i-1)+MIN_GAP;
+  const n=nodes[i], D=n.loop?loopD(LOOP_H[n.loop]):0;
+  const hi=i===nodes.length-1 ? W_WORLD-9 : nodes[i+1].x-MIN_GAP-D;
+  n.x=Math.min(Math.max(x,lo),Math.max(lo,hi));
+  n.y=Math.min(Math.max(y, i===1?LIFT_MIN:0), Y_MAX);
 }
-cv.addEventListener('pointerdown',ev=>{
-  cv.focus();
-  const p=toWorld(ev), hitM=HIT_PX/p.pxPerM;
-  let best=-1, bd=hitM;
-  for(let i=0;i<nodes.length;i++){
-    const d=Math.hypot(nodes[i].x-p.x,nodes[i].y-p.y);
-    if(d<bd){ bd=d; best=i; }
+// where would a click at p add a node?
+function ghostFor(p){
+  if(p.y<-1 || p.y>Y_MAX+3 || p.x>W_WORLD-9) return null;
+  const y=Math.min(Math.max(p.y,0),Y_MAX);
+  const lastI=nodes.length-1;
+  if(p.x>exitX(lastI)+MIN_GAP) return {mode:'append', x:p.x, y, a:{x:exitX(lastI), y:nodes[lastI].y}};
+  for(let i=1;i<lastI;i++){
+    if(p.x>exitX(i)+MIN_GAP && p.x<nodes[i+1].x-MIN_GAP)
+      return {mode:'insert', at:i+1, x:p.x, y, a:{x:exitX(i),y:nodes[i].y}, b:{x:nodes[i+1].x,y:nodes[i+1].y}};
   }
+  return null;
+}
+function hillWord(i){
+  if(i<1) return null;
+  const d=nodes[i].y-nodes[i-1].y;
+  return d>0.5?'UP HILL!':d<-0.5?'DOWN HILL!':'FLAT!';
+}
+function editPop(text, i){ if(!text) return; popups=popups.filter(p=>!p.edit); addPop(text, {x:nodes[i].x+9, y:nodes[i].y+6}, null, true); }
+
+let dragMoved=false, lastWord=null;
+cv.addEventListener('pointerdown',ev=>{
+  if(step!==2) return;
+  cv.focus();
+  const p=toWorld(ev), hitM=HIT_PX/p.k;
+  let best=-1, bd=hitM;
+  nodes.forEach((n,i)=>{ const d=Math.hypot(n.x-p.x,n.y-p.y); if(d<bd){bd=d;best=i;} });
   if(best>=0){
-    selected=best; dragging=best;
+    selected=best; dragging=best>0?best:-1; dragMoved=false; lastWord=null;
     try{ cv.setPointerCapture(ev.pointerId); }catch(e){}
-    resetCart();
+    refreshNodeUI();
+  } else {
+    const g=ghostFor(p);
+    if(g){
+      if(nodes.length>=16){ say('bad','<b>That’s a lot of track!</b>','Delete a node before adding another.'); return; }
+      const nd={x:g.x, y:g.y, loop:0};
+      if(g.mode==='append'){ nodes.push(nd); selected=nodes.length-1; }
+      else { nodes.splice(g.at,0,nd); selected=g.at; }
+      trackChanged();
+      editPop(hillWord(selected), selected);
+      trackGuide();
+    }
   }
   ev.preventDefault();
 });
 cv.addEventListener('pointermove',ev=>{
-  if(dragging<0) return;
+  if(step!==2) return;
   const p=toWorld(ev);
-  clampNode(dragging,p.x,p.y);
-  resetCart();
+  if(dragging<0){ hover=p; return; }
+  clampNode(dragging,p.x,p.y); dragMoved=true;
+  trackChanged();
+  const wd=hillWord(dragging);
+  if(wd && wd!==lastWord){ lastWord=wd; editPop(wd, dragging); }
   ev.preventDefault();
 });
-const endDrag=()=>{ dragging=-1; };
+cv.addEventListener('pointerleave',()=>{ hover=null; });
+const endDrag=()=>{ if(dragging>=0 && dragMoved && step===2) trackGuide(); dragging=-1; };
 cv.addEventListener('pointerup',endDrag);
 cv.addEventListener('pointercancel',endDrag);
 cv.addEventListener('lostpointercapture',endDrag);
 
-cv.addEventListener('keydown',ev=>{
-  if(ev.key==='Tab'){
-    selected=(selected+(ev.shiftKey?-1:1)+nodes.length)%nodes.length;
-    ev.preventDefault(); return;
+function toggleLoop(){
+  const i=selected, n=nodes[i];
+  if(i<2 || i>=nodes.length-1) return;
+  if(n.loop){ n.loop=0; trackChanged(); return; }
+  const size=+$('loopSize').value, D=loopD(LOOP_H[size]);
+  if(nodes[i+1].x - n.x < D+MIN_GAP){
+    say('bad','<b>No room for a loop here.</b>','Drag the next node farther right, or choose a smaller loop.'); return;
   }
-  if(ev.key===' '||ev.key==='Enter'){ toggleRun(); ev.preventDefault(); return; }
-  const st=ev.shiftKey?4:1;
-  let dx=0,dy=0;
+  n.loop=size; trackChanged(); editPop('LOOP!', i);
+}
+function deleteNode(){
+  const i=selected;
+  if(i<=1 || nodes.length<=3) return;
+  nodes.splice(i,1); selected=Math.min(i,nodes.length-1); trackChanged(); trackGuide();
+}
+$('btnLoop').onclick=toggleLoop;
+$('loopSize').onchange=e=>{
+  const n=nodes[selected];
+  if(!n.loop) return;
+  const old=n.loop; n.loop=+e.target.value;
+  if(nodes[selected+1].x-n.x < loopD(LOOP_H[n.loop])+MIN_GAP){
+    n.loop=old; e.target.value=String(old);
+    say('bad','<b>No room for a bigger loop.</b>','Drag the next node farther right first.'); return;
+  }
+  trackChanged(); editPop('LOOP!', selected);
+};
+$('btnDel').onclick=deleteNode;
+$('preset').onchange=e=>{
+  const p=PRESETS[e.target.value];
+  if(p){ nodes=p.map(a=>({x:a[0],y:a[1],loop:a[2]||0})); selected=1; trackChanged(); trackGuide(); }
+  e.target.value='';
+};
+
+cv.addEventListener('keydown',ev=>{
+  if(step===3 && (ev.key===' '||ev.key==='Enter')){ toggleRun(); ev.preventDefault(); return; }
+  if(step!==2) return;
+  if(ev.key==='Tab'){ selected=(selected+(ev.shiftKey?-1:1)+nodes.length)%nodes.length; refreshNodeUI(); ev.preventDefault(); return; }
+  if(ev.key==='l'||ev.key==='L'){ toggleLoop(); ev.preventDefault(); return; }
+  if(ev.key==='Delete'||ev.key==='Backspace'){ deleteNode(); ev.preventDefault(); return; }
+  const st=ev.shiftKey?4:1; let dx=0,dy=0;
   if(ev.key==='ArrowUp')dy=st; else if(ev.key==='ArrowDown')dy=-st;
   else if(ev.key==='ArrowLeft')dx=-st; else if(ev.key==='ArrowRight')dx=st;
   else return;
   ev.preventDefault();
   clampNode(selected,nodes[selected].x+dx,nodes[selected].y+dy);
-  resetCart();
+  trackChanged();
 });
 
+/* ============================ controls ============================ */
 function toggleRun(){
-  if(running){ running=false; btnRun.textContent='Resume'; return; }
-  if(done||cart.s>=track.len) resetCart();
-  setOutcome(null);
-  running=true; btnRun.textContent='Pause';
+  if(step!==3) return;
+  if(running){ running=false; setRunBtn(); return; }
+  if(done) resetCart();
+  const fresh=!cart.released && cart.s<=startS()+0.01;
+  running=true; setRunBtn();
+  if(fresh) say('','<b>Click, click, click&hellip;</b>','The chain lift is pulling the train up. It does work to give the train potential energy.');
 }
 btnRun.onclick=toggleRun;
-$('btnReset').onclick=resetCart;
+$('btnReset').onclick=()=>{
+  if(step===2){ nodes=[{x:10,y:0,loop:0},{x:32,y:40,loop:0}]; selected=1; trackChanged(); trackGuide(); }
+  else { resetCart(); STEP_GUIDE[3](); }
+};
 $('btnSlow').onclick=e=>{ slow=!slow; e.currentTarget.setAttribute('aria-pressed',String(slow)); };
-$('cars').oninput=e=>{ cars=+e.target.value; resetCart(); };
-$('fric').onchange=e=>{ mu=+e.target.value; resetCart(); };
-$('trail').onchange=e=>{ showTrail=e.target.checked; };
-$('grid').onchange=e=>{ showGrid=e.target.checked; };
-$('btnAdd').onclick=()=>{
-  if(nodes.length>=12) return;
-  let gi=0,gw=0;
-  for(let i=0;i<nodes.length-1;i++){ const wd=nodes[i+1].x-nodes[i].x; if(wd>gw){gw=wd;gi=i;} }
-  if(gw<2*MIN_GAP) return;
-  nodes.splice(gi+1,0,{x:(nodes[gi].x+nodes[gi+1].x)/2, y:(nodes[gi].y+nodes[gi+1].y)/2});
-  selected=gi+1; buildTrack(); resetCart();
-};
-$('btnDel').onclick=()=>{
-  if(nodes.length<=4) return;
-  const i=(selected>0&&selected<nodes.length-1)?selected:1;
-  nodes.splice(i,1); selected=Math.min(selected,nodes.length-1); buildTrack(); resetCart();
-};
-$('preset').onchange=e=>{
-  const p=PRESETS[e.target.value];
-  if(p){ nodes=p.map(a=>({x:a[0],y:a[1]})); selected=0; buildTrack(); resetCart(); }
-  e.target.value='';
-};
+$('btnCam').onclick=e=>{ follow=!follow; e.currentTarget.setAttribute('aria-pressed',String(!follow)); };
+$('fric').onchange=e=>{ mu=+e.target.value; resetCart(); STEP_GUIDE[3](); };
+$('cars').oninput=e=>{ cars=+e.target.value; $('carsOut').textContent=cars+(cars===1?' car':' cars'); $('massInfo').textContent=mass()+' kg'; resetCart(); save(); refreshUI(); };
+$('cname').oninput=e=>{ design.name=e.target.value; save(); };
+
+function buildPickers(){
+  const mk=(host, key)=>{
+    host.innerHTML='';
+    COLORS.forEach((c,i)=>{
+      const b=document.createElement('button'); b.type='button'; b.style.background=c;
+      b.setAttribute('aria-label',(key==='main'?'Main':'Detail')+' color '+COLOR_NAMES[i]);
+      b.setAttribute('aria-pressed', String(design[key]===i));
+      b.onclick=()=>{ design[key]=i; save(); buildPickers(); host.children[i].focus(); };
+      host.appendChild(b);
+    });
+  };
+  mk($('swMain'),'main'); mk($('swDetail'),'detail');
+  const ph=$('patterns'); ph.innerHTML='';
+  PATTERNS.forEach((k,i)=>{
+    const b=document.createElement('button'); b.type='button'; b.title=PATTERN_NAMES[i];
+    b.setAttribute('aria-label','Pattern: '+PATTERN_NAMES[i]); b.setAttribute('aria-pressed',String(design.pattern===k));
+    const c=document.createElement('canvas'); c.width=128; c.height=80; b.appendChild(c);
+    const g=c.getContext('2d');
+    g.fillStyle=COLORS[design.main]; g.fillRect(0,0,128,80);
+    g.save(); g.translate(64,74); drawPattern(g,k,COLORS[design.detail],128,64,0); g.restore();
+    b.onclick=()=>{ design.pattern=k; save(); buildPickers(); ph.children[i].focus(); };
+    ph.appendChild(b);
+  });
+}
 
 new ResizeObserver(fit).observe(cv);
 window.addEventListener('orientationchange',()=>setTimeout(fit,150));
 
 /* ============================ go ============================ */
-buildTrack(); fit(); resetCart(); requestAnimationFrame(frame);
+load();
+$('cname').value=design.name; $('cars').value=cars;
+$('carsOut').textContent=cars+(cars===1?' car':' cars'); $('massInfo').textContent=mass()+' kg';
+buildPickers();
+buildTrack(); fit(); resetCart();
+setStep(0);
+requestAnimationFrame(frame);
 
 // hook for automated checking
 window.__sim={
-  cart, mass, step, resetCart,
-  get track(){return track;}, get nodes(){return nodes;},
-  get running(){return running;}, get done(){return done;}, get maxS(){return maxS;},
-  setNodes:a=>{nodes=a.map(p=>({x:p[0],y:p[1]}));selected=0;buildTrack();resetCart();},
-  // deterministic headless run: returns outcome + energy-conservation error
+  cart, mass, resetCart, sampleAt,
+  get track(){return track;}, get nodes(){return nodes;}, get done(){return done;}, get step(){return step;},
+  setStep, toggleRun,
+  // deterministic headless run: returns outcome + energy-conservation error after the lift
   probe(nodeList,nCars,friction){
-    const oc=cars, om=mu;
+    const oc=cars, om=mu, on=nodes;
     if(nCars) cars=nCars; if(friction) mu=friction;
-    nodes=nodeList.map(p=>({x:p[0],y:p[1]})); buildTrack(); resetCart();
-    const m=mass(), E0=m*G*nodes[0].y;
-    let peakG=1, minG=1, worst=0, i=0;
-    for(;i<9000 && !done;i++){
-      step(1/60);
-      peakG=Math.max(peakG,cart.gForce); minG=Math.min(minG,cart.gForce);
-      const p=sampleAt(cart.s);
-      const E=m*G*p.y+0.5*m*cart.v*cart.v+cart.thermal;
-      worst=Math.max(worst,Math.abs(E-E0)/E0);
+    nodes=nodeList.map(p=>({x:p[0],y:p[1],loop:p[2]||0})); buildTrack(); resetCart();
+    const m=mass();
+    let peakG=1, minG=1, worst=0;
+    for(let i=0;i<12000 && !done;i++){
+      step_(1/60);
+      if(cart.released){
+        peakG=Math.max(peakG,cart.gForce); minG=Math.min(minG,cart.gForce);
+        const p=sampleAt(cart.s);
+        const E=m*G*p.y+0.5*m*cart.v*cart.v+cart.thermal;
+        worst=Math.max(worst,Math.abs(E-cart.E0)/cart.E0);
+      }
     }
     const r={done, peakG:+peakG.toFixed(2), minG:+minG.toFixed(2), vmax:+cart.vmax.toFixed(1),
       maxS:+maxS.toFixed(0), trackLen:+track.len.toFixed(0), seconds:+runTime.toFixed(1),
-      energyErrPct:+(100*worst).toFixed(4), minTrackY:+Math.min(...track.pts.map(p=>p.y)).toFixed(2),
-      thermalPct:+(100*cart.thermal/E0).toFixed(1)};
-    cars=oc; mu=om;
+      x:+sampleAt(cart.s).x.toFixed(0), energyErrPct:+(100*worst).toFixed(3), thermalPct:+(100*cart.thermal/Math.max(cart.E0,1)).toFixed(1)};
+    cars=oc; mu=om; nodes=on; buildTrack(); resetCart();
     return r;
   }};
 })();
