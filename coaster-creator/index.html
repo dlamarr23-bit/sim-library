@@ -406,7 +406,7 @@
           the PE and KE equations at the top.</li>
         <li><strong>Track Design.</strong> The first hill is the <strong>chain lift</strong>. It puts energy into your coaster.
           Click any black node to see its buttons: <strong>build hill</strong>, <strong>build loop</strong>, or
-          <strong>delete</strong>. For a hill or loop, move your mouse to the right, then click again. Drag a node to move it.
+          <strong>delete</strong>. For a hill, move your mouse to a white line on the right and click. For a loop, move your mouse up or down to size it and click. Nodes sit on the white lines; drag one up or down to change its height.
           Keep building until your track reaches <strong>COASTER END</strong>.</li>
         <li><strong>Coaster Test.</strong> Press <strong>Play</strong>. The chain pulls the train up the first hill, then
           lets it go. The train must reach the end station slowly enough for the brakes to stop it.
@@ -456,7 +456,7 @@
         steady 5 m/s, so the energy at the top of the lift is <i>mgh + &frac12;mv&sup2;</i>. The energy bar is scaled to that
         amount, so you can watch the lift fill it up. After the lift, rolling friction
         (&mu; &times; the force between the wheels and track) and air drag turn energy into heat. The brakes at the end
-        slow the train at 4 m/s&sup2; over 24 m, so they can stop a train arriving at up to about 14 m/s (50 km/h). Friction grows with mass
+        slow the train at 4 m/s&sup2; over 26 m, so they can stop a train arriving at up to about 14 m/s (50 km/h). Friction grows with mass
         but air drag does not, so a heavier train coasts a little farther. The train is tracked by its front car.</p>
     </div>
   </details>
@@ -494,13 +494,16 @@ const CAR_LEN = 4.2, CAR_GAP = 0.5;
 const DRAG_K = 0.5 * 1.2 * 0.7 * 1.3;   // ½·air density·drag coefficient·frontal area (same for any number of cars)
 const V_LIFT = 5.0;                     // chain lift speed, m/s
 const SUBSTEPS = 14;
-const BRAKE_LEN = 24, BRAKE_DECEL = 4;  // brake run at the end station: the brakes can stop a train arriving at up to sqrt(2*4*24) ≈ 14 m/s
+const BRAKE_LEN = 26, BRAKE_DECEL = 4;  // brake run at the end station: the brakes can stop a train arriving at up to sqrt(2*4*26) ≈ 14.4 m/s
 const V_SAFE = Math.sqrt(2*BRAKE_DECEL*BRAKE_LEN);
 const G_NOTE_HI = 5, G_NOTE_LO = -1.5;  // outside this range, the results add a note about the force on riders
-const MIN_GAP = 8;
+const MIN_GAP = 8;                      // smaller than GRID, so nodes can sit on neighbouring lines
 const Y_MAX = 72, LIFT_MIN = 8;
-const LOOP_H = [0, 12, 18, 24, 30];     // loop heights, metres
-const LOOP_NAMES = ['', 'Small', 'Medium', 'Large', 'Giant'];
+const LOOP_H = [0, 12, 18, 24, 30];     // loop heights for the Small / Medium / Large / Giant buttons, metres
+const LOOP_MIN = 8, LOOP_MAX = 36;      // a loop dragged with the mouse can be any height in this range
+const LOOP_CLEAR = 4;                   // track needed after a loop before the next node, metres
+const GRID = 10;                        // nodes sit on the white vertical lines, every 10 m
+const snapX = x => Math.round(x/GRID)*GRID;
 const LOOP_A = 0.8;                     // loop curvature profile: 1 - A*cos(2*pi*u); 1 would be a pure teardrop
 const DS = 0.2;                         // track resolution, metres
 const HIT_PX = 20, NODE_PX = 9;
@@ -511,15 +514,15 @@ const COLOR_NAMES = ['red','orange','yellow','green','blue','purple','gray','tea
 const PATTERNS = ['plain','stripes','flames','stars','dots','zigzag'];
 const PATTERN_NAMES = ['Plain','Racing stripes','Flames','Stars','Polka dots','Lightning'];
 
-/* Presets, checked headlessly at 1-8 cars: at medium friction each one reaches the end station slowly
-   enough for the brakes (the "too tall" one always gets stuck). Changing the friction can tip a design
-   into crashing or getting stuck, which is worth exploring. */
+/* Presets (nodes on the 10 m grid lines; a third number is a loop height in metres), checked headlessly
+   at 1-8 cars: at medium friction each one reaches the end station slowly enough for the brakes (the
+   "too tall" one always gets stuck). Changing the friction can tip a design into crashing or getting stuck. */
 const PRESETS = {
-  classic:[[10,0],[32,44],[76,2,3],[140,20],[164,10],[190,26]],
-  double :[[10,0],[32,46],[78,2,3],[124,2,3],[190,24]],
-  camel  :[[10,0],[30,40],[66,4],[100,24],[130,5],[160,15],[190,27]],
-  family :[[10,0],[30,24],[60,5],[88,15],[116,5],[142,10],[164,4],[190,14]],
-  toohigh:[[10,0],[30,30],[64,4],[104,34],[140,6],[166,12],[190,14]]
+  classic:[[10,0],[30,44],[80,2,24],[140,20],[160,10],[190,26]],
+  double :[[10,0],[30,46],[80,2,24],[130,2,24],[190,23.5]],
+  camel  :[[10,0],[30,40],[70,4],[100,24],[130,5],[160,15],[190,27]],
+  family :[[10,0],[30,24],[60,5],[90,15],[120,5],[140,10],[160,4],[190,14]],
+  toohigh:[[10,0],[30,30],[60,4],[100,34],[140,6],[170,12],[190,14]]
 };
 
 /* ============================ dom ============================ */
@@ -531,7 +534,8 @@ const crumbs = [...document.querySelectorAll('.crumbs button')];
 
 /* ============================ state ============================ */
 let step = 0, maxStep = 0;
-let nodes = PRESETS.classic.map(p=>({x:p[0], y:p[1], loop:p[2]||0}));
+const START_NODES = [[10,0],[30,50]];  // a new coaster: just the station and the top of the lift hill
+let nodes = START_NODES.map(p=>({x:p[0], y:p[1], loop:0}));
 let selected = 1, dragging = -1, hover = null;
 let cars = 3, mu = 0.012;
 let design = {name:'The Screaming Eagle', pattern:'flames', main:2, detail:0};
@@ -545,7 +549,7 @@ let cam = {x:100, y:30};
 const mass = () => cars*MASS_PER_CAR;
 
 /* -------- per-viewer save (convenience only) -------- */
-const SAVE_KEY = 'coaster-creator-v2';
+const SAVE_KEY = 'coaster-creator-v3';
 function save(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify({design, cars, nodes:nodes.map(n=>[n.x,n.y,n.loop])})); }catch(e){}
 }
@@ -612,7 +616,7 @@ function buildTrack(){
   const CP=[];
   nodes.forEach((n,i)=>{
     CP.push({x:n.x, y:n.y, flat:!!n.loop, node:i, loopOut:!!n.loop});
-    if(n.loop) CP.push({x:n.x+loopD(LOOP_H[n.loop]), y:n.y, flat:true, node:i, loopEnd:true});
+    if(n.loop) CP.push({x:n.x+loopD(n.loop), y:n.y, flat:true, node:i, loopEnd:true});
   });
   const n=CP.length, X=CP.map(p=>p.x), Y=CP.map(p=>p.y);
   const h=[], del=[];
@@ -636,7 +640,7 @@ function buildTrack(){
   for(let i=0;i<n-1;i++){
     cpIdx[i]=raw.length;
     if(CP[i].loopOut){
-      const lp=loopPoints(X[i],Y[i],LOOP_H[nodes[CP[i].node].loop]);
+      const lp=loopPoints(X[i],Y[i],nodes[CP[i].node].loop);
       const L={rawA:raw.length, node:CP[i].node};
       for(let k=0;k<lp.length-1;k++) raw.push(lp[k]);
       L.rawB=raw.length; loops.push(L);
@@ -881,20 +885,20 @@ function refreshNodeUI(){
   let label;
   if(i===0) label='Station (start)';
   else if(i===1) label='Lift hill top · '+nd.y.toFixed(1)+' m';
-  else label='Node '+(i+1)+' · '+nd.y.toFixed(1)+' m'+(nd.loop?' · '+LOOP_NAMES[nd.loop]+' loop':'');
+  else label='Node '+(i+1)+' · '+nd.y.toFixed(1)+' m'+(nd.loop?' · '+nd.loop.toFixed(1)+' m loop':'');
   $('nodeInfo').textContent=label;
   const canLoop = i>=2 && i<nodes.length-1;
   $('btnLoop').disabled=!canLoop;
   $('btnLoop').textContent=nd.loop?'Remove loop':'Add loop';
   $('loopSize').disabled=!canLoop;
-  if(nd.loop) $('loopSize').value=String(nd.loop);
+  if(nd.loop){ let k=1; for(let q=1;q<LOOP_H.length;q++) if(Math.abs(LOOP_H[q]-nd.loop)<Math.abs(LOOP_H[k]-nd.loop)) k=q; $('loopSize').value=String(k); }
   $('btnDel').disabled = i<=1 || nodes.length<=3;
   $('btnHill').disabled = i===0;
   refreshUI();
 }
 
 function trackGuide(){
-  if(!trackComplete()) say('','<b>Keep building!</b>','Click a node and use <b>build hill</b> or <b>build loop</b>, or click to the right of the last node. Reach <b>COASTER END</b> to unlock the test.');
+  if(!trackComplete()) say('','<b>Build an initial hill to put energy into your coaster.</b>','Then add hills and loops to use up energy so it doesn\u2019t crash. Click a node to build from it. Reach <b>COASTER END</b> to test.');
   else say('','<b>Your track reaches the end!</b>','Drag nodes to change hills, add a loop, or press <b>Next</b> to test it.');
 }
 
@@ -1176,7 +1180,7 @@ function drawRealTrack(){
     const X=SX(top.x), w2=Math.max(3,0.6*ppm);
     ctx.fillStyle=PAL.support; ctx.strokeStyle=PAL.supportEdge;
     ctx.beginPath(); ctx.rect(X-w2/2, SY(top.y), w2, SY(0)-SY(top.y)); ctx.fill(); ctx.stroke();
-    if(a.y>1){ const XA=SX(a.x+loopD(LOOP_H[nodes[L.node].loop])/2); ctx.beginPath(); ctx.rect(XA-w2/2, SY(a.y)+0.2*ppm, w2, SY(0)-SY(a.y)); ctx.fill(); ctx.stroke(); }
+    if(a.y>1){ const XA=SX(a.x+loopD(nodes[L.node].loop)/2); ctx.beginPath(); ctx.rect(XA-w2/2, SY(a.y)+0.2*ppm, w2, SY(0)-SY(a.y)); ctx.fill(); ctx.stroke(); }
   }
   // rail: pale band with darker edges, ties hanging underneath
   const path=(off)=>{
@@ -1341,7 +1345,8 @@ function drawEditor(){
 
   // track: thick white line with a dotted texture
   const P=track.P;
-  const line=()=>{ ctx.beginPath(); ctx.moveTo(SX(P[0].x),SY(P[0].y)); for(let i=2;i<P.length;i+=2) ctx.lineTo(SX(P[i].x),SY(P[i].y)); ctx.lineTo(SX(P[P.length-1].x),SY(P[P.length-1].y)); };
+  const endI = trackComplete() ? P.length-1 : Math.min(P.length-1, Math.round(track.brakeS/DS));   // brakes appear once the track reaches the end
+  const line=()=>{ ctx.beginPath(); ctx.moveTo(SX(P[0].x),SY(P[0].y)); for(let i=2;i<endI;i+=2) ctx.lineTo(SX(P[i].x),SY(P[i].y)); ctx.lineTo(SX(P[endI].x),SY(P[endI].y)); };
   ctx.lineJoin=ctx.lineCap='round';
   line(); ctx.strokeStyle=PAL.trackW; ctx.lineWidth=Math.max(3,5.5*u); ctx.stroke();
   line(); ctx.strokeStyle=PAL.trackDash; ctx.lineWidth=Math.max(1,1.4*u); ctx.setLineDash([2*u,7*u]); ctx.stroke(); ctx.setLineDash([]);
@@ -1350,7 +1355,7 @@ function drawEditor(){
   ctx.stroke(); ctx.setLineDash([]);
 
   // brake run label
-  { const e=nodes[nodes.length-1];
+  if(trackComplete()){ const e=nodes[nodes.length-1];
     ctx.font='800 '+(11*u)+'px Poppins,system-ui,sans-serif'; ctx.fillStyle=PAL.lbl; ctx.textAlign='left';
     ctx.fillText('BRAKES \u25B6', SX(e.x)+12*u, SY(e.y)+18*u); }
 
@@ -1369,16 +1374,16 @@ function drawEditor(){
         ctx.strokeStyle='#e9ef4a'; ctx.lineWidth=Math.max(2,3*u); ctx.beginPath(); ctx.arc(SX(g.x),SY(g.y),24*u,0,7); ctx.stroke();
       }
     } else {
-      const g=loopSpot(hover), lp=loopPoints(n.x,n.y,LOOP_H[g.size]);
-      ctx.strokeStyle=g.room?'rgba(124,214,110,.85)':'rgba(230,80,60,.8)';
+      const g=loopSpot(hover), lp=loopPoints(n.x,n.y,g.h);
+      ctx.strokeStyle='rgba(124,214,110,.9)';
       ctx.beginPath(); lp.forEach((q,k)=>{ if(k%6===0||k===lp.length-1){ if(k===0) ctx.moveTo(SX(q.x),SY(q.y)); else ctx.lineTo(SX(q.x),SY(q.y)); } }); ctx.stroke();
       ctx.font='800 '+(13*u)+'px Poppins,system-ui,sans-serif'; ctx.fillStyle=PAL.lbl; ctx.textAlign='center';
-      ctx.fillText(LOOP_NAMES[g.size]+' loop \u00b7 '+LOOP_H[g.size]+' m'+(g.room?'':' (no room)'), SX(n.x+loopD(LOOP_H[g.size])/2), SY(n.y+LOOP_H[g.size])-12*u);
+      ctx.fillText('Loop \u00b7 '+g.h.toFixed(1)+' m tall', SX(n.x+loopD(g.h)/2), SY(n.y+g.h)-12*u);
       ctx.textAlign='left';
     }
   }
   // ghost preview of the next piece of track
-  if(hover && dragging<0 && !mode && !menuItems().length){
+  if(hover && dragging<0 && !mode){
     const g=ghostFor(hover);
     if(g){
       ctx.strokeStyle=PAL.ghost; ctx.lineWidth=Math.max(3,7*u);
@@ -1528,28 +1533,46 @@ function frame(ts){
 }
 
 /* ============================ track editing ============================ */
-function exitX(i){ const n=nodes[i]; return n.x + (n.loop ? loopD(LOOP_H[n.loop]) : 0); }
+function exitX(i){ const n=nodes[i]; return n.x + (n.loop ? loopD(n.loop) : 0); }
 function toWorld(ev){
   const r=cv.getBoundingClientRect(), k=r.width/W_WORLD;
   return {x:(ev.clientX-r.left)/k, y:Y_TOP-(ev.clientY-r.top)/k, k};
 }
+// the range of grid lines node i may sit on, given its neighbours
+function lineRange(i){
+  const n=nodes[i];
+  const lo = nodes[i-1].loop ? exitX(i-1)+LOOP_CLEAR : nodes[i-1].x+MIN_GAP;
+  const hi = i===nodes.length-1 ? END_BAND-3 : nodes[i+1].x-(n.loop ? loopD(n.loop)+LOOP_CLEAR : MIN_GAP);
+  return [Math.ceil(lo/GRID)*GRID, Math.floor(hi/GRID)*GRID];
+}
 function clampNode(i,x,y){
   if(i===0) return;
-  const lo=exitX(i-1)+MIN_GAP;
-  const n=nodes[i], D=n.loop?loopD(LOOP_H[n.loop]):0;
-  const hi=i===nodes.length-1 ? W_WORLD-9 : nodes[i+1].x-MIN_GAP-D;
-  n.x=Math.min(Math.max(x,lo),Math.max(lo,hi));
+  const n=nodes[i], [lo,hi]=lineRange(i);
+  if(hi>=lo) n.x=Math.min(Math.max(snapX(x),lo),hi);
   n.y=Math.min(Math.max(y, i===1?LIFT_MIN:0), Y_MAX);
 }
-// where would a click at p add a node?
+// tallest loop that fits at node i (room before the next node, and below the top of the sheet)
+function loopMax(i){
+  if(i<2 || i>=nodes.length-1) return 0;
+  const n=nodes[i];
+  return Math.min(LOOP_MAX, Y_TOP-2-n.y, (nodes[i+1].x-n.x-LOOP_CLEAR)/loopD(1));
+}
+// where would a click at p add a node? (on the nearest free white line)
 function ghostFor(p){
-  if(p.y<-1 || p.y>Y_MAX+3 || p.x>W_WORLD-9) return null;
-  const y=Math.min(Math.max(p.y,0),Y_MAX);
+  if(p.y<-1 || p.y>Y_MAX+3) return null;
+  const x=snapX(p.x), y=Math.min(Math.max(p.y,0),Y_MAX);
+  if(x<GRID || x>END_BAND-3 || nodes.some(n=>n.x===x)) return null;
   const lastI=nodes.length-1;
-  if(p.x>exitX(lastI)+MIN_GAP) return {mode:'append', x:p.x, y, a:{x:exitX(lastI), y:nodes[lastI].y}};
+  if(x>nodes[lastI].x){
+    const lo = nodes[lastI].loop ? exitX(lastI)+LOOP_CLEAR : nodes[lastI].x+MIN_GAP;
+    return x>=lo ? {mode:'append', x, y, a:{x:exitX(lastI), y:nodes[lastI].y}} : null;
+  }
   for(let i=1;i<lastI;i++){
-    if(p.x>exitX(i)+MIN_GAP && p.x<nodes[i+1].x-MIN_GAP)
-      return {mode:'insert', at:i+1, x:p.x, y, a:{x:exitX(i),y:nodes[i].y}, b:{x:nodes[i+1].x,y:nodes[i+1].y}};
+    if(x>nodes[i].x && x<nodes[i+1].x){
+      const lo = nodes[i].loop ? exitX(i)+LOOP_CLEAR : nodes[i].x+MIN_GAP;
+      if(x>=lo && x<=nodes[i+1].x-MIN_GAP) return {mode:'insert', at:i+1, x, y, a:{x:exitX(i),y:nodes[i].y}, b:{x:nodes[i+1].x,y:nodes[i+1].y}};
+      return null;
+    }
   }
   return null;
 }
@@ -1579,24 +1602,30 @@ function menuHit(ev){
   return menuItems().find(it=>Math.hypot(it.x-X,it.y-Y)<16*u);
 }
 function startMode(m){
+  if(m==='hill' && !hillSpot({x:nodes[selected].x+GRID, y:nodes[selected].y})){
+    say('bad','<b>No room for a hill here.</b>','There is no free white line before the next node. Move or delete the next node first.'); return;
+  }
+  if(m==='loop' && loopMax(selected)<LOOP_MIN){
+    say('bad','<b>No room for a loop here.</b>','A loop needs about '+Math.ceil(loopD(LOOP_MIN)+LOOP_CLEAR)+' m of space before the next node. Move or delete the next node first.'); return;
+  }
   mode=m; hover=null;
-  if(m==='hill') say('','<b>Build a hill.</b>','Move your mouse to the right, then click again to add a hill. Press <b>Esc</b> to cancel.');
-  else say('','<b>Build a loop.</b>','Move your mouse to the right to size the loop, then click again to add it. Press <b>Esc</b> to cancel.');
+  if(m==='hill') say('','<b>Build a hill.</b>','Move your mouse to a white line on the right, then click again to add a hill. Press <b>Esc</b> to cancel.');
+  else say('','<b>Build a loop.</b>','Move your mouse up or down to make the loop bigger or smaller, then click again to add it. Press <b>Esc</b> to cancel.');
 }
 function endMode(){ mode=null; trackGuide(); }
 // where a new hill from the selected node would go
 function hillSpot(p){
-  const i=selected, lo=exitX(i)+MIN_GAP, hi=i<nodes.length-1 ? nodes[i+1].x-MIN_GAP : W_WORLD-9;
+  const i=selected;
+  const lo=Math.ceil((nodes[i].loop ? exitX(i)+LOOP_CLEAR : nodes[i].x+MIN_GAP)/GRID)*GRID;
+  const hi=Math.floor((i<nodes.length-1 ? nodes[i+1].x-MIN_GAP : END_BAND-3)/GRID)*GRID;
   if(hi<lo) return null;
-  return {x:Math.min(Math.max(p.x,lo),hi), y:Math.min(Math.max(p.y,0),Y_MAX), at:i+1, room:true};
+  return {x:Math.min(Math.max(snapX(p.x),lo),hi), y:Math.min(Math.max(p.y,0),Y_MAX), at:i+1};
 }
-// loop size from how far right the mouse is
+// loop height follows the mouse smoothly (up = bigger), limited to what fits
 function loopSpot(p){
-  const i=selected, n=nodes[i], dx=p.x-n.x;
-  let size=1;
-  for(let k=1;k<LOOP_H.length;k++) if(loopD(LOOP_H[k])<=dx) size=k;
-  const room = nodes[i+1].x-n.x >= loopD(LOOP_H[size])+MIN_GAP;
-  return {size, room};
+  const i=selected, n=nodes[i];
+  const h=Math.min(Math.max(p.y-n.y, LOOP_MIN), loopMax(i));
+  return {h:Math.round(h*2)/2};
 }
 function addNodeAt(at,x,y){
   if(nodes.length>=16){ say('bad','<b>That’s a lot of track!</b>','Delete a node before adding another.'); return false; }
@@ -1614,15 +1643,14 @@ cv.addEventListener('pointerdown',ev=>{
     else if(it.id==='remove') deleteNode();
     ev.preventDefault(); return;
   }
+  if(mode && (p.x<nodes[selected].x-3 || (mode==='loop' && p.x>nodes[selected+1].x+3))){ endMode(); ev.preventDefault(); return; }   // clicking away cancels
   if(mode==='hill'){
     const g=hillSpot(p);
     if(g && addNodeAt(g.at,g.x,g.y)) endMode();
     ev.preventDefault(); return;
   }
   if(mode==='loop'){
-    const g=loopSpot(p);
-    if(!g.room){ say('bad','<b>No room for that loop.</b>','Move the mouse back for a smaller loop, or drag the next node farther right first.'); ev.preventDefault(); return; }
-    nodes[selected].loop=g.size; trackChanged(); editPop('LOOP!', selected); endMode();
+    nodes[selected].loop=loopSpot(p).h; trackChanged(); editPop('LOOP!', selected); endMode();
     ev.preventDefault(); return;
   }
   const hitM=HIT_PX/p.k;
@@ -1647,7 +1675,7 @@ cv.addEventListener('pointermove',ev=>{
   const p=toWorld(ev);
   cv.style.cursor = menuHit(ev) ? 'pointer' : '';
   if(dragging<0){ hover=p; return; }
-  clampNode(dragging,p.x,p.y); dragMoved=true;
+  clampNode(dragging,nodes[dragging].x,p.y); dragMoved=true;   // nodes slide up and down their white line
   trackChanged();
   const wd=hillWord(dragging);
   if(wd && wd!==lastWord){ lastWord=wd; editPop(wd, dragging); }
@@ -1669,21 +1697,25 @@ cv.addEventListener('lostpointercapture',endDrag);
 function addHillAuto(){
   const i=selected;
   if(i===0) return;
-  const lo=exitX(i)+MIN_GAP, hi=i<nodes.length-1 ? nodes[i+1].x-MIN_GAP : W_WORLD-9;
-  if(hi<lo){ say('bad','<b>No room for a hill here.</b>','Drag the next node farther right first.'); return; }
-  const x = i<nodes.length-1 ? (lo+hi)/2 : Math.min(lo+16, hi);
+  const lo=Math.ceil((nodes[i].loop ? exitX(i)+LOOP_CLEAR : nodes[i].x+MIN_GAP)/GRID)*GRID;
+  const hi=Math.floor((i<nodes.length-1 ? nodes[i+1].x-MIN_GAP : END_BAND-3)/GRID)*GRID;
+  if(hi<lo){ say('bad','<b>No room for a hill here.</b>','There is no free white line before the next node.'); return; }
+  const x = i<nodes.length-1 ? snapX((lo+hi)/2) : Math.min(lo+GRID, hi);
   const y = i<nodes.length-1 ? (nodes[i].y+nodes[i+1].y)/2 : Math.max(nodes[i].y-6, 2);
-  if(addNodeAt(i+1,x,y)) trackGuide();
+  if(addNodeAt(i+1,Math.min(Math.max(x,lo),hi),y)) trackGuide();
+}
+function fitLoop(i, want){
+  const mx=loopMax(i);
+  if(mx<LOOP_MIN){ say('bad','<b>No room for a loop here.</b>','Move or delete the next node to make space.'); return 0; }
+  if(want>mx) say('','<b>Loop made smaller to fit.</b>','It is '+mx.toFixed(1)+' m tall. Move the next node farther right for a bigger one.');
+  return Math.round(Math.min(want,mx)*2)/2;
 }
 function toggleLoop(){
   const i=selected, n=nodes[i];
   if(i<2 || i>=nodes.length-1) return;
   if(n.loop){ n.loop=0; trackChanged(); return; }
-  const size=+$('loopSize').value, D=loopD(LOOP_H[size]);
-  if(nodes[i+1].x - n.x < D+MIN_GAP){
-    say('bad','<b>No room for a loop here.</b>','Drag the next node farther right, or choose a smaller loop.'); return;
-  }
-  n.loop=size; trackChanged(); editPop('LOOP!', i);
+  const h=fitLoop(i, LOOP_H[+$('loopSize').value]);
+  if(h){ n.loop=h; trackChanged(); editPop('LOOP!', i); }
 }
 function deleteNode(){
   const i=selected;
@@ -1695,12 +1727,8 @@ $('btnLoop').onclick=toggleLoop;
 $('loopSize').onchange=e=>{
   const n=nodes[selected];
   if(!n.loop) return;
-  const old=n.loop; n.loop=+e.target.value;
-  if(nodes[selected+1].x-n.x < loopD(LOOP_H[n.loop])+MIN_GAP){
-    n.loop=old; e.target.value=String(old);
-    say('bad','<b>No room for a bigger loop.</b>','Drag the next node farther right first.'); return;
-  }
-  trackChanged(); editPop('LOOP!', selected);
+  const h=fitLoop(selected, LOOP_H[+e.target.value]);
+  if(h){ n.loop=h; trackChanged(); editPop('LOOP!', selected); }
 };
 $('btnDel').onclick=deleteNode;
 $('preset').onchange=e=>{
@@ -1719,7 +1747,7 @@ cv.addEventListener('keydown',ev=>{
   if(ev.key==='Delete'||ev.key==='Backspace'){ deleteNode(); ev.preventDefault(); return; }
   const st=ev.shiftKey?4:1; let dx=0,dy=0;
   if(ev.key==='ArrowUp')dy=st; else if(ev.key==='ArrowDown')dy=-st;
-  else if(ev.key==='ArrowLeft')dx=-st; else if(ev.key==='ArrowRight')dx=st;
+  else if(ev.key==='ArrowLeft')dx=-GRID; else if(ev.key==='ArrowRight')dx=GRID;   // left / right hop to the next white line
   else return;
   ev.preventDefault();
   clampNode(selected,nodes[selected].x+dx,nodes[selected].y+dy);
@@ -1738,7 +1766,7 @@ function toggleRun(){
 }
 btnRun.onclick=toggleRun;
 $('btnReset').onclick=()=>{
-  if(step===2){ nodes=[{x:10,y:0,loop:0},{x:32,y:40,loop:0}]; selected=1; trackChanged(); trackGuide(); }
+  if(step===2){ nodes=START_NODES.map(p=>({x:p[0],y:p[1],loop:0})); selected=1; menuOpen=true; mode=null; trackChanged(); trackGuide(); }
   else { resetCart(); STEP_GUIDE[3](); }
 };
 $('btnSlow').onclick=e=>{ slow=!slow; e.currentTarget.setAttribute('aria-pressed',String(slow)); };
