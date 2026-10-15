@@ -142,6 +142,35 @@
     font-weight:800;font-size:clamp(14px,1.2vw,20px);color:rgba(0,0,0,.55);
     background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 55%,rgba(0,0,0,.08));
   }
+  .scorepanel{position:absolute;top:0;background:var(--floor);overflow:auto;padding:2% 4%;display:flex;flex-direction:column}
+  .scorepanel[hidden]{display:none}
+  .eq[hidden]{display:none}
+  .eqtotal{grid-column:2;font-size:clamp(20px,1.8vw,28px);font-weight:700;gap:24px;padding:8px 28px;min-width:min(420px,100%);justify-content:space-between}
+  .eqtotal b{font-weight:800;font-variant-numeric:tabular-nums}
+  .scorepanel h2{margin:0 0 1%;text-align:center;font-size:clamp(20px,2vw,30px);font-weight:800;color:var(--ink)}
+  .scoretable{width:100%;border-collapse:collapse;font-size:clamp(14px,1.2vw,19px);color:var(--ink)}
+  .scoretable td{padding:3px 6px;border-bottom:2px solid color-mix(in srgb,var(--ink) 25%,transparent);font-weight:600}
+  .scoretable td:nth-child(2){font-weight:700;color:var(--ink-2)}
+  .scoretable td:last-child{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+  .scoretable tr.metric{cursor:help}
+  .scoretable tr.metric:hover td,.scoretable tr.metric:focus td{background:color-mix(in srgb,var(--accent-2) 14%,transparent)}
+  .scoretable tr.sub td{border-bottom:0;font-size:1.1em;padding-bottom:8px}
+  .scoretable tr.total td{border-top:3px solid var(--ink);border-bottom:0;font-size:1.25em;padding-top:6px}
+  .paper{position:absolute;left:50%;top:50%;width:min(420px,60%);background:#fbfaf4;color:#1d1f24;border:2px solid #333;box-shadow:6px 8px 0 rgba(0,0,0,.35);
+    padding:10px 14px;z-index:2;transform:translate(-50%,-50%) rotate(-14deg) scale(.1);opacity:0;pointer-events:none}
+  .paper.go{animation:paperIn 2.6s ease-out forwards}
+  @keyframes paperIn{0%{transform:translate(-50%,-50%) rotate(-560deg) scale(.1);opacity:1}35%{transform:translate(-50%,-50%) rotate(-14deg) scale(1);opacity:1}
+    80%{transform:translate(-50%,-50%) rotate(-14deg) scale(1);opacity:1}100%{transform:translate(-50%,-50%) rotate(-14deg) scale(1.05);opacity:0}}
+  .paper .mast{font:italic 800 18px Georgia,serif;text-align:center;border-bottom:2px solid #333;padding-bottom:4px}
+  .paper .head{font:400 clamp(26px,3vw,40px)/1 Bangers,Poppins,sans-serif;text-align:center;margin:8px 0;letter-spacing:.02em}
+  .paper .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .paper .cols span{height:60px;background:repeating-linear-gradient(#999 0 2px,transparent 2px 7px)}
+  @media print{
+    body *{visibility:hidden}
+    #scorePanel,#scorePanel *{visibility:visible}
+    #scorePanel{position:fixed!important;left:0!important;top:0!important;width:100%!important;height:auto!important;background:#fff;color:#000}
+    .paper{display:none}
+  }
   .ebar .s-pe{background-color:var(--pe)} .ebar .s-ke{background-color:var(--ke)} .ebar .s-th{background-color:var(--th)}
 
   .bottom{
@@ -243,7 +272,9 @@
       <button data-step="0">Cart Design</button><span class="sep" aria-hidden="true">&gt;</span>
       <button data-step="1">Cart Length</button><span class="sep" aria-hidden="true">&gt;</span>
       <button data-step="2">Track Design</button><span class="sep" aria-hidden="true">&gt;</span>
-      <button data-step="3">Coaster Test</button>
+      <button data-step="3">Coaster Test</button><span class="sep" aria-hidden="true">&gt;</span>
+      <button data-step="4">Debrief</button><span class="sep" aria-hidden="true">&gt;</span>
+      <button data-step="5">Final Score</button>
     </nav>
 
     <div class="toolbar">
@@ -266,12 +297,18 @@
           <span class="res" id="eqKE"></span>
         </div>
       </div>
+      <div class="eq eqtotal" id="eqTotal" hidden>Total Score: <b id="totalBig">0</b></div>
       <button id="btnNext" class="bevel" type="button">Next<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 3 8 7-8 7z" fill="currentColor"/></svg></button>
     </div>
 
     <div class="stage">
       <div class="scroller">
         <canvas id="cv" tabindex="0" role="application" aria-label="Coaster scene"></canvas>
+      </div>
+      <div class="scorepanel" id="scorePanel" hidden>
+        <div class="paper" id="paper" aria-hidden="true"><div class="mast">The Daily Coaster</div><div class="head" id="paperHead">COASTER A BIG SUCCESS!</div><div class="cols"><span></span><span></span><span></span></div></div>
+        <h2 id="scoreTitle">Results</h2>
+        <table class="scoretable" id="scoreTable"></table>
       </div>
       <div class="ebar" id="ebar" role="img" aria-label="Energy bar: potential, kinetic and thermal energy">
         <span class="s-pe" id="segPE">PE</span><span class="s-ke" id="segKE">KE</span><span class="s-th" id="segTH">TE</span>
@@ -369,6 +406,21 @@
         </div>
       </div>
 
+      <!-- step 4: debrief -->
+      <div class="stepctl" data-for="4">
+        <div class="grp"><span class="glabel">Mass</span><span class="nodeinfo" id="dMass">&ndash;</span></div>
+        <div class="grp"><span class="glabel">Speed</span><span class="nodeinfo" id="dSpeed">&ndash;</span></div>
+        <div class="grp"><span class="glabel">Height</span><span class="nodeinfo" id="dHeight">&ndash;</span></div>
+        <div class="grp"><span class="glabel">Time</span><span class="nodeinfo" id="dTime">&ndash;</span></div>
+      </div>
+      <!-- step 5: final score -->
+      <div class="stepctl" data-for="5">
+        <div class="row">
+          <button id="btnRetry" type="button">Improve my coaster</button>
+          <button id="btnPrint" type="button">Print</button>
+        </div>
+      </div>
+
       <div class="actions">
         <button id="btnReset" class="bevel" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 1-7.4 5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="M3 3v7h7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="resetTxt">Reset</span></button>
         <button id="btnRun" class="bevel go" type="button"><svg viewBox="0 0 20 20" aria-hidden="true" id="runIcon"><path d="M5 3l12 7-12 7z" fill="currentColor"/></svg><span id="runTxt">Play</span></button>
@@ -415,6 +467,11 @@
           <span style="color:var(--th);font-weight:800">orange TE</span> is thermal energy made by friction and air.</li>
         <li><strong>Read the numbers.</strong> The equations at the top fill in with the train's mass, height and speed
           as it moves. Press <strong>Whole track</strong> to see the full ride at once.</li>
+        <li><strong>Debrief.</strong> After the ride, a graph shows how the energy changed over time. Red is PE, green is KE
+          and orange is thermal energy. Drag the <strong>green circle</strong> along the bottom to read the energy, speed
+          and height at any moment.</li>
+        <li><strong>Final Score.</strong> You earn points for hills, loops, screams, top speed and how well you used the
+          brakes. Hover over each line to learn how to raise it.</li>
         <li><strong>Fix and try again.</strong> <strong>Stuck?</strong> It needs more energy, or lower hills.
           <strong>Crashed?</strong> It has too much energy at the end. Raise the end of the track or use up energy with
           more track. Press <strong>Back</strong>, change the track, and test it again.</li>
@@ -542,8 +599,11 @@ let design = {name:'The Screaming Eagle', pattern:'flames', main:2, detail:0};
 let running = false, slow = false, follow = true;
 let track = null;
 const cart = {s:0, v:0, thermal:0, gForce:1, dist:0, vmax:0, released:false, E0:0, vArrive:0, gMax:1, gMaxX:0, gMin:1, gMinX:0};
+let probing = false;
 let runTime = 0, done = null, maxS = 0, lastProgressT = 0, justReleased = false;
 let popups = [];
+let history = [], nextSample = 0, thrillT = 0, screams = 0, lastRun = null, debriefT = 0, debriefTimer = 0;
+const SAMPLE_DT = 0.05;                 // seconds of ride time between energy samples for the Debrief graph
 let popState = {scream:-9, air:-9, g:-9, lastS:0};
 let cam = {x:100, y:30};
 const mass = () => cars*MASS_PER_CAR;
@@ -721,6 +781,7 @@ function resetCart(){
   cart.dist=0; cart.vmax=0; cart.released=false; cart.E0=0; cart.vArrive=-1;
   cart.gMax=1; cart.gMin=1; cart.gMaxX=0; cart.gMinX=0;
   runTime=0; done=null; maxS=cart.s; lastProgressT=0;
+  history=[]; nextSample=0; thrillT=0; screams=0; clearTimeout(debriefTimer);
   running=false; popups=popups.filter(p=>p.edit);
   popState={scream:-9, air:-9, g:-9, lastS:cart.s};
   setRunBtn();
@@ -732,6 +793,7 @@ function step_(dt){
   for(let i=0;i<SUBSTEPS;i++){
     const h=dt/SUBSTEPS;
     const p=sampleAt(cart.s);
+    if(runTime>=nextSample){ record(p); nextSample+=SAMPLE_DT; }
     if(!cart.released){
       // chain lift: a motor pulls the train at constant speed (it supplies the energy)
       cart.v=V_LIFT; cart.gForce=(m*cart.v*cart.v*p.k + m*G*p.ux)/(m*G);
@@ -747,6 +809,7 @@ function step_(dt){
     }
     const N = m*cart.v*cart.v*p.k + m*G*p.ux;     // force from the track, perpendicular to it
     cart.gForce = N/(m*G);
+    if((p.uy<-0.5 && Math.abs(cart.v)>12) || cart.gForce>3){ thrillT+=h; if(thrillT>=0.5){ thrillT-=0.5; screams++; } }   // riders scream on fast drops and hard turns
     if(cart.gForce>cart.gMax){ cart.gMax=cart.gForce; cart.gMaxX=p.x; }
     if(cart.gForce<cart.gMin){ cart.gMin=cart.gForce; cart.gMinX=p.x; }
     const dir = cart.v>=0 ? 1 : -1;
@@ -774,6 +837,10 @@ function step_(dt){
   if(cart.released && (runTime-lastProgressT > 5 || runTime > 90)) finish('stuck');
 }
 
+function record(p){
+  const m=mass();
+  history.push({t:runTime, PE:m*G*Math.max(p.y,0), KE:0.5*m*cart.v*cart.v, TE:cart.thermal, h:Math.max(p.y,0), v:Math.abs(cart.v)});
+}
 function gNote(){
   // energy is the focus, so strong forces never end the ride; they get a note at the end instead
   const notes=[];
@@ -785,10 +852,17 @@ function gNote(){
 }
 function finish(kind){
   running=false; done=kind;
+  record(sampleAt(cart.s));
+  lastRun = {kind, history:history.slice(), name:(design.name||'').trim()||'Your coaster', mass:mass(), mu,
+    Emax:mass()*G*nodes[1].y+0.5*mass()*V_LIFT*V_LIFT, vmax:cart.vmax, screams, vArrive:cart.vArrive,
+    stopGap: kind==='ok' ? Math.max(0, track.len-cart.s) : null, nodes:nodes.map(n=>({...n}))};
+  debriefT = lastRun.history.length-1;
+  clearTimeout(debriefTimer);
+  if(!probing) debriefTimer=setTimeout(()=>{ if(step===3 && !running && done) setStep(4); }, 2300);
   const name=(design.name||'').trim()||'Your coaster';
   const kmh=v=>(v*3.6).toFixed(0)+' km/h';
   if(kind==='ok'){
-    splash('SAFE STOP!','ok');
+    splash('SUCCESS!','ok');
     say('ok','<b>'+esc(name)+' made it and stopped safely!</b>',
       'It reached the brakes at '+cart.vArrive.toFixed(1)+' m/s ('+kmh(cart.vArrive)+'). The brakes turned its last kinetic energy into thermal energy. '+gNote());
   } else if(kind==='crash'){
@@ -836,6 +910,8 @@ function say(tone, title, sub){
 }
 function setRunBtn(){
   const icon=$('runIcon');
+  if(step===3) btnNext.disabled = !lastRun;
+  if(typeof updateCrumbs==='function' && crumbs) updateCrumbs();
   if(running){ $('runTxt').textContent='Pause'; icon.innerHTML='<rect x="4" y="3" width="4.5" height="14" rx="1" fill="currentColor"/><rect x="11.5" y="3" width="4.5" height="14" rx="1" fill="currentColor"/>'; }
   else { $('runTxt').textContent = done ? 'Again' : (track && cart.s>startS()+0.01 ? 'Resume' : 'Play'); icon.innerHTML='<path d="M5 3l12 7-12 7z" fill="currentColor"/>'; }
 }
@@ -887,7 +963,7 @@ function refreshNodeUI(){
   else if(i===1) label='Lift hill top · '+nd.y.toFixed(1)+' m';
   else label='Node '+(i+1)+' · '+nd.y.toFixed(1)+' m'+(nd.loop?' · '+nd.loop.toFixed(1)+' m loop':'');
   $('nodeInfo').textContent=label;
-  const canLoop = i>=2 && i<nodes.length-1;
+  const canLoop = i>=1;
   $('btnLoop').disabled=!canLoop;
   $('btnLoop').textContent=nd.loop?'Remove loop':'Add loop';
   $('loopSize').disabled=!canLoop;
@@ -911,40 +987,182 @@ const STEP_GUIDE = [
 ];
 function setStep(n){
   if(n===3 && !trackComplete()){ say('bad','<b>The track isn’t finished.</b>','Add nodes until the track reaches <b>COASTER END</b>.'); return; }
-  running=false;
+  if(n>=4 && !lastRun){ say('bad','<b>Test your coaster first.</b>','The Debrief and Final Score appear after a test run.'); return; }
+  running=false; clearTimeout(debriefTimer);
   step=n; maxStep=Math.max(maxStep,n);
-  crumbs.forEach((b,i)=>{
-    if(i===n) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current');
-    b.disabled = i>maxStep && !(i===maxStep+1 && i<3) || (i===3 && !trackComplete());
-  });
+  updateCrumbs();
   document.querySelectorAll('.stepctl').forEach(el=>el.classList.toggle('on', +el.dataset.for===n));
   btnBack.disabled = n===0;
-  btnNext.disabled = n===3 || (n===2 && !trackComplete());
-  btnNext.style.visibility = n===3 ? 'hidden' : '';
+  btnNext.disabled = (n===2 && !trackComplete()) || (n===3 && !lastRun) || n===5;
+  btnNext.style.visibility = n===5 ? 'hidden' : '';
   btnRun.style.display = n===3 ? '' : 'none';
-  $('btnReset').style.display = n>=2 ? '' : 'none';
+  $('btnReset').style.display = (n===2||n===3) ? '' : 'none';
   $('resetTxt').textContent = n===2 ? 'Clear' : 'Reset';
   $('ebar').classList.toggle('show', n===3);
+  $('scorePanel').hidden = n!==5;
+  document.querySelector('.eq:not(.eqtotal)').hidden = n===5;
+  $('eqTotal').hidden = n!==5;
   cv.classList.toggle('edit', n===2);
   cv.setAttribute('aria-label', [
     'Preview of your coaster carts.',
     'Preview of your coaster train.',
-    'Track editor. Click to the right of the last node to add track. Tab selects a node, arrow keys move it, L adds a loop, Delete removes it.',
-    'Coaster test. Press space to play or pause.'][n]);
+    'Track editor. Click a node to build a hill or loop from it. Tab selects a node, arrow keys move it, H adds a hill, L adds a loop, Delete removes it.',
+    'Coaster test. Press space to play or pause.',
+    'Energy graph of your last ride. Drag the green circle, or use the left and right arrow keys, to read the energy at any moment.',
+    'Final score.'][n]);
   popups=[];
   if(n===3){ resetCart(); const p=sampleAt(cart.s); cam.x=p.x; cam.y=p.y; }
-  STEP_GUIDE[n]();
-  if(n===2) refreshNodeUI(); else refreshUI();
-  setRunBtn();
+  if(n===4) debriefGuide();
+  else if(n===5) showScore();
+  else STEP_GUIDE[n]();
+  if(n===2) refreshNodeUI(); else if(n<4) refreshUI(); else if(n===4) refreshDebrief();
+  setRunBtn(); placeOverlay();
+}
+function updateCrumbs(){
+  crumbs.forEach((b,i)=>{
+    if(i===step) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current');
+    b.disabled = (i>maxStep && !(i===maxStep+1 && i<3)) || (i===3 && !trackComplete()) || (i>=4 && !lastRun);
+  });
 }
 crumbs.forEach((b,i)=>b.addEventListener('click',()=>setStep(i)));
 btnBack.onclick=()=>setStep(Math.max(0,step-1));
-btnNext.onclick=()=>setStep(Math.min(3,step+1));
+btnNext.onclick=()=>setStep(Math.min(5,step+1));
+
+/* ============================ debrief: energy over time ============================ */
+function debriefGuide(){
+  const r=lastRun;
+  if(r.kind==='ok') say('ok','<b>Wow, great job!</b>','Your coaster changed potential energy into kinetic energy and, just as important, made enough thermal energy to stop safely. Drag the green circle to see the energy at any moment.');
+  else if(r.kind==='crash') say('bad','<b>Oh no! Your coaster had too much energy at the end.</b>','If you add more track, or raise the end station, less of its energy will be kinetic energy when it reaches the brakes. Drag the green circle to explore.');
+  else say('bad','<b>Oh no! Your coaster ran out of energy.</b>','Look where the green (KE) runs out. Make the hill there lower, or the lift hill taller. Drag the green circle to explore.');
+}
+function refreshDebrief(){
+  const r=lastRun; if(!r) return;
+  const k=Math.min(Math.max(Math.round(debriefT),0), r.history.length-1), smp=r.history[k];
+  $('dMass').textContent=r.mass+' kg';
+  $('dSpeed').textContent=smp.v.toFixed(1)+' m/s';
+  $('dHeight').textContent=smp.h.toFixed(1)+' m';
+  $('dTime').textContent=smp.t.toFixed(1)+' s';
+  eqM1.textContent=eqM2.textContent=r.mass+' kg';
+  eqH.classList.remove('hot');
+  eqH.textContent=smp.h.toFixed(1)+' m'; eqV.textContent=smp.v.toFixed(1)+' m/s';
+  eqPE.textContent='= '+fmtJ(smp.PE); eqKE.textContent='= '+fmtJ(smp.KE);
+}
+let DB=null;   // chart geometry, for hit-testing the slider
+function drawDebrief(){
+  const r=lastRun, w=cv.width, h=cv.height;
+  ctx.fillStyle=PAL.floor; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle=PAL.title; ctx.textAlign='center';
+  ctx.font='800 '+Math.round(26*u)+'px Poppins,system-ui,sans-serif';
+  ctx.fillText(r.name+' Results', w/2, 38*u);
+  const k=Math.min(Math.max(Math.round(debriefT),0), r.history.length-1), smp=r.history[k];
+  // three value boxes
+  const boxes=[['Kinetic Energy',smp.KE,'#3fae4d'],['Potential Energy',smp.PE,'#d94a3d'],['Thermal Energy',smp.TE,'#f0962a']];
+  const bw=(w-80*u)/3, bh=34*u, by=54*u;
+  ctx.font='700 '+Math.round(15*u)+'px Poppins,system-ui,sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='left';
+  boxes.forEach(([lbl,val,col],q)=>{
+    const bx=20*u+q*(bw+20*u);
+    ctx.fillStyle=col; ctx.strokeStyle='#2b2f36'; ctx.lineWidth=Math.max(1.5,2*u);
+    ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,6*u); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#14181e'; ctx.fillText(lbl+': '+fmtJ(val), bx+12*u, by+bh/2+1);
+  });
+  // chart frame
+  const x0=30*u, x1=w-30*u, y0=by+bh+18*u, y1=h-26*u;
+  ctx.fillStyle=PAL===PAL_DARK?'#20264f':'#b9bce9'; ctx.strokeStyle='#2b2f36'; ctx.lineWidth=Math.max(2,3*u);
+  ctx.beginPath(); ctx.roundRect(x0,y0,x1-x0,y1-y0,6*u); ctx.fill(); ctx.stroke();
+  const H=r.history, tEnd=Math.max(H[H.length-1].t, 0.1), E=Math.max(r.Emax, ...H.map(q=>q.PE+q.KE+q.TE))*1.04;
+  const cx0=x0+6*u, cx1=x1-28*u, cy0=y0+6*u, cy1=y1-6*u;
+  const X=t=>cx0+(cx1-cx0)*t/tEnd, Y=e=>cy1-(cy1-cy0)*e/E;
+  DB={cx0,cx1,cy1,X,tEnd};
+  const band=(lo,hi,col)=>{
+    ctx.fillStyle=col; ctx.beginPath();
+    H.forEach((q,i)=>{ const xx=X(q.t), yy=Y(hi(q)); if(i===0) ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy); });
+    for(let i=H.length-1;i>=0;i--) ctx.lineTo(X(H[i].t), Y(lo(H[i])));
+    ctx.closePath(); ctx.fill();
+  };
+  band(q=>0,              q=>q.PE,              '#d94a3d');
+  band(q=>q.PE,           q=>q.PE+q.KE,         '#3fae4d');
+  band(q=>q.PE+q.KE,      q=>q.PE+q.KE+q.TE,    '#f0962a');
+  // axis labels
+  ctx.fillStyle=PAL.title; ctx.font='700 '+Math.round(13*u)+'px Poppins,system-ui,sans-serif';
+  ctx.textAlign='left'; ctx.fillText('Time →', cx0+30*u, cy1-12*u);
+  ctx.save(); ctx.translate(x1-14*u,(y0+y1)/2); ctx.rotate(-Math.PI/2); ctx.textAlign='center';
+  ctx.fillText('Total energy in system →', 0, 0); ctx.restore();
+  // slider: line + green handle on the time axis
+  const sx=X(smp.t);
+  ctx.strokeStyle='rgba(20,24,30,.8)'; ctx.lineWidth=Math.max(1.5,2*u); ctx.setLineDash([5*u,4*u]);
+  ctx.beginPath(); ctx.moveTo(sx,cy0); ctx.lineTo(sx,y1); ctx.stroke(); ctx.setLineDash([]);
+  const g=ctx.createRadialGradient(sx-4*u,y1-4*u,2*u,sx,y1,14*u); g.addColorStop(0,'#c9f7a8'); g.addColorStop(1,'#2f9a3a');
+  ctx.fillStyle=g; ctx.strokeStyle='#14381c'; ctx.lineWidth=Math.max(1.5,2.5*u);
+  ctx.beginPath(); ctx.arc(sx,y1,13*u,0,7); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=Math.max(1.2,2*u);
+  ctx.beginPath(); ctx.moveTo(sx-5*u,y1-4*u); ctx.lineTo(sx-8*u,y1); ctx.lineTo(sx-5*u,y1+4*u); ctx.moveTo(sx+5*u,y1-4*u); ctx.lineTo(sx+8*u,y1); ctx.lineTo(sx+5*u,y1+4*u); ctx.stroke();
+  ctx.textBaseline='alphabetic'; ctx.textAlign='left';
+}
+function debriefAt(clientX){
+  if(!DB||!lastRun) return;
+  const r=cv.getBoundingClientRect(), X=(clientX-r.left)*cv.width/r.width;
+  const t=Math.min(Math.max((X-DB.cx0)/(DB.cx1-DB.cx0),0),1)*DB.tEnd;
+  const H=lastRun.history; let k=0; while(k<H.length-1 && H[k+1].t<=t) k++;
+  debriefT=k; refreshDebrief();
+}
+
+/* ============================ final score ============================ */
+function scoreRun(r){
+  // Hills: metres climbed after the lift. Loops: total loop height. Both x difficulty.
+  let climb=0;
+  for(let i=2;i<r.nodes.length;i++) climb+=Math.max(0, r.nodes[i].y-r.nodes[i-1].y);
+  const loopH=r.nodes.reduce((a,n)=>a+(n.loop||0),0);
+  const diff = r.mu<=0.006 ? ['Hard (low friction)',4] : r.mu<=0.015 ? ['Medium',3] : ['Easy (high friction)',2];
+  const build = Math.round((climb + loopH*2) * diff[1]);
+  // Ride: screams, top speed, and how well the brakes were used (stopping near the end of the brake run)
+  const scr=r.screams*3, spd=Math.round(r.vmax*4);
+  const acc = r.kind==='ok' ? Math.round(700*(1-r.stopGap/BRAKE_LEN)) : 0;
+  const ride = r.kind==='ok' ? scr+spd+acc : 0;
+  return {climb, loopH, diff, build, scr, spd, acc, ride, total:build+ride};
+}
+const SCORE_TIPS={
+  hills:'Hills: 1 point for every metre the train climbs after the lift hill. More (and taller) hills score more, but each climb turns KE back into PE.',
+  loops:'Loops: 2 points for every metre of loop height. Big loops need lots of kinetic energy at the bottom.',
+  diff:'Difficulty: low friction is hardest, because less energy turns into thermal energy and the train arrives faster. Your build points are multiplied.',
+  screams:'Screams: riders scream on fast, steep drops and hard turns. 3 points each.',
+  speed:'Top speed: 4 points for each m/s. Speed comes from turning PE into KE on a big drop.',
+  stop:'Stop accuracy: the brakes are worth up to 700 points. Arrive with just enough kinetic energy to use the whole brake run, without crashing.'
+};
+function showScore(){
+  const r=lastRun, sc=scoreRun(r);
+  $('scoreTitle').textContent=r.name+' Results';
+  const fmt=n=>n.toLocaleString();
+  const row=(id,label,mid,pts)=>`<tr class="metric" tabindex="0" data-tip="${id}"><td>${label}</td><td>${mid}</td><td>${pts}</td></tr>`;
+  $('scoreTable').innerHTML =
+    row('hills','Hills',sc.climb.toFixed(0)+' m',fmt(Math.round(sc.climb)))+
+    row('loops','Loops',sc.loopH.toFixed(1)+' m',fmt(Math.round(sc.loopH*2)))+
+    row('diff','Difficulty',sc.diff[0],'×'+sc.diff[1])+
+    `<tr class="sub"><td colspan="2">Build score</td><td>${fmt(sc.build)}</td></tr>`+
+    row('screams','Screams',String(r.screams),fmt(r.kind==='ok'?sc.scr:0))+
+    row('speed','Top speed',r.vmax.toFixed(1)+' m/s',fmt(r.kind==='ok'?sc.spd:0))+
+    row('stop','Stop accuracy', r.kind==='ok' ? r.stopGap.toFixed(1)+' m from the end' : (r.kind==='crash'?'Crashed':'Got stuck'), fmt(sc.acc))+
+    `<tr class="sub"><td colspan="2">Ride score${r.kind==='ok'?'':' (only for a safe stop)'}</td><td>${fmt(sc.ride)}</td></tr>`+
+    `<tr class="total"><td colspan="2">Total score</td><td>${fmt(sc.total)}</td></tr>`;
+  $('totalBig').textContent=fmt(sc.total);
+  $('scoreTable').querySelectorAll('tr.metric').forEach(tr=>{
+    const tip=()=>say('', '<b>'+tr.cells[0].textContent+'</b>', SCORE_TIPS[tr.dataset.tip]);
+    tr.addEventListener('mouseenter',tip); tr.addEventListener('focus',tip);
+  });
+  say('', '<b>Here’s your score!</b>', 'Hover over (or tab to) each line to learn how to raise it. How do you think your coaster could be improved?');
+  $('paperHead').textContent = r.kind==='ok' ? 'COASTER A BIG SUCCESS!' : r.kind==='crash' ? 'COASTER CRASHES AT STATION!' : 'COASTER STUCK ON HILL!';
+  const pp=$('paper'); pp.classList.remove('go'); void pp.offsetWidth; pp.classList.add('go');
+}
+function placeOverlay(){
+  const sp=$('scorePanel');
+  sp.style.left=cv.offsetLeft+'px'; sp.style.width=cv.clientWidth+'px'; sp.style.height=cv.clientHeight+'px';
+}
+$('btnPrint').onclick=()=>window.print();
+$('btnRetry').onclick=()=>setStep(2);
 
 function trackChanged(){
   buildTrack(); resetCart(); save();
   btnNext.disabled = step===2 && !trackComplete();
-  crumbs[3].disabled = !trackComplete();
+  updateCrumbs();
   if(step===2) refreshNodeUI();
 }
 
@@ -958,6 +1176,7 @@ function fit(){
   ppm0=cv.width/W_WORLD;
   u=dpr*Math.max(cssW/1100,0.62);
   $('ebar').style.width=Math.round(Math.min(cssW*0.48,720))+'px';   // keep the bar clear of the minimap
+  if(typeof placeOverlay==='function') placeOverlay();
 }
 // view: world -> screen
 let V={x0:0, y1:Y_TOP, ppm:1};
@@ -1511,7 +1730,9 @@ function draw(){
   if(step===0) drawPreview(13);
   else if(step===1) drawPreview(Math.max(13, cars*(CAR_LEN+CAR_GAP)*0.62));
   else if(step===2) drawEditor();
-  else drawTest();
+  else if(step===3) drawTest();
+  else if(step===4) drawDebrief();
+  else { ctx.fillStyle=PAL.floor; ctx.fillRect(0,0,cv.width,cv.height); }
 }
 
 /* ============================ loop ============================ */
@@ -1553,9 +1774,20 @@ function clampNode(i,x,y){
 }
 // tallest loop that fits at node i (room before the next node, and below the top of the sheet)
 function loopMax(i){
-  if(i<2 || i>=nodes.length-1) return 0;
+  if(i<1) return 0;
   const n=nodes[i];
-  return Math.min(LOOP_MAX, Y_TOP-2-n.y, (nodes[i+1].x-n.x-LOOP_CLEAR)/loopD(1));
+  // at the last node a loop extends the track: a new node goes on the first free line after it
+  const room = i<nodes.length-1 ? nodes[i+1].x-n.x-LOOP_CLEAR : Math.floor((END_BAND-3)/GRID)*GRID-n.x-LOOP_CLEAR;
+  return Math.min(LOOP_MAX, Y_TOP-2-n.y, room/loopD(1));
+}
+// put a loop of height h at node i (and, at the end of the track, a new node after it)
+function setLoop(i,h){
+  nodes[i].loop=h;
+  if(i===nodes.length-1){
+    const x=Math.ceil((exitX(i)+LOOP_CLEAR)/GRID)*GRID;
+    nodes.push({x:Math.min(x,Math.floor((END_BAND-3)/GRID)*GRID), y:nodes[i].y, loop:0});
+  }
+  trackChanged(); editPop('LOOP!', i);
 }
 // where would a click at p add a node? (on the nearest free white line)
 function ghostFor(p){
@@ -1592,7 +1824,7 @@ function menuItems(){
   if(i===0) return [];
   const X=SX(n.x), Y=SY(n.y), o=32*u, items=[];
   items.push({id:'hill', x:X-o, y:Y-o, label:'Build hill'});
-  if(i>=2 && i<nodes.length-1) items.push({id:'loop', x:X+o, y:Y-o, label:n.loop?'Remove loop':'Build loop'});
+  items.push({id:'loop', x:X+o, y:Y-o, label:n.loop?'Remove loop':'Build loop'});
   if(i>=2 && nodes.length>3) items.push({id:'remove', x:X+o, y:Y+o, label:'Delete node'});
   return items;
 }
@@ -1632,6 +1864,10 @@ function addNodeAt(at,x,y){
   nodes.splice(at,0,{x,y,loop:0}); selected=at; trackChanged(); editPop(hillWord(at), at); return true;
 }
 
+let dbDrag=false;
+cv.addEventListener('pointerdown',ev=>{ if(step!==4) return; cv.focus(); dbDrag=true; try{cv.setPointerCapture(ev.pointerId);}catch(e){} debriefAt(ev.clientX); ev.preventDefault(); });
+cv.addEventListener('pointermove',ev=>{ if(step===4 && dbDrag) debriefAt(ev.clientX); });
+cv.addEventListener('pointerup',()=>{ dbDrag=false; });
 cv.addEventListener('pointerdown',ev=>{
   if(step!==2) return;
   cv.focus();
@@ -1643,14 +1879,14 @@ cv.addEventListener('pointerdown',ev=>{
     else if(it.id==='remove') deleteNode();
     ev.preventDefault(); return;
   }
-  if(mode && (p.x<nodes[selected].x-3 || (mode==='loop' && p.x>nodes[selected+1].x+3))){ endMode(); ev.preventDefault(); return; }   // clicking away cancels
+  if(mode && (p.x<nodes[selected].x-3 || (mode==='loop' && selected<nodes.length-1 && p.x>nodes[selected+1].x+3))){ endMode(); ev.preventDefault(); return; }   // clicking away cancels
   if(mode==='hill'){
     const g=hillSpot(p);
     if(g && addNodeAt(g.at,g.x,g.y)) endMode();
     ev.preventDefault(); return;
   }
   if(mode==='loop'){
-    nodes[selected].loop=loopSpot(p).h; trackChanged(); editPop('LOOP!', selected); endMode();
+    setLoop(selected, loopSpot(p).h); endMode();
     ev.preventDefault(); return;
   }
   const hitM=HIT_PX/p.k;
@@ -1712,10 +1948,10 @@ function fitLoop(i, want){
 }
 function toggleLoop(){
   const i=selected, n=nodes[i];
-  if(i<2 || i>=nodes.length-1) return;
+  if(i<1) return;
   if(n.loop){ n.loop=0; trackChanged(); return; }
   const h=fitLoop(i, LOOP_H[+$('loopSize').value]);
-  if(h){ n.loop=h; trackChanged(); editPop('LOOP!', i); }
+  if(h) setLoop(i,h);
 }
 function deleteNode(){
   const i=selected;
@@ -1739,6 +1975,9 @@ $('preset').onchange=e=>{
 
 cv.addEventListener('keydown',ev=>{
   if(step===3 && (ev.key===' '||ev.key==='Enter')){ toggleRun(); ev.preventDefault(); return; }
+  if(step===4 && lastRun && (ev.key==='ArrowLeft'||ev.key==='ArrowRight')){
+    const st=(ev.shiftKey?20:2)*(ev.key==='ArrowLeft'?-1:1);
+    debriefT=Math.min(Math.max(Math.round(debriefT)+st,0),lastRun.history.length-1); refreshDebrief(); ev.preventDefault(); return; }
   if(step!==2) return;
   if(ev.key==='Escape' && mode){ endMode(); ev.preventDefault(); return; }
   if(ev.key==='Tab'){ selected=(selected+(ev.shiftKey?-1:1)+nodes.length)%nodes.length; menuOpen=true; refreshNodeUI(); ev.preventDefault(); return; }
@@ -1834,6 +2073,7 @@ window.__sim={
   setStep, toggleRun,
   // deterministic headless run: returns outcome + energy-conservation error after the lift
   probe(nodeList,nCars,friction){
+    probing=true;
     const oc=cars, om=mu, on=nodes;
     if(nCars) cars=nCars; if(friction) mu=friction;
     nodes=nodeList.map(p=>({x:p[0],y:p[1],loop:p[2]||0})); buildTrack(); resetCart();
@@ -1851,7 +2091,7 @@ window.__sim={
     const r={done, peakG:+peakG.toFixed(2), minG:+minG.toFixed(2), vmax:+cart.vmax.toFixed(1),
       maxS:+maxS.toFixed(0), trackLen:+track.len.toFixed(0), seconds:+runTime.toFixed(1),
       x:+sampleAt(cart.s).x.toFixed(0), vArrive:+cart.vArrive.toFixed(1), gMax:+cart.gMax.toFixed(1), gMin:+cart.gMin.toFixed(1), energyErrPct:+(100*worst).toFixed(3), thermalPct:+(100*cart.thermal/Math.max(cart.E0,1)).toFixed(1)};
-    cars=oc; mu=om; nodes=on; buildTrack(); resetCart();
+    cars=oc; mu=om; nodes=on; buildTrack(); resetCart(); probing=false;
     return r;
   }};
 })();
