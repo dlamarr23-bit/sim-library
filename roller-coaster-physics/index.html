@@ -409,7 +409,7 @@ const DEF = { car:"sedan", h1:70, h2:55, h3:27, mu:0 };
 const CFG = { ...DEF };
 
 const SLIDERS = [
-  { key:"h1", lab:"Hill 1", min:20, max:100, step:1, dp:0, unit:"cm" },
+  { key:"h1", lab:"Hill 1", min:0,  max:100, step:1, dp:0, unit:"cm" },
   { key:"h2", lab:"Hill 2", min:0,  max:100, step:1, dp:0, unit:"cm" },
   { key:"h3", lab:"Hill 3", min:0,  max:100, step:1, dp:0, unit:"cm" },
   { key:"mu", lab:"Coefficient of friction", min:0, max:0.2, step:0.01, dp:2, unit:"" },
@@ -671,7 +671,9 @@ function stopText(R){
   const head = "The simulation has stopped. ";
   if (R.end === "egg")  return head + (R.broke ? "Your toy car hit the egg and broke it!"
                                                : "Your toy car touched the egg but did not break it.");
-  if (R.end === "held") return head + "Friction is holding your toy car in place, so it never started rolling.";
+  if (R.end === "held") return head + (R.c.h1 === 0
+    ? "Hill 1 has no height, so your toy car had no energy to start rolling."
+    : "Friction is holding your toy car in place, so it never started rolling.");
   if (R.end === "rest") return head + "Friction stopped your toy car before it reached the egg.";
   return head + `Your toy car could not get over Hill ${R.maxX < XC2 ? 2 : 3}, so it never reached the egg.`;
 }
