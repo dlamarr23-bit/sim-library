@@ -3,348 +3,513 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gas laws — temperature, pressure and volume</title>
+<title>Pressure and Phase Changes</title>
 
 <!--
   ============================================================================
-  GAS LAWS LAB  (PhET-style, single file, no dependencies)
+  PRESSURE AND PHASE CHANGES  (PhET-style, single file, no dependencies)
 
   HOW TO EMBED
-  1) Easiest: upload this file and drop it in an iframe:
-       <iframe src="gas-laws-lab.html"
-               style="width:100%;height:1560px;border:0" loading="lazy"
-               title="Gas laws simulation"></iframe>
-  2) Or paste the style block, the cvlab div, and the script block into a page.
-     Every CSS rule is scoped under .cvlab.
+       <iframe src="pressure-and-phase-changes/"
+               style="width:100%;height:1700px;border:0" loading="lazy"
+               title="Pressure and phase changes simulation"></iframe>
 
   THE MODEL
-     Pressure comes from the ideal gas law, anchored so that oxygen at 150 K in
-     a full container reads 5.5 atm, which is the value the worksheet supplies:
-        P = 5.5 x (T / 150) / V          V in containers
+     Pressure comes from the ideal gas law, anchored so that 60 molecules of
+     oxygen at 150 K in a full container read 5.5 atm (the worksheet's value):
+        P = 5.5 x (T / 150) x (N / 60) / V        V in containers, N molecules
      Below the boiling point the substance condenses and the gauge falls away
      to a small vapour pressure. Pushing the lid down compresses the gas
      adiabatically, T x V^(gamma-1) = constant, so it warms and has to be
-     cooled back, exactly as the worksheet describes.
-     The particles are a visualisation driven by the temperature, not a
-     molecular dynamics calculation.
+     cooled back. The bicycle pump adds molecules (N goes up). Above 300 atm
+     the lid blows off, the gas escapes, and "Return lid" puts it back.
+     The phase diagram is a schematic (not to scale); its dot follows the
+     state the container is in. The particles are a visualisation driven by
+     the temperature, not a molecular dynamics calculation.
   ============================================================================
 -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-.cvlab{
-  --paper:#FFFFFF; --shell:#EEF1F5; --rule:#D8DDE5;
-  --ink:#131820; --ink-2:#59637333;
-  --ink-2:#596373;
-  --hot:#E8552F; --cold:#2E8FE0; --brand:#6D3FD4; --brand-d:#5227AE;
-  --ok:#16A34A; --warn:#D97706;
-  --steel:#9AA4B0; --tank:#3C4653;
-  --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  background:var(--shell);font-family:var(--font-b);color:var(--ink);font-weight:700;
-  padding:16px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.5;-webkit-font-smoothing:antialiased;
+/* ============================== TOKENS ============================== */
+:root{
+  --bg:#EEF1F5; --card:#FFFFFF; --field:#F5F7FB;
+  --ink:#131820; --ink-2:#4F5968; --muted:#7A8494;
+  --line:#D8DDE5; --line-2:#EEF0F4;
+  --accent:#6D3FD4; --accent-2:#5227AE; --accent-soft:#F1EBFF; --on-accent:#FFFFFF;
+  --hot:#E8552F; --cold:#2E8FE0;
+  --warn:#FFD83D; --warn-ink:#2A2100;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  color-scheme:light;
 }
-.cvlab *{box-sizing:border-box}
-.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-b);font-weight:700;letter-spacing:-.01em}
-.cvlab p{margin:0}
-.cvlab :focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1218; --card:#191E27; --field:#222935;
+    --ink:#EEF1F6; --ink-2:#B3BCCA; --muted:#8994A6;
+    --line:rgba(255,255,255,.14); --line-2:rgba(255,255,255,.07);
+    --accent:#A486FF; --accent-2:#8A68F5; --accent-soft:#2A2346; --on-accent:#120A26;
+    --hot:#FF7A56; --cold:#62B2FF;
+    --warn:#FFD83D; --warn-ink:#2A2100;
+    --shadow:0 1px 3px rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1218; --card:#191E27; --field:#222935;
+  --ink:#EEF1F6; --ink-2:#B3BCCA; --muted:#8994A6;
+  --line:rgba(255,255,255,.14); --line-2:rgba(255,255,255,.07);
+  --accent:#A486FF; --accent-2:#8A68F5; --accent-soft:#2A2346; --on-accent:#120A26;
+  --hot:#FF7A56; --cold:#62B2FF;
+  --warn:#FFD83D; --warn-ink:#2A2100;
+  --shadow:0 1px 3px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
 
-.cvlab-head{background:linear-gradient(120deg,#171C26,#2B2340);color:#fff;
-  border-radius:14px 14px 0 0;padding:16px 20px;
-  display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
-.cvlab-eyebrow{display:block;font-size:13px;font-weight:700;letter-spacing:.16em;
-  text-transform:uppercase;color:#B79BFF;margin-bottom:3px}
-.cvlab-head h1{font-size:clamp(20px,3vw,30px);line-height:1.1}
-.cvlab-readouts{display:flex;flex-wrap:wrap;gap:9px}
-.cvlab-ro{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
-  border-radius:10px;padding:7px 12px;min-width:104px}
-.cvlab-ro-k{display:block;font-size:11.5px;font-weight:700;letter-spacing:.13em;
-  text-transform:uppercase;color:#9FA9BC}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#F3F5FA;
-  font-variant-numeric:tabular-nums;white-space:nowrap}
-.cvlab-ro-t .cvlab-ro-v{color:#FF9E7A}
-.cvlab-ro-p .cvlab-ro-v{color:#8FD2FF}
-.cvlab-ro-s .cvlab-ro-v{color:#9FE8B4}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:700 17px/1.45 "Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:min(1900px,97vw);margin:0 auto;padding:16px 0 40px}
+@media (max-width:700px){.wrap{max-width:none;padding:12px 16px 32px}}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3,p{margin:0}
 
-.cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
-  border-radius:0 0 14px 14px;padding:12px}
-.cvlab canvas{display:block;width:100%}
-#cvlab-scene{height:clamp(340px,34vw,470px);border-radius:10px;touch-action:none;cursor:grab}
-#cvlab-scene.dragging{cursor:grabbing}
-@media (max-width:820px){#cvlab-scene{height:clamp(280px,52vw,380px)}}
-.cvlab-hint{font-size:14px;color:var(--ink-2);margin-top:8px;font-weight:700}
-.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;padding-top:12px;
-  border-top:1px solid var(--rule)}
-.cvlab-status{flex:1 1 260px;min-width:210px;font-size:16px;color:var(--ink-2);font-weight:700}
-.cvlab-status strong{color:var(--ink);font-weight:700}
+/* -------- header -------- */
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:12px}
+header.top>div:first-child{flex:1 1 320px;min-width:0}
+header.top .spacer{display:none}
+header.top .themebtn{order:2}
+header.top .readouts{order:3;flex:1 1 100%}
+@media (min-width:1300px){header.top .readouts{order:1;flex:0 1 auto}}
+header.top .eyebrow{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+header.top h1{font-size:clamp(26px,3vw,36px);font-weight:800;line-height:1.1;letter-spacing:-.01em}
+header.top p{margin-top:4px;color:var(--ink-2);font-size:clamp(15px,1.2vw,17px);font-weight:600}
+.spacer{flex:1 1 auto}
+.themebtn{flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);
+  color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow)}
+.themebtn:hover{border-color:var(--accent)}
+.themebtn svg{width:21px;height:21px}
 
-.cvlab-btn{font-family:var(--font-b);font-size:17px;font-weight:700;cursor:pointer;
-  background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:9px;
+.readouts{display:flex;flex-wrap:wrap;gap:9px}
+.ro{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:7px 14px;min-width:104px;box-shadow:var(--shadow);flex:1 1 auto}
+@media (max-width:700px){.ro{min-width:0;padding:6px 10px}.ro-k{font-size:11px!important}}
+.ro-k{display:block;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ro-v{display:block;font-size:clamp(18px,1.6vw,22px);font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ro-t .ro-v{color:var(--hot)}
+.ro-p .ro-v{color:var(--cold)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+
+/* -------- the bench: scene + phase diagram -------- */
+.bench{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media (min-width:1100px){.bench{grid-template-columns:minmax(0,1fr) minmax(300px,24%)}}
+.scenecard{padding:12px}
+canvas{display:block;width:100%}
+#scene{height:clamp(360px,36vw,560px);border-radius:10px;touch-action:none;cursor:default}
+#scene.grab{cursor:grab}
+#scene.dragging{cursor:grabbing}
+@media (max-width:820px){#scene{height:clamp(300px,62vw,420px)}}
+.hint{font-size:15px;color:var(--ink-2);margin-top:8px;font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;padding-top:12px;border-top:1px solid var(--line)}
+.status{flex:1 1 260px;min-width:210px;font-size:16px;color:var(--ink-2);font-weight:600}
+.status strong{color:var(--ink);font-weight:800}
+
+.btn{font-size:16px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  background:var(--card);color:var(--ink);border:2px solid var(--ink);border-radius:10px;
   padding:9px 16px;line-height:1.1;transition:transform .08s ease,background .14s ease,color .14s ease}
-.cvlab-btn:hover:not(:disabled){background:var(--ink);color:#fff}
-.cvlab-btn:active:not(:disabled){transform:translateY(1px)}
-.cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
-.cvlab-btn-go{background:var(--brand);border-color:var(--brand-d);color:#fff;min-width:150px}
-.cvlab-btn-go:hover:not(:disabled){background:var(--brand-d);color:#fff}
-.cvlab-btn-sm{font-size:15px;padding:7px 12px;border-width:1.5px;border-radius:8px}
+.btn:hover:not(:disabled){background:var(--ink);color:var(--card)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-go{background:var(--accent);border-color:var(--accent-2);color:var(--on-accent)}
+.btn-go:hover:not(:disabled){background:var(--accent-2);color:var(--on-accent)}
+.btn-warn{background:var(--warn);border-color:#B89400;color:var(--warn-ink);animation:pulse 1.2s ease-in-out infinite}
+.btn-warn:hover:not(:disabled){background:#FFE97A;color:var(--warn-ink)}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(255,216,61,.35)}}
+.btn-sm{font-size:14px;padding:7px 12px;border-width:1.5px;border-radius:9px}
+.iconbtn{width:46px;height:46px;border-radius:50%;padding:0;display:grid;place-items:center;flex:none}
+.iconbtn svg{width:20px;height:20px}
 
-.cvlab-grid{display:grid;gap:14px;margin-top:14px;
-  grid-template-columns:minmax(230px,1fr) minmax(210px,.88fr) minmax(240px,1.05fr)}
-@media (max-width:1020px){.cvlab-grid{grid-template-columns:1fr 1fr}}
-@media (max-width:660px){.cvlab-grid{grid-template-columns:1fr}}
-.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:14px;
-  display:flex;flex-direction:column;gap:11px}
-.cvlab-panel h2{font-size:15px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;
-  color:var(--ink);padding-bottom:9px;border-bottom:2px solid var(--ink)}
-.cvlab-note{font-size:14.5px;color:var(--ink-2);font-weight:700}
-.cvlab-row{display:flex;flex-wrap:wrap;gap:7px}
+.phasecard{padding:14px;display:flex;flex-direction:column;gap:10px}
+.phasecard h2,.panel h2{font-size:15px;letter-spacing:.11em;text-transform:uppercase;font-weight:800;
+  padding-bottom:9px;border-bottom:2px solid var(--ink)}
+#phase{height:clamp(240px,20vw,330px)}
+.phase-now{font-size:16px;color:var(--ink-2);font-weight:600}
+.phase-now strong{color:var(--ink);font-weight:800}
+.phase-tiny{font-size:13px;color:var(--muted);font-weight:600}
 
-.cvlab-subs{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.cvlab-sub{cursor:pointer;border:2px solid var(--rule);border-radius:10px;padding:8px;
-  background:var(--paper);display:flex;align-items:center;gap:8px;text-align:left;
-  font-family:var(--font-b);font-size:14.5px;font-weight:700;color:var(--ink);
+/* -------- control panels -------- */
+.grid{display:grid;gap:14px;margin-top:14px;
+  grid-template-columns:minmax(240px,1fr) minmax(230px,.95fr) minmax(280px,1.15fr)}
+@media (max-width:1020px){.grid{grid-template-columns:1fr 1fr}}
+@media (max-width:660px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{min-width:0}
+.panel{padding:14px;display:flex;flex-direction:column;gap:12px}
+.note{font-size:15px;color:var(--ink-2);font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+
+.subs{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.sub{cursor:pointer;border:2px solid var(--line);border-radius:10px;padding:8px;background:var(--card);
+  display:flex;align-items:center;gap:8px;text-align:left;font-size:15.5px;font-weight:800;color:var(--ink);
   transition:border-color .14s ease,background .14s ease}
-.cvlab-sub:hover{background:#F5F7FB}
-.cvlab-sub.is-on{border-color:var(--brand);background:#F3EEFF}
-.cvlab-sub i{display:block;width:20px;height:20px;flex:none;border-radius:50%}
+.sub:hover{background:var(--field)}
+.sub.is-on{border-color:var(--accent);background:var(--accent-soft)}
+.sub i{display:block;width:22px;height:22px;flex:none;border-radius:50%}
 
-.cvlab-field{display:flex;flex-direction:column;gap:5px}
-.cvlab-field>span{font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
-  color:var(--ink-2)}
-.cvlab input[type=range]{width:100%;margin:2px 0}
-#cvlab-heat{accent-color:var(--hot)}
-.cvlab select,.cvlab input[type=number]{font-family:var(--font-b);font-size:15.5px;padding:8px 9px;
-  border:1.5px solid var(--ink);border-radius:9px;background:#fff;color:var(--ink);width:100%;
-  font-weight:700}
-.cvlab-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.cvlab-vols{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.cvlab-qb{cursor:pointer;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;
-  padding:8px 2px;font-family:var(--font-m);font-size:14px;font-weight:700;color:var(--ink);
-  transition:border-color .14s ease,background .14s ease}
-.cvlab-qb:hover{background:#F5F7FB}
-.cvlab-qb.is-on{border-color:var(--brand);background:#F3EEFF;color:var(--brand-d)}
+.field{display:flex;flex-direction:column;gap:5px}
+.field>span{font-size:13px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+input[type=range]{width:100%;margin:2px 0}
+#heat{accent-color:var(--hot)}
+#vol{accent-color:var(--accent)}
+.heatlabels{display:flex;justify-content:space-between;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.heatlabels .c{color:var(--cold)} .heatlabels .h{color:var(--hot)}
+select,input[type=number]{font-size:16px;padding:8px 9px;border:1.5px solid var(--ink);border-radius:9px;
+  background:var(--field);color:var(--ink);width:100%;font-weight:700}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.vols{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.units{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.qb{cursor:pointer;background:var(--card);border:1.5px solid var(--line);border-radius:9px;
+  padding:8px 4px;font-size:15px;font-weight:800;color:var(--ink);transition:border-color .14s ease,background .14s ease}
+.qb:hover:not(:disabled){background:var(--field)}
+.qb.is-on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-2)}
+:root[data-theme="dark"] .qb.is-on{color:var(--accent)}
+.qb:disabled{opacity:.4;cursor:not-allowed}
+.count{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.count small{font-size:14px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-left:6px}
+.opts label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;font-size:15px;color:var(--ink-2);font-weight:600}
+.opts input{margin:4px 0 0;accent-color:var(--accent);flex:none}
 
-.cvlab-tablewrap{max-height:260px;overflow:auto;border:1px solid var(--rule);border-radius:9px}
-.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13.5px}
-.cvlab thead th{position:sticky;top:0;background:#F4F6FA;font-size:11px;letter-spacing:.04em;
-  font-weight:700;padding:6px 4px;text-align:right;border-bottom:1px solid var(--rule);
-  color:var(--ink-2);white-space:nowrap;font-family:var(--font-b);text-transform:uppercase}
-.cvlab thead th:first-child{text-align:left}
-.cvlab tbody td{padding:5px 4px;text-align:right;font-variant-numeric:tabular-nums;
-  border-bottom:1px solid #EEF0F4;white-space:nowrap}
-.cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
-.cvlab tbody tr:last-child td{border-bottom:0}
-.cvlab tbody tr.is-new td{background:#F3EEFF}
-.cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
+.tablewrap{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:9px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+thead th{position:sticky;top:0;background:var(--field);font-size:12px;letter-spacing:.06em;font-weight:800;
+  padding:7px 5px;text-align:right;border-bottom:1px solid var(--line);color:var(--ink-2);white-space:nowrap;text-transform:uppercase}
+thead th:first-child,thead th:nth-child(2){text-align:left}
+tbody td{padding:6px 5px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line-2);white-space:nowrap}
+tbody td:first-child{text-align:left;color:var(--muted)}
+tbody td:nth-child(2){text-align:left}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.is-new td{background:var(--accent-soft)}
+.empty{display:block;padding:14px 10px;font-size:15px;color:var(--ink-2);font-weight:600;white-space:normal;text-align:left}
 
-.cvlab-panel-graph{margin-top:14px}
-#cvlab-graph{height:clamp(260px,30vw,420px)}
-.cvlab-axes{display:flex;flex-wrap:wrap;gap:7px}
-.cvlab-key{display:flex;flex-wrap:wrap;gap:9px;margin-top:2px}
-.cvlab-kchip{display:flex;align-items:center;gap:7px;border:1.5px solid var(--rule);
-  border-radius:999px;padding:4px 12px 4px 6px;font-size:14.5px;font-weight:700;background:#fff}
-.cvlab-kchip.off{opacity:.42}
-.cvlab-kchip i{display:block;width:24px;height:0;border-top-width:4px;border-top-style:solid;
-  position:relative;flex:none}
-.cvlab-kchip i::after{content:"";position:absolute;left:7px;top:-5px;width:10px;height:10px;
-  border-radius:50%;background:inherit;border-top:0}
-.cvlab-kchip b{font-weight:700;color:var(--ink-2);font-size:13px}
-.cvlab-opts{display:flex;flex-direction:column;gap:8px;font-size:15px;color:var(--ink-2);font-weight:700}
-.cvlab-opts label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
-.cvlab-opts input{margin:3px 0 0;accent-color:var(--brand);flex:none}
+.graphcard{margin-top:14px;padding:14px;display:flex;flex-direction:column;gap:11px}
+.graphcard h2{font-size:15px;letter-spacing:.11em;text-transform:uppercase;font-weight:800;padding-bottom:9px;border-bottom:2px solid var(--ink)}
+#graph{height:clamp(270px,30vw,440px)}
+.axes{display:flex;flex-wrap:wrap;gap:7px}
+.axes .qb{padding:8px 12px}
+.key{display:flex;flex-wrap:wrap;gap:9px}
+.kchip{display:flex;align-items:center;gap:7px;border:1.5px solid var(--line);border-radius:999px;
+  padding:4px 12px 4px 8px;font-size:15px;font-weight:800;background:var(--card)}
+.kchip.off{opacity:.42}
+.kchip i{display:block;width:12px;height:12px;border-radius:50%;flex:none}
+.kchip b{font-weight:600;color:var(--muted);font-size:13px}
 
-.cvlab-notes{margin-top:14px;background:var(--paper);border:1px solid var(--rule);border-radius:14px;
-  padding:12px 16px}
-.cvlab-notes h3{font-size:17px;margin:0 0 8px}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#2B323C}
-.cvlab-notes ul,.cvlab-notes ol{margin:5px 0 0;padding-left:20px}
-.cvlab-notes li{margin:4px 0}
-.cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-@media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
+/* -------- dropdown sections -------- */
+.notes{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.notes summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 18px;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.notes summary::-webkit-details-marker{display:none}
+.notes summary svg{width:18px;height:18px;flex:none;transition:transform .18s ease}
+.notes[open] summary svg{transform:rotate(180deg)}
+.notes[open] summary{border-bottom:1px solid var(--line)}
+.notes-body{padding:12px 18px 16px}
+.notes p,.notes li{font-size:16.5px;color:var(--ink-2);font-weight:500;line-height:1.55;margin:0}
+.notes p + p{margin-top:9px}
+.notes ol,.notes ul{margin:0;padding-left:24px}
+.notes li{margin:7px 0}
+.notes strong{color:var(--ink);font-weight:800}
+.eq{display:inline-block;background:var(--field);border:1px solid var(--line);border-radius:6px;padding:1px 8px;color:var(--ink);font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#EEF1F5">
+<body>
+<div class="wrap">
 
-<div class="cvlab" id="cvlab">
-
-  <header class="cvlab-head">
+  <header class="top">
     <div>
-      <span class="cvlab-eyebrow">States of matter &middot; gas laws</span>
-      <h1>Temperature, pressure and volume</h1>
+      <span class="eyebrow">Motion lab &middot; states of matter</span>
+      <h1>Pressure and Phase Changes</h1>
+      <p>Heat it, squeeze it, or pump in more molecules. Watch the pressure and the phase diagram change.</p>
     </div>
-    <div class="cvlab-readouts">
-      <div class="cvlab-ro"><span class="cvlab-ro-k">Substance</span><span class="cvlab-ro-v" id="cvlab-ro-sub">Oxygen</span></div>
-      <div class="cvlab-ro cvlab-ro-t"><span class="cvlab-ro-k">Temperature</span><span class="cvlab-ro-v" id="cvlab-ro-t">45 K</span></div>
-      <div class="cvlab-ro cvlab-ro-p"><span class="cvlab-ro-k">Pressure</span><span class="cvlab-ro-v" id="cvlab-ro-p">0.0 atm</span></div>
-      <div class="cvlab-ro cvlab-ro-s"><span class="cvlab-ro-k">State</span><span class="cvlab-ro-v" id="cvlab-ro-state">Solid</span></div>
+    <div class="spacer"></div>
+    <button class="themebtn" id="themeBtn" type="button" aria-label="Switch to dark mode"></button>
+    <div class="readouts">
+      <div class="ro"><span class="ro-k">Substance</span><span class="ro-v" id="ro-sub">Oxygen</span></div>
+      <div class="ro ro-t"><span class="ro-k">Temperature</span><span class="ro-v" id="ro-t">45 K</span></div>
+      <div class="ro ro-p"><span class="ro-k">Pressure</span><span class="ro-v" id="ro-p">0.0 atm</span></div>
+      <div class="ro"><span class="ro-k">Molecules</span><span class="ro-v" id="ro-n">60</span></div>
+      <div class="ro"><span class="ro-k">State</span><span class="ro-v" id="ro-state">Solid</span></div>
     </div>
   </header>
 
-  <div class="cvlab-bench">
-    <canvas id="cvlab-scene" role="application" tabindex="0"
-      aria-label="A sealed container of particles with a movable lid, a graduated scale up the right hand side, a pressure gauge, a thermometer and a heater underneath."></canvas>
-    <p class="cvlab-hint">Drag the lid handle up and down, or use the volume buttons &middot; the scale on the right reads the volume in containers &middot; pushing the lid down warms the gas, so cool it back before you record</p>
-    <div class="cvlab-bar">
-      <button class="cvlab-btn cvlab-btn-go" id="cvlab-record">Record this row</button>
-      <button class="cvlab-btn cvlab-btn-sm" id="cvlab-reset">Reset</button>
-      <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
-        Oxygen at 45 K. Heat it up and watch what happens to the particles.
-      </p>
+  <div class="bench">
+    <div class="card scenecard">
+      <canvas id="scene" role="application" tabindex="0"
+        aria-label="A sealed container of molecules with a movable lid. A pressure gauge and a thermometer go through the lid. A bicycle pump on the left adds molecules. A heater sits underneath."></canvas>
+      <p class="hint">Drag the <strong>purple handle</strong> on the lid to squeeze the container. Drag the <strong>pump handle</strong> up and down to add molecules. Over 300 atm, the lid pops off!</p>
+      <div class="bar">
+        <button class="btn iconbtn" id="pause" type="button" aria-label="Pause"></button>
+        <button class="btn iconbtn" id="step" type="button" aria-label="Step forward" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14l9-7z" fill="currentColor"/><rect x="16" y="5" width="3" height="14" rx="1" fill="currentColor"/></svg>
+        </button>
+        <button class="btn btn-go" id="record" type="button">Record this row</button>
+        <button class="btn btn-warn" id="returnlid" type="button" hidden>Return lid</button>
+        <button class="btn btn-sm" id="reset" type="button">Reset</button>
+        <p class="status" id="status" role="status" aria-live="polite">Oxygen at 45 K. Heat it up and watch what happens to the molecules.</p>
+      </div>
     </div>
+
+    <aside class="card phasecard">
+      <h2>Phase diagram</h2>
+      <canvas id="phase" role="img" aria-label="Phase diagram with a red dot that shows the state of the container."></canvas>
+      <p class="phase-now" id="phase-now">The red dot is <strong>in the solid area</strong>.</p>
+      <p class="phase-tiny">Not to scale. The dot shows where the container is right now.</p>
+    </aside>
   </div>
 
-  <div class="cvlab-grid">
+  <div class="grid">
 
-    <section class="cvlab-panel">
+    <section class="card panel">
       <h2>Substance &amp; temperature</h2>
-      <div class="cvlab-subs" id="cvlab-sublist"></div>
-      <div class="cvlab-field">
-        <span>Heat and cool &mdash; drag, it springs back</span>
-        <input type="range" id="cvlab-heat" min="-1" max="1" step="0.02" value="0">
+      <div class="subs" id="sublist"></div>
+      <div class="field">
+        <span>Heat or cool &mdash; drag, it springs back</span>
+        <input type="range" id="heat" min="-1" max="1" step="0.02" value="0" aria-label="Heat or cool">
+        <div class="heatlabels"><span class="c">&larr; Cool</span><span class="h">Heat &rarr;</span></div>
       </div>
-      <div class="cvlab-field">
-        <span>Or jump straight to a temperature</span>
-        <div class="cvlab-quick" id="cvlab-tquick"></div>
+      <div class="field">
+        <span>Or jump to a temperature</span>
+        <div class="quick" id="tquick"></div>
       </div>
-      <div class="cvlab-field">
+      <div class="field">
         <span>Any temperature you like (K)</span>
-        <div class="cvlab-row" style="flex-wrap:nowrap">
-          <input type="number" id="cvlab-tset" min="5" max="3000" step="5" value="450">
-          <button class="cvlab-btn cvlab-btn-sm" id="cvlab-tgo" style="flex:none">Go</button>
+        <div class="row" style="flex-wrap:nowrap">
+          <input type="number" id="tset" min="5" max="3000" step="5" value="450" aria-label="Temperature in kelvin">
+          <button class="btn btn-sm" id="tgo" type="button" style="flex:none">Go</button>
         </div>
       </div>
-      <label class="cvlab-field" for="cvlab-rate">
+      <label class="field" for="rate">
         <span>How fast it heats</span>
-        <select id="cvlab-rate">
+        <select id="rate">
+          <option value="300">Slow</option>
           <option value="900">Fast</option>
           <option value="2500" selected>Very fast</option>
           <option value="99999">Instant</option>
         </select>
       </label>
+      <div class="field">
+        <span>Show temperature in</span>
+        <div class="units" id="units">
+          <button class="qb is-on" type="button" data-u="K">Kelvin (K)</button>
+          <button class="qb" type="button" data-u="C">Celsius (&deg;C)</button>
+        </div>
+      </div>
     </section>
 
-    <section class="cvlab-panel">
-      <h2>Container volume</h2>
-      <div class="cvlab-field">
+    <section class="card panel">
+      <h2>Volume &amp; molecules</h2>
+      <div class="field">
         <span>Push the lid to</span>
-        <div class="cvlab-vols" id="cvlab-vquick"></div>
+        <div class="vols" id="vquick"></div>
       </div>
-      <label class="cvlab-field" for="cvlab-vol">
-        <span>Or anywhere &mdash; now <b id="cvlab-volval" style="font-family:var(--font-m)">1.00</b> containers</span>
-        <input type="range" id="cvlab-vol" min="0.15" max="1" step="0.01" value="1">
+      <label class="field" for="vol">
+        <span>Or anywhere &mdash; now <b id="volval">1.00</b> containers</span>
+        <input type="range" id="vol" min="0.15" max="1" step="0.01" value="1">
       </label>
-      <p class="cvlab-note" id="cvlab-adia">&nbsp;</p>
-      <div class="cvlab-opts">
-        <label><input type="checkbox" id="cvlab-snap" checked>
-          <span>Snap the lid to the quarter marks</span></label>
+      <p class="note" id="adia">&nbsp;</p>
+      <div class="opts">
+        <label><input type="checkbox" id="snap" checked><span>Snap the lid to the quarter marks</span></label>
+      </div>
+      <div class="field">
+        <span>Bicycle pump</span>
+        <div class="row">
+          <div class="count" id="ncount">60<small>molecules</small></div>
+          <div class="spacer"></div>
+          <button class="btn btn-sm" id="pump" type="button">Pump in 4</button>
+        </div>
+        <p class="note">Each pump adds 4 molecules. More molecules hit the walls, so the pressure goes up.</p>
       </div>
     </section>
 
-    <section class="cvlab-panel">
+    <section class="card panel">
       <h2>Your data</h2>
-      <div class="cvlab-tablewrap">
+      <div class="tablewrap">
         <table>
-          <caption class="cvlab-sr">Recorded temperature, volume and pressure</caption>
+          <caption class="sr">Recorded temperature, volume, molecules and pressure</caption>
           <thead><tr>
             <th scope="col">#</th><th scope="col">Substance</th>
-            <th scope="col">T (K)</th><th scope="col">V (cont.)</th><th scope="col">P (atm)</th>
+            <th scope="col">T (K)</th><th scope="col">V (cont.)</th><th scope="col">Molecules</th><th scope="col">P (atm)</th>
           </tr></thead>
-          <tbody id="cvlab-tbody"></tbody>
+          <tbody id="tbody"></tbody>
         </table>
       </div>
-      <div class="cvlab-row">
-        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clear">Clear</button>
-        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-copy">Copy data</button>
+      <div class="row">
+        <button class="btn btn-sm" id="clear" type="button">Clear</button>
+        <button class="btn btn-sm" id="copy" type="button">Copy data</button>
       </div>
-      <p class="cvlab-note" id="cvlab-copynote">&nbsp;</p>
+      <p class="note" id="copynote">&nbsp;</p>
     </section>
 
   </div>
 
-  <section class="cvlab-panel cvlab-panel-graph">
+  <section class="card graphcard">
     <h2>Graph your recorded points</h2>
-    <div class="cvlab-axes" id="cvlab-axes"></div>
-    <canvas id="cvlab-graph" role="img" aria-label="Graph of the recorded data, coloured by substance."></canvas>
-    <div class="cvlab-key" id="cvlab-key"></div>
-    <p class="cvlab-note" id="cvlab-gnote">&nbsp;</p>
+    <div class="axes" id="axes"></div>
+    <canvas id="graph" role="img" aria-label="Graph of the recorded data, coloured by substance."></canvas>
+    <div class="key" id="key"></div>
+    <p class="note" id="gnote">&nbsp;</p>
   </section>
 
-  <section class="cvlab-notes">
-    <h3>How to use this simulation</h3>
-    <ol>
-      <li>Pick a <strong>substance</strong> in the Substance &amp; temperature panel, then heat or cool it with the slider, the jump-to buttons, or by typing any temperature and pressing <strong>Go</strong>. Use the speed dropdown to control how fast it heats.</li>
-      <li>Watch the particles and the readouts: <strong>Temperature</strong>, <strong>Pressure</strong>, and <strong>State</strong> update together as the substance melts, boils, and changes pressure.</li>
-      <li>Change the <strong>container volume</strong> by dragging the lid on the scene, using the quick volume buttons, or the volume slider. Pushing the lid down compresses and warms the gas &mdash; the panel tells you when to cool back down before recording.</li>
-      <li>Press <strong>Record this row</strong> to save the current substance, temperature, volume, and pressure as a row in the <strong>Your data</strong> table.</li>
-      <li>Use the <strong>Graph your recorded points</strong> panel to plot your data and check the relationships between temperature, pressure, and volume.</li>
-      <li>Press <strong>Reset</strong> to start over, <strong>Clear</strong> to wipe the table, or <strong>Copy data</strong> to copy your results for a spreadsheet.</li>
-    </ol>
-  </section>
+  <details class="notes" open>
+    <summary>How to use this simulation <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <ol>
+        <li><strong>Pick a substance.</strong> Choose Neon, Argon, Oxygen or Water.</li>
+        <li><strong>Heat or cool it.</strong> Drag the slider toward Heat or Cool. It springs back when you let go. You can also press a temperature button, or type a number and press <strong>Go</strong>.</li>
+        <li><strong>Watch the tools.</strong> The thermometer shows the temperature. The gauge shows the pressure. The red dot on the <strong>phase diagram</strong> shows if it is a solid, liquid or gas.</li>
+        <li><strong>Squeeze it.</strong> Drag the purple handle on the lid, or use the volume buttons. Squeezing a gas also warms it, so cool it back before you record.</li>
+        <li><strong>Add molecules.</strong> Drag the pump handle up and down, or press <strong>Pump in 4</strong>.</li>
+        <li><strong>Be careful!</strong> If the pressure goes over 300 atm, the lid pops off and the gas escapes. Press <strong>Return lid</strong> to put it back.</li>
+        <li><strong>Collect data.</strong> Press <strong>Record this row</strong>. Your row shows up in the table and on the graph. Use <strong>Pause</strong> and <strong>Step</strong> to freeze the molecules. Press <strong>Reset</strong> to start over.</li>
+      </ol>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>Why does the pressure change? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <p><strong>Pressure</strong> is how hard the molecules push on the walls. Every time a molecule hits a wall, it gives the wall a tiny push. Lots of pushes add up to pressure.</p>
+      <p><strong>Hotter means more pressure.</strong> Hot molecules move faster. They hit the walls harder and more often.</p>
+      <p><strong>Smaller means more pressure.</strong> When you push the lid down, the molecules have less room. They hit the walls more often.</p>
+      <p><strong>More molecules means more pressure.</strong> The pump adds molecules. More molecules make more hits.</p>
+      <p><strong>Squeezing warms a gas.</strong> When the lid pushes down on moving molecules, it speeds them up. Faster molecules mean a higher temperature. That is why the temperature jumps when you squeeze.</p>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>Reading the phase diagram <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <p>A <strong>phase diagram</strong> is a map. It shows which state a substance is in at each temperature and pressure. Temperature goes across. Pressure goes up.</p>
+      <p>The lines between the colors are where two states are together, like boiling water with steam above it. When the dot sits on a line, two states are in the container at once.</p>
+      <p>The <strong>triple point</strong> is where solid, liquid and gas can all be together. Past the <strong>critical point</strong>, liquid and gas stop being different. That area is called a <strong>supercritical fluid</strong>.</p>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>The math the simulation uses <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <p>For a gas, the pressure is <span class="eq">P = 5.5 &times; (T &divide; 150) &times; (N &divide; 60) &divide; V</span>. T is the temperature in kelvin. N is the number of molecules. V is the volume in containers. So 60 molecules at 150 K in a full container give 5.5 atm.</p>
+      <p>Below the boiling point, most of the substance turns to liquid or solid. Then the pressure drops to a very small value.</p>
+      <p>Squeezing follows <span class="eq">T &times; V<sup>&gamma;&minus;1</sup> stays the same</span>. Gamma (&gamma;) is a number for each gas. The lid pops off above 300 atm.</p>
+      <p>The molecules on screen are a picture of the idea. They are not an exact model of real molecules.</p>
+    </div>
+  </details>
 </div>
 
 <script>
 (function(){
   "use strict";
 
-  /* ------------------------------------------------ substances */
+  /* ------------------------------------------------ substances
+     col/col2 = particle colours (PhET style), gcol = graph / key colour,
+     tc = real critical temperature (K), used only to place the phase-diagram dot */
   var SUBS = [
-    { key:"neon",   name:"Neon",   melt:24.6,  boil:27.1,  gamma:1.67, start:18,
-      col:"#F2913B", col2:"#B4621E", atoms:1, r:0.46 },
-    { key:"argon",  name:"Argon",  melt:83.8,  boil:87.3,  gamma:1.67, start:60,
-      col:"#B45FD6", col2:"#7B33A0", atoms:1, r:0.52 },
-    { key:"oxygen", name:"Oxygen", melt:54.4,  boil:90.2,  gamma:1.40, start:45,
-      col:"#E24A4A", col2:"#9E2020", atoms:2, r:0.38 },
-    { key:"water",  name:"Water",  melt:273.15, boil:373.15, gamma:1.33, start:180,
-      col:"#4A9FE2", col2:"#1F5E96", atoms:3, r:0.36 }
+    { key:"neon",   name:"Neon",   melt:24.6,  boil:27.1,  tc:44.4,  gamma:1.67, start:18,
+      col:"#5FF0F0", col2:"#139AA8", gcol:"#0EA5B7", atoms:1, r:0.46 },
+    { key:"argon",  name:"Argon",  melt:83.8,  boil:87.3,  tc:150.7, gamma:1.67, start:60,
+      col:"#FFB8C6", col2:"#D9607E", gcol:"#D9467A", atoms:1, r:0.52 },
+    { key:"oxygen", name:"Oxygen", melt:54.4,  boil:90.2,  tc:154.6, gamma:1.40, start:45,
+      col:"#FF7A4A", col2:"#C9300E", gcol:"#E8501E", atoms:2, r:0.38 },
+    { key:"water",  name:"Water",  melt:273.15, boil:373.15, tc:647.1, gamma:1.33, start:180,
+      col:"#FF5A3C", col2:"#B8220C", gcol:"#2F6FD6", atoms:3, r:0.36 }
   ];
 
   /* ------------------------------------------------ constants */
-  var P_REF = 5.5, T_REF = 150;      // the worksheet's anchor: 150 K, full container
+  var P_REF = 5.5, T_REF = 150, N_REF = 60;   /* the worksheet's anchor */
+  var P_BURST = 300;                           /* the lid pops off above this */
   var T_MIN = 5, T_MAX = 3000;
   var V_MIN = 0.15, V_MAX = 1;
-  var NPART = 60;
-  var CX0 = 25, CX1 = 49, CY0 = 3, CH = 18;   // inner container, world units
-  var VIEW_X0 = 0, VIEW_X1 = 72, VIEW_Y0 = -1, VIEW_Y1 = 32;
+  var N_START = 60, N_MAX = 180, N_PUMP = 4;
+  var CX0 = 25, CX1 = 49, CY0 = 3, CH = 18;   /* inner container, world units */
+  var VIEW_X0 = 0, VIEW_X1 = 72, VIEW_Y0 = -1, VIEW_Y1 = 32.5;
+  var LID_TH = 1.5;
+  var THERMO_X = CX0 + 5.5, PIPE_X = CX0 + 2.4;
+  var GAUGE = { x:13, y:26.2, r:4.9 };
+  var PUMP = { x:6, base:0, top:11 };
+  var HOSE_Y = CY0 + 1.6;
   var T_QUICK = [150, 450, 900];
-  var V_QUICK = [
-    { lab:"\u00BC", v:0.25 }, { lab:"\u00BD", v:0.5 },
-    { lab:"\u00BE", v:0.75 }, { lab:"FULL", v:1 }
-  ];
+  var V_QUICK = [ { lab:"¼", v:0.25 }, { lab:"½", v:0.5 }, { lab:"¾", v:0.75 }, { lab:"FULL", v:1 } ];
 
   /* ------------------------------------------------ state */
-  var si = 2;                        // oxygen
+  var si = 2;
   var T = SUBS[2].start;
   var vol = 1;
-  var targetT = null;                // when jumping to a temperature
-  var heatCmd = 0;                   // -1 cooling, +1 heating
-  var rate = 2500;                   // K per second
+  var targetT = null, heatCmd = 0, rate = 2500;
   var parts = [], lattice = [];
   var trials = [], newest = -1;
-  var axisMode = "PT";
-  var plotted = [], hoverIdx = -1;   // screen positions of the drawn points, for hovering
+  var axisMode = "PT", units = "K";
+  var plotted = [], hoverIdx = -1;
   var lastAdia = null;
-  var dragging = false;
+  var dragging = null, grabOff = 0;  /* "lid" | "pump" | null */
   var lastFrame = null;
+  var paused = false;
+  var lidOn = true, lidFly = null;
+  var pumpH = 1, pumpArmed = true, pumpAnim = null;
+  var escaped = 0;
 
-  var reduceMotion = window.matchMedia
-    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+  var reduceMotion = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
 
   /* ------------------------------------------------ dom */
   function $(id){ return document.getElementById(id); }
-  var sceneC = $("cvlab-scene"), sctx = sceneC.getContext("2d");
-  var graphC = $("cvlab-graph"), gctx = graphC.getContext("2d");
-  var elSubs = $("cvlab-sublist"), elHeat = $("cvlab-heat");
-  var elTQuick = $("cvlab-tquick"), elTSet = $("cvlab-tset"), elTGo = $("cvlab-tgo");
-  var elRate = $("cvlab-rate"), elVQuick = $("cvlab-vquick"), elVol = $("cvlab-vol");
-  var elVolVal = $("cvlab-volval"), elAdia = $("cvlab-adia"), elSnap = $("cvlab-snap");
-  var elRecord = $("cvlab-record"), elReset = $("cvlab-reset"), elStatus = $("cvlab-status");
-  var elBody = $("cvlab-tbody"), elClear = $("cvlab-clear"), elCopy = $("cvlab-copy");
-  var elCopyNote = $("cvlab-copynote"), elAxes = $("cvlab-axes"), elGNote = $("cvlab-gnote");
-  var elKey = $("cvlab-key");
-  var roSub = $("cvlab-ro-sub"), roT = $("cvlab-ro-t"), roP = $("cvlab-ro-p"), roState = $("cvlab-ro-state");
+  var sceneC = $("scene"), sctx = sceneC.getContext("2d");
+  var graphC = $("graph"), gctx = graphC.getContext("2d");
+  var phaseC = $("phase"), pctx = phaseC.getContext("2d");
+  var elSubs = $("sublist"), elHeat = $("heat");
+  var elTQuick = $("tquick"), elTSet = $("tset"), elTGo = $("tgo");
+  var elRate = $("rate"), elVQuick = $("vquick"), elVol = $("vol");
+  var elVolVal = $("volval"), elAdia = $("adia"), elSnap = $("snap");
+  var elRecord = $("record"), elReset = $("reset"), elStatus = $("status");
+  var elPause = $("pause"), elStep = $("step"), elReturn = $("returnlid"), elPump = $("pump");
+  var elBody = $("tbody"), elClear = $("clear"), elCopy = $("copy");
+  var elCopyNote = $("copynote"), elAxes = $("axes"), elGNote = $("gnote"), elKey = $("key");
+  var elUnits = $("units"), elNCount = $("ncount"), elPhaseNow = $("phase-now");
+  var roSub = $("ro-sub"), roT = $("ro-t"), roP = $("ro-p"), roN = $("ro-n"), roState = $("ro-state");
+
+  /* ------------------------------------------------ theme palettes for the canvases */
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute("data-theme");
+    if(a === "dark") return true;
+    if(a === "light") return false;
+    return !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  var PAL = {
+    light:{ bg0:"#F7F9FC", bg1:"#E4E9F0", ink:"#131820", ink2:"#4F5968", tick:"#9AA4B0",
+            face:"#F9FBFD", plate:"#2E3642", plateInk:"#8FD2FF", inside:"#0E1218",
+            plot:"#FCFDFE", grid:"#E8ECF1", grid2:"#D3D9E0", axis:"#131820", lab:"#59636F",
+            ring:"#FCFDFE", tipBg:"rgba(19,24,32,.94)", tipInk:"#F2F5FA",
+            ph:{ solid:"#B9A6E8", liquid:"#9BE8A6", gas:"#F7C948", super:"#D5EE7A", line:"#131820", text:"#1B1F27" } },
+    dark: { bg0:"#151A23", bg1:"#0E1218", ink:"#EEF1F6", ink2:"#B3BCCA", tick:"#5D6878",
+            face:"#E9EEF4", plate:"#0A0D12", plateInk:"#8FD2FF", inside:"#05070A",
+            plot:"#141922", grid:"#1F2633", grid2:"#2C3545", axis:"#C9D1DC", lab:"#9FA9B8",
+            ring:"#141922", tipBg:"rgba(238,241,246,.96)", tipInk:"#131820",
+            ph:{ solid:"#7E68C9", liquid:"#3FA866", gas:"#C99A1F", super:"#8FAE2E", line:"#EEF1F6", text:"#0B0E12" } }
+  };
+  var C = PAL.light;
+  function readTheme(){ C = isDarkNow() ? PAL.dark : PAL.light; }
 
   /* ------------------------------------------------ helpers */
   function S(){ return SUBS[si]; }
@@ -352,15 +517,20 @@
   function clamp(x,a,b){ return x<a?a:(x>b?b:x); }
   function now(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
   function say(m){ elStatus.innerHTML = m; }
+  function tText(t){ return units === "C" ? Math.round(t - 273.15) + " °C" : Math.round(t) + " K"; }
+  function N(){ return parts.length; }
 
-  /* pressure: ideal gas above the boiling point, a small vapour pressure below it */
+  /* pressure: ideal gas above the boiling point, a small vapour pressure below it.
+     With the lid off the container is open, so the gauge reads 0. */
   function pressure(){
-    var ideal = P_REF*(T/T_REF)/vol;
+    if(!lidOn) return 0;
+    var ideal = P_REF*(T/T_REF)*(N()/N_REF)/vol;
     var b = S().boil;
     if(T >= b) return ideal;
     return ideal*Math.exp(-(b - T)/(0.055*b));
   }
   function stateName(){
+    if(N() === 0) return "Empty";
     if(T < S().melt) return "Solid";
     if(T < S().boil) return "Liquid";
     return "Gas";
@@ -369,13 +539,14 @@
   function fit(canvas, ctx){
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
     var r = canvas.getBoundingClientRect();
-    var w = Math.max(260, Math.round(r.width)), h = Math.max(180, Math.round(r.height));
+    var w = Math.max(220, Math.round(r.width)), h = Math.max(160, Math.round(r.height));
     if(canvas.width !== w*dpr || canvas.height !== h*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
     ctx.setTransform(dpr,0,0,dpr,0,0);
     return { w:w, h:h };
   }
   function roundRect(ctx,x,y,w,h,r){
-    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+    if(w < 0){ x += w; w = -w; } if(h < 0){ y += h; h = -h; }
+    r = Math.min(r, w/2, h/2);
     ctx.beginPath();
     ctx.moveTo(x+r,y);
     ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
@@ -388,49 +559,61 @@
     var raw = Math.max(maxv,1e-9)/5;
     var e = Math.pow(10, Math.floor(Math.log10(raw)));
     var m = raw/e;
-    var st = m<=1 ? 1 : (m<=2 ? 2 : (m<=5 ? 5 : 10));
-    return st*e;
+    return (m<=1 ? 1 : (m<=2 ? 2 : (m<=5 ? 5 : 10)))*e;
   }
+  function font(px, min){ return '700 ' + Math.max(min, px).toFixed(1) + 'px "Poppins", system-ui, sans-serif'; }
 
   /* ------------------------------------------------ particles */
   function lidY(){ return CY0 + CH*vol; }
   function buildLattice(){
     lattice = [];
-    var sp = (CX1-CX0)/15;
-    var cols = 15, rows = Math.ceil(NPART/cols);
-    for(var i=0;i<NPART;i++){
+    var cols = 15, sp = (CX1-CX0)/cols;
+    for(var i=0;i<N_MAX;i++){
       var c = i % cols, rw = Math.floor(i/cols);
-      lattice.push({ x: CX0 + sp*(c + 0.5) + (rw%2 ? sp*0.25 : 0),
-                     y: CY0 + 0.7 + rw*sp*0.92 });
+      lattice.push({ x: CX0 + sp*(c + 0.5) + (rw%2 ? sp*0.25 : 0), y: CY0 + 0.7 + rw*sp*0.92 });
     }
+  }
+  function newPart(x,y,vx,vy){
+    return { x:x, y:y, vx:vx, vy:vy, a:Math.random()*Math.PI*2, w:(Math.random()-0.5)*2 };
   }
   function seedParticles(){
     parts = [];
-    buildLattice();
-    for(var i=0;i<NPART;i++){
-      parts.push({ x: lattice[i].x, y: lattice[i].y,
-                   vx: (Math.random()-0.5), vy: (Math.random()-0.5),
-                   a: Math.random()*Math.PI*2, w: (Math.random()-0.5)*2 });
+    for(var i=0;i<N_START;i++){
+      parts.push(newPart(lattice[i].x, lattice[i].y, Math.random()-0.5, Math.random()-0.5));
     }
+  }
+  function speedFor(t){ return clamp(Math.sqrt(t/300)*7.5, 0.6, 26); }
+  function pumpIn(){
+    var added = 0, s = S();
+    for(var i=0;i<N_PUMP && parts.length < N_MAX;i++){
+      var sp = Math.max(4, speedFor(T));
+      parts.push(newPart(CX0 + s.r + 0.3 + i*0.5, HOSE_Y + (Math.random()-0.5)*0.6,
+                         sp*(0.8+Math.random()*0.4), (Math.random()-0.2)*sp*0.6));
+      added++;
+    }
+    if(!added){ say("The container is full. It can hold <strong>" + N_MAX + "</strong> molecules."); }
+    else if(lidOn){ say("Pumped in <strong>" + added + "</strong> molecules. Now there are <strong>" + N() + "</strong>."); }
+    refresh();
+    return added;
   }
   function stepParticles(dt){
     var s = S(), top = lidY(), r = s.r;
-    var solid = clamp((s.melt - T)/(0.12*s.melt), 0, 1);   /* sharp, right at the melting point */
-    var cond  = clamp((s.boil - T)/(0.30*s.boil + 1), 0, 1);   /* 0 gas, 1 well condensed */
-    var speed = clamp(Math.sqrt(T/300)*7.5, 0.6, 26);
+    var rim = CY0 + CH;
+    var solid = clamp((s.melt - T)/(0.12*s.melt), 0, 1);
+    var cond  = clamp((s.boil - T)/(0.30*s.boil + 1), 0, 1);
+    var speed = speedFor(T);
     var grav  = 34*cond;
     var d0 = r*2.05;
     for(var i=0;i<parts.length;i++){
       var p = parts[i];
       p.vy -= grav*dt;
-      if(solid > 0.02){
+      if(solid > 0.02 && p.y < rim){
         var L = lattice[i];
         p.vx += (L.x - p.x)*110*solid*dt;
         p.vy += (L.y - p.y)*110*solid*dt;
         p.vx *= (1 - 5.5*solid*dt); p.vy *= (1 - 5.5*solid*dt);
       }
     }
-    /* soft repulsion, plus a little cohesion once condensed */
     for(var a=0;a<parts.length;a++){
       for(var b=a+1;b<parts.length;b++){
         var pa = parts[a], pb = parts[b];
@@ -445,18 +628,27 @@
         pb.vx -= ux*f*dt; pb.vy -= uy*f*dt;
       }
     }
-    /* move, bounce, and hold the speed at whatever the temperature says */
-    var sum = 0;
+    var sum = 0, keep = [];
     for(var m=0;m<parts.length;m++){
       var q = parts[m];
       q.x += q.vx*dt; q.y += q.vy*dt;
       q.a += q.w*dt;
-      if(q.x < CX0+r){ q.x = CX0+r; q.vx = Math.abs(q.vx); }
-      if(q.x > CX1-r){ q.x = CX1-r; q.vx = -Math.abs(q.vx); }
+      var inside = q.y < rim;
+      if(inside){
+        if(q.x < CX0+r){ q.x = CX0+r; q.vx = Math.abs(q.vx); }
+        if(q.x > CX1-r){ q.x = CX1-r; q.vx = -Math.abs(q.vx); }
+      }
       if(q.y < CY0+r){ q.y = CY0+r; q.vy = Math.abs(q.vy)*0.9; }
-      if(q.y > top-r){ q.y = top-r; q.vy = -Math.abs(q.vy); }
+      if(lidOn && q.y > top-r){ q.y = top-r; q.vy = -Math.abs(q.vy); }
+      if(!lidOn && !inside){
+        q.vy += 6*dt;   /* once out of the open top, the escaping gas drifts away */
+        if(q.y > VIEW_Y1 + 2 || q.x < VIEW_X0 - 2 || q.x > VIEW_X1 + 2){ escaped++; continue; }
+      }
+      keep.push(q);
       sum += q.vx*q.vx + q.vy*q.vy;
     }
+    parts = keep;
+    if(!parts.length) return;
     var rms = Math.sqrt(sum/parts.length) || 1e-4;
     var want = speed*(1 - 0.86*Math.min(1,solid));
     var scale = 1 + clamp((want/rms) - 1, -0.5, 0.5)*Math.min(1, dt*9);
@@ -467,16 +659,16 @@
   function setSub(i){
     si = i; T = SUBS[i].start; vol = 1; targetT = null; heatCmd = 0;
     elHeat.value = "0"; elVol.value = "1"; lastAdia = null;
+    lidOn = true; lidFly = null; escaped = 0; pumpH = 1; pumpArmed = true; pumpAnim = null;
     seedParticles(); refresh();
-    say("Switched to <strong>" + S().name + "</strong> at " + Math.round(T) + " K.");
+    say("Switched to <strong>" + S().name + "</strong> at " + tText(T) + ".");
   }
   function setVolume(v, quiet){
+    if(!lidOn) return;
     var old = vol;
     v = clamp(v, V_MIN, V_MAX);
     if(elSnap.checked){
-      for(var i=0;i<V_QUICK.length;i++){
-        if(Math.abs(v - V_QUICK[i].v) < 0.035) v = V_QUICK[i].v;
-      }
+      for(var i=0;i<V_QUICK.length;i++){ if(Math.abs(v - V_QUICK[i].v) < 0.035) v = V_QUICK[i].v; }
     }
     if(Math.abs(v - old) < 1e-6) return;
     /* squeezing a gas does work on it, so it warms: T V^(gamma-1) = constant */
@@ -491,116 +683,159 @@
     elVol.value = String(vol);
     if(!quiet && lastAdia){
       say((lastAdia.squeeze ? "Squeezing" : "Expanding") + " the gas took it from <strong>"
-          + Math.round(lastAdia.from) + " K</strong> to <strong>" + Math.round(lastAdia.to)
-          + " K</strong> on its own. Bring it back before you record.");
+          + tText(lastAdia.from) + "</strong> to <strong>" + tText(lastAdia.to)
+          + "</strong> on its own. Bring it back before you record.");
     }
+    checkBurst();
+    refresh();
+  }
+  function checkBurst(){
+    if(!lidOn || pressure() <= P_BURST) return;
+    lidOn = false;
+    dragging = null; sceneC.classList.remove("dragging");
+    lidFly = { y: lidY(), dx: 0, vy: 26, vx: 9, rot: 0, vr: 1.6 };
+    escaped = 0;
+    say("<strong>Pop!</strong> The pressure went over <strong>" + P_BURST + " atm</strong> and blew the lid off. "
+      + "The gas is escaping. Press <strong>Return lid</strong> to put it back.");
+    refresh();
+  }
+  function returnLid(){
+    if(lidOn) return;
+    var rim = CY0 + CH, keep = [];
+    for(var i=0;i<parts.length;i++){ if(parts[i].y < rim - 0.3) keep.push(parts[i]); else escaped++; }
+    parts = keep;
+    lidOn = true; lidFly = null; vol = 1; elVol.value = "1"; lastAdia = null;
+    say("The lid is back on. <strong>" + N() + "</strong> molecules are left in the container.");
     refresh();
   }
   function record(){
+    if(!lidOn){ say("Put the lid back on before you record."); return; }
     var p = pressure();
-    trials.push({ n: trials.length+1, sub: S().name, sidx: si, t: T, v: vol, p: p });
+    trials.push({ n: trials.length+1, sub: S().name, sidx: si, t: T, v: vol, p: p, m: N() });
     newest = trials.length-1;
     say("Recorded <strong>" + Math.round(T) + " K</strong>, <strong>" + fmt(vol,2)
-        + " containers</strong>, <strong>" + fmt(p,1) + " atm</strong>.");
+        + " containers</strong>, <strong>" + N() + " molecules</strong>, <strong>" + fmt(p,1) + " atm</strong>.");
     refresh();
+  }
+  function setPaused(p){
+    paused = p;
+    elPause.innerHTML = paused
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1.2" fill="currentColor"/><rect x="14" y="4.5" width="4" height="15" rx="1.2" fill="currentColor"/></svg>';
+    elPause.setAttribute("aria-label", paused ? "Play" : "Pause");
+    elStep.disabled = !paused;
   }
 
   /* ------------------------------------------------ panels */
+  function swatch(s){
+    if(s.atoms === 3) return "radial-gradient(circle at 50% 62%," + s.col + " 0 42%,transparent 44%),radial-gradient(circle at 22% 30%,#fff 0 22%,transparent 24%),radial-gradient(circle at 78% 30%,#fff 0 22%,transparent 24%)";
+    return "radial-gradient(circle at 34% 30%,#fff," + s.col + " 55%," + s.col2 + ")";
+  }
   function buildSubs(){
     var html = "";
     for(var i=0;i<SUBS.length;i++){
-      html += '<button class="cvlab-sub" data-i="' + i + '">'
-        + '<i style="background:radial-gradient(circle at 34% 30%,#fff,' + SUBS[i].col
-        + ' 58%,' + SUBS[i].col2 + ')"></i>' + SUBS[i].name + '</button>';
+      html += '<button class="sub" type="button" data-i="' + i + '"><i style="background:' + swatch(SUBS[i])
+        + (SUBS[i].atoms===3 ? ';background-color:#30343c' : '') + '"></i>' + SUBS[i].name + '</button>';
     }
     elSubs.innerHTML = html;
     elSubs.addEventListener("click", function(e){
-      var b = e.target.closest ? e.target.closest(".cvlab-sub") : null;
-      if(!b) return;
-      setSub(parseInt(b.getAttribute("data-i"),10));
+      var b = e.target.closest ? e.target.closest(".sub") : null;
+      if(b) setSub(parseInt(b.getAttribute("data-i"),10));
     });
   }
   function buildQuick(){
     var h1 = "";
-    for(var i=0;i<T_QUICK.length;i++) h1 += '<button class="cvlab-qb" data-t="' + T_QUICK[i] + '">' + T_QUICK[i] + ' K</button>';
+    for(var i=0;i<T_QUICK.length;i++) h1 += '<button class="qb" type="button" data-t="' + T_QUICK[i] + '">' + T_QUICK[i] + ' K</button>';
     elTQuick.innerHTML = h1;
     elTQuick.addEventListener("click", function(e){
-      var b = e.target.closest ? e.target.closest(".cvlab-qb") : null;
+      var b = e.target.closest ? e.target.closest(".qb") : null;
       if(!b) return;
       targetT = parseInt(b.getAttribute("data-t"),10);
       heatCmd = 0; elHeat.value = "0";
-      say("Heading for <strong>" + targetT + " K</strong>.");
+      say("Heading for <strong>" + tText(targetT) + "</strong>.");
     });
     var h2 = "";
-    for(var j=0;j<V_QUICK.length;j++) h2 += '<button class="cvlab-qb" data-v="' + V_QUICK[j].v + '">' + V_QUICK[j].lab + '</button>';
+    for(var j=0;j<V_QUICK.length;j++) h2 += '<button class="qb" type="button" data-v="' + V_QUICK[j].v + '">' + V_QUICK[j].lab + '</button>';
     elVQuick.innerHTML = h2;
     elVQuick.addEventListener("click", function(e){
-      var b = e.target.closest ? e.target.closest(".cvlab-qb") : null;
-      if(!b) return;
-      setVolume(parseFloat(b.getAttribute("data-v")));
+      var b = e.target.closest ? e.target.closest(".qb") : null;
+      if(b) setVolume(parseFloat(b.getAttribute("data-v")));
     });
-    var modes = [["PT","Pressure vs temperature"],["PV","Pressure vs volume"],["VT","Volume vs temperature"]];
+    var modes = [["PT","Pressure vs temperature"],["PV","Pressure vs volume"],["VT","Volume vs temperature"],["PN","Pressure vs molecules"]];
     var h3 = "";
-    for(var k=0;k<modes.length;k++) h3 += '<button class="cvlab-qb" style="padding:8px 12px" data-m="' + modes[k][0] + '">' + modes[k][1] + '</button>';
+    for(var k=0;k<modes.length;k++) h3 += '<button class="qb" type="button" data-m="' + modes[k][0] + '">' + modes[k][1] + '</button>';
     elAxes.innerHTML = h3;
     elAxes.addEventListener("click", function(e){
-      var b = e.target.closest ? e.target.closest(".cvlab-qb") : null;
+      var b = e.target.closest ? e.target.closest(".qb") : null;
       if(!b) return;
-      axisMode = b.getAttribute("data-m");
+      axisMode = b.getAttribute("data-m"); hoverIdx = -1;
+      refresh();
+    });
+    elUnits.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".qb") : null;
+      if(!b) return;
+      units = b.getAttribute("data-u");
       refresh();
     });
   }
   function renderChips(){
-    var bs = elSubs.querySelectorAll(".cvlab-sub");
-    for(var i=0;i<bs.length;i++){
-      bs[i].className = "cvlab-sub" + (parseInt(bs[i].getAttribute("data-i"),10) === si ? " is-on" : "");
-    }
-    var vs = elVQuick.querySelectorAll(".cvlab-qb");
+    var bs = elSubs.querySelectorAll(".sub");
+    for(var i=0;i<bs.length;i++) bs[i].classList.toggle("is-on", parseInt(bs[i].getAttribute("data-i"),10) === si);
+    var vs = elVQuick.querySelectorAll(".qb");
     for(var j=0;j<vs.length;j++){
-      var vv = parseFloat(vs[j].getAttribute("data-v"));
-      vs[j].className = "cvlab-qb" + (Math.abs(vv - vol) < 0.005 ? " is-on" : "");
+      vs[j].classList.toggle("is-on", lidOn && Math.abs(parseFloat(vs[j].getAttribute("data-v")) - vol) < 0.005);
+      vs[j].disabled = !lidOn;
     }
-    var as = elAxes.querySelectorAll(".cvlab-qb");
-    for(var k=0;k<as.length;k++){
-      as[k].className = "cvlab-qb" + (as[k].getAttribute("data-m") === axisMode ? " is-on" : "");
-    }
+    var as = elAxes.querySelectorAll(".qb");
+    for(var k=0;k<as.length;k++) as[k].classList.toggle("is-on", as[k].getAttribute("data-m") === axisMode);
+    var us = elUnits.querySelectorAll(".qb");
+    for(var u=0;u<us.length;u++) us[u].classList.toggle("is-on", us[u].getAttribute("data-u") === units);
+    elVol.disabled = !lidOn;
+    elRecord.disabled = !lidOn;
+    elReturn.hidden = lidOn;
+    elPump.disabled = parts.length >= N_MAX;
   }
   function renderTable(){
     if(!trials.length){
-      elBody.innerHTML = '<tr><td colspan="5"><span class="cvlab-empty">'
-        + 'Nothing recorded yet. Set things up, then press Record this row.</span></td></tr>';
+      elBody.innerHTML = '<tr><td colspan="6"><span class="empty">Nothing recorded yet. Set things up, then press Record this row.</span></td></tr>';
       return;
     }
     var html = "";
     for(var i=0;i<trials.length;i++){
       var r = trials[i];
-      html += '<tr' + (i===newest ? ' class="is-new"' : '') + '><td>' + r.n + '</td><td>'
-        + r.sub + '</td><td>' + Math.round(r.t) + '</td><td>' + fmt(r.v,2) + '</td><td>'
-        + fmt(r.p,1) + '</td></tr>';
+      html += '<tr' + (i===newest ? ' class="is-new"' : '') + '><td>' + r.n + '</td><td>' + r.sub + '</td><td>'
+        + Math.round(r.t) + '</td><td>' + fmt(r.v,2) + '</td><td>' + r.m + '</td><td>' + fmt(r.p,1) + '</td></tr>';
     }
     elBody.innerHTML = html;
   }
+  var lastPhaseText = "";
   function renderReadouts(){
     roSub.textContent = S().name;
-    roT.textContent = Math.round(T) + " K";
+    roT.textContent = tText(T);
     roP.textContent = fmt(pressure(),1) + " atm";
-    roState.textContent = stateName();
+    roN.textContent = String(N());
+    roState.textContent = lidOn ? stateName() : "Lid off";
     elVolVal.textContent = fmt(vol,2);
-    elVol.value = String(vol);
-    if(lastAdia){
+    elNCount.innerHTML = N() + "<small>molecules</small>";
+    elPump.disabled = parts.length >= N_MAX;
+    if(!lidOn){
+      elAdia.innerHTML = "The lid is off. Press <b>Return lid</b> to change the volume again.";
+    } else if(lastAdia){
       elAdia.innerHTML = (lastAdia.squeeze ? "Squeezed" : "Expanded") + ", so the gas went from <b>"
-        + Math.round(lastAdia.from) + " K</b> to <b>" + Math.round(lastAdia.to)
-        + " K</b> by itself.";
+        + tText(lastAdia.from) + "</b> to <b>" + tText(lastAdia.to) + "</b> by itself.";
     } else {
       elAdia.innerHTML = "Moving the lid changes the temperature too. Watch this line.";
     }
+    var pd = phasePoint();
+    var txt = "The red dot is <strong>" + pd.where + "</strong>.";
+    if(txt !== lastPhaseText){ elPhaseNow.innerHTML = txt; lastPhaseText = txt; }
   }
   function refresh(){ renderChips(); renderTable(); renderReadouts(); drawGraph(); }
 
-  /* ------------------------------------------------ scene */
+  /* ------------------------------------------------ scene geometry */
   var V = {};
   function geometry(w,h){
-    V.w = w; V.h = h; V.compact = w < 640;
+    V.w = w; V.h = h; V.compact = w < 600;
     V.k = Math.min((w-16)/(VIEW_X1-VIEW_X0), (h-16)/(VIEW_Y1-VIEW_Y0));
     V.ox = (w - (VIEW_X1-VIEW_X0)*V.k)/2 - VIEW_X0*V.k;
     V.oy = h - (h - (VIEW_Y1-VIEW_Y0)*V.k)/2 + VIEW_Y0*V.k;
@@ -614,15 +849,19 @@
     var ctx = sctx;
     ctx.clearRect(0,0,w,h);
     var bg = ctx.createLinearGradient(0,0,0,h);
-    bg.addColorStop(0,"#F7F9FC"); bg.addColorStop(1,"#E6EBF2");
+    bg.addColorStop(0,C.bg0); bg.addColorStop(1,C.bg1);
     ctx.fillStyle = bg; ctx.fillRect(0,0,w,h);
     drawHeater(ctx);
+    drawHose(ctx);
+    drawPump(ctx);
     drawContainer(ctx);
     drawParticles(ctx);
-    drawLid(ctx);
+    drawContainerFront(ctx);
     drawScale(ctx);
+    drawGaugePipe(ctx);
+    if(lidOn) drawLidAssembly(ctx, lidY(), 0, 0, true);
+    else if(lidFly) drawFlyingLid(ctx);
     drawGauge(ctx);
-    drawThermo(ctx);
   }
 
   function drawHeater(ctx){
@@ -633,14 +872,13 @@
     ctx.fillStyle = g;
     roundRect(ctx, x0, y-hh, x1-x0, hh, 0.5*k); ctx.fill();
     ctx.strokeStyle = "#39414C"; ctx.lineWidth = 1; ctx.stroke();
-    /* flame when heating, frost when cooling */
     var amt = heatCmd !== 0 ? heatCmd : (targetT !== null ? (targetT > T ? 1 : -1) : 0);
     if(Math.abs(amt) < 0.05) return;
     var n = 7;
     for(var i=0;i<n;i++){
       var fx = x0 + (x1-x0)*(i+0.5)/n;
       var ph = reduceMotion ? 0.5 : (Math.sin(now()/120 + i)*0.5 + 0.5);
-      var fh = (1.6 + ph*1.5)*k*Math.abs(amt);
+      var fh = (1.0 + ph*0.9)*k*Math.abs(amt);
       if(amt > 0){
         var fg = ctx.createLinearGradient(0, y-hh, 0, y-hh-fh);
         fg.addColorStop(0,"#F6C34A"); fg.addColorStop(.5,"#F0762A"); fg.addColorStop(1,"rgba(224,80,30,0)");
@@ -651,55 +889,105 @@
         ctx.quadraticCurveTo(fx+0.7*k, y-hh-fh*0.6, fx+0.55*k, y-hh);
         ctx.closePath(); ctx.fill();
       } else {
-        ctx.fillStyle = "rgba(90,175,240,.65)";
-        ctx.beginPath();
-        ctx.arc(fx, y-hh-fh*0.5, 0.5*k, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = "rgba(120,195,250,.8)"; ctx.lineWidth = Math.max(1,0.16*k);
+        ctx.fillStyle = "rgba(90,175,240,.75)";
+        ctx.beginPath(); ctx.arc(fx, y-hh-fh*0.5, 0.45*k, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "rgba(160,215,255,.9)"; ctx.lineWidth = Math.max(1,0.14*k);
         ctx.beginPath();
         ctx.moveTo(fx, y-hh); ctx.lineTo(fx, y-hh-fh);
-        ctx.moveTo(fx-0.5*k, y-hh-fh*0.55); ctx.lineTo(fx+0.5*k, y-hh-fh*0.55);
+        ctx.moveTo(fx-0.45*k, y-hh-fh*0.55); ctx.lineTo(fx+0.45*k, y-hh-fh*0.55);
         ctx.stroke();
       }
     }
   }
 
+  /* the bicycle pump, its hose, and the stopper where the hose goes through the wall */
+  function drawHose(ctx){
+    var k = V.k;
+    ctx.strokeStyle = "#8E98A4"; ctx.lineWidth = Math.max(3, 0.75*k); ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(PX(PUMP.x + 3.2), PY(0.7));
+    ctx.bezierCurveTo(PX(16), PY(0.2), PX(14), PY(HOSE_Y), PX(CX0-1.6), PY(HOSE_Y));
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = Math.max(1, 0.2*k);
+    ctx.stroke();
+  }
+  function drawPump(ctx){
+    var k = V.k, x = PX(PUMP.x);
+    var by = PY(PUMP.base), ty = PY(PUMP.top);
+    /* base plate */
+    ctx.fillStyle = "#6E7884";
+    roundRect(ctx, PX(PUMP.x-3.6), by-0.9*k, 7.2*k, 0.9*k, 0.3*k); ctx.fill();
+    ctx.fillStyle = "#8E98A4";
+    roundRect(ctx, PX(PUMP.x-1.2), by-1.6*k, 2.4*k, 0.8*k, 0.2*k); ctx.fill();
+    /* the rod rises out of the barrel with the handle */
+    var hy = PY(PUMP.top + 0.6 + 4.2*pumpH);
+    ctx.strokeStyle = "#B7C0CA"; ctx.lineWidth = Math.max(2, 0.36*k); ctx.lineCap = "butt";
+    ctx.beginPath(); ctx.moveTo(x, ty); ctx.lineTo(x, hy); ctx.stroke();
+    /* barrel */
+    var g = ctx.createLinearGradient(x-1.3*k, 0, x+1.3*k, 0);
+    g.addColorStop(0,"#7A1712"); g.addColorStop(.45,"#D9362B"); g.addColorStop(1,"#7A1712");
+    ctx.fillStyle = g;
+    roundRect(ctx, x-1.3*k, ty, 2.6*k, by-1.6*k-ty, 0.4*k); ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1;
+    for(var i=1;i<9;i++){ var yy = ty + (by-1.6*k-ty)*i/9; ctx.beginPath(); ctx.moveTo(x-0.5*k,yy); ctx.lineTo(x+0.5*k,yy); ctx.stroke(); }
+    /* handle */
+    var hot = dragging === "pump";
+    ctx.fillStyle = hot ? "#C9D1DA" : "#9AA4B0";
+    roundRect(ctx, x-3*k, hy-0.9*k, 6*k, 0.9*k, 0.4*k); ctx.fill();
+    ctx.fillStyle = "#6E7884";
+    for(var j=-2;j<=2;j++){ ctx.fillRect(x + j*1.1*k - 0.12*k, hy-0.9*k, 0.24*k, 0.9*k); }
+    if(!V.compact){
+      ctx.fillStyle = C.ink2; ctx.font = font(0.95*k, 9);
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText("PUMP", x, by + 0.15*k);
+    }
+  }
+
   function drawContainer(ctx){
     var k = V.k;
-    var ox0 = PX(CX0-1), ox1 = PX(CX1+1), oy0 = PY(CY0+CH+1.2), oy1 = PY(CY0-1);
-    ctx.fillStyle = "rgba(20,26,34,.10)";
+    var ox0 = PX(CX0-1), ox1 = PX(CX1+1), oy0 = PY(CY0+CH+0.6), oy1 = PY(CY0-1);
+    ctx.fillStyle = "rgba(0,0,0,.14)";
     roundRect(ctx, ox0+3, oy0+4, ox1-ox0, oy1-oy0, 0.6*k); ctx.fill();
     var g = ctx.createLinearGradient(ox0,0,ox1,0);
-    g.addColorStop(0,"#59636F"); g.addColorStop(.06,"#8C97A4");
-    g.addColorStop(.94,"#8C97A4"); g.addColorStop(1,"#59636F");
+    g.addColorStop(0,"#59636F"); g.addColorStop(.06,"#9AA4B0"); g.addColorStop(.94,"#9AA4B0"); g.addColorStop(1,"#59636F");
     ctx.fillStyle = g;
     roundRect(ctx, ox0, oy0, ox1-ox0, oy1-oy0, 0.6*k); ctx.fill();
-    /* the inside */
-    var ig = ctx.createLinearGradient(0, PY(CY0+CH), 0, PY(CY0));
-    ig.addColorStop(0,"#F4F7FB"); ig.addColorStop(1,"#E3EAF3");
-    ctx.fillStyle = ig;
-    ctx.fillRect(PX(CX0), PY(CY0+CH), (CX1-CX0)*k, CH*k);
-    ctx.strokeStyle = "rgba(60,70,83,.55)"; ctx.lineWidth = 1;
-    ctx.strokeRect(PX(CX0), PY(CY0+CH), (CX1-CX0)*k, CH*k);
+    ctx.fillStyle = C.inside;
+    ctx.fillRect(PX(CX0), PY(CY0+CH+0.6), (CX1-CX0)*k, (CH+0.6)*k);
+  }
+  /* rubber stopper where the pump hose goes through the left wall */
+  function drawContainerFront(ctx){
+    var k = V.k;
+    ctx.fillStyle = "#1E1E22";
+    roundRect(ctx, PX(CX0-1.7), PY(HOSE_Y+0.75), 1.9*k, 1.5*k, 0.45*k); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 1; ctx.stroke();
   }
 
   function drawParticles(ctx){
     var k = V.k, s = S(), r = s.r*k;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(PX(CX0), PY(lidY()), (CX1-CX0)*k, (lidY()-CY0)*k);
+    if(lidOn){
+      ctx.rect(PX(CX0), PY(lidY()), (CX1-CX0)*k, (lidY()-CY0)*k);
+    } else {
+      ctx.rect(PX(CX0), PY(CY0+CH+0.6), (CX1-CX0)*k, (CH+0.6)*k);
+      ctx.rect(0, 0, V.w, PY(CY0+CH+0.6));
+    }
     ctx.clip();
+    var ox = [[0,0]];
+    if(s.atoms === 2) ox = [[-r*0.72,0],[r*0.72,0]];
+    if(s.atoms === 3) ox = [[0,-r*0.15],[-r*1.05,r*0.75],[r*1.05,r*0.75]];
     for(var i=0;i<parts.length;i++){
       var p = parts[i], px = PX(p.x), py = PY(p.y);
-      var offs = [[0,0]];
-      if(s.atoms === 2) offs = [[-r*0.72,0],[r*0.72,0]];
-      if(s.atoms === 3) offs = [[0,0],[-r*1.25,r*0.72],[r*1.25,r*0.72]];
       var ca = Math.cos(p.a), sa = Math.sin(p.a);
-      for(var o=0;o<offs.length;o++){
-        var dx = offs[o][0]*ca - offs[o][1]*sa;
-        var dy = offs[o][0]*sa + offs[o][1]*ca;
-        var rr = (s.atoms === 3 && o > 0) ? r*0.62 : r;
+      for(var o=ox.length-1;o>=0;o--){
+        var dx = ox[o][0]*ca - ox[o][1]*sa;
+        var dy = ox[o][0]*sa + ox[o][1]*ca;
+        var isH = (s.atoms === 3 && o > 0);
+        var rr = isH ? r*0.6 : r;
+        var c1 = isH ? "#FFFFFF" : s.col, c2 = isH ? "#BFC6CF" : s.col2;
         var rg = ctx.createRadialGradient(px+dx-rr*0.34, py+dy-rr*0.34, rr*0.1, px+dx, py+dy, rr*1.05);
-        rg.addColorStop(0,"#FFFFFF"); rg.addColorStop(.42, s.col); rg.addColorStop(1, s.col2);
+        rg.addColorStop(0,"#FFFFFF"); rg.addColorStop(.42, c1); rg.addColorStop(1, c2);
         ctx.fillStyle = rg;
         ctx.beginPath(); ctx.arc(px+dx, py+dy, rr, 0, Math.PI*2); ctx.fill();
       }
@@ -707,207 +995,305 @@
     ctx.restore();
   }
 
-  function drawLid(ctx){
-    var k = V.k, y = PY(lidY());
-    var x0 = PX(CX0-1.1), x1 = PX(CX1+1.1);
-    var th = 1.5*k;
-    var g = ctx.createLinearGradient(0, y-th, 0, y);
-    g.addColorStop(0,"#A6B0BC"); g.addColorStop(.45,"#79838F"); g.addColorStop(1,"#525C68");
+  /* lid + the two things that pass through it on rubber stoppers: thermometer and gauge pipe */
+  function drawLidAssembly(ctx, ly, dx, rot, withHandle){
+    var k = V.k;
+    var cx = PX((CX0+CX1)/2 + dx), cy = PY(ly);
+    ctx.save();
+    ctx.translate(cx, cy); ctx.rotate(rot);
+    function LX(u){ return (u - (CX0+CX1)/2)*k; }
+    var x0 = LX(CX0-1.1), x1 = LX(CX1+1.1), th = LID_TH*k;
+    var g = ctx.createLinearGradient(0, -th, 0, 0);
+    g.addColorStop(0,"#B6BFCA"); g.addColorStop(.45,"#86909C"); g.addColorStop(1,"#56606C");
     ctx.fillStyle = g;
-    roundRect(ctx, x0, y-th, x1-x0, th, 0.35*k); ctx.fill();
+    roundRect(ctx, x0, -th, x1-x0, th, 0.35*k); ctx.fill();
     ctx.strokeStyle = "#454E59"; ctx.lineWidth = 1; ctx.stroke();
-    /* the handle you drag */
-    var hx = (x0+x1)/2, hy = y - th;
-    ctx.fillStyle = "#6D3FD4";
-    roundRect(ctx, hx-3.2*k, hy-1.5*k, 6.4*k, 1.5*k, 0.4*k); ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,.32)";
-    roundRect(ctx, hx-2.9*k, hy-1.25*k, 5.8*k, 0.45*k, 0.2*k); ctx.fill();
-    ctx.strokeStyle = "#FFFFFF"; ctx.lineWidth = Math.max(1.4, 0.18*k);
-    ctx.beginPath();
-    ctx.moveTo(hx-0.9*k, hy-0.95*k); ctx.lineTo(hx, hy-1.35*k); ctx.lineTo(hx+0.9*k, hy-0.95*k);
-    ctx.moveTo(hx-0.9*k, hy-0.55*k); ctx.lineTo(hx, hy-0.15*k); ctx.lineTo(hx+0.9*k, hy-0.55*k);
-    ctx.stroke();
+
+    /* thermometer: stem above, bulb submerged under the lid */
+    var tx = LX(THERMO_X), wd = 1.1*k;
+    var stemTop = -th - 6.2*k, bulbY = 1.05*k;
+    ctx.fillStyle = "rgba(245,248,252,.92)";
+    roundRect(ctx, tx-wd/2, stemTop, wd, bulbY - stemTop, wd/2); ctx.fill();
+    ctx.strokeStyle = "#8E98A4"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = "#D9362B";
+    ctx.beginPath(); ctx.arc(tx, bulbY, wd*0.82, 0, Math.PI*2); ctx.fill();
+    var f = Math.log(clamp(T,T_MIN,T_MAX)/T_MIN)/Math.log(T_MAX/T_MIN);
+    var colTop = bulbY - (bulbY - stemTop - wd*0.6)*f;
+    ctx.fillStyle = "#D9362B";
+    roundRect(ctx, tx-wd*0.22, colTop, wd*0.44, bulbY-colTop, wd*0.22); ctx.fill();
+    ctx.strokeStyle = "rgba(60,70,83,.45)";
+    for(var i=1;i<6;i++){ var yy = stemTop + (bulbY-stemTop)*i/7; ctx.beginPath(); ctx.moveTo(tx+wd*0.15,yy); ctx.lineTo(tx+wd*0.5,yy); ctx.stroke(); }
+    stopper(ctx, tx, -th, 1.9*k, 1.1*k);
+    if(withHandle){
+      /* readout box on top of the thermometer */
+      var label = tText(T);
+      ctx.font = font(1.25*k, 11);
+      var bw = Math.max(ctx.measureText(label).width + 1.6*k, 6*k), bh = 1.9*k;
+      ctx.fillStyle = C.face; ctx.strokeStyle = "#59636F"; ctx.lineWidth = 1.2;
+      roundRect(ctx, tx - bw/2, stemTop - bh - 0.3*k, bw, bh, 0.4*k); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#131820"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(label, tx, stemTop - bh/2 - 0.3*k);
+    }
+
+    /* gauge pipe stopper */
+    stopper(ctx, LX(PIPE_X), -th, 1.9*k, 1.1*k);
+
+    if(withHandle){
+      var hx = 0, hy = -th, on = dragging === "lid";
+      ctx.fillStyle = on ? "#5227AE" : "#6D3FD4";
+      roundRect(ctx, hx-3.2*k, hy-1.5*k, 6.4*k, 1.5*k, 0.4*k); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.32)";
+      roundRect(ctx, hx-2.9*k, hy-1.25*k, 5.8*k, 0.45*k, 0.2*k); ctx.fill();
+      ctx.strokeStyle = "#FFFFFF"; ctx.lineWidth = Math.max(1.4, 0.18*k);
+      ctx.beginPath();
+      ctx.moveTo(hx-0.9*k, hy-0.95*k); ctx.lineTo(hx, hy-1.35*k); ctx.lineTo(hx+0.9*k, hy-0.95*k);
+      ctx.moveTo(hx-0.9*k, hy-0.55*k); ctx.lineTo(hx, hy-0.15*k); ctx.lineTo(hx+0.9*k, hy-0.55*k);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function stopper(ctx, x, y, w, h){
+    ctx.fillStyle = "#1E1E22";
+    roundRect(ctx, x - w/2, y - h*0.75, w, h, h*0.4); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.2)"; ctx.lineWidth = 1; ctx.stroke();
+  }
+  function drawFlyingLid(ctx){
+    if(lidFly.y > VIEW_Y1 + 12) return;
+    drawLidAssembly(ctx, lidFly.y, lidFly.dx, lidFly.rot, false);
   }
 
-  /* the graduated scale the worksheet needs */
+  /* the gauge pipe: across from the gauge, then down to the lid (it telescopes as the lid moves) */
+  function drawGaugePipe(ctx){
+    var k = V.k, py = GAUGE.y;
+    var endY = lidOn ? lidY() + LID_TH : CY0 + CH + 2.4;
+    ctx.lineCap = "butt"; ctx.lineJoin = "round";
+    ctx.strokeStyle = "#8E98A4"; ctx.lineWidth = 1.1*k;
+    ctx.beginPath();
+    ctx.moveTo(PX(GAUGE.x + GAUGE.r*0.9), PY(py));
+    ctx.lineTo(PX(PIPE_X), PY(py));
+    ctx.lineTo(PX(PIPE_X), PY(endY));
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 0.3*k;
+    ctx.stroke();
+    if(!lidOn){
+      ctx.fillStyle = "#59636F";
+      ctx.fillRect(PX(PIPE_X) - 0.7*k, PY(endY), 1.4*k, 0.5*k);
+    }
+  }
+
+  function drawGauge(ctx){
+    var k = V.k, cx = PX(GAUGE.x), cy = PY(GAUGE.y), R = GAUGE.r*k;
+    ctx.fillStyle = "rgba(0,0,0,.14)";
+    ctx.beginPath(); ctx.arc(cx+3, cy+4, R, 0, Math.PI*2); ctx.fill();
+    var g = ctx.createLinearGradient(cx-R, cy-R, cx+R, cy+R);
+    g.addColorStop(0,"#B0B9C4"); g.addColorStop(.5,"#7A8490"); g.addColorStop(1,"#4C5560");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = C.face;
+    ctx.beginPath(); ctx.arc(cx, cy, R*0.86, 0, Math.PI*2); ctx.fill();
+    var P = pressure();
+    var a0 = Math.PI*0.75, a1 = Math.PI*2.25;
+    /* danger zone near the top of the dial */
+    ctx.strokeStyle = "rgba(220,40,40,.8)"; ctx.lineWidth = 0.42*k;
+    ctx.beginPath(); ctx.arc(cx, cy, R*0.74, a0 + (a1-a0)*(250/P_BURST), a1); ctx.stroke();
+    for(var i=0;i<=12;i++){
+      var a = a0 + (a1-a0)*i/12, big = (i%2===0);
+      ctx.strokeStyle = big ? "#3C4653" : "#9AA4B0"; ctx.lineWidth = Math.max(1,0.14*k);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a)*R*(big?0.6:0.68), cy + Math.sin(a)*R*(big?0.6:0.68));
+      ctx.lineTo(cx + Math.cos(a)*R*0.78, cy + Math.sin(a)*R*0.78);
+      ctx.stroke();
+      if(i%4===0 && !V.compact){
+        ctx.fillStyle = "#3C4653"; ctx.font = font(0.78*k, 8);
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(String(Math.round(P_BURST*i/12)), cx + Math.cos(a)*R*0.44, cy + Math.sin(a)*R*0.44);
+      }
+    }
+    var na = a0 + (a1-a0)*clamp(P/P_BURST, 0, 1);
+    ctx.strokeStyle = "#E8302F"; ctx.lineWidth = Math.max(2, 0.3*k); ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(cx - Math.cos(na)*R*0.12, cy - Math.sin(na)*R*0.12);
+    ctx.lineTo(cx + Math.cos(na)*R*0.7, cy + Math.sin(na)*R*0.7);
+    ctx.stroke();
+    ctx.fillStyle = "#3C4653";
+    ctx.beginPath(); ctx.arc(cx, cy, R*0.09, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#3C4653"; ctx.font = font(0.72*k, 8);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if(!V.compact) ctx.fillText("atm", cx, cy + R*0.64);
+    /* reading plate under the dial */
+    var bw = R*1.55, bh = 1.9*k, by = cy + R + 0.3*k;
+    ctx.fillStyle = C.plate;
+    roundRect(ctx, cx - bw/2, by, bw, bh, 0.35*k); ctx.fill();
+    ctx.fillStyle = C.plateInk; ctx.font = font(1.3*k, 11);
+    ctx.textBaseline = "middle";
+    ctx.fillText(fmt(P,1) + " atm", cx, by + bh*0.52);
+    if(!V.compact){
+      ctx.fillStyle = C.ink2; ctx.font = font(0.9*k, 9);
+      ctx.textBaseline = "bottom";
+      ctx.fillText("PRESSURE", cx, cy - R - 0.2*k);
+    }
+  }
+
   function drawScale(ctx){
     var k = V.k, x = PX(CX1+1.4);
-    ctx.strokeStyle = "#59636F"; ctx.lineWidth = 1.6;
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.6;
     ctx.beginPath(); ctx.moveTo(x, PY(CY0)); ctx.lineTo(x, PY(CY0+CH)); ctx.stroke();
-    var marks = [
-      { v:0.25, lab:"\u00BC" }, { v:0.5, lab:"\u00BD" },
-      { v:0.75, lab:"\u00BE" }, { v:1, lab:"FULL" }
-    ];
-    /* every twentieth as a small tick */
-    ctx.strokeStyle = "rgba(89,99,111,.55)"; ctx.lineWidth = 1;
+    var marks = [ { v:0.25, lab:"¼" }, { v:0.5, lab:"½" }, { v:0.75, lab:"¾" }, { v:1, lab:"FULL" } ];
+    ctx.strokeStyle = C.tick; ctx.lineWidth = 1;
     ctx.beginPath();
-    for(var i=0;i<=20;i++){
-      var yy = PY(CY0 + CH*i/20);
-      ctx.moveTo(x, yy); ctx.lineTo(x + 0.7*k, yy);
-    }
+    for(var i=0;i<=20;i++){ var yy = PY(CY0 + CH*i/20); ctx.moveTo(x, yy); ctx.lineTo(x + 0.7*k, yy); }
     ctx.stroke();
+    var acc = isDarkNow() ? "#A486FF" : "#6D3FD4";
     for(var m=0;m<marks.length;m++){
       var y = PY(CY0 + CH*marks[m].v);
-      var on = Math.abs(vol - marks[m].v) < 0.005;
-      ctx.strokeStyle = on ? "#6D3FD4" : "#3C4653";
-      ctx.lineWidth = on ? 2.4 : 1.8;
+      var on = lidOn && Math.abs(vol - marks[m].v) < 0.005;
+      ctx.strokeStyle = on ? acc : C.ink; ctx.lineWidth = on ? 2.4 : 1.8;
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 2.2*k, y); ctx.stroke();
       if(V.compact) continue;
-      ctx.fillStyle = on ? "#6D3FD4" : "#3C4653";
-      ctx.font = '700 ' + Math.max(9, 1.25*k).toFixed(1) + 'px "Poppins", sans-serif';
+      ctx.fillStyle = on ? acc : C.ink; ctx.font = font(1.25*k, 10);
       ctx.textAlign = "left"; ctx.textBaseline = "middle";
       ctx.fillText(marks[m].lab, x + 2.7*k, y);
     }
     if(!V.compact){
       ctx.save();
-      ctx.translate(x + 5.6*k, PY(CY0 + CH*0.5));
-      ctx.rotate(-Math.PI/2);
-      ctx.fillStyle = "#59636F";
-      ctx.font = '700 ' + Math.max(8, 0.95*k).toFixed(1) + 'px "Poppins", sans-serif';
+      ctx.translate(x + 6.4*k, PY(CY0 + CH*0.5)); ctx.rotate(-Math.PI/2);
+      ctx.fillStyle = C.ink2; ctx.font = font(0.95*k, 9);
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("VOLUME (CONTAINERS)", 0, 0);
       ctx.restore();
     }
   }
 
-  function drawGauge(ctx){
-    var k = V.k, cx = PX(11), cy = PY(19), R = 6.6*k;
-    ctx.fillStyle = "rgba(20,26,34,.12)";
-    ctx.beginPath(); ctx.arc(cx+3, cy+4, R, 0, Math.PI*2); ctx.fill();
-    var g = ctx.createLinearGradient(cx-R, cy-R, cx+R, cy+R);
-    g.addColorStop(0,"#98A2AE"); g.addColorStop(.5,"#6E7884"); g.addColorStop(1,"#4C5560");
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = "#F7FAFD";
-    ctx.beginPath(); ctx.arc(cx, cy, R*0.85, 0, Math.PI*2); ctx.fill();
-    /* the dial runs 0 to 120 atm over 240 degrees */
-    var P = pressure(), PMAXD = 120;
-    var a0 = Math.PI*0.75, a1 = Math.PI*2.25;
-    ctx.strokeStyle = "#C3CBD5"; ctx.lineWidth = Math.max(1,0.16*k);
-    for(var i=0;i<=12;i++){
-      var a = a0 + (a1-a0)*i/12;
-      var big = (i%3===0);
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a)*R*(big?0.62:0.70), cy + Math.sin(a)*R*(big?0.62:0.70));
-      ctx.lineTo(cx + Math.cos(a)*R*0.78, cy + Math.sin(a)*R*0.78);
-      ctx.strokeStyle = big ? "#5A6472" : "#B9C2CD";
-      ctx.stroke();
-      if(i%3===0 && !V.compact){
-        ctx.fillStyle = "#5A6472";
-        ctx.font = '700 ' + Math.max(7,0.82*k).toFixed(1) + 'px "IBM Plex Mono", monospace';
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(String(Math.round(PMAXD*i/12)),
-                     cx + Math.cos(a)*R*0.50, cy + Math.sin(a)*R*0.50);
+  /* ------------------------------------------------ phase diagram (schematic) */
+  var TP = { u:0.22, v:0.22 }, CP = { u:0.72, v:0.62 };
+  function vSub(u){ return 0.03 + (TP.v-0.03)*Math.pow(clamp(u/TP.u,0,1), 2.2); }
+  function vVap(u){ return TP.v + (CP.v-TP.v)*Math.pow(clamp((u-TP.u)/(CP.u-TP.u),0,1), 1.6); }
+  function uFus(v){ return TP.u + 0.07*clamp((v-TP.v)/(1-TP.v),0,1); }
+  var U_BOIL = 0.42;
+  function vOfP(P){ return 0.03 + 0.94*Math.log(1+P)/Math.log(1+P_BURST); }
+  function phasePoint(){
+    var s = S(), u, v, where;
+    var st = stateName();
+    if(!lidOn || st === "Empty"){
+      u = st === "Empty" ? 0.5 : (T < s.boil ? TP.u + (U_BOIL-TP.u)*clamp((T-s.melt)/(s.boil-s.melt),0,1) : U_BOIL + 0.1);
+      return { u:clamp(u,0.02,0.98), v:0.03, where: lidOn ? "at the bottom (no molecules)" : "at the bottom (the lid is off)" };
+    }
+    if(st === "Solid"){
+      u = TP.u*clamp(T/s.melt, 0.08, 1); v = vSub(u);
+      where = "on the solid–gas line (solid with a little vapor)";
+    } else if(st === "Liquid"){
+      u = TP.u + (U_BOIL-TP.u)*clamp((T-s.melt)/(s.boil-s.melt),0,1); v = vVap(u);
+      where = "on the liquid–gas line (liquid with vapor above it)";
+    } else {
+      if(T < s.tc) u = U_BOIL + (CP.u-U_BOIL)*Math.log(T/s.boil)/Math.log(s.tc/s.boil);
+      else u = CP.u + (0.97-CP.u)*Math.min(1, Math.log(T/s.tc)/Math.log(T_MAX/s.tc));
+      v = vOfP(pressure());
+      if(u < CP.u){
+        v = 0.03 + (vVap(u) - 0.07)*clamp(v/vOfP(P_BURST*0.6), 0, 1);
+        where = "in the gas area";
+      } else {
+        where = v > CP.v ? "in the supercritical fluid area" : "in the gas area";
       }
     }
-    var frac = clamp(P/PMAXD, 0, 1.02);
-    var na = a0 + (a1-a0)*Math.min(frac,1);
-    ctx.strokeStyle = "#E8552F"; ctx.lineWidth = Math.max(2, 0.32*k); ctx.lineCap = "round";
+    return { u:clamp(u,0.02,0.98), v:clamp(v,0.02,0.98), where:where };
+  }
+  function drawPhase(){
+    var sz = fit(phaseC, pctx), w = sz.w, h = sz.h, ctx = pctx;
+    var mL = 30, mR = 8, mT = 8, mB = 28;
+    var pw = w-mL-mR, ph = h-mT-mB;
+    function X(u){ return mL + u*pw; }
+    function Y(v){ return mT + ph - v*ph; }
+    ctx.clearRect(0,0,w,h);
+    var P = C.ph, n = 40, i;
+    /* gas: everything first */
+    ctx.fillStyle = P.gas; ctx.fillRect(X(0), Y(1), pw, ph);
+    /* supercritical */
+    ctx.fillStyle = P.super; ctx.fillRect(X(CP.u), Y(1), X(1)-X(CP.u), Y(CP.v)-Y(1));
+    /* liquid: above the vapor curve, right of the fusion line, left of the critical temperature */
+    ctx.fillStyle = P.liquid;
     ctx.beginPath();
-    ctx.moveTo(cx - Math.cos(na)*R*0.12, cy - Math.sin(na)*R*0.12);
-    ctx.lineTo(cx + Math.cos(na)*R*0.66, cy + Math.sin(na)*R*0.66);
+    ctx.moveTo(X(TP.u), Y(TP.v));
+    for(i=1;i<=n;i++){ var uu = TP.u + (CP.u-TP.u)*i/n; ctx.lineTo(X(uu), Y(vVap(uu))); }
+    ctx.lineTo(X(CP.u), Y(1)); ctx.lineTo(X(uFus(1)), Y(1));
+    ctx.closePath(); ctx.fill();
+    /* solid: left of the fusion line, above the sublimation curve */
+    ctx.fillStyle = P.solid;
+    ctx.beginPath();
+    ctx.moveTo(X(0), Y(vSub(0)));
+    for(i=1;i<=n;i++){ var us = TP.u*i/n; ctx.lineTo(X(us), Y(vSub(us))); }
+    ctx.lineTo(X(uFus(1)), Y(1)); ctx.lineTo(X(0), Y(1));
+    ctx.closePath(); ctx.fill();
+    /* boundary lines */
+    ctx.strokeStyle = P.line; ctx.lineWidth = 2; ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(X(0), Y(vSub(0)));
+    for(i=1;i<=n;i++){ var u1 = TP.u*i/n; ctx.lineTo(X(u1), Y(vSub(u1))); }
+    for(i=1;i<=n;i++){ var u2 = TP.u + (CP.u-TP.u)*i/n; ctx.lineTo(X(u2), Y(vVap(u2))); }
+    ctx.moveTo(X(TP.u), Y(TP.v)); ctx.lineTo(X(uFus(1)), Y(1));
     ctx.stroke();
-    ctx.fillStyle = "#3C4653";
-    ctx.beginPath(); ctx.arc(cx, cy, R*0.09, 0, Math.PI*2); ctx.fill();
-    /* the reading goes in a plate below the dial, so nothing sits on the numbers */
-    var bw = R*1.5, bh = R*0.52, by = cy + R + 0.35*k;
-    ctx.fillStyle = "#3C4653";
-    roundRect(ctx, cx - bw/2, by, bw, bh, 0.35*k); ctx.fill();
-    ctx.fillStyle = "#8FD2FF";
-    ctx.font = '700 ' + Math.max(11, 1.5*k).toFixed(1) + 'px "IBM Plex Mono", monospace';
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(fmt(P,1) + " atm", cx, by + bh*0.52);
-    ctx.fillStyle = "#3C4653";
-    ctx.font = '700 ' + Math.max(8, 0.95*k).toFixed(1) + 'px "Poppins", sans-serif';
-    ctx.textBaseline = "top";
-    ctx.fillText("PRESSURE", cx, by + bh + 0.25*k);
-    /* a small pipe joining the gauge to the tank */
-    ctx.strokeStyle = "#6E7884"; ctx.lineWidth = 1.1*k;
-    ctx.beginPath();
-    ctx.moveTo(cx + R*0.92, cy); ctx.lineTo(PX(CX0-1), cy); ctx.stroke();
+    /* axes */
+    ctx.strokeStyle = C.axis; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(X(0), Y(1)); ctx.lineTo(X(0), Y(0)); ctx.lineTo(X(1), Y(0)); ctx.stroke();
+    ctx.fillStyle = C.axis;
+    ctx.beginPath(); ctx.moveTo(X(0)-5, Y(1)+8); ctx.lineTo(X(0), Y(1)); ctx.lineTo(X(0)+5, Y(1)+8); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(X(1)-8, Y(0)-5); ctx.lineTo(X(1), Y(0)); ctx.lineTo(X(1)-8, Y(0)+5); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.font = font(13, 11);
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.fillText("Temperature", mL + pw/2, Y(0) + 6);
+    ctx.save(); ctx.translate(12, mT + ph/2); ctx.rotate(-Math.PI/2);
+    ctx.textBaseline = "middle"; ctx.fillText("Pressure", 0, 0); ctx.restore();
+    /* region labels */
+    ctx.fillStyle = P.text; ctx.font = font(14, 11); ctx.textBaseline = "middle";
+    ctx.fillText("solid", X(0.11), Y(0.8));
+    ctx.fillText("liquid", X(0.5), Y(0.82));
+    ctx.fillText("gas", X(0.6), Y(0.14));
+    ctx.font = font(11, 9);
+    ctx.fillText("supercritical", X(0.86), Y(0.86));
+    ctx.fillText("triple", X(TP.u - 0.09), Y(TP.v + 0.13));
+    ctx.fillText("point", X(TP.u - 0.09), Y(TP.v + 0.07));
+    ctx.fillText("critical point", X(CP.u - 0.1), Y(CP.v + 0.08));
+    ctx.fillStyle = P.line;
+    ctx.beginPath(); ctx.arc(X(TP.u), Y(TP.v), 4, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(X(CP.u), Y(CP.v), 4, 0, Math.PI*2); ctx.fill();
+    /* the dot */
+    var d = phasePoint();
+    ctx.fillStyle = "#E3211B"; ctx.strokeStyle = "#FFFFFF"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X(d.u), Y(d.v), 7, 0, Math.PI*2); ctx.fill(); ctx.stroke();
   }
 
-  function drawThermo(ctx){
-    var k = V.k, x = PX(62), yb = PY(3), yt = PY(26);
-    var wd = 2.2*k;
-    ctx.fillStyle = "rgba(20,26,34,.10)";
-    roundRect(ctx, x-wd/2+3, yt+3, wd, yb-yt, wd/2); ctx.fill();
-    ctx.fillStyle = "#F5F8FC";
-    roundRect(ctx, x-wd/2, yt, wd, yb-yt, wd/2); ctx.fill();
-    ctx.strokeStyle = "#9AA4B0"; ctx.lineWidth = 1.2;
-    roundRect(ctx, x-wd/2, yt, wd, yb-yt, wd/2); ctx.stroke();
-    /* a log-ish scale so both 45 K and 2700 K are readable */
-    function ty(t){
-      var f = Math.log(clamp(t,T_MIN,T_MAX)/T_MIN)/Math.log(T_MAX/T_MIN);
-      return yb - (yb-yt)*f;
-    }
-    var labels = [10,30,100,300,1000,3000];
-    ctx.font = '700 ' + Math.max(7,0.85*k).toFixed(1) + 'px "IBM Plex Mono", monospace';
-    ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    for(var i=0;i<labels.length;i++){
-      var y = ty(labels[i]);
-      ctx.strokeStyle = "#B9C2CD"; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(x+wd/2, y); ctx.lineTo(x+wd/2+0.9*k, y); ctx.stroke();
-      ctx.fillStyle = "#5A6472";
-      ctx.fillText(String(labels[i]), x+wd/2+1.3*k, y);
-    }
-    /* the column */
-    var yv = ty(T);
-    var cg = ctx.createLinearGradient(0, yb, 0, yt);
-    cg.addColorStop(0,"#E8552F"); cg.addColorStop(1,"#F6A03A");
-    ctx.fillStyle = cg;
-    roundRect(ctx, x-wd*0.28, yv, wd*0.56, yb-yv, wd*0.28); ctx.fill();
-    ctx.fillStyle = "#E8552F";
-    ctx.beginPath(); ctx.arc(x, yb, wd*0.72, 0, Math.PI*2); ctx.fill();
-    if(V.compact) return;
-    ctx.fillStyle = "#131820";
-    ctx.font = '700 ' + Math.max(10, 1.35*k).toFixed(1) + 'px "IBM Plex Mono", monospace';
-    ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-    ctx.fillText(Math.round(T) + " K", x, yt - 1.4*k);
-    ctx.fillStyle = "#5A6472";
-    ctx.font = '700 ' + Math.max(8, 0.95*k).toFixed(1) + 'px "Poppins", sans-serif';
-    ctx.fillText(stateName().toUpperCase(), x, yt - 0.1*k);
-  }
-
-  /* how a value on each axis should be written */
+  /* ------------------------------------------------ graph */
   function axText(key, val){
     if(key === "t") return Math.round(val) + " K";
     if(key === "v") return val.toFixed(2) + " cont.";
+    if(key === "m") return Math.round(val) + " molecules";
     return val.toFixed(1) + " atm";
   }
-  /* the key, with substances you have not used yet dimmed */
   function renderKey(){
     var used = [false,false,false,false];
-    for(var i=0;i<trials.length;i++){
-      var gi = (typeof trials[i].sidx === "number") ? trials[i].sidx : 0;
-      used[gi] = true;
-    }
+    for(var i=0;i<trials.length;i++) used[trials[i].sidx] = true;
     var html = "";
     for(var g=0; g<SUBS.length; g++){
-      html += '<span class="cvlab-kchip' + (used[g] ? "" : " off") + '">'
-        + '<i style="border-top-color:' + SUBS[g].col + ';background:' + SUBS[g].col + '"></i>'
+      html += '<span class="kchip' + (used[g] ? "" : " off") + '"><i style="background:' + SUBS[g].gcol + '"></i>'
         + SUBS[g].name + (used[g] ? "" : " <b>no data</b>") + '</span>';
     }
     elKey.innerHTML = html;
   }
-
-  /* ------------------------------------------------ graph */
   function drawGraph(){
-    var sz = fit(graphC, gctx), w = sz.w, h = sz.h;
-    var ctx = gctx;
-    var mL = 58, mR = 16, mT = 14, mB = 40;
+    var sz = fit(graphC, gctx), w = sz.w, h = sz.h, ctx = gctx;
+    var mL = 62, mR = 16, mT = 14, mB = 46;
     var pw = w-mL-mR, ph = h-mT-mB;
     var conf = {
       PT: { xk:"t", yk:"p", xl:"TEMPERATURE (K)", yl:"PRESSURE (atm)", xdp:0, ydp:1 },
       PV: { xk:"v", yk:"p", xl:"VOLUME (containers)", yl:"PRESSURE (atm)", xdp:2, ydp:1 },
-      VT: { xk:"t", yk:"v", xl:"TEMPERATURE (K)", yl:"VOLUME (containers)", xdp:0, ydp:2 }
+      VT: { xk:"t", yk:"v", xl:"TEMPERATURE (K)", yl:"VOLUME (containers)", xdp:0, ydp:2 },
+      PN: { xk:"m", yk:"p", xl:"MOLECULES", yl:"PRESSURE (atm)", xdp:0, ydp:1 }
     }[axisMode];
-    var maxX = 1e-9, maxY = 1e-9;
-    for(var i=0;i<trials.length;i++){
-      maxX = Math.max(maxX, trials[i][conf.xk]);
-      maxY = Math.max(maxY, trials[i][conf.yk]);
+    var maxX = 1e-9, maxY = 1e-9, i;
+    for(i=0;i<trials.length;i++){ maxX = Math.max(maxX, trials[i][conf.xk]); maxY = Math.max(maxY, trials[i][conf.yk]); }
+    if(trials.length === 0){
+      maxX = conf.xk === "v" ? 1 : (conf.xk === "m" ? 120 : 1000);
+      maxY = conf.yk === "v" ? 1 : 40;
     }
-    if(trials.length === 0){ maxX = conf.xk === "v" ? 1 : 1000; maxY = conf.yk === "v" ? 1 : 40; }
     maxX *= 1.15; maxY *= 1.15;
     var xStep = axisStep(maxX), yStep = axisStep(maxY);
     maxX = Math.ceil(maxX/xStep)*xStep; maxY = Math.ceil(maxY/yStep)*yStep;
@@ -915,180 +1301,209 @@
     var PYg = function(b){ return mT + ph - (b/maxY)*ph; };
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FCFDFE"; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = "#E8ECF1"; ctx.lineWidth = 1;
+    ctx.fillStyle = C.plot; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var y0=0; y0<=maxY+1e-9; y0+=yStep/2){ var ya=Math.round(PYg(y0))+0.5; ctx.moveTo(mL,ya); ctx.lineTo(mL+pw,ya); }
     for(var x0=0; x0<=maxX+1e-9; x0+=xStep/2){ var xa=Math.round(PXg(x0))+0.5; ctx.moveTo(xa,mT); ctx.lineTo(xa,mT+ph); }
     ctx.stroke();
-    ctx.strokeStyle = "#D3D9E0";
+    ctx.strokeStyle = C.grid2;
     ctx.beginPath();
     for(var y1=0; y1<=maxY+1e-9; y1+=yStep){ var yb=Math.round(PYg(y1))+0.5; ctx.moveTo(mL,yb); ctx.lineTo(mL+pw,yb); }
     for(var x1=0; x1<=maxX+1e-9; x1+=xStep){ var xb=Math.round(PXg(x1))+0.5; ctx.moveTo(xb,mT); ctx.lineTo(xb,mT+ph); }
     ctx.stroke();
-    ctx.strokeStyle = "#131820"; ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = "#59636F"; ctx.font = '700 10px "IBM Plex Mono", monospace';
+    ctx.strokeStyle = C.axis; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
+    ctx.fillStyle = C.lab; ctx.font = font(13, 11);
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for(var y2=0; y2<=maxY+1e-9; y2+=yStep) ctx.fillText(y2.toFixed(conf.ydp), mL-7, PYg(y2));
+    for(var y2=0; y2<=maxY+1e-9; y2+=yStep) ctx.fillText(y2.toFixed(conf.ydp), mL-8, PYg(y2));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var x2=0; x2<=maxX+1e-9; x2+=xStep) ctx.fillText(x2.toFixed(conf.xdp), PXg(x2), mT+ph+7);
     ctx.save();
     ctx.translate(15, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#131820"; ctx.font = '700 10px "Poppins", sans-serif';
+    ctx.fillStyle = C.axis; ctx.font = font(13, 11);
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(conf.yl, 0, 0);
     ctx.restore();
-    ctx.fillStyle = "#131820"; ctx.font = '700 10px "Poppins", sans-serif';
+    ctx.fillStyle = C.axis; ctx.font = font(13, 11);
     ctx.textAlign = "center"; ctx.textBaseline = "top";
-    ctx.fillText(conf.xl, mL+pw/2, mT+ph+22);
+    ctx.fillText(conf.xl, mL+pw/2, mT+ph+25);
 
     if(!trials.length){
       plotted = [];
-      ctx.fillStyle = "#93A0AF";
-      ctx.font = '700 13px "Poppins", sans-serif';
+      ctx.fillStyle = C.lab; ctx.font = font(15, 12);
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("Record some rows and they will appear here.", mL+pw/2, mT+ph/2);
+      ctx.fillText("Record some rows and they will show up here.", mL+pw/2, mT+ph/2);
       elGNote.innerHTML = "Pick the pair of axes that matches the experiment you are running.";
       renderKey();
       return;
     }
-
-    /* one series per substance, each in its own colour */
     plotted = [];
     var groups = [];
     for(var g=0; g<SUBS.length; g++) groups.push([]);
     for(var j=0;j<trials.length;j++){
       var tr = trials[j];
-      var gi = (typeof tr.sidx === "number") ? tr.sidx : 0;
-      groups[gi].push({ x: tr[conf.xk], y: tr[conf.yk], t: tr });
+      groups[tr.sidx].push({ x: tr[conf.xk], y: tr[conf.yk], t: tr });
     }
     for(var gg=0; gg<groups.length; gg++){
       var arr = groups[gg];
       if(!arr.length) continue;
       arr.sort(function(a,b){ return a.x-b.x; });
-      /* joining line, twice the old thickness */
       if(arr.length > 1){
-        ctx.strokeStyle = SUBS[gg].col; ctx.lineWidth = 3.6;
-        ctx.lineJoin = "round"; ctx.lineCap = "round";
-        ctx.globalAlpha = 0.75;
+        ctx.strokeStyle = SUBS[gg].gcol; ctx.lineWidth = 3.6;
+        ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.globalAlpha = 0.75;
         ctx.beginPath();
         for(var m=0;m<arr.length;m++){
           var qx = PXg(arr[m].x), qy = PYg(Math.min(maxY, arr[m].y));
           if(m===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
         }
-        ctx.stroke();
-        ctx.globalAlpha = 1;
+        ctx.stroke(); ctx.globalAlpha = 1;
       }
       for(var n2=0;n2<arr.length;n2++){
         var cx = PXg(arr[n2].x), cy = PYg(Math.min(maxY, arr[n2].y));
         plotted.push({ sx:cx, sy:cy, gi:gg, t:arr[n2].t, x:arr[n2].x, y:arr[n2].y });
-        ctx.fillStyle = SUBS[gg].col;
-        ctx.beginPath(); ctx.arc(cx, cy, 5.4, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = "#FCFDFE"; ctx.lineWidth = 1.8;
-        ctx.beginPath(); ctx.arc(cx, cy, 5.4, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = SUBS[gg].gcol;
+        ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = C.ring; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI*2); ctx.stroke();
       }
     }
-
-    /* the hovered point gets a ring and a little card with its coordinates */
     if(hoverIdx >= 0 && hoverIdx < plotted.length){
       var hp = plotted[hoverIdx];
-      ctx.strokeStyle = SUBS[hp.gi].col; ctx.lineWidth = 2.4;
-      ctx.beginPath(); ctx.arc(hp.sx, hp.sy, 10, 0, Math.PI*2); ctx.stroke();
-      var l1 = SUBS[hp.gi].name;
+      ctx.strokeStyle = SUBS[hp.gi].gcol; ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.arc(hp.sx, hp.sy, 11, 0, Math.PI*2); ctx.stroke();
+      var l1 = SUBS[hp.gi].name + " · " + hp.t.m + " molecules";
       var l2 = "(" + axText(conf.xk, hp.x) + ",  " + axText(conf.yk, hp.y) + ")";
-      ctx.font = '700 12px "Poppins", sans-serif';
-      var w1 = ctx.measureText(l1).width;
-      ctx.font = '700 12.5px "IBM Plex Mono", monospace';
-      var w2 = ctx.measureText(l2).width;
-      var bw = Math.max(w1, w2) + 20, bh = 40;
+      ctx.font = font(13, 12);
+      var bw = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) + 22, bh = 46;
       var bx = hp.sx + 14, by = hp.sy - bh - 12;
       if(bx + bw > w - 4) bx = hp.sx - bw - 14;
       if(by < mT + 2) by = hp.sy + 16;
-      ctx.fillStyle = "rgba(19,24,32,.94)";
+      ctx.fillStyle = C.tipBg;
       roundRect(ctx, bx, by, bw, bh, 8); ctx.fill();
-      ctx.strokeStyle = SUBS[hp.gi].col; ctx.lineWidth = 2;
+      ctx.strokeStyle = SUBS[hp.gi].gcol; ctx.lineWidth = 2;
       roundRect(ctx, bx, by, bw, bh, 8); ctx.stroke();
       ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      ctx.fillStyle = SUBS[hp.gi].col;
-      ctx.font = '700 12px "Poppins", sans-serif';
-      ctx.fillText(l1, bx + 10, by + 13);
-      ctx.fillStyle = "#F2F5FA";
-      ctx.font = '700 12.5px "IBM Plex Mono", monospace';
-      ctx.fillText(l2, bx + 10, by + 28);
+      ctx.fillStyle = SUBS[hp.gi].gcol; ctx.fillText(l1, bx + 11, by + 15);
+      ctx.fillStyle = C.tipInk; ctx.fillText(l2, bx + 11, by + 32);
     }
-
     renderKey();
-    var kinds = {}, nk = 0;
+    var kinds = {}, nk = 0, counts = {}, nc = 0;
     for(var kk=0;kk<trials.length;kk++){
-      var kg = (typeof trials[kk].sidx === "number") ? trials[kk].sidx : 0;
-      if(!kinds[kg]){ kinds[kg] = 1; nk++; }
+      if(!kinds[trials[kk].sidx]){ kinds[trials[kk].sidx] = 1; nk++; }
+      if(!counts[trials[kk].m]){ counts[trials[kk].m] = 1; nc++; }
     }
     var note = trials.length + " point" + (trials.length===1?"":"s")
-      + " plotted. Each substance is joined separately, in order of the x axis rather than the order "
-      + "you recorded them. Hover a point, or tap it, to read its coordinates.";
-    if(nk > 1){
-      note += " <b>The substances land on the same line, and that is the right answer</b> &mdash; the "
-            + "container holds the same number of molecules whichever one you pick, and pressure "
-            + "depends on how many there are rather than which ones.";
+      + " plotted. Each substance gets its own line, joined left to right. Hover or tap a point to read it.";
+    if(nk > 1 && nc === 1){
+      note += " <b>The substances land on the same line, and that is the right answer</b> &mdash; they all have the same number of molecules, "
+            + "and pressure depends on how many molecules there are, not which kind.";
+    } else if(nc > 1 && axisMode !== "PN"){
+      note += " Some rows have a different number of molecules. Try <b>Pressure vs molecules</b> to see that pattern.";
     }
     elGNote.innerHTML = note;
   }
 
-  /* ------------------------------------------------ pointer: drag the lid */
+  /* ------------------------------------------------ pointer: drag the lid or the pump */
   function pos(e){
     var r = sceneC.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
+  function hitLid(p){
+    if(!lidOn) return false;
+    var ly = PY(lidY());
+    return Math.abs(p.y - (ly - 1.5*V.k)) < Math.max(22, 1.8*V.k) && p.x > PX(CX0-1.5) && p.x < PX(CX1+1.5);
+  }
+  function hitPump(p){
+    var hy = PY(PUMP.top + 0.6 + 4.2*pumpH);
+    return p.x > PX(PUMP.x - 4) && p.x < PX(PUMP.x + 4) && p.y > hy - 2*V.k && p.y < hy + 2*V.k;
+  }
   sceneC.addEventListener("pointerdown", function(e){
     var p = pos(e);
-    var ly = PY(lidY());
-    if(Math.abs(p.y - ly) < 34 && p.x > PX(CX0-3) && p.x < PX(CX1+3)){
-      dragging = true;
-      sceneC.classList.add("dragging");
-      sceneC.setPointerCapture && sceneC.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    }
+    if(hitPump(p)) dragging = "pump";
+    else if(hitLid(p)){ dragging = "lid"; grabOff = (V.oy - p.y)/V.k - lidY(); }
+    else return;
+    pumpAnim = null;
+    sceneC.classList.add("dragging");
+    if(sceneC.setPointerCapture) sceneC.setPointerCapture(e.pointerId);
+    e.preventDefault();
   });
   sceneC.addEventListener("pointermove", function(e){
-    if(!dragging) return;
     var p = pos(e);
-    var u = (V.oy - p.y)/V.k;                 /* world y under the pointer */
-    setVolume((u - CY0)/CH, true);
+    var u = (V.oy - p.y)/V.k;
+    if(dragging === "lid"){ setVolume((u - grabOff - CY0)/CH, true); return; }
+    if(dragging === "pump"){ setPumpH(clamp((u - PUMP.top - 0.6 + 0.45)/4.2, 0, 1)); return; }
+    sceneC.classList.toggle("grab", hitPump(p) || hitLid(p));
   });
+  function setPumpH(hh){
+    pumpH = hh;
+    if(pumpH > 0.8) pumpArmed = true;
+    if(pumpArmed && pumpH < 0.12){ pumpArmed = false; pumpIn(); }
+  }
   function endDrag(){
     if(!dragging) return;
-    dragging = false;
+    var was = dragging;
+    dragging = null;
     sceneC.classList.remove("dragging");
-    if(lastAdia){
+    if(was === "lid" && lastAdia){
       say((lastAdia.squeeze ? "Squeezing" : "Expanding") + " took the gas from <strong>"
-          + Math.round(lastAdia.from) + " K</strong> to <strong>" + Math.round(lastAdia.to)
-          + " K</strong> on its own.");
+          + tText(lastAdia.from) + "</strong> to <strong>" + tText(lastAdia.to) + "</strong> on its own.");
     }
+    if(was === "pump") pumpAnim = { t:0, mode:"up" };
   }
   sceneC.addEventListener("pointerup", endDrag);
   sceneC.addEventListener("pointercancel", endDrag);
+  sceneC.addEventListener("keydown", function(e){
+    if(e.key === "ArrowDown"){ setVolume(vol - 0.05); e.preventDefault(); }
+    else if(e.key === "ArrowUp"){ setVolume(vol + 0.05); e.preventDefault(); }
+    else if(e.key === "p" || e.key === "P"){ startPumpStroke(); }
+  });
+  function startPumpStroke(){ if(!dragging) pumpAnim = { t:0, mode:"stroke" }; }
 
   /* ------------------------------------------------ loop */
+  function physics(dt){
+    if(heatCmd !== 0){
+      T = clamp(T + heatCmd*rate*dt, T_MIN, T_MAX);
+      targetT = null;
+    } else if(targetT !== null){
+      var gap = targetT - T, step = rate*dt;
+      if(Math.abs(gap) <= step){ T = targetT; targetT = null; }
+      else T += Math.sign(gap)*step;
+    }
+    stepParticles(Math.min(dt, 0.033));
+    checkBurst();
+    if(lidFly){
+      lidFly.y += lidFly.vy*dt; lidFly.dx += lidFly.vx*dt; lidFly.rot += lidFly.vr*dt;
+    }
+  }
+  function animatePump(dt){
+    if(!pumpAnim) return;
+    pumpAnim.t += dt;
+    if(pumpAnim.mode === "stroke"){
+      var f = pumpAnim.t/0.45;
+      if(f < 0.5) setPumpH(1 - f*2);
+      else if(f < 1) setPumpH((f-0.5)*2);
+      else { setPumpH(1); pumpAnim = null; }
+    } else {
+      setPumpH(Math.min(1, pumpH + dt*4));
+      if(pumpH >= 1) pumpAnim = null;
+    }
+  }
+  var lastN = -1, lastLid = true;
   function frame(){
     var n = now();
     if(lastFrame === null) lastFrame = n;
     var dt = (n - lastFrame)/1000; lastFrame = n;
     if(dt > 0.05) dt = 0.05;
-
-    if(heatCmd !== 0){
-      T = clamp(T + heatCmd*rate*dt, T_MIN, T_MAX);
-      targetT = null;
-    } else if(targetT !== null){
-      var gap = targetT - T;
-      var step = rate*dt;
-      if(Math.abs(gap) <= step){ T = targetT; targetT = null; }
-      else T += Math.sign(gap)*step;
-    }
-    stepParticles(Math.min(dt, 0.033));
+    animatePump(dt);
+    if(!paused) physics(dt);
     drawScene();
+    drawPhase();
     renderReadouts();
+    if(N() !== lastN || lidOn !== lastLid){
+      lastN = N(); lastLid = lidOn; renderChips();
+      if(!lidOn && N() === 0 && escaped > 0) say("All of the gas escaped. Press <strong>Return lid</strong>, then pump in more molecules.");
+    }
     requestAnimationFrame(frame);
   }
 
@@ -1098,31 +1513,29 @@
     if(heatCmd !== 0) targetT = null;
   });
   function releaseHeat(){ heatCmd = 0; elHeat.value = "0"; }
-  elHeat.addEventListener("pointerup", releaseHeat);
-  elHeat.addEventListener("pointercancel", releaseHeat);
-  elHeat.addEventListener("mouseup", releaseHeat);
-  elHeat.addEventListener("touchend", releaseHeat);
-  elHeat.addEventListener("blur", releaseHeat);
+  ["pointerup","pointercancel","mouseup","touchend","blur","change"].forEach(function(ev){ elHeat.addEventListener(ev, releaseHeat); });
   elRate.addEventListener("change", function(){ rate = parseFloat(elRate.value) || 2500; });
   elTGo.addEventListener("click", function(){
     var v = parseFloat(elTSet.value);
     if(isNaN(v)) return;
     targetT = clamp(v, T_MIN, T_MAX);
     heatCmd = 0; elHeat.value = "0";
-    say("Heading for <strong>" + Math.round(targetT) + " K</strong>.");
+    say("Heading for <strong>" + tText(targetT) + "</strong>.");
   });
   elVol.addEventListener("input", function(){ setVolume(parseFloat(elVol.value)); });
   elSnap.addEventListener("change", function(){ if(elSnap.checked) setVolume(vol); });
   elRecord.addEventListener("click", record);
   elReset.addEventListener("click", function(){ setSub(si); });
-  elClear.addEventListener("click", function(){
-    trials = []; newest = -1; hoverIdx = -1; refresh(); say("Data cleared.");
-  });
+  elReturn.addEventListener("click", returnLid);
+  elPump.addEventListener("click", startPumpStroke);
+  elPause.addEventListener("click", function(){ setPaused(!paused); });
+  elStep.addEventListener("click", function(){ for(var i=0;i<4;i++) physics(1/30); });
+  elClear.addEventListener("click", function(){ trials = []; newest = -1; hoverIdx = -1; refresh(); say("Data cleared."); });
   elCopy.addEventListener("click", function(){
-    var rows = ["row\tsubstance\ttemperature_K\tvolume_containers\tpressure_atm"];
+    var rows = ["row\tsubstance\ttemperature_K\tvolume_containers\tmolecules\tpressure_atm"];
     for(var i=0;i<trials.length;i++){
       var r = trials[i];
-      rows.push(r.n + "\t" + r.sub + "\t" + Math.round(r.t) + "\t" + fmt(r.v,2) + "\t" + fmt(r.p,2));
+      rows.push(r.n + "\t" + r.sub + "\t" + Math.round(r.t) + "\t" + fmt(r.v,2) + "\t" + r.m + "\t" + fmt(r.p,2));
     }
     var txt = rows.join("\n");
     function fallback(){
@@ -1133,20 +1546,17 @@
       try{ document.execCommand("copy"); }catch(err){}
       document.body.removeChild(ta);
     }
-    function ok(){ elCopyNote.innerHTML = "Copied <b>" + trials.length + "</b> rows."; }
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(txt).then(ok, function(){ fallback(); ok(); });
-    } else { fallback(); ok(); }
+    function ok(){ elCopyNote.innerHTML = "Copied <b>" + trials.length + "</b> rows. Paste them into a spreadsheet."; }
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, function(){ fallback(); ok(); });
+    else { fallback(); ok(); }
   });
 
-  /* hovering, or tapping on a touch screen, reads a point's coordinates */
   function hoverAt(e){
     var r = graphC.getBoundingClientRect();
     var mx = e.clientX - r.left, my = e.clientY - r.top;
     var best = -1, bd = 18*18;
     for(var i=0;i<plotted.length;i++){
-      var dx = plotted[i].sx - mx, dy = plotted[i].sy - my;
-      var d2 = dx*dx + dy*dy;
+      var dx = plotted[i].sx - mx, dy = plotted[i].sy - my, d2 = dx*dx + dy*dy;
       if(d2 < bd){ bd = d2; best = i; }
     }
     if(best !== hoverIdx){ hoverIdx = best; drawGraph(); }
@@ -1160,26 +1570,50 @@
   });
 
   var rt;
-  window.addEventListener("resize", function(){
-    clearTimeout(rt); rt = setTimeout(function(){ hoverIdx = -1; drawGraph(); }, 120);
-  });
-  if(window.ResizeObserver){
-    new ResizeObserver(drawGraph).observe(graphC.parentNode);
+  window.addEventListener("resize", function(){ clearTimeout(rt); rt = setTimeout(function(){ hoverIdx = -1; drawGraph(); }, 120); });
+  if(window.ResizeObserver) new ResizeObserver(function(){ drawGraph(); }).observe(graphC.parentNode);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ drawGraph(); });
+
+  /* ------------------------------------------------ light / dark toggle */
+  var themeBtn = $("themeBtn");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.innerHTML = d ? SUN : MOON;
+    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
   }
-  if(document.fonts && document.fonts.ready){
-    document.fonts.ready.then(function(){ drawGraph(); });
+  function applyTheme(t){ document.documentElement.setAttribute("data-theme", t); readTheme(); paintToggle(); drawGraph(); }
+  themeBtn.addEventListener("click", function(){
+    var next = isDarkNow() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+  });
+  window.addEventListener("message", function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var t = e.data && e.data.simTheme;
+    if ((t === "light" || t === "dark") && t !== (isDarkNow() ? "dark" : "light")) applyTheme(t);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")){ readTheme(); paintToggle(); drawGraph(); } };
+    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
   }
 
-  buildSubs(); buildQuick(); seedParticles(); renderKey(); refresh();
+  /* ------------------------------------------------ boot */
+  readTheme(); paintToggle(); setPaused(false);
+  buildLattice(); buildSubs(); buildQuick(); seedParticles(); renderKey(); refresh();
   requestAnimationFrame(frame);
 
   if(window.__glHook) window.__glHook({
-    SUBS: SUBS, setSub: setSub, setVolume: setVolume, record: record,
-    setT: function(x){ T = clamp(x, T_MIN, T_MAX); targetT = null; heatCmd = 0; },
+    SUBS: SUBS, setSub: setSub, setVolume: setVolume, record: record, pumpIn: pumpIn, returnLid: returnLid,
+    setT: function(x){ T = clamp(x, T_MIN, T_MAX); targetT = null; heatCmd = 0; checkBurst(); },
     goT: function(x){ targetT = clamp(x, T_MIN, T_MAX); heatCmd = 0; },
-    pressure: pressure, stateName: stateName,
-    state: function(){ return { T:T, vol:vol, si:si, trials:trials, targetT:targetT,
-                                parts:parts, axisMode:axisMode }; },
+    pressure: pressure, stateName: stateName, phasePoint: phasePoint, setPaused: setPaused,
+    state: function(){ return { T:T, vol:vol, si:si, trials:trials, targetT:targetT, n:parts.length,
+                                lidOn:lidOn, axisMode:axisMode, paused:paused }; },
     setAxis: function(m){ axisMode = m; refresh(); }
   });
 })();
