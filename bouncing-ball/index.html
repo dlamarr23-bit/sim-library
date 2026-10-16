@@ -15,7 +15,8 @@
                style="width:100%;height:1400px;border:0" loading="lazy"
                title="Golf ball bounce height simulation"></iframe>
   2) Or paste the style block, the cvlab div, and the script block into a page.
-     Every CSS rule is scoped under .cvlab.
+     Layout rules are scoped under .cvlab; the light/dark color tokens live on :root,
+     and the small theme script in the head applies a saved light/dark choice.
 
   THE MODEL
      Free fall between impacts, solved exactly rather than integrated, so the
@@ -33,127 +34,208 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-.cvlab{
+/* ---------- tokens: bare :root = light, system dark unless light is chosen, explicit dark ---------- */
+:root{
   --bench:#DDE0D6; --paper:#FBFBF7; --rule:#C9CFC2;
   --ink:#1B1D1C; --ink-2:#5A5F58;
-  --blue:#1552B8; --blue-d:#0E3B87;
+  --blue:#1552B8; --blue-d:#0E3B87; --on-blue:#ffffff;
+  --tape:#E8B93C;
+  --head-bg:#1B1D1C; --head-ink:#F4F5F0;
+  --ro-bg:#000; --ro-line:#35392F; --ro-k:#8C9284; --ro-v:#DDE3D2;
+  --field:#EFF1E9; --row-line:#E8EAE1; --row-new:#FCF3D9; --notes-ink:#33362F;
+  /* canvas colors (read by the script) */
+  --c-wall1:#F1F2EC; --c-wall2:#E4E7DD; --c-floor1:#DEE1DB; --c-floor2:#C6CAC3; --c-floor-line:#ADB2AA;
+  --c-grout:#B7BCB4; --c-sheen:rgba(255,255,255,.35); --c-trail:#5A5F58; --c-shadow-rgb:27,29,28;
+  --c-label-bg:rgba(251,251,247,.93); --c-drop:#1552B8; --c-peak:#C0392B; --c-peak-text:#A6323C;
+  --c-plot:#FDFDF9; --c-grid:#E4E8DC; --c-grid-2:#CCD2C4; --c-axis:#1B1D1C; --c-tick:#5A5F58;
+  --c-empty:#8A9082; --c-perfect:#A9AFA2; --c-dot:#1552B8;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+    --ink:#EEF0EA; --ink-2:#B6BAB0;
+    --blue:#3F7FE6; --blue-d:#2A63C2; --on-blue:#ffffff;
+    --tape:#F0C64A;
+    --head-bg:#0A0B0A; --head-ink:#F4F5F0;
+    --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
+    --field:#252925; --row-line:#2A2F29; --row-new:#3A3320; --notes-ink:#C9CCC3;
+    --c-wall1:#20241F; --c-wall2:#1A1D19; --c-floor1:#3A3F38; --c-floor2:#2C302A; --c-floor-line:#545A51;
+    --c-grout:#4A5047; --c-sheen:rgba(255,255,255,.06); --c-trail:#C9CEC2; --c-shadow-rgb:0,0,0;
+    --c-label-bg:rgba(28,31,28,.93); --c-drop:#7FB0FF; --c-peak:#FF7A6A; --c-peak-text:#FF8F80;
+    --c-plot:#171A17; --c-grid:#262B25; --c-grid-2:#363D35; --c-axis:#C9CEC2; --c-tick:#A9AFA4;
+    --c-empty:#8D9288; --c-perfect:#6E756A; --c-dot:#7FB0FF;
+    --shadow:0 1px 3px rgba(0,0,0,.4);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+  --ink:#EEF0EA; --ink-2:#B6BAB0;
+  --blue:#3F7FE6; --blue-d:#2A63C2; --on-blue:#ffffff;
+  --tape:#F0C64A;
+  --head-bg:#0A0B0A; --head-ink:#F4F5F0;
+  --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
+  --field:#252925; --row-line:#2A2F29; --row-new:#3A3320; --notes-ink:#C9CCC3;
+  --c-wall1:#20241F; --c-wall2:#1A1D19; --c-floor1:#3A3F38; --c-floor2:#2C302A; --c-floor-line:#545A51;
+  --c-grout:#4A5047; --c-sheen:rgba(255,255,255,.06); --c-trail:#C9CEC2; --c-shadow-rgb:0,0,0;
+  --c-label-bg:rgba(28,31,28,.93); --c-drop:#7FB0FF; --c-peak:#FF7A6A; --c-peak-text:#FF8F80;
+  --c-plot:#171A17; --c-grid:#262B25; --c-grid-2:#363D35; --c-axis:#C9CEC2; --c-tick:#A9AFA4;
+  --c-empty:#8D9288; --c-perfect:#6E756A; --c-dot:#7FB0FF;
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+  color-scheme:dark;
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bench)}
+
+.cvlab{
   --ball:#F6F7F2; --ball-d:#C7CBBF;
-  --oak:#DDB37C; --epoxy:#22251F;
-  --wood:#E3C48D; --wood-d:#B08F4D;
-  --tile:#D5D8D2; --grout:#B4B8B0;
-  --tape:#E8B93C; --ptape:#7FA8CE;
   --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
-  padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
+  --font-m:"Poppins",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--bench);font-family:var(--font-b);font-weight:700;font-size:16px;color:var(--ink);
+  padding:clamp(10px,1.2vw,18px);max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
 }
 .cvlab *{box-sizing:border-box}
-.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
+.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:800;letter-spacing:.01em}
 .cvlab p{margin:0}
 .cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
-  display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
-.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--tape);margin-bottom:2px}
-.cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
-.cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
-.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:96px}
-.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
-  text-transform:uppercase;color:#8C9284}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
-  font-variant-numeric:tabular-nums;white-space:nowrap}
+/* ---------- instrument faceplate header ------------------------------- */
+.cvlab-head{background:var(--head-bg);color:var(--head-ink);border-radius:8px 8px 0 0;padding:14px 18px;
+  display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+.cvlab-title{flex:1 1 280px}
+.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:13px;letter-spacing:.18em;font-weight:700;
+  text-transform:uppercase;color:var(--tape);margin-bottom:4px}
+.cvlab-head h1{font-size:clamp(24px,2.8vw,36px);text-transform:uppercase;letter-spacing:.04em;line-height:1.05}
+.cvlab-readouts{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:5px;padding:6px 12px;min-width:120px}
+.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.14em;font-weight:700;
+  text-transform:uppercase;color:var(--ro-k)}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:clamp(22px,2.3vw,36px);font-weight:800;line-height:1.15;
+  color:var(--ro-v);font-variant-numeric:tabular-nums;white-space:nowrap}
 .cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
+.cvlab-themebtn{flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
+  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.cvlab-themebtn:hover{border-color:var(--tape)}
+.cvlab-themebtn svg{width:21px;height:21px}
 
+/* ---------- bench: apparatus + height-time trace ---------------------- */
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
-  border-radius:0 0 5px 5px;padding:10px 10px 12px}
+  border-radius:0 0 8px 8px;padding:12px 12px 14px}
 .cvlab canvas{display:block;width:100%}
-.cvlab-stage{display:grid;grid-template-columns:minmax(184px,.32fr) 1fr;gap:10px}
-#cvlab-scene,#cvlab-trace{height:clamp(320px,32vw,436px);border-radius:3px}
+.cvlab-stage{display:grid;grid-template-columns:minmax(220px,.34fr) 1fr;gap:12px}
+#cvlab-scene,#cvlab-trace{height:clamp(340px,32vw,560px);border-radius:4px}
 @media (max-width:760px){
   .cvlab-stage{grid-template-columns:1fr}
-  #cvlab-scene{height:clamp(260px,50vw,360px)}#cvlab-trace{height:clamp(190px,34vw,230px)}
+  #cvlab-scene{height:clamp(280px,60vw,380px)}#cvlab-trace{height:clamp(220px,46vw,280px)}
 }
-.cvlab-hint{font-family:var(--font-m);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+.cvlab-hint{font-family:var(--font-m);font-size:13px;letter-spacing:.06em;font-weight:700;text-transform:uppercase;
   color:var(--ink-2);margin-top:6px}
-.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;
+.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;padding-top:12px;
   border-top:1px dashed var(--rule)}
-.cvlab-status{flex:1 1 240px;min-width:200px;font-size:16px;color:var(--ink-2)}
-.cvlab-status strong{color:var(--ink);font-weight:700}
+.cvlab-status{flex:1 1 260px;min-width:200px;font-size:16px;font-weight:600;color:var(--ink-2)}
+.cvlab-status strong{color:var(--ink);font-weight:800}
 
-.cvlab-btn{font-family:var(--font-d);font-size:17px;font-weight:700;letter-spacing:.05em;
+/* ---------- buttons --------------------------------------------------- */
+.cvlab-btn{font-family:var(--font-d);font-size:16px;font-weight:800;letter-spacing:.06em;
   text-transform:uppercase;cursor:pointer;background:var(--paper);color:var(--ink);
-  border:1.5px solid var(--ink);border-radius:3px;padding:7px 14px;line-height:1.1;
+  border:1.5px solid var(--ink);border-radius:5px;padding:9px 16px;line-height:1.1;
   transition:transform .08s ease,background .12s ease,color .12s ease}
 .cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
 .cvlab-btn:active:not(:disabled){transform:translateY(1px)}
 .cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
-.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:#fff;min-width:126px}
-.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:#fff}
-.cvlab-btn-sm{font-size:15px;padding:5px 10px;border-width:1px}
+.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:var(--on-blue);min-width:150px}
+.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:var(--on-blue)}
+.cvlab-btn-sm{font-size:14px;padding:7px 12px;border-width:1px}
 
-.cvlab-grid{display:grid;gap:12px;margin-top:12px;
-  grid-template-columns:minmax(210px,.85fr) minmax(210px,.85fr) minmax(300px,1.3fr)}
+/* ---------- panels ---------------------------------------------------- */
+.cvlab-grid{display:grid;gap:14px;margin-top:14px;
+  grid-template-columns:minmax(260px,.85fr) minmax(260px,.85fr) minmax(320px,1.3fr)}
 @media (max-width:1000px){.cvlab-grid{grid-template-columns:1fr 1fr}
   .cvlab-panel-graph{grid-column:1/-1}}
 @media (max-width:640px){.cvlab-grid{grid-template-columns:1fr}}
-.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:5px;padding:12px;
-  display:flex;flex-direction:column;gap:10px}
-.cvlab-panel h2{font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-family:var(--font-m);
-  font-weight:700;color:var(--ink);padding-bottom:7px;border-bottom:2px solid var(--ink)}
-.cvlab-note{font-size:14.5px;color:var(--ink-2)}
-.cvlab-row{display:flex;flex-wrap:wrap;gap:6px}
+.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:8px;box-shadow:var(--shadow);
+  padding:14px;display:flex;flex-direction:column;gap:12px}
+.cvlab-panel h2{font-size:15px;letter-spacing:.14em;text-transform:uppercase;font-family:var(--font-m);
+  font-weight:800;color:var(--ink);padding-bottom:8px;border-bottom:2px solid var(--ink)}
+.cvlab-note{font-size:15px;font-weight:600;color:var(--ink-2)}
+.cvlab-note strong{color:var(--ink);font-weight:800}
+.cvlab-row{display:flex;flex-wrap:wrap;gap:8px}
 
-.cvlab-heights{display:flex;gap:5px}
-.cvlab-hbtn{flex:1;cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:3px;
-  padding:9px 2px;font-family:var(--font-m);font-size:14px;font-weight:700;color:var(--ink);
+.cvlab-heights{display:flex;gap:6px}
+.cvlab-hbtn{flex:1;cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:5px;
+  padding:10px 2px;font-family:var(--font-m);font-size:16px;font-weight:800;color:var(--ink);
   transition:background .12s ease,color .12s ease}
-.cvlab-hbtn:hover:not(:disabled){background:#EFF1E9}
-.cvlab-hbtn.is-on{background:var(--ink);color:#F4F5F0}
+.cvlab-hbtn:hover:not(:disabled){background:var(--field)}
+.cvlab-hbtn.is-on{background:var(--ink);color:var(--paper)}
 .cvlab-hbtn:disabled{opacity:.4;cursor:not-allowed}
 
-.cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
-.cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
-.cvlab-opts input{margin:3px 0 0;accent-color:var(--blue);flex:none}
+.cvlab-opts{display:flex;flex-direction:column;gap:8px;font-size:15px;font-weight:600;color:var(--ink-2)}
+.cvlab-opts label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.cvlab-opts input{margin:4px 0 0;width:17px;height:17px;accent-color:var(--blue);flex:none}
 
-.cvlab-tablewrap{max-height:300px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
-.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:14px}
-.cvlab thead th{position:sticky;top:0;background:#EFF1E9;font-size:11px;letter-spacing:.06em;
-  text-transform:uppercase;font-weight:700;padding:6px 5px;text-align:right;
+/* ---------- data table ----------------------------------------------- */
+.cvlab-tablewrap{max-height:380px;overflow:auto;border:1px solid var(--rule);border-radius:5px}
+.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:15.5px}
+.cvlab thead th{position:sticky;top:0;background:var(--field);font-size:12px;letter-spacing:.06em;
+  text-transform:uppercase;font-weight:800;padding:8px 6px;text-align:right;
   border-bottom:1px solid var(--rule);color:var(--ink-2)}
 .cvlab thead th:first-child{text-align:left}
-.cvlab tbody td{padding:4px 5px;text-align:right;font-variant-numeric:tabular-nums;
-  border-bottom:1px solid #E8EAE1}
+.cvlab tbody td{padding:5px 6px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;
+  border-bottom:1px solid var(--row-line)}
 .cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
 .cvlab tbody tr:last-child td{border-bottom:0}
-.cvlab tbody tr.is-new td{background:#FCF3D9}
-.cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
+.cvlab tbody tr.is-new td{background:var(--row-new)}
+.cvlab-empty{display:block;padding:14px 4px;font-size:15px;font-weight:600;color:var(--ink-2);font-family:var(--font-b);text-align:left}
 
-#cvlab-graph{height:clamp(260px,30vw,420px)}
-.cvlab-key{display:flex;flex-wrap:wrap;gap:12px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
-.cvlab-key i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--blue);
-  vertical-align:middle;margin-right:4px}
-.cvlab-key s{display:inline-block;width:16px;height:0;border-top:2px dashed #A9AFA2;
-  vertical-align:middle;margin-right:4px;text-decoration:none}
+/* ---------- graph ----------------------------------------------------- */
+#cvlab-graph{height:clamp(280px,28vw,460px)}
+.cvlab-key{display:flex;flex-wrap:wrap;gap:14px;font-family:var(--font-m);font-size:14px;font-weight:700;color:var(--ink-2)}
+.cvlab-key i{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--c-dot);
+  vertical-align:middle;margin-right:5px}
+.cvlab-key s{display:inline-block;width:20px;height:0;border-top:2px dashed var(--c-perfect);
+  vertical-align:middle;margin-right:5px;text-decoration:none}
 
-.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
-  padding:10px 14px}
-.cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
-.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
-.cvlab-notes li{margin:3px 0}
+/* ---------- dropdown sections (how to use + explanations) ------------- */
+.cvlab-notes{margin-top:14px;background:var(--paper);border:1px solid var(--rule);border-radius:8px;box-shadow:var(--shadow)}
+.cvlab-notes summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 18px;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.cvlab-notes summary::-webkit-details-marker{display:none}
+.cvlab-notes summary svg{width:18px;height:18px;flex:none;transition:transform .18s ease}
+.cvlab-notes[open] summary svg{transform:rotate(180deg)}
+.cvlab-notes[open] summary{border-bottom:1px solid var(--rule)}
+.cvlab-notes-body{padding:12px 18px 16px}
+.cvlab-notes p,.cvlab-notes li{font-size:16.5px;font-weight:500;line-height:1.55;color:var(--notes-ink)}
+.cvlab-notes p + p,.cvlab-notes p + ul,.cvlab-notes ul + p{margin-top:9px}
+.cvlab-notes ul,.cvlab-notes ol{margin:0;padding-left:24px}
+.cvlab-notes li{margin:7px 0}
+.cvlab-notes strong{color:var(--ink);font-weight:800}
+.cvlab-eq{display:inline-block;background:var(--field);border:1px solid var(--rule);border-radius:6px;
+  padding:1px 8px;color:var(--ink);font-weight:700}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#DDE0D6">
+<body>
 
 <div class="cvlab" id="cvlab">
 
   <header class="cvlab-head">
-    <div>
-      <span class="cvlab-eyebrow">Energy lab &middot; bouncing</span>
+    <div class="cvlab-title">
+      <span class="cvlab-eyebrow">Motion lab &middot; energy and bouncing</span>
       <h1>Drop height vs bounce height</h1>
     </div>
     <div class="cvlab-readouts">
@@ -162,12 +244,13 @@
       <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">First bounce</span><span class="cvlab-ro-v" id="cvlab-ro-bounce">&mdash;</span></div>
       <div class="cvlab-ro"><span class="cvlab-ro-k">Stage</span><span class="cvlab-ro-v" id="cvlab-ro-stage">Ready</span></div>
     </div>
+    <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="cvlab-bench">
     <div class="cvlab-stage">
       <canvas id="cvlab-scene" role="img"
-        aria-label="A meter stick taped upright to the lab station with zero on the tile floor, and a golf ball held at the chosen drop height."></canvas>
+        aria-label="A meter stick taped upright to the lab station with zero on the tile floor, and a golf ball waiting at the chosen drop height."></canvas>
       <canvas id="cvlab-trace" role="img"
         aria-label="Graph of the ball's height above the floor against time, showing the drop, the impact, and the first bounce."></canvas>
     </div>
@@ -230,18 +313,59 @@
 
   </div>
 
-  <section class="cvlab-notes">
-    <h3>How to use this simulation</h3>
-    <ol>
-      <li>Pick a <strong>drop height</strong> from the buttons in the Drop height panel. The ball is always released from rest at that height.</li>
-      <li>Press <strong>Drop the ball</strong> and watch it fall, hit the floor, and bounce. Watch closely for the top of the first bounce &mdash; it goes by fast, which is why <strong>Slow motion</strong> is on by default.</li>
-      <li>Heights are read to the <strong>bottom of the ball</strong>, matching where you'd line it up against a real meter stick. A strip of tape is left on the stick marking the top of every first bounce.</li>
-      <li>The height-vs-time chart beside the apparatus traces the drop, the impact, and the bounce so you can see the whole motion at once.</li>
-      <li>Each drop is saved as a row in the <strong>Trials</strong> table and a point on the <strong>Bounce height vs drop height</strong> graph, so you can compare heights.</li>
-      <li>Turn on <strong>Show the best-fit line</strong> to see the line through your data and the slope it gives, <strong>Add measurement error</strong> so repeated drops don't land on the exact same number, or the realism switch to let the ball lose a little bounce at higher speeds.</li>
-      <li>Press <strong>Reset</strong> to get ready for another drop, <strong>Clear trials</strong> to wipe the table and graph, or <strong>Copy data</strong> to copy your results for a spreadsheet.</li>
-    </ol>
-  </section>
+  <details class="cvlab-notes" open>
+    <summary>How to use this simulation <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="cvlab-notes-body">
+      <ol>
+        <li>Pick a <strong>drop height</strong> in the Drop height panel. The ball always starts from rest at that height. That means it is not moving when you let go.</li>
+        <li>Press <strong>Drop the ball</strong>. Watch it fall, hit the floor, and bounce back up.</li>
+        <li>Watch for the top of the first bounce. It goes by fast. That is why <strong>Slow motion</strong> is on to start.</li>
+        <li>Heights are measured to the <strong>bottom of the ball</strong>, like lining it up with a real meter stick. A piece of tape marks the top of each first bounce.</li>
+        <li>The chart beside the ball shows its <strong>height over time</strong>. You can see the drop, the hit, and the bounce all at once.</li>
+        <li>Each drop adds a row to the <strong>Trials</strong> table and a dot to the <strong>Bounce height vs drop height</strong> graph.</li>
+        <li>Turn on <strong>Show the best-fit line</strong> to draw a line through your dots. Turn on <strong>Add measurement error</strong> to make it more like a real lab.</li>
+        <li>Press <strong>Reset</strong> to drop again. Press <strong>Clear trials</strong> to start over, or <strong>Copy data</strong> to paste your results into a spreadsheet.</li>
+      </ol>
+    </div>
+  </details>
+
+  <details class="cvlab-notes">
+    <summary>What happens when a ball bounces? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="cvlab-notes-body">
+      <p>When you hold the ball up high, it has stored energy. This is called <strong>gravitational potential energy</strong>. The higher the ball, the more of it there is.</p>
+      <p>As the ball falls, that stored energy turns into <strong>kinetic energy</strong>, the energy of motion. The ball moves fastest just before it hits the floor.</p>
+      <p>When it hits, the ball squishes a little and then springs back. That push from the floor sends it back up. As it rises, it slows down and the energy turns back into stored energy.</p>
+    </div>
+  </details>
+
+  <details class="cvlab-notes">
+    <summary>Why doesn't it bounce back to the same height? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="cvlab-notes-body">
+      <p>Some energy is lost every time the ball hits the floor. It turns into heat and sound. You can hear the "click" when it lands. So the ball has less energy on the way up.</p>
+      <p>Less energy means it can't climb as high. A golf ball on tile bounces back to about <strong>69%</strong> of the height it was dropped from. Drop it from 100 cm and it comes back to about 69 cm.</p>
+      <p>The dashed line on the graph shows a perfect bounce, where the ball comes back to the same height. Your dots will always land below it.</p>
+    </div>
+  </details>
+
+  <details class="cvlab-notes">
+    <summary>Reading the graph <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="cvlab-notes-body">
+      <p>Each dot is one drop. Higher drops give higher bounces. The dots fall close to a straight line through zero.</p>
+      <p>A straight line through zero means the bounce is always the same <strong>fraction</strong> of the drop. Double the drop height, and the bounce height doubles too.</p>
+      <p>The <strong>slope</strong> of the best-fit line is that fraction. Slope means how steep the line is. You can also find it in the <strong>Bounce/Drop</strong> column of the table.</p>
+      <p>Turn on the realism switch, and the ball loses a little more bounce when it hits the floor faster. Then the dots bend a little below a straight line at the bigger heights.</p>
+    </div>
+  </details>
+
+  <details class="cvlab-notes">
+    <summary>The math the simulation uses <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="cvlab-notes-body">
+      <p><strong>Speed when it hits the floor:</strong> <span class="cvlab-eq">v = &radic;(2 &times; g &times; h<sub>drop</sub>)</span></p>
+      <p><strong>Speed when it leaves the floor:</strong> <span class="cvlab-eq">e &times; v</span>. Here e is the <strong>coefficient of restitution</strong>. It is a number that tells how bouncy the ball is. For a golf ball on tile, e = 0.83.</p>
+      <p><strong>Bounce height:</strong> <span class="cvlab-eq">h<sub>bounce</sub> = e&sup2; &times; h<sub>drop</sub></span>. Since 0.83 &times; 0.83 is about 0.69, the ball comes back to about 69% of its drop height.</p>
+      <p>Gravity is g = 980 cm/s&sup2;. The ball is 4.3 cm across, drawn a little larger so it is easy to see. The sim works out the falling motion exactly, so the recorded number always matches what you see.</p>
+    </div>
+  </details>
 </div>
 
 <script>
@@ -297,6 +421,20 @@
   }
   function say(m){ elStatus.innerHTML = m; }
   function monoStack(){ return '"Poppins", ui-monospace, Menlo, Consolas, monospace'; }
+
+  /* ------------------------------------------------ theme colors (read from CSS tokens) */
+  var P = {};
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute("data-theme");
+    return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function readPalette(){
+    var cs = getComputedStyle(document.documentElement);
+    ["c-wall1","c-wall2","c-floor1","c-floor2","c-floor-line","c-grout","c-sheen","c-trail","c-shadow-rgb",
+     "c-label-bg","c-drop","c-peak","c-peak-text","c-plot","c-grid","c-grid-2","c-axis","c-tick",
+     "c-empty","c-perfect","c-dot"].forEach(function(k){ P[k] = cs.getPropertyValue("--"+k).trim(); });
+  }
+  readPalette();
   function corAt(v){
     if(!elSpeedDep.checked) return E_CONST;
     return clamp(E0 - EK*v, 0.4, 0.95);
@@ -388,7 +526,7 @@
     stage = "falling"; t = 0; peakShown = false; recorded = false;
     lastFrame = null; dirty = true;
     elGo.textContent = "Falling\u2026";
-    say("Let go from <strong>" + drop + " cm</strong>. It leaves your fingers at rest.");
+    say("Let go from <strong>" + drop + " cm</strong>. It starts at rest.");
     syncUI();
   }
 
@@ -471,7 +609,7 @@
     ctx.clearRect(0,0,w,h);
 
     var wall = ctx.createLinearGradient(0,0,0,G.floorY);
-    wall.addColorStop(0,"#F1F2EC"); wall.addColorStop(1,"#E4E7DD");
+    wall.addColorStop(0,P["c-wall1"]); wall.addColorStop(1,P["c-wall2"]);
     ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.floorY);
 
     drawStation(ctx);
@@ -486,18 +624,18 @@
   function drawFloor(ctx){
     var y = G.floorY, h = G.h;
     var g = ctx.createLinearGradient(0,y,0,h);
-    g.addColorStop(0,"#DEE1DB"); g.addColorStop(1,"#C6CAC3");
+    g.addColorStop(0,P["c-floor1"]); g.addColorStop(1,P["c-floor2"]);
     ctx.fillStyle = g; ctx.fillRect(0,y,G.w,h-y);
-    ctx.strokeStyle = "#ADB2AA"; ctx.lineWidth = 1;
+    ctx.strokeStyle = P["c-floor-line"]; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0,y+0.5); ctx.lineTo(G.w,y+0.5); ctx.stroke();
-    ctx.strokeStyle = "#B7BCB4";
+    ctx.strokeStyle = P["c-grout"];
     var tw = Math.max(26, G.w*0.22);
     ctx.beginPath();
     for(var x=tw*0.4; x<G.w; x+=tw){
       ctx.moveTo(Math.round(x)+0.5, y+2); ctx.lineTo(Math.round(x)+0.5, h);
     }
     ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,.35)";
+    ctx.fillStyle = P["c-sheen"];
     ctx.fillRect(0, y+1, G.w, Math.max(1.5, (h-y)*0.10));
   }
 
@@ -546,9 +684,13 @@
     ctx.stroke();
     var labStep = G.k >= 3.2 ? 10 : 20;
     ctx.fillStyle = "#3A2E17";
-    ctx.font = "700 " + (G.compact?8:9.5) + "px " + monoStack();
+    ctx.font = "800 " + (G.compact?10:clamp(G.stickW*0.36, 10.5, 13)) + "px " + monoStack();
     ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    for(var c=0; c<=STICK_CM; c+=labStep) ctx.fillText(String(c), x+2, Y(c));
+    for(var c=0; c<=STICK_CM; c+=labStep){
+      /* keep the end labels on the wood, so they never sit over the wall */
+      ctx.textBaseline = c === STICK_CM ? "top" : (c === 0 ? "bottom" : "middle");
+      ctx.fillText(String(c), x+2, Y(c) + (c === STICK_CM ? 2 : (c === 0 ? -2 : 0)));
+    }
 
     /* painter's tape holding it to the station */
     ctx.fillStyle = "rgba(127,168,206,.85)";
@@ -569,12 +711,12 @@
       ctx.globalAlpha = (0.45 + 0.55*(i+1)/marks.length)*e;
       ctx.fillStyle = "#D8A92E";
       var wq = Math.max(20, G.ballX - x0 - G.ballR - 3);
-      roundRect(ctx, x0, yy-4.5, wq, 9, 1.5); ctx.fill();
+      roundRect(ctx, x0, yy-7, wq, 14, 1.5); ctx.fill();
       ctx.fillStyle = "#F0C64A";
-      roundRect(ctx, x0, yy-4.5, wq, 7, 1.5); ctx.fill();
+      roundRect(ctx, x0, yy-7, wq, 12, 1.5); ctx.fill();
       if(!G.compact){
         ctx.fillStyle = "#3A2E17";
-        ctx.font = "700 8px " + monoStack();
+        ctx.font = "800 " + (wq < 54 ? 9.5 : 11) + "px " + monoStack();
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText("d=" + m.drop, x0 + wq/2, yy);
       }
@@ -585,8 +727,8 @@
   /* the drop line and, once it is known, the peak line */
   function drawGuides(ctx){
     var xa = G.stickX + G.stickW, xb = G.ballX + G.ballR + 4;
-    label(Y(drop), "#1552B8", drop + "cm");
-    if(peakShown) label(Y(firstApex()), "#C0392B", fmt(firstApex()) + "cm");
+    label(Y(drop), P["c-drop"], drop + "cm");
+    if(peakShown) label(Y(firstApex()), P["c-peak"], fmt(firstApex()) + "cm");
 
     /* the label sits clear of the ball, level with its own line */
     function label(yy, col, txt){
@@ -595,11 +737,11 @@
       ctx.beginPath(); ctx.moveTo(xa, yy); ctx.lineTo(Math.min(G.w-3, xb+6), yy); ctx.stroke();
       ctx.restore();
       if(G.compact) return;
-      ctx.font = "700 9.5px " + monoStack();
+      ctx.font = "800 " + (G.w < 300 ? 11 : 13) + "px " + monoStack();
       var tw = ctx.measureText(txt).width;
       var lx = clamp(G.ballX + G.ballR + 6, 2, G.w - tw - 6);
-      ctx.fillStyle = "rgba(251,251,247,.93)";
-      roundRect(ctx, lx-4, yy-6.5, tw+8, 13, 2); ctx.fill();
+      ctx.fillStyle = P["c-label-bg"];
+      roundRect(ctx, lx-4, yy-9, tw+8, 18, 3); ctx.fill();
       ctx.fillStyle = col; ctx.textAlign = "left"; ctx.textBaseline = "middle";
       ctx.fillText(txt, lx, yy);
     }
@@ -615,7 +757,7 @@
         var tp = t - i*0.028;
         if(tp <= 0) continue;
         ctx.globalAlpha = 0.11*(1 - i/7);
-        ctx.fillStyle = "#5A5F58";
+        ctx.fillStyle = P["c-trail"];
         ctx.beginPath(); ctx.arc(cx, Y(heightAt(tp)) - r, r*0.85, 0, Math.PI*2); ctx.fill();
       }
       ctx.globalAlpha = 1;
@@ -623,7 +765,7 @@
 
     /* contact shadow that tightens as it nears the floor */
     var near = clamp(1 - yb/30, 0, 1);
-    ctx.fillStyle = "rgba(27,29,28," + (0.10 + 0.16*near).toFixed(3) + ")";
+    ctx.fillStyle = "rgba(" + P["c-shadow-rgb"] + "," + ((isDarkNow() ? 0.30 : 0.10) + 0.16*near).toFixed(3) + ")";
     ctx.beginPath();
     ctx.ellipse(cx, G.floorY + 1.5, r*(0.75 + 0.5*near), r*0.20, 0, 0, Math.PI*2); ctx.fill();
 
@@ -645,81 +787,72 @@
         }
       }
     }
-
-    /* fingers, before release only */
-    if(stage === "ready"){
-      ctx.fillStyle = "#E8C6A0"; ctx.strokeStyle = "#B8916C"; ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.ellipse(cx + r*1.05, cy - r*1.25, r*0.95, r*0.55, -0.5, 0, Math.PI*2);
-      ctx.fill(); ctx.stroke();
-      ctx.beginPath();
-      ctx.ellipse(cx - r*0.30, cy - r*0.85, r*0.34, r*0.52, 0.35, 0, Math.PI*2);
-      ctx.fill(); ctx.stroke();
-      ctx.beginPath();
-      ctx.ellipse(cx + r*0.45, cy - r*0.80, r*0.34, r*0.52, -0.35, 0, Math.PI*2);
-      ctx.fill(); ctx.stroke();
-    }
   }
 
   /* ------------------------------------------------ height vs time */
   function drawTrace(){
     var s = fit(traceC, tctx), w = s.w, h = s.h;
     var ctx = tctx;
-    var mL = 46, mR = 14, mT = 14, mB = 32;
+    var mL = 58, mR = 16, mT = 16, mB = 44;
     var pw = w-mL-mR, ph = h-mT-mB;
     var PX = function(tt){ return mL + (tt/T_WINDOW)*pw; };
     var PY = function(cm){ return mT + ph - (cm/VIEW_CM)*ph; };
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var cm=0; cm<=100; cm+=10){ var y=Math.round(PY(cm))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
     for(var tt=0; tt<=T_WINDOW; tt+=0.25){ var x=Math.round(PX(tt))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
     ctx.stroke();
-    ctx.strokeStyle = "#CCD2C4";
+    ctx.strokeStyle = P["c-grid-2"];
     ctx.beginPath();
     for(var c2=0; c2<=100; c2+=50){ var y2=Math.round(PY(c2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
     for(var t2=0; t2<=T_WINDOW; t2+=1){ var x2=Math.round(PX(t2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
     ctx.stroke();
 
     /* the floor, and the height it was let go from */
-    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
     ctx.save();
-    ctx.setLineDash([5,4]); ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1.2;
+    ctx.setLineDash([5,4]); ctx.strokeStyle = P["c-drop"]; ctx.lineWidth = 1.4;
     ctx.beginPath(); ctx.moveTo(mL, PY(drop)); ctx.lineTo(mL+pw, PY(drop)); ctx.stroke();
     ctx.restore();
-    ctx.fillStyle = "#1552B8"; ctx.font = "700 9.5px " + monoStack();
+    ctx.fillStyle = P["c-drop"]; ctx.font = "800 13px " + monoStack();
     ctx.textAlign = "left"; ctx.textBaseline = "bottom";
-    ctx.fillText("let go from " + drop + " cm", mL+5, PY(drop)-3);
+    ctx.fillText("let go from " + drop + " cm", mL+6, PY(drop)-4);
 
-    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 13px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for(var c3=0; c3<=100; c3+=50) ctx.fillText(String(c3), mL-6, PY(c3));
+    for(var c3=0; c3<=100; c3+=50) ctx.fillText(String(c3), mL-8, PY(c3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var t3=0; t3<=T_WINDOW; t3+=1) ctx.fillText(String(t3), PX(t3), mT+ph+6);
     ctx.save();
-    ctx.translate(12, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = P["c-axis"]; ctx.font = "800 13px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("HEIGHT (cm)", 0, 0);
     ctx.restore();
-    ctx.fillStyle = "#1B1D1C";
-    ctx.fillText("TIME (s)", mL+pw/2, mT+ph+19);
+    ctx.fillStyle = P["c-axis"]; ctx.font = "800 13px " + monoStack();
+    ctx.fillText("TIME (s)", mL+pw/2, mT+ph+24);
 
     if(!segs.length){
-      ctx.fillStyle = "#8A9082";
-      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.fillStyle = P["c-empty"];
+      ctx.font = "700 " + (pw < 520 ? 13 : 15) + 'px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("Drop the ball and its height draws itself here.", mL+pw/2, mT+ph/2);
+      if(pw < 460){
+        ctx.fillText("Drop the ball and its height", mL+pw/2, mT+ph*0.78 - 10);
+        ctx.fillText("draws itself here.", mL+pw/2, mT+ph*0.78 + 10);
+      } else {
+        ctx.fillText("Drop the ball and its height draws itself here.", mL+pw/2, mT+ph*0.78);
+      }
       return;
     }
 
     /* the path so far, evaluated exactly */
     var tEnd = Math.min(t, T_WINDOW);
-    ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 2.4; ctx.lineJoin = "round";
+    ctx.strokeStyle = P["c-drop"]; ctx.lineWidth = 2.8; ctx.lineJoin = "round";
     ctx.beginPath();
     var steps = Math.max(2, Math.round(pw));
     for(var i=0;i<=steps;i++){
@@ -733,14 +866,14 @@
     if(peakShown){
       var ax = PX(Math.min(firstApexT(), T_WINDOW)), ay = PY(firstApex());
       ctx.save();
-      ctx.setLineDash([4,3]); ctx.strokeStyle = "#C0392B"; ctx.lineWidth = 1.2;
+      ctx.setLineDash([4,3]); ctx.strokeStyle = P["c-peak"]; ctx.lineWidth = 1.4;
       ctx.beginPath(); ctx.moveTo(mL, ay); ctx.lineTo(mL+pw, ay); ctx.stroke();
       ctx.restore();
-      ctx.fillStyle = "#C0392B";
-      ctx.beginPath(); ctx.arc(ax, ay, 4.4, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(ax, ay, 4.4, 0, Math.PI*2); ctx.stroke();
-      ctx.fillStyle = "#A6323C"; ctx.font = "700 10px " + monoStack();
+      ctx.fillStyle = P["c-peak"];
+      ctx.beginPath(); ctx.arc(ax, ay, 5.5, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = P["c-plot"]; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(ax, ay, 5.5, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = P["c-peak-text"]; ctx.font = "800 13px " + monoStack();
       ctx.textAlign = "left"; ctx.textBaseline = "bottom";
       ctx.fillText("first bounce " + fmt(firstApex()) + " cm", ax + 7, ay - 5);
     }
@@ -751,21 +884,21 @@
   function drawGraph(){
     var s = fit(graphC, gctx), w = s.w, h = s.h;
     var ctx = gctx;
-    var mL = 44, mR = 14, mT = 12, mB = 32;
+    var mL = 58, mR = 16, mT = 14, mB = 44;
     var pw = w-mL-mR, ph = h-mT-mB;
     var PX = function(a){ return mL + (a/AX)*pw; };
     var PY = function(b){ return mT + ph - (b/AX)*ph; };
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var a=0; a<=AX; a+=10){
       var y=Math.round(PY(a))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y);
       var x=Math.round(PX(a))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph);
     }
     ctx.stroke();
-    ctx.strokeStyle = "#CCD2C4";
+    ctx.strokeStyle = P["c-grid-2"];
     ctx.beginPath();
     for(var a2=0; a2<=AX; a2+=50){
       var y2=Math.round(PY(a2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2);
@@ -775,30 +908,30 @@
 
     /* what a perfect bounce would look like */
     ctx.save();
-    ctx.setLineDash([6,4]); ctx.strokeStyle = "#A9AFA2"; ctx.lineWidth = 1.5;
+    ctx.setLineDash([6,4]); ctx.strokeStyle = P["c-perfect"]; ctx.lineWidth = 1.6;
     ctx.beginPath(); ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(AX), PY(AX)); ctx.stroke();
     ctx.restore();
 
-    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 13px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for(var b3=0; b3<=AX; b3+=25) ctx.fillText(String(b3), mL-6, PY(b3));
+    for(var b3=0; b3<=AX; b3+=25) ctx.fillText(String(b3), mL-8, PY(b3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var a3=0; a3<=AX; a3+=25) ctx.fillText(String(a3), PX(a3), mT+ph+6);
     ctx.save();
-    ctx.translate(11, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = P["c-axis"]; ctx.font = "800 13px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("BOUNCE HEIGHT (cm)", 0, 0);
     ctx.restore();
-    ctx.fillStyle = "#1B1D1C";
-    ctx.fillText("DROP HEIGHT (cm)", mL+pw/2, mT+ph+19);
+    ctx.fillStyle = P["c-axis"]; ctx.font = "800 13px " + monoStack();
+    ctx.fillText("DROP HEIGHT (cm)", mL+pw/2, mT+ph+24);
 
     if(trials.length === 0){
-      ctx.fillStyle = "#8A9082";
-      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.fillStyle = P["c-empty"];
+      ctx.font = "700 " + (pw < 520 ? 13 : 15) + 'px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Your first point lands here.", mL+pw/2, mT+ph*0.62);
       return;
@@ -809,26 +942,26 @@
       var sxy=0, sxx=0;
       for(var i=0;i<trials.length;i++){ sxy += trials[i].drop*trials[i].h; sxx += trials[i].drop*trials[i].drop; }
       var slope = sxx>0 ? sxy/sxx : 0;
-      ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1.8;
+      ctx.strokeStyle = P["c-dot"]; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(AX), PY(Math.min(AX, slope*AX))); ctx.stroke();
       var lab = "slope " + slope.toFixed(3) + "   e = \u221Aslope = " + Math.sqrt(Math.max(0,slope)).toFixed(3);
-      ctx.font = "700 10.5px " + monoStack();
-      var lw = ctx.measureText(lab).width + 12;
-      var by = mT+ph-24;
-      ctx.fillStyle = "rgba(251,251,247,.95)";
-      roundRect(ctx, mL+pw-lw-6, by, lw, 18, 3); ctx.fill();
-      ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1;
-      roundRect(ctx, mL+pw-lw-6, by, lw, 18, 3); ctx.stroke();
-      ctx.fillStyle = "#1552B8"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(lab, mL+pw-lw/2-6, by+9);
+      ctx.font = "800 " + (pw < 420 ? 11 : 13) + "px " + monoStack();
+      var lw = ctx.measureText(lab).width + 14;
+      var by = mT+ph-30;
+      ctx.fillStyle = P["c-label-bg"];
+      roundRect(ctx, mL+pw-lw-6, by, lw, 22, 3); ctx.fill();
+      ctx.strokeStyle = P["c-dot"]; ctx.lineWidth = 1.2;
+      roundRect(ctx, mL+pw-lw-6, by, lw, 22, 3); ctx.stroke();
+      ctx.fillStyle = P["c-dot"]; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(lab, mL+pw-lw/2-6, by+11);
     }
 
     for(var j=0;j<trials.length;j++){
       var cx = PX(trials[j].drop), cy = PY(Math.min(AX, trials[j].h));
-      ctx.fillStyle = "#1552B8";
-      ctx.beginPath(); ctx.arc(cx, cy, 4.4, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.4;
-      ctx.beginPath(); ctx.arc(cx, cy, 4.4, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = P["c-dot"];
+      ctx.beginPath(); ctx.arc(cx, cy, 5.5, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = P["c-plot"]; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(cx, cy, 5.5, 0, Math.PI*2); ctx.stroke();
     }
   }
 
@@ -904,6 +1037,38 @@
   if(document.fonts && document.fonts.ready){
     document.fonts.ready.then(function(){ dirty = true; drawScene(); drawTrace(); drawGraph(); });
   }
+
+  /* ------------------------------------------------ light / dark toggle */
+  var themeBtn = $("cvlab-theme");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.innerHTML = d ? SUN : MOON;
+    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+  }
+  function repaint(){ readPalette(); paintToggle(); dirty = true; drawScene(); drawTrace(); drawGraph(); }
+  function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
+  themeBtn.addEventListener("click", function(){
+    var next = isDarkNow() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+  });
+  /* the page around this sim switched its light / dark mode: follow it (not saved) */
+  window.addEventListener("message", function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var th = e.data && e.data.simTheme;
+    if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
+    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
   buildHeights();
   renderTable();
