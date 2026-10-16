@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sled Energy and Collisions</title>
+
+<!--
+  ============================================================================
+  SLED ENERGY AND COLLISIONS  (single file, no dependencies besides the Poppins font)
+
+  ONE SLED   A polar bear on a sled slides down a snowy hill (no friction) and
+             crashes into a row of 0 to 5 snowmen. Each snowman takes 20,000 J
+             to knock down. The sled stops when the snowmen have taken all of
+             its kinetic energy, or slides off the right side if some is left.
+  TWO SLEDS  A red sled on the left hill and a blue sled on the right hill slide
+             into the valley and crash. They either stick together (momentum is
+             kept, some kinetic energy is lost) or bounce (momentum and kinetic
+             energy are both kept). A sled that reaches the top of a hill with
+             speed to spare slides off the screen.
+
+  THE MODEL (scene drawn 1180 x 540 px, ground line at y = 480 px)
+    Hill     h = 60.6 m x (1 - u)^1.75, u running 0 to 1 from the top corner
+             (x = 45 px) to the foot (x = 350 px). 6.90 px per meter, so the
+             top of the hill is 60.6 m. A sled can be dragged from 0 to 50 m.
+    Motion   along the track, g = 9.8 m/s^2, no friction. The simulation runs
+             1.6 times faster than real time so the ride looks like the video.
+    Energy   PE = m g h, KE = 1/2 m v^2. Masses 10 to 200 kg.
+    Snowmen  centred at x = 683 px and every 92.5 px after. A snowman soaks up
+             its 20,000 J while the sled's front pushes 60 px into it.
+    Crash    stick:  v = (m1 v1 + m2 v2) / (m1 + m2)
+             bounce: v1' = ((m1 - m2) v1 + 2 m2 v2) / (m1 + m2), and the same
+                     the other way round
+
+  CHECKED AGAINST THE REFERENCE VIDEO
+    100 kg from 25 m: top speed 22.14 m/s, 24,500 J, 1.23 snowmen destroyed.
+    190 kg from 25 m: 46,550 J, 2.33 snowmen destroyed.
+    200 kg red + 100 kg blue, both from 25 m:
+      stick together: both move at 7.38 m/s after the crash, and rock up to
+      red 0.2 m / blue 8.0 m;
+      bounce: red 7.38 m/s back to the left (up to 2.8 m), blue 36.89 m/s,
+      and blue leaves over the top of the right hill (60.6 m) at 13.17 m/s.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================== TOKENS ============================== */
+:root{
+  --bg:#f3f2ec; --card:#ffffff; --field:#f7f7f3;
+  --ink:#151515; --ink-2:#4b4a45; --muted:#7c7a73;
+  --line:rgba(20,20,20,.14);
+  --accent:#2a6fd6; --accent-2:#1f58ad; --on-accent:#ffffff;
+  --red:#c8102e; --blue:#1f46c8;
+  --scene-ink:#151515; --stage-bg:#e9e7f4;
+  --g-bezel:#8f949c; --g-bezel-2:#6a6f77; --g-face:#fdfdfd; --g-ring:#c9ccd1;
+  --tbar:#f6f7f9; --tbar-line:#c1c6cd;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121412; --card:#1c1f1c; --field:#252925;
+    --ink:#eef0ea; --ink-2:#b6bab0; --muted:#8d9288;
+    --line:rgba(255,255,255,.14);
+    --accent:#5b9bff; --accent-2:#3f7fe6; --on-accent:#0b1220;
+    --red:#ff5c6c; --blue:#7c9cff;
+    --scene-ink:#eef0ea; --stage-bg:#22243f;
+    --g-bezel:#5c626c; --g-bezel-2:#3c414a; --g-face:#1f2328; --g-ring:#4a4f58;
+    --tbar:#2a2e33; --tbar-line:#4a4f58;
+    --shadow:0 1px 3px rgba(0,0,0,.4);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121412; --card:#1c1f1c; --field:#252925;
+  --ink:#eef0ea; --ink-2:#b6bab0; --muted:#8d9288;
+  --line:rgba(255,255,255,.14);
+  --accent:#5b9bff; --accent-2:#3f7fe6; --on-accent:#0b1220;
+  --red:#ff5c6c; --blue:#7c9cff;
+  --scene-ink:#eef0ea; --stage-bg:#22243f;
+  --g-bezel:#5c626c; --g-bezel-2:#3c414a; --g-face:#1f2328; --g-ring:#4a4f58;
+  --tbar:#2a2e33; --tbar-line:#4a4f58;
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:700 17px/1.45 "Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:min(1900px,97vw);margin:0 auto;padding:16px 0 40px}
+@media (max-width:700px){.wrap{max-width:none;padding:12px 16px 32px}}
+button,select,input{font:inherit;color:inherit}
+
+/* -------- header -------- */
+header.top{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+header.top .eyebrow{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+header.top h1{margin:0;font-size:clamp(26px,3vw,36px);font-weight:800;line-height:1.1;letter-spacing:-.01em}
+header.top p{margin:4px 0 0;color:var(--ink-2);font-size:clamp(15px,1.2vw,17px);font-weight:600}
+.spacer{flex:1 1 auto}
+.themebtn{flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);
+  color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow)}
+.themebtn:hover{border-color:var(--accent)}
+.themebtn svg{width:21px;height:21px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+
+/* -------- page layout: the hill, with the controls beside it on wide screens and below it on smaller ones -------- */
+.main{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+.panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.panel.two{grid-template-columns:minmax(0,1fr) minmax(210px,.7fr) minmax(0,1fr)}
+@media (max-width:900px){
+  .panel.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .panel.two #midCard{grid-column:1 / -1;order:3}
+}
+@media (max-width:620px){.panel,.panel.two{grid-template-columns:minmax(0,1fr)}}
+@media (min-width:1180px){
+  .main{grid-template-columns:minmax(0,1fr) clamp(350px,25vw,470px)}
+  .panel{display:flex;flex-direction:column;align-items:stretch}
+}
+
+/* -------- the hill -------- */
+.stagecard{padding:8px}
+.stage{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--stage-bg);
+  container-type:inline-size}
+.scenebox{position:relative}
+#scene{display:block;width:100%;height:auto;aspect-ratio:1180 / 540;touch-action:none;outline:none}
+#scene:focus-visible{box-shadow:inset 0 0 0 3px var(--accent)}
+.ov{position:absolute;z-index:2;margin:0;color:var(--scene-ink);font-size:clamp(12px,1.72cqw,26px);line-height:1.3}
+.modes{left:18.2%;top:3.2%;display:flex;gap:6.4cqw;border:0;padding:0;min-width:0}
+.modes legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.energybox{left:57.9%;top:3.2%}
+.opt{display:inline-flex;align-items:center;gap:.42em;cursor:pointer;white-space:nowrap;font-weight:700}
+.opt input{width:1.15em;height:1.15em;margin:0;accent-color:var(--accent);cursor:pointer;flex:none}
+.modes:disabled .opt{opacity:.5;cursor:not-allowed}
+.modes:disabled .opt input{cursor:not-allowed}
+.elines{margin-top:.2em;font-size:clamp(11px,1.45cqw,22px);line-height:1.28;font-weight:600;font-variant-numeric:tabular-nums}
+.instr{left:20.4%;top:32.5%;width:60%;font-weight:800}
+.hgt{position:absolute;bottom:12.4%;font-size:clamp(11px,1.72cqw,26px);line-height:1.2;color:#17171c;font-weight:600;
+  font-variant-numeric:tabular-nums;pointer-events:none}
+.hgt.l{left:2.4%}
+.hgt.r{right:2.2%}
+.transport{left:50%;bottom:2.3%;transform:translateX(-50%);display:flex;gap:3px;padding:3px;border-radius:999px;
+  background:var(--tbar);border:1.5px solid var(--tbar-line);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tbtn{width:clamp(40px,4.6cqw,64px);height:clamp(30px,3.1cqw,46px);border:0;border-radius:999px;background:transparent;
+  color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.tbtn svg{width:clamp(15px,1.75cqw,24px);height:auto}
+.tbtn:hover:not(:disabled){background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.tbtn.play:not(:disabled){background:var(--accent);color:var(--on-accent)}
+.tbtn.play:hover:not(:disabled){background:var(--accent-2)}
+.tbtn:disabled{opacity:.33;cursor:not-allowed}
+.tbtn:active:not(:disabled){transform:translateY(1px)}
+/* a narrow hill: the labels and buttons move out of the picture, above and below it */
+@container (max-width:680px){
+  .ov{position:static;transform:none;width:auto;font-size:15px}
+  .modes{display:flex;flex-wrap:wrap;gap:4px 20px;padding:8px 12px 0}
+  .energybox{padding:4px 12px 8px}
+  .elines{font-size:14px}
+  .instr{padding:8px 12px 0;font-size:14.5px;font-weight:700}
+  .transport{width:max-content;margin:10px auto 12px}
+  .tbtn{width:56px;height:42px}
+  .tbtn svg{width:20px}
+}
+
+/* -------- control cards -------- */
+fieldset{border:0;margin:0;padding:0;min-width:0}
+fieldset.setup:disabled{opacity:.5}
+.name{display:block;font-size:18px;font-weight:800}
+.srow{display:grid;grid-template-columns:auto minmax(80px,1fr) auto;align-items:center;gap:8px 12px}
+@media (max-width:420px){.srow{grid-template-columns:minmax(0,1fr) auto}.srow .name{grid-column:1 / -1}}
+.srow input[type=range]{width:100%;min-width:0;height:28px;margin:0;cursor:pointer}
+.rng.red{accent-color:var(--red)}
+.rng.blue{accent-color:var(--blue)}
+fieldset:disabled input[type=range]{cursor:not-allowed}
+.numbox{flex:none;display:flex;align-items:center;gap:5px;background:var(--field);border:1.5px solid var(--line);
+  border-radius:9px;padding:4px 10px;width:104px}
+.numbox:focus-within{border-color:var(--accent)}
+.numbox.nounit{width:74px}
+.numbox input{width:100%;min-width:0;border:0;background:transparent;text-align:right;font-size:18px;font-weight:800;
+  font-variant-numeric:tabular-nums;padding:2px 0;outline:none;-moz-appearance:textfield;appearance:textfield}
+.numbox input::-webkit-outer-spin-button,.numbox input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.numbox span{color:var(--ink-2);font-size:16px}
+.gaugebox{margin-top:12px;display:flex;flex-direction:column;align-items:center}
+.gaugebox .name{align-self:flex-start}
+.gauge{display:block;width:min(100%,260px);height:auto;margin-top:4px}
+.gauge text{font-family:inherit}
+.g-bezel{fill:var(--g-bezel);stroke:var(--g-bezel-2);stroke-width:2}
+.g-face{fill:var(--g-face);stroke:var(--g-ring);stroke-width:2}
+.g-tk{stroke:var(--ink);stroke-width:2.6;stroke-linecap:round}
+.g-tk2{stroke:var(--ink-2);stroke-width:1.4;stroke-linecap:round}
+.g-num{fill:var(--ink);font-size:18px;font-weight:700}
+.g-needle path{fill:var(--red)}
+.g-needle.blue path{fill:var(--blue)}
+.g-hub{fill:var(--g-bezel);stroke:var(--g-bezel-2);stroke-width:1.5}
+.g-hub2{fill:var(--g-face)}
+.gread{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:-2px}
+.radio{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;border:2px solid transparent;
+  cursor:pointer;font-size:17px}
+.radio:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.radio:has(input:checked){border-color:var(--accent);background:var(--field)}
+.radio input{width:20px;height:20px;margin:0;accent-color:var(--accent);flex:none}
+fieldset:disabled .radio{cursor:not-allowed}
+.kinds{display:grid;gap:6px;margin-top:6px}
+.result{margin-top:6px;border:1.5px solid var(--line);border-radius:10px;background:var(--field);padding:10px 14px;
+  font-size:17px;line-height:1.65;font-variant-numeric:tabular-nums}
+.result.empty{border-style:dashed;color:var(--ink-2);font-weight:600;font-size:16px;line-height:1.5}
+.result b{font-weight:800}
+.mt{margin-top:14px}
+
+/* -------- dropdown sections -------- */
+.notes{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.notes summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 18px;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.notes summary::-webkit-details-marker{display:none}
+.notes summary svg{width:18px;height:18px;flex:none;transition:transform .18s ease}
+.notes[open] summary svg{transform:rotate(180deg)}
+.notes[open] summary{border-bottom:1px solid var(--line)}
+.notes-body{padding:12px 18px 16px}
+.notes p,.notes li{font-size:16.5px;color:var(--ink-2);font-weight:500;line-height:1.55;margin:0}
+.notes p + p{margin-top:9px}
+.notes ol,.notes ul{margin:0;padding-left:24px}
+.notes li{margin:7px 0}
+.notes strong{color:var(--ink);font-weight:800}
+.eq{display:inline-block;background:var(--field);border:1px solid var(--line);border-radius:6px;padding:1px 8px;
+  color:var(--ink);font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <span class="eyebrow">Motion lab &middot; energy</span>
+      <h1>Sled Energy and Collisions</h1>
+      <p>Send a sled down a snowy hill into a row of snowmen, or crash two sleds together. Where does the energy go?</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="themebtn" id="themeBtn" type="button" aria-label="Switch to dark mode"></button>
+  </header>
+
+  <div class="main">
+    <!-- ===================== THE HILL ===================== -->
+    <section class="card stagecard" aria-label="The sledding hill">
+      <div class="stage">
+        <fieldset class="ov modes" id="modeSet">
+          <legend>How many sleds</legend>
+          <label class="opt"><input type="radio" name="mode" value="one" checked> One sled</label>
+          <label class="opt"><input type="radio" name="mode" value="two"> Two sleds</label>
+        </fieldset>
+        <div class="ov energybox">
+          <label class="opt"><input type="checkbox" id="showEnergy"> Show energy</label>
+          <div class="elines" id="eLines" aria-live="off" hidden></div>
+        </div>
+        <div class="scenebox">
+          <canvas id="scene" tabindex="0" role="img"
+            aria-label="A snowy hill with a polar bear on a sled. Drag a sled, or use the arrow keys (Shift and the arrow keys for the blue sled), to set its height."></canvas>
+          <div class="hgt l" id="hgtRed">Height: 25.0 m</div>
+          <div class="hgt r" id="hgtBlue" hidden>Height: 25.0 m</div>
+        </div>
+        <p class="ov instr" id="instr"></p>
+        <div class="ov transport" role="group" aria-label="Simulation controls">
+          <button class="tbtn play" id="playBtn" type="button" aria-label="Play" title="Play">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg></button>
+          <button class="tbtn" id="pauseBtn" type="button" aria-label="Pause" title="Pause" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1" fill="currentColor"/></svg></button>
+          <button class="tbtn" id="resetBtn" type="button" aria-label="Reset" title="Reset" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.6 9.2A7.2 7.2 0 1 1 5 14.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M3.2 4.6l1.9 5.9 5.9-1.9z" fill="currentColor"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CONTROLS ===================== -->
+    <div class="panel" id="panel">
+      <section class="card" id="redCard" aria-label="Red sled">
+        <fieldset class="setup" id="redSet">
+          <div class="srow">
+            <label class="name" for="rgMR">Red sled mass</label>
+            <input type="range" class="rng red" id="rgMR" min="10" max="200" step="1" value="100">
+            <span class="numbox"><input type="number" id="nbMR" min="10" max="200" step="1" inputmode="numeric" aria-label="Red sled mass in kilograms" value="100"><span>kg</span></span>
+          </div>
+        </fieldset>
+        <div class="gaugebox">
+          <span class="name">Red sled speed</span>
+          <svg class="gauge" id="gRed" viewBox="0 0 260 162" role="img" aria-label="Red sled speedometer, 0 to 40 meters per second"></svg>
+          <div class="gread" id="vRed" aria-live="off">0.00 m/s</div>
+        </div>
+      </section>
+
+      <section class="card" id="midCard" aria-label="Collision type" hidden>
+        <fieldset class="setup" id="kindSet">
+          <legend class="name">Collision type</legend>
+          <div class="kinds">
+            <label class="radio"><input type="radio" name="kind" value="stick" checked> Sleds stick together</label>
+            <label class="radio"><input type="radio" name="kind" value="bounce"> Sleds bounce</label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card" id="snowCard" aria-label="Snowmen">
+        <fieldset class="setup" id="snowSet">
+          <div class="srow">
+            <label class="name" for="rgSnow">Snowmen</label>
+            <input type="range" class="rng blue" id="rgSnow" min="0" max="5" step="1" value="3">
+            <span class="numbox nounit"><input type="number" id="nbSnow" min="0" max="5" step="1" inputmode="numeric" aria-label="Number of snowmen" value="3"></span>
+          </div>
+        </fieldset>
+        <span class="name mt">Collision result:</span>
+        <div class="result empty" id="result" aria-live="polite"></div>
+      </section>
+
+      <section class="card" id="blueCard" aria-label="Blue sled" hidden>
+        <fieldset class="setup" id="blueSet">
+          <div class="srow">
+            <label class="name" for="rgMB">Blue sled mass</label>
+            <input type="range" class="rng blue" id="rgMB" min="10" max="200" step="1" value="100">
+            <span class="numbox"><input type="number" id="nbMB" min="10" max="200" step="1" inputmode="numeric" aria-label="Blue sled mass in kilograms" value="100"><span>kg</span></span>
+          </div>
+        </fieldset>
+        <div class="gaugebox">
+          <span class="name">Blue sled speed</span>
+          <svg class="gauge" id="gBlue" viewBox="0 0 260 162" role="img" aria-label="Blue sled speedometer, 0 to 40 meters per second"></svg>
+          <div class="gread" id="vBlue" aria-live="off">0.00 m/s</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ===================== HOW TO / WHY ===================== -->
+  <details class="notes" open>
+    <summary>How to use this simulation <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <ol>
+        <li>Choose <strong>One sled</strong> or <strong>Two sleds</strong> at the top of the picture.</li>
+        <li><strong>Drag a sled</strong> up or down the hill to set how high it starts. Its <strong>Height</strong> shows in the bottom corner. The top of the hill is 50 m.</li>
+        <li>Set each sled's <strong>mass</strong> with its slider, or type a number in the box. The mass can be 10 to 200 kg.</li>
+        <li>With one sled, use the <strong>Snowmen</strong> slider to line up 0 to 5 snowmen. With two sleds, choose <strong>Sleds stick together</strong> or <strong>Sleds bounce</strong>.</li>
+        <li>Check <strong>Show energy</strong> to see each sled's potential energy and kinetic energy while it moves.</li>
+        <li>Press <strong>Play</strong> (the triangle). The <strong>speed gauge</strong> shows how fast each sled is going. With one sled, the <strong>Collision result</strong> box tells you what happened in the crash.</li>
+        <li>Press <strong>Pause</strong> to freeze the action. Press <strong>Reset</strong> to put the sleds back. You must reset before you can change the setup.</li>
+      </ol>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>Where does the energy go? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <p><strong>Potential energy (PE)</strong> is stored energy. Here it comes from height. A sled high on the hill has a lot of it. More height or more mass means more potential energy.</p>
+      <p><strong>Kinetic energy (KE)</strong> is the energy of motion. A faster sled has more kinetic energy. So does a heavier sled going the same speed.</p>
+      <p>As the sled slides down, its potential energy changes into kinetic energy. At the bottom, all of it is kinetic energy. This hill has no friction, so the total energy stays the same the whole way down.</p>
+      <p>The speed at the bottom depends only on the height. A 50 kg sled and a 200 kg sled that start at 25 m both reach 22.14 m/s. The heavier sled has more energy, though.</p>
+      <p>It takes <strong>20,000 J</strong> (joules) to knock down one snowman. Each snowman takes some of the sled's kinetic energy. When the energy runs out, the sled stops. A sled with more energy wrecks more snowmen.</p>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>Crashing two sleds <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <p><strong>Momentum</strong> is mass times velocity. Velocity is speed in a direction. Here, moving right counts as plus and moving left counts as minus.</p>
+      <p>When the sleds crash, the total momentum before the crash equals the total momentum after it. This is called <strong>conservation of momentum</strong>.</p>
+      <p><strong>Sleds stick together:</strong> the sleds move as one after the crash. Some kinetic energy turns into heat and sound, so there is less kinetic energy after the crash. Two sleds with the same mass and speed stop dead.</p>
+      <p><strong>Sleds bounce:</strong> the sleds push off each other like springs. No kinetic energy is lost. A light sled hit by a heavy sled can fly away fast, even over the top of the hill.</p>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>The math the simulation uses <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <ul>
+        <li>Potential energy: <span class="eq">PE = m &times; g &times; h</span></li>
+        <li>Kinetic energy: <span class="eq">KE = &frac12; &times; m &times; v&sup2;</span></li>
+        <li>Use <strong>m</strong> in kilograms, <strong>h</strong> in meters, <strong>v</strong> in meters per second, and <strong>g = 9.8 N/kg</strong>. Then the energy comes out in joules (J).</li>
+        <li>Speed at the bottom of the hill (no friction): <span class="eq">v = &radic;(2 &times; g &times; h)</span></li>
+        <li>Snowmen destroyed: <span class="eq">KE &divide; 20,000 J</span> (up to the number of snowmen)</li>
+        <li>Momentum: <span class="eq">p = m &times; v</span></li>
+        <li>Sleds stick together: <span class="eq">v = (m&#8321;v&#8321; + m&#8322;v&#8322;) &divide; (m&#8321; + m&#8322;)</span></li>
+        <li>Sleds bounce: the total kinetic energy after the crash equals the total before it.</li>
+      </ul>
+    </div>
+  </details>
+
+</div>
+
+<script>
+(() => {
+"use strict";
+/* ==================================================================
+   CONSTANTS
+   ================================================================== */
+const W = 1180, H = 540, GY = 480;                 // scene size and the ground line (px)
+const HX0 = 45, HX1 = 350, HA = 418, HP = 1.75;    // hill: top corner x, foot x, height (px), curve power
+const PPM = HA / 60.6;                             // px per meter: the top of the hill is 60.6 m
+const G = 9.8, GPX = G * PPM;                      // m/s^2, and the same in px/s^2
+const TIME_SCALE = 1.6, DT = 0.0005;               // simulated seconds per real second, integrator step (s)
+const H_MAX = 50, H_STEP = 0.5;                    // highest start (m), drag steps (m)
+const SNOW_J = 20000;                              // energy to knock down one snowman (J)
+const SNOW_X0 = 683, SNOW_DX = 92.5, SNOW_R = 19;  // first snowman's centre, spacing, half width (px)
+const ZONE = 60, SN = 0.92;                        // a snowman soaks up its energy over 60 px; snowman drawing scale
+const HALF = 58, TOUCH = 104;                      // sled front from its centre; centre gap when two sleds touch (px)
+const CHORD = 34, OFF = 95;                        // the board rests on points 34 px either side; off screen beyond 95 px
+const TX0 = -340, TX1 = W + 340, TSTEP = 0.5;      // the track table (px)
+const TAU = Math.PI * 2;
+
+const el = id => document.getElementById(id);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const fmt1 = v => (Math.round(v * 10 + 1e-7) / 10).toFixed(1);
+const fmt2 = v => (Math.round(v * 100 + 1e-7) / 100).toFixed(2);
+const fmtJ = j => Math.round(Math.max(0, j) + 1e-7).toLocaleString("en-US");
+const rnd = (a, b) => a + Math.random() * (b - a);
+const seeded = seed => { let s = seed >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; };
+
+/* ==================================================================
+   SETUP + STATE
+   ================================================================== */
+const CFG = { mode:"one", hR:25, hB:25, mR:100, mB:100, snow:3, stick:true, energy:false };
+const mkSled = (id, facing) => ({ id, facing, m:100, s:0, v:0, e:0, gone:false, fh:0, fv:0 });
+const SL = { red:mkSled("red", 1), blue:mkSled("blue", -1) };
+/* phase: idle (can set up), playing, paused, done (one sled has stopped or left) */
+const S = { phase:"idle", stuck:false, pairE:0, result:null, played:false, snowmen:[], debris:[], puffs:[] };
+const two = () => CFG.mode === "two";
+
+/* ==================================================================
+   THE TRACK (px, h measured up from the ground line)
+   ================================================================== */
+const hill = x => x <= HX0 ? HA : x >= HX1 ? 0 : HA * Math.pow(1 - (x - HX0) / (HX1 - HX0), HP);
+const hillD = x => (x <= HX0 || x >= HX1) ? 0 : -HA * HP * Math.pow(1 - (x - HX0) / (HX1 - HX0), HP - 1) / (HX1 - HX0);
+const trackH = x => hill(x) + (two() ? hill(W - x) : 0);
+const trackD = x => hillD(x) - (two() ? hillD(W - x) : 0);
+/* where on the left hill the track is h meters high */
+const hillXAt = hm => {
+  const hp = hm * PPM;
+  return hp <= 0 ? HX1 : HX0 + (1 - Math.pow(Math.min(1, hp / HA), 1 / HP)) * (HX1 - HX0);
+};
+
+/* distance along the track (s) for every half pixel across */
+let TS = null;
+function buildTrack(){
+  const n = Math.round((TX1 - TX0) / TSTEP) + 1;
+  TS = new Float64Array(n);
+  let ph = trackH(TX0);
+  for (let i = 1; i < n; i++){
+    const h = trackH(TX0 + i * TSTEP);
+    TS[i] = TS[i - 1] + Math.hypot(TSTEP, h - ph);
+    ph = h;
+  }
+}
+function sOfX(x){
+  const f = clamp((x - TX0) / TSTEP, 0, TS.length - 1.000001), i = Math.floor(f);
+  return TS[i] + (f - i) * (TS[i + 1] - TS[i]);
+}
+function xOfS(s){
+  const n = TS.length - 1;
+  if (s <= 0) return TX0 + s;
+  if (s >= TS[n]) return TX1 + (s - TS[n]);
+  let lo = 0, hi = n;
+  while (hi - lo > 1){ const mid = (lo + hi) >> 1; if (TS[mid] <= s) lo = mid; else hi = mid; }
+  return TX0 + (lo + (s - TS[lo]) / (TS[hi] - TS[lo])) * TSTEP;
+}
+const hAt = s => trackH(xOfS(s));
+const sinAt = s => { const d = trackD(xOfS(s)); return d / Math.hypot(1, d); };
+
+/* ==================================================================
+   SETTING UP A RUN
+   ================================================================== */
+function placeSled(id){
+  const sl = SL[id], red = id === "red";
+  const h = red ? CFG.hR : CFG.hB;
+  sl.m = red ? CFG.mR : CFG.mB;
+  sl.s = sOfX(red ? hillXAt(h) : W - hillXAt(h));
+  sl.v = 0; sl.gone = false;
+  sl.e = GPX * hAt(sl.s);                           // energy per kg, in px^2/s^2
+}
+function buildSnowmen(){
+  S.snowmen = Array.from({ length:CFG.snow }, (_, i) => ({ x:SNOW_X0 + i * SNOW_DX, absorbed:0, hit:false, out:null }));
+}
+function resetRun(){
+  S.phase = "idle"; S.stuck = false; S.pairE = 0; S.result = null;
+  S.debris = []; S.puffs = [];
+  placeSled("red"); placeSled("blue");
+  buildSnowmen();
+  dirty = true;
+  sync();
+}
+
+/* ==================================================================
+   PHYSICS (px and px/s; one step is DT simulated seconds)
+   ================================================================== */
+/* one sled on its own: slides along the track, energy kept exactly */
+function stepFree(sl, dt){
+  sl.v += -GPX * sinAt(sl.s) * dt;
+  sl.s += sl.v * dt;
+  const k = sl.e - GPX * hAt(sl.s);
+  if (k > 0.01 * sl.e) sl.v = (sl.v < 0 ? -1 : 1) * Math.sqrt(2 * k);
+}
+/* two sleds stuck together: they move as one, the blue one just ahead of the red one */
+function stepPair(dt){
+  const R = SL.red, B = SL.blue, M = R.m + B.m;
+  R.v += -GPX * (R.m * sinAt(R.s) + B.m * sinAt(B.s)) / M * dt;
+  R.s += R.v * dt;
+  B.s = R.s + TOUCH;
+  const k = S.pairE - GPX * (R.m * hAt(R.s) + B.m * hAt(B.s));
+  if (k > 0.01 * S.pairE) R.v = (R.v < 0 ? -1 : 1) * Math.sqrt(2 * k / M);
+  B.v = R.v;
+}
+function checkGone(sl){
+  if (sl.gone) return;
+  const x = xOfS(sl.s);
+  if (x < -OFF || x > W + OFF){ sl.gone = true; sl.fh = hAt(sl.s) / PPM; sl.fv = Math.abs(sl.v) / PPM; }
+}
+function collide(){
+  const R = SL.red, B = SL.blue;
+  const gap = B.s - R.s - TOUCH;
+  if (gap >= 0) return;
+  R.s += gap / 2; B.s -= gap / 2;
+  if (R.v - B.v <= 0) return;                       // already moving apart
+  const M = R.m + B.m, hitX = (xOfS(R.s) + xOfS(B.s)) / 2, speed = Math.abs(R.v - B.v);
+  if (CFG.stick){
+    const v = (R.m * R.v + B.m * B.v) / M;
+    R.v = B.v = v;
+    B.s = R.s + TOUCH;
+    S.stuck = true;
+    S.pairE = 0.5 * M * v * v + GPX * (R.m * hAt(R.s) + B.m * hAt(B.s));
+  } else {
+    const vr = ((R.m - B.m) * R.v + 2 * B.m * B.v) / M;
+    const vb = ((B.m - R.m) * B.v + 2 * R.m * R.v) / M;
+    R.v = vr; B.v = vb;
+    R.e = 0.5 * vr * vr + GPX * hAt(R.s);
+    B.e = 0.5 * vb * vb + GPX * hAt(B.s);
+  }
+  spawnPuff(hitX, GY - trackH(hitX) - 30, 0, Math.min(22, 6 + speed / 14));
+}
+
+/* ONE SLED: down the hill and through the snowmen */
+const maxEnergy = () => CFG.mR * G * CFG.hR;
+function stepOne(dt){
+  const R = SL.red;
+  stepFree(R, dt);
+  const front = xOfS(R.s) + HALF;
+  for (const sn of S.snowmen){
+    const z0 = sn.x - SNOW_R;
+    if (front <= z0) break;                         // the snowmen stand in order: none of the rest is reached yet
+    if (sn.absorbed >= SNOW_J) continue;
+    /* the snowmen stand on flat ground, so all of the sled's energy that is left is kinetic */
+    const used = S.snowmen.reduce((a, o) => a + o.absorbed, 0);
+    let ke = Math.max(0, maxEnergy() - used);
+    if (!sn.hit) hitSnowman(sn, ke, R.v);
+    const take = Math.min(SNOW_J * Math.min(1, (front - z0) / ZONE) - sn.absorbed, ke);
+    if (take > 0){
+      sn.absorbed += take; ke -= take;
+      if (SNOW_J - sn.absorbed < 1e-6) sn.absorbed = SNOW_J;
+      R.v = PPM * Math.sqrt(2 * ke / R.m);
+      R.e = 0.5 * R.v * R.v;
+    }
+    if (ke <= 1e-6){                                // out of energy: the sled stops here
+      R.v = 0; R.e = 0;
+      R.s = sOfX(z0 + ZONE * sn.absorbed / SNOW_J - HALF);
+      finish(true); return;
+    }
+    break;
+  }
+  if (R.v === 0 && sinAt(R.s) === 0){ finish(true); return; }   // started on flat ground: it never moves
+  checkGone(R);
+  if (R.gone) finish(false);
+}
+function finish(stopped){
+  const R = SL.red, E = maxEnergy();
+  const used = S.snowmen.reduce((a, o) => a + o.absorbed, 0);
+  const finalE = stopped ? 0 : Math.max(0, E - used);
+  S.result = {
+    maxV: Math.sqrt(2 * G * CFG.hR),
+    maxE: E,
+    destroyed: stopped ? Math.min(S.snowmen.length, E / SNOW_J) : used / SNOW_J,
+    finalV: Math.sqrt(2 * finalE / R.m),
+    finalE,
+  };
+  S.phase = "done";
+  sync();
+}
+
+/* TWO SLEDS: free until they touch, then stuck together or bounced apart */
+function stepTwo(dt){
+  const R = SL.red, B = SL.blue;
+  if (S.stuck){
+    if (!(R.gone && B.gone)) stepPair(dt);
+  } else {
+    if (!R.gone) stepFree(R, dt);
+    if (!B.gone) stepFree(B, dt);
+    if (!R.gone && !B.gone) collide();
+  }
+  checkGone(R); checkGone(B);
+}
+
+function advance(dtSim){
+  const n = Math.max(1, Math.ceil(dtSim / DT)), h = dtSim / n;
+  for (let i = 0; i < n && S.phase === "playing"; i++){
+    if (two()) stepTwo(h); else stepOne(h);
+  }
+}
+
+/* ==================================================================
+   SNOWMEN PIECES + SNOW PUFFS
+   ================================================================== */
+function addPiece(type, x, y, r, vx, vy){
+  S.debris.push({ type, x, y, r, vx, vy, rot:0, vr:rnd(-9, 9), rest:false, hidden:false });
+}
+function spawnPuff(x, y, v, n){
+  for (let i = 0; i < n; i++){
+    const life = rnd(0.45, 0.85);
+    S.puffs.push({ x:x + rnd(-16, 16), y:y + rnd(-28, 22), vx:rnd(-70, 110) + v * 0.35, vy:rnd(-110, -10),
+                   r:rnd(7, 15), gr:rnd(14, 34), life, max:life });
+  }
+}
+/* the sled reaches a snowman with ke joules left: it is knocked down, or loses its head (and middle) */
+function hitSnowman(sn, ke, v){
+  sn.hit = true;
+  const f = ke / SNOW_J;
+  sn.out = f >= 1 ? "gone" : f >= 0.5 ? "headmid" : "head";
+  const k = Math.min(1, v / 160);
+  const fwd = () => v * rnd(0.55, 1.2) + rnd(-25, 45);
+  const up = (a, b) => -rnd(a, b) * (0.45 + 0.55 * k);
+  const x = sn.x, base = GY + 3;
+  addPiece("head", x, base - 74 * SN, 12 * SN, fwd(), up(260, 520));
+  addPiece("hat", x, base - 94 * SN, 11 * SN, fwd() * 1.1, up(320, 620));
+  if (sn.out === "headmid") addPiece("mid", x, base - 50 * SN, 15 * SN, fwd() * 0.8, up(150, 330));
+  if (sn.out === "gone"){
+    addPiece("scarf", x, base - 62 * SN, 4, fwd(), up(200, 480));
+    addPiece("stick", x - 22, base - 58 * SN, 3, fwd() * 0.8, up(200, 520));
+    addPiece("stick", x + 22, base - 58 * SN, 3, fwd() * 1.2, up(200, 520));
+    for (let i = 0; i < 6; i++)
+      addPiece("lump", x + rnd(-14, 14), base - rnd(8, 60) * SN, rnd(6, 11) * SN, fwd() * rnd(0.35, 1), up(80, 380));
+  }
+  spawnPuff(x - 8, base - 45, v, 16);
+}
+/* move the flying pieces and puffs; true while anything is still moving */
+function updateFx(dt){
+  let busy = false;
+  for (const p of S.debris){
+    if (p.rest) continue;
+    busy = true;
+    p.vy += 1400 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
+    const floor = GY + 2 - p.r * 0.8;
+    if (p.y >= floor){
+      p.y = floor;
+      if (p.vy < 90){
+        p.vy = 0; p.vx *= Math.exp(-7 * dt); p.vr *= Math.exp(-7 * dt);
+        if (Math.abs(p.vx) < 6){
+          p.rest = true;
+          if (p.type === "hat") p.rot = Math.cos(p.rot) > 0 ? Math.PI / 2 : -Math.PI / 2;
+          if (p.type === "stick" || p.type === "scarf") p.rot = 0;
+        }
+      } else { p.vy *= -0.3; p.vx *= 0.6; p.vr *= 0.6; }
+    }
+    if (p.x > W + 60 || p.x < -60){ p.rest = true; p.hidden = true; }
+  }
+  for (const q of S.puffs){
+    q.x += q.vx * dt; q.y += q.vy * dt;
+    q.vx *= Math.exp(-3 * dt); q.vy *= Math.exp(-3 * dt);
+    q.r += q.gr * dt; q.life -= dt;
+  }
+  S.puffs = S.puffs.filter(q => q.life > 0);
+  return busy || S.puffs.length > 0;
+}
+
+/* ==================================================================
+   COLOURS FOR THE PICTURE (light and dark)
+   ================================================================== */
+const PAL = {
+  light:{ sky:"#cbc6e7", glow0:"#fbfbfe", glow1:"rgba(239,237,249,.9)", glow2:"rgba(203,198,231,0)",
+          mb0:"#aeaad4", mb1:"#c7c4e3", mf0:"#9e9ac8", mf1:"#b4b1d8",
+          snow:"#ffffff", streak:"146,162,194", strip:"#e7eaee", stripEdge:"rgba(110,120,140,.13)", line:"#5a5a66",
+          snowShade:"#dce2ec", snowLine:"#98a3b6", fur:"#ffffff", furLine:"#a7afbf", furShade:"rgba(150,163,190,.28)",
+          puff:"255,255,255", puffLine:"150,165,195", night:false },
+  dark: { sky:"#23264a", glow0:"#4b4b84", glow1:"rgba(52,53,98,.9)", glow2:"rgba(35,38,74,0)",
+          mb0:"#4a4882", mb1:"#55538a", mf0:"#37356a", mf1:"#444276",
+          snow:"#e1e6f0", streak:"104,118,156", strip:"#b1b9c8", stripEdge:"rgba(0,0,0,.13)", line:"#15151d",
+          snowShade:"#bfc8d8", snowLine:"#6b7690", fur:"#eef1f6", furLine:"#7d879b", furShade:"rgba(80,92,122,.3)",
+          puff:"236,240,248", puffLine:"120,132,165", night:true },
+};
+const COL = {
+  red: { board:"#b0141e", rim:"#f29a2e", muff:"#d7262f", muffDark:"#8c1219" },
+  blue:{ board:"#1f58d6", rim:"#8cc4ff", muff:"#2f6af0", muffDark:"#173a9a" },
+};
+
+/* ==================================================================
+   THE BACKGROUND (sky, mountains, hill): drawn once, then copied every frame
+   ================================================================== */
+const canvas = el("scene"), ctx = canvas.getContext("2d");
+const bg = document.createElement("canvas");
+let k = 1;                                        // canvas pixels per scene px
+const BACK = [[-10,352],[110,318],[230,288],[330,262],[410,244],[466,231],[515,252],[562,290],[606,281],[652,293],
+              [705,312],[770,322],[860,330],[960,321],[1060,328],[1190,322]];
+const FRONT = [[300,486],[390,456],[470,424],[548,390],[628,360],[705,337],[790,328],[880,333],[968,325],[1060,331],[1190,336]];
+
+function smooth(b, pts){
+  b.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length - 1; i++){
+    const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+    b.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+  }
+  const l = pts[pts.length - 1];
+  b.lineTo(l[0], l[1]);
+}
+function mountain(b, pts, c0, c1, top){
+  b.beginPath(); smooth(b, pts);
+  b.lineTo(W + 10, GY + 1); b.lineTo(-10, GY + 1); b.closePath();
+  const g = b.createLinearGradient(0, top, 0, GY);
+  g.addColorStop(0, c0); g.addColorStop(1, c1);
+  b.fillStyle = g; b.fill();
+}
+function trackPath(b){
+  b.moveTo(-10, GY - trackH(-10));
+  for (let x = -8; x <= W + 10; x += 2) b.lineTo(x, GY - trackH(x));
+}
+/* brush-stroke streaks of shadow down the hill */
+function streaks(b, P, mirror){
+  b.save();
+  if (mirror){ b.translate(W, 0); b.scale(-1, 1); }
+  const r = seeded(mirror ? 11 : 7);
+  for (let i = 0; i < 18; i++){
+    const off = 3 + r() * 34 + i * 1.2;
+    const u0 = r() * 0.4, u1 = Math.min(1, u0 + 0.3 + r() * 0.6);
+    b.beginPath();
+    for (let u = u0; u <= u1 + 1e-9; u += 0.01){
+      const x = HX0 + u * (HX1 - HX0), d = hillD(x), n = Math.hypot(1, d);
+      const px = x + off * d / n, ph = hill(x) - off / n;
+      if (u === u0) b.moveTo(px, GY - ph); else b.lineTo(px, GY - ph);
+    }
+    b.lineWidth = 1.2 + r() * 3.6; b.lineCap = "round";
+    b.strokeStyle = `rgba(${P.streak},${(0.16 + r() * 0.3).toFixed(2)})`;
+    b.stroke();
+  }
+  const g = b.createLinearGradient(0, 0, 230, 0);
+  g.addColorStop(0, `rgba(${P.streak},.2)`); g.addColorStop(1, `rgba(${P.streak},0)`);
+  b.fillStyle = g; b.fillRect(0, 0, 230, GY + 2);
+  b.restore();
+}
+function buildBg(){
+  const P = pal();
+  bg.width = canvas.width; bg.height = canvas.height;
+  const b = bg.getContext("2d");
+  b.setTransform(k, 0, 0, k, 0, 0);
+  b.fillStyle = P.sky; b.fillRect(0, 0, W, H);
+  const g = b.createRadialGradient(370, 260, 10, 370, 260, 780);
+  g.addColorStop(0, P.glow0); g.addColorStop(0.38, P.glow1); g.addColorStop(1, P.glow2);
+  b.fillStyle = g; b.fillRect(0, 0, W, H);
+  if (P.night){                                   // dark mode: a night sky
+    const r = seeded(3);
+    for (let i = 0; i < 60; i++){
+      const x = r() * W, y = r() * 310, s = 0.6 + r() * 1.3, a = 0.35 + r() * 0.55;
+      b.beginPath(); b.arc(x, y, s, 0, TAU); b.fillStyle = `rgba(255,255,255,${a.toFixed(2)})`; b.fill();
+    }
+    const mg = b.createRadialGradient(985, 96, 10, 985, 96, 90);
+    mg.addColorStop(0, "rgba(255,250,220,.35)"); mg.addColorStop(1, "rgba(255,250,220,0)");
+    b.fillStyle = mg; b.fillRect(880, 0, 210, 200);
+    b.beginPath(); b.arc(985, 96, 25, 0, TAU); b.fillStyle = "#f4f0d8"; b.fill();
+  }
+  mountain(b, BACK, P.mb0, P.mb1, 230);
+  mountain(b, FRONT, P.mf0, P.mf1, 325);
+  /* the snow: the hill, and the flat ground in front of it */
+  const snow = () => { b.beginPath(); trackPath(b); b.lineTo(W + 10, GY + 1); b.lineTo(-10, GY + 1); b.closePath(); };
+  snow(); b.fillStyle = P.snow; b.fill();
+  b.save(); snow(); b.clip();
+  streaks(b, P, false);
+  if (two()) streaks(b, P, true);
+  b.restore();
+  b.fillStyle = P.strip; b.fillRect(0, GY, W, H - GY);
+  b.fillStyle = P.stripEdge; b.fillRect(0, GY, W, 3);
+  b.beginPath(); trackPath(b);
+  b.lineWidth = 2.4; b.lineJoin = "round"; b.strokeStyle = P.line; b.stroke();
+}
+
+/* ==================================================================
+   DRAWINGS: the polar bear on its sled, snowmen, pieces, puffs
+   (scene px; the sled faces +x with its board's bottom centre at 0,0)
+   ================================================================== */
+function drawRider(c, col, P, lean){
+  c.lineJoin = "round"; c.lineCap = "round";
+  /* the sled: a long board that curls up at the front */
+  c.beginPath();
+  c.moveTo(-54, 0); c.lineTo(42, 0);
+  c.quadraticCurveTo(57, 0, 59, -13);
+  c.quadraticCurveTo(60, -23, 52, -24);
+  c.lineTo(50.5, -19);
+  c.quadraticCurveTo(51, -9, 41, -9);
+  c.lineTo(-54, -9);
+  c.quadraticCurveTo(-60, -9, -60, -4.5);
+  c.quadraticCurveTo(-60, 0, -54, 0);
+  c.closePath();
+  c.fillStyle = col.board; c.fill();
+  c.lineWidth = 3; c.strokeStyle = col.rim; c.stroke();
+  c.beginPath(); c.moveTo(-52, -5.5); c.lineTo(40, -5.5);
+  c.lineWidth = 1.5; c.strokeStyle = "rgba(255,255,255,.28)"; c.stroke();
+
+  /* on a slope the bear leans back from the board, the way a rider sits up */
+  c.save();
+  c.translate(-8, -9); c.rotate(lean); c.translate(8, 9);
+  /* the bear: each group is outlined, then filled, so its parts merge into one fluffy shape */
+  const shape = s => { c.beginPath(); if (s[0] === "e") c.ellipse(s[1], s[2], s[3], s[4], s[5], 0, TAU); else c.arc(s[1], s[2], s[3], 0, TAU); };
+  const group = list => {
+    c.lineWidth = 4.2; c.strokeStyle = P.furLine;
+    for (const s of list){ shape(s); c.stroke(); }
+    c.fillStyle = P.fur;
+    for (const s of list){ shape(s); c.fill(); }
+  };
+  group([["e", -26, -25, 21, 16, 0], ["e", -6, -38, 29, 21, -0.2], ["c", -24, -52, 7.5], ["c", -10, -57, 7.5],
+         ["c", 4, -55, 6.5], ["c", -38, -41, 6.5], ["c", -40, -30, 6], ["c", -47, -33, 5], ["e", -2, -13.5, 13, 6, 0]]);
+  c.fillStyle = P.furShade;
+  c.beginPath(); c.ellipse(-8, -23, 20, 6.5, -0.1, 0, TAU); c.fill();
+  c.strokeStyle = P.furLine; c.lineWidth = 1.3;
+  c.beginPath(); c.moveTo(-33, -44); c.quadraticCurveTo(-29, -40, -30, -35);
+  c.moveTo(-18, -27); c.quadraticCurveTo(-14, -24, -10, -25); c.stroke();
+  /* front leg reaching for the curl */
+  c.lineWidth = 15 + 4.2; c.strokeStyle = P.furLine;
+  c.beginPath(); c.moveTo(12, -37); c.lineTo(33, -15); c.stroke();
+  c.beginPath(); c.ellipse(35, -13.5, 7.5, 5.5, 0, 0, TAU); c.lineWidth = 4.2; c.stroke();
+  c.lineWidth = 15; c.strokeStyle = P.fur;
+  c.beginPath(); c.moveTo(12, -37); c.lineTo(33, -15); c.stroke();
+  c.fillStyle = P.fur; c.beginPath(); c.ellipse(35, -13.5, 7.5, 5.5, 0, 0, TAU); c.fill();
+  /* head */
+  group([["c", 25, -56, 16.5], ["e", 38.5, -49.5, 10.5, 7.6, 0.12]]);
+  c.fillStyle = "#1b1b20";
+  c.beginPath(); c.ellipse(48.3, -52.3, 3.9, 3, 0, 0, TAU); c.fill();
+  c.beginPath(); c.arc(31.5, -60.5, 2.5, 0, TAU); c.fill();
+  c.fillStyle = "#ffffff"; c.beginPath(); c.arc(32.3, -61.4, 0.8, 0, TAU); c.fill();
+  c.strokeStyle = "#2a2a30"; c.lineWidth = 1.4;
+  c.beginPath(); c.moveTo(47.5, -47); c.quadraticCurveTo(44, -43.2, 39.5, -45.2); c.stroke();
+  /* earmuffs */
+  c.strokeStyle = col.muff; c.lineWidth = 3.6;
+  c.beginPath(); c.moveTo(15.5, -62); c.quadraticCurveTo(13, -77, 26, -73.5); c.stroke();
+  c.beginPath(); c.arc(16.5, -57.5, 7.2, 0, TAU);
+  c.fillStyle = col.muff; c.fill(); c.lineWidth = 1.6; c.strokeStyle = col.muffDark; c.stroke();
+  c.beginPath(); c.arc(14.6, -59.6, 2.4, 0, TAU); c.fillStyle = "rgba(255,255,255,.4)"; c.fill();
+  c.restore();
+}
+
+function drawSled(sl, col, P){
+  /* rest the board on two points of the track, so it lies along the slope */
+  const x1 = xOfS(sl.s - CHORD), x2 = xOfS(sl.s + CHORD);
+  const y1 = GY - trackH(x1), y2 = GY - trackH(x2);
+  const ang = Math.atan2(y2 - y1, x2 - x1);
+  ctx.save();
+  ctx.translate((x1 + x2) / 2, (y1 + y2) / 2);
+  ctx.rotate(ang);
+  ctx.scale(sl.facing, 1);
+  drawRider(ctx, col, P, -0.4 * ang * sl.facing);
+  ctx.restore();
+}
+
+function ball(c, x, y, r, P){
+  const g = c.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.15, x, y, r);
+  g.addColorStop(0, P.snow); g.addColorStop(1, P.snowShade);
+  c.beginPath(); c.arc(x, y, r, 0, TAU);
+  c.fillStyle = g; c.fill(); c.lineWidth = 1.3; c.strokeStyle = P.snowLine; c.stroke();
+}
+function rrect(c, x, y, w, h, r){ c.beginPath(); c.roundRect ? c.roundRect(x, y, w, h, r) : c.rect(x, y, w, h); }
+/* snowman parts, each drawn around its own centre */
+function smFace(c, x, y){
+  c.fillStyle = "#222226";
+  c.beginPath(); c.arc(x - 4, y - 3, 1.7, 0, TAU); c.arc(x + 4, y - 3, 1.7, 0, TAU); c.fill();
+  for (const [dx, dy] of [[-5, 5.5], [-2, 7], [2, 7], [5, 5.5]]){ c.beginPath(); c.arc(x + dx, y + dy, 0.9, 0, TAU); c.fill(); }
+  c.fillStyle = "#ee8a2a";
+  c.beginPath(); c.moveTo(x, y); c.lineTo(x + 9, y + 1.6); c.lineTo(x, y + 3); c.closePath(); c.fill();
+}
+function smHat(c, x, y){                          // y = bottom of the brim
+  c.fillStyle = "#1c1c22";
+  rrect(c, x - 14, y - 3.5, 28, 3.5, 1.5); c.fill();
+  rrect(c, x - 9.5, y - 21.5, 19, 18.5, 1.5); c.fill();
+  c.fillStyle = "rgba(255,255,255,.13)"; c.fillRect(x - 7, y - 19.5, 3, 13);
+}
+function smArms(c, x, y){                         // y = middle ball's centre
+  c.strokeStyle = "#5a3a1f"; c.lineWidth = 2.2; c.lineCap = "round";
+  c.beginPath();
+  for (const s of [-1, 1]){
+    c.moveTo(x + 13 * s, y - 3); c.lineTo(x + 31 * s, y - 17);
+    c.moveTo(x + 25 * s, y - 12.5); c.lineTo(x + 27 * s, y - 22);
+    c.moveTo(x + 31 * s, y - 17); c.lineTo(x + 36 * s, y - 18);
+  }
+  c.stroke();
+}
+function smScarf(c, x, y){                        // y = neck
+  c.fillStyle = "#8e1b3e";
+  rrect(c, x - 12.5, y - 3, 25, 6.5, 3); c.fill();
+  c.beginPath(); c.moveTo(x + 3, y + 1); c.lineTo(x + 10, y + 15); c.lineTo(x + 14.5, y + 13); c.lineTo(x + 8.5, y); c.closePath(); c.fill();
+  c.strokeStyle = "#c4517a"; c.lineWidth = 1.2;
+  c.beginPath(); c.moveTo(x + 6.5, y + 6); c.lineTo(x + 10.5, y + 4); c.moveTo(x + 8.5, y + 10); c.lineTo(x + 12.5, y + 8); c.stroke();
+}
+function smMid(c, x, y, P){
+  smArms(c, x, y);
+  ball(c, x, y, 15, P);
+  c.fillStyle = "#222226";
+  c.beginPath(); c.arc(x, y + 2, 1.7, 0, TAU); c.arc(x, y + 9, 1.7, 0, TAU); c.fill();
+}
+function drawSnowman(x, head, mid, P){
+  const c = ctx;
+  c.save(); c.translate(x, GY + 3); c.scale(SN, SN);
+  ball(c, 0, -21, 21, P);
+  if (mid) smMid(c, 0, -50, P);
+  if (head){ ball(c, 0, -74, 12, P); smFace(c, 0, -74); }
+  if (mid) smScarf(c, 0, -62);
+  if (head) smHat(c, 0, -84);
+  c.restore();
+}
+function drawMound(x, P){
+  const c = ctx;
+  c.save(); c.translate(x, GY + 3); c.scale(SN, SN);
+  c.beginPath(); c.ellipse(0, -2, 27, 7, 0, 0, TAU); c.fillStyle = P.snowShade; c.fill();
+  ball(c, -10, -6, 8, P); ball(c, 9, -5, 7, P); ball(c, 0, -8, 6, P);
+  c.restore();
+}
+function drawPiece(p, P){
+  const c = ctx;
+  c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.scale(SN, SN);
+  switch (p.type){
+    case "head":  ball(c, 0, 0, 12, P); smFace(c, 0, 0); break;
+    case "hat":   smHat(c, 0, 10); break;
+    case "mid":   smMid(c, 0, 0, P); smScarf(c, 0, -12); break;
+    case "lump":  ball(c, 0, 0, p.r / SN, P); break;
+    case "scarf":
+      c.strokeStyle = "#8e1b3e"; c.lineWidth = 6; c.lineCap = "round";
+      c.beginPath(); c.moveTo(-12, 0); c.quadraticCurveTo(-4, -5, 2, 0); c.quadraticCurveTo(8, 5, 13, 1); c.stroke();
+      break;
+    case "stick":
+      c.strokeStyle = "#5a3a1f"; c.lineWidth = 2.2; c.lineCap = "round";
+      c.beginPath(); c.moveTo(-13, 0); c.lineTo(13, 0); c.moveTo(4, 0); c.lineTo(8, -7); c.stroke();
+      break;
+  }
+  c.restore();
+}
+function drawPuffs(P){
+  for (const q of S.puffs){
+    const a = Math.max(0, q.life / q.max) * 0.85;
+    ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, TAU);
+    ctx.fillStyle = `rgba(${P.puff},${a.toFixed(3)})`; ctx.fill();
+    ctx.lineWidth = 1.2; ctx.strokeStyle = `rgba(${P.puffLine},${(a * 0.45).toFixed(3)})`; ctx.stroke();
+  }
+}
+
+function draw(){
+  const P = pal();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(bg, 0, 0);
+  ctx.setTransform(k, 0, 0, k, 0, 0);
+  if (!two()){
+    const front = xOfS(SL.red.s) + HALF;
+    for (const sn of S.snowmen){
+      if (!sn.hit) drawSnowman(sn.x, true, true, P);
+      else if (sn.out === "gone") drawMound(sn.x, P);
+      else drawSnowman(sn.x + clamp(front - (sn.x - SNOW_R), 0, ZONE), false, sn.out === "head", P);   // pushed along by the sled
+    }
+  }
+  for (const p of S.debris) if (!p.hidden) drawPiece(p, P);
+  if (!SL.red.gone) drawSled(SL.red, COL.red, P);
+  if (two() && !SL.blue.gone) drawSled(SL.blue, COL.blue, P);
+  drawPuffs(P);
+}
+
+/* ==================================================================
+   SPEED GAUGES
+   ================================================================== */
+const GCX = 130, GCY = 120, GR = 104;
+function buildGauge(svg, blue){
+  const P = (r, deg) => [GCX + r * Math.cos(deg * Math.PI / 180), GCY - r * Math.sin(deg * Math.PI / 180)];
+  const face = r => {
+    const a = P(r, 200), b = P(r, 340);
+    return `M${a[0].toFixed(1)},${a[1].toFixed(1)} A${r},${r} 0 1 1 ${b[0].toFixed(1)},${b[1].toFixed(1)} Z`;
+  };
+  let s = `<path class="g-bezel" d="${face(GR + 10)}"/><path class="g-face" d="${face(GR)}"/>`;
+  for (let v = 0; v <= 40; v += 2){
+    const deg = 180 - v * 4.5, major = v % 10 === 0;
+    const a = P(GR - 5, deg), b = P(GR - (major ? 19 : 11), deg);
+    s += `<line class="${major ? "g-tk" : "g-tk2"}" x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}"/>`;
+    if (major){
+      const t = P(GR - 35, deg);
+      s += `<text class="g-num" x="${t[0].toFixed(1)}" y="${(t[1] + 6).toFixed(1)}" text-anchor="middle">${v}</text>`;
+    }
+  }
+  s += `<g class="g-needle${blue ? " blue" : ""}"><path d="M${GCX - (GR - 12)},${GCY} L${GCX + 4},${GCY - 5.5} L${GCX + 17},${GCY} L${GCX + 4},${GCY + 5.5} Z"/></g>`
+     + `<circle class="g-hub" cx="${GCX}" cy="${GCY}" r="11"/><circle class="g-hub2" cx="${GCX}" cy="${GCY}" r="4.5"/>`;
+  svg.innerHTML = s;
+  return svg.querySelector(".g-needle");
+}
+const needleR = buildGauge(el("gRed"), false), needleB = buildGauge(el("gBlue"), true);
+function setGauge(needle, out, v){
+  const deg = (clamp(v, 0, 42) * 4.5).toFixed(2);
+  if (needle._d !== deg){ needle.setAttribute("transform", `rotate(${deg} ${GCX} ${GCY})`); needle._d = deg; }
+  setText(out, `${fmt2(v)} m/s`);
+}
+
+/* ==================================================================
+   READOUTS
+   ================================================================== */
+function setText(node, t){ if (node._t !== t){ node.textContent = t; node._t = t; } }
+function setHTML(node, t){ if (node._h !== t){ node.innerHTML = t; node._h = t; } }
+/* a sled's height (m) and speed (m/s) right now */
+function hv(sl){
+  if (sl.gone) return [sl.fh, sl.fv];
+  if (S.phase === "idle") return [sl.id === "red" ? CFG.hR : CFG.hB, 0];
+  return [hAt(sl.s) / PPM, Math.abs(sl.v) / PPM];
+}
+function readouts(){
+  const [hR, vR] = hv(SL.red), [hB, vB] = hv(SL.blue);
+  setText(el("hgtRed"), `Height: ${fmt1(hR)} m`);
+  setGauge(needleR, el("vRed"), vR);
+  if (two()){
+    setText(el("hgtBlue"), `Height: ${fmt1(hB)} m`);
+    setGauge(needleB, el("vBlue"), vB);
+  }
+  const lines = el("eLines");
+  lines.hidden = !CFG.energy;
+  if (CFG.energy){
+    const row = (name, sl, h, v) =>
+      `<div>${name} sled potential energy: ${fmtJ(sl.m * G * h)} J</div><div>${name} sled kinetic energy: ${fmtJ(0.5 * sl.m * v * v)} J</div>`;
+    setHTML(lines, row("Red", SL.red, hR, vR) + (two() ? row("Blue", SL.blue, hB, vB) : ""));
+  }
+  const res = el("result"), R = S.result;
+  res.classList.toggle("empty", !R);
+  setHTML(res, R
+    ? `<div>Max. sled speed: <b>${fmt2(R.maxV)} m/s</b></div><div>Max. sled energy: <b>${fmtJ(R.maxE)} J</b></div>`
+      + `<div>Snowmen destroyed: <b>${fmt2(R.destroyed)}</b></div><div>Final sled speed: <b>${fmt2(R.finalV)} m/s</b></div>`
+      + `<div>Final sled energy: <b>${fmtJ(R.finalE)} J</b></div>`
+    : "Press Play. When the sled stops, the result of the crash shows here.");
+}
+
+/* ==================================================================
+   CONTROLS
+   ================================================================== */
+const INSTR = {
+  one:"Drag the sled to set its height. Set the mass of the sled with the slider, and add snowmen if you like. Press Play to start the sled.",
+  two:"Drag the sleds to set their heights. Set the masses with the sliders, and choose the collision type. Press Play to start the sleds.",
+};
+function sync(){
+  const started = S.phase !== "idle";
+  el("playBtn").disabled = S.phase === "playing" || S.phase === "done";
+  el("pauseBtn").disabled = S.phase !== "playing";
+  el("resetBtn").disabled = !started;
+  for (const id of ["modeSet", "redSet", "blueSet", "snowSet", "kindSet"]) el(id).disabled = started;
+  el("instr").hidden = started || S.played;
+  if (started) canvas.style.cursor = "default";
+  dirty = true;
+}
+function applyMode(){
+  const t = two();
+  buildTrack(); buildBg();
+  el("panel").classList.toggle("two", t);
+  el("midCard").hidden = !t; el("blueCard").hidden = !t; el("snowCard").hidden = t;
+  el("hgtBlue").hidden = !t;
+  el("instr").textContent = INSTR[CFG.mode];
+  resetRun();
+}
+
+function play(){
+  if (S.phase !== "idle" && S.phase !== "paused") return;
+  S.phase = "playing"; S.played = true;
+  sync();
+}
+function pause(){ if (S.phase === "playing"){ S.phase = "paused"; sync(); } }
+
+function bindNumber(key, rgId, nbId, min, max){
+  const rg = el(rgId), nb = el(nbId);
+  const apply = (raw, from) => {
+    let v = parseFloat(raw);
+    if (Number.isNaN(v)) v = CFG[key];
+    v = clamp(Math.round(v), min, max);
+    CFG[key] = v;
+    if (from !== rg) rg.value = String(v);
+    nb.value = String(v);
+    if (S.phase === "idle"){
+      SL.red.m = CFG.mR; SL.blue.m = CFG.mB;
+      if (S.snowmen.length !== CFG.snow) buildSnowmen();
+      dirty = true;
+    }
+  };
+  rg.addEventListener("input", () => apply(rg.value, rg));
+  nb.addEventListener("change", () => apply(nb.value, nb));
+  nb.addEventListener("keydown", e => { if (e.key === "Enter") nb.blur(); });
+  return () => { rg.value = String(CFG[key]); nb.value = String(CFG[key]); };
+}
+const showMR = bindNumber("mR", "rgMR", "nbMR", 10, 200);
+const showMB = bindNumber("mB", "rgMB", "nbMB", 10, 200);
+bindNumber("snow", "rgSnow", "nbSnow", 0, 5);
+
+document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener("change", () => {
+  if (!r.checked) return;
+  CFG.mode = r.value;
+  CFG.hR = CFG.hB = 25; CFG.mR = CFG.mB = 100;
+  showMR(); showMB();
+  S.played = false;
+  applyMode();
+}));
+document.querySelectorAll('input[name="kind"]').forEach(r => r.addEventListener("change", () => {
+  if (r.checked) CFG.stick = r.value === "stick";
+}));
+el("showEnergy").addEventListener("change", e => { CFG.energy = e.target.checked; dirty = true; });
+el("playBtn").onclick = play;
+el("pauseBtn").onclick = pause;
+el("resetBtn").onclick = resetRun;
+document.addEventListener("keydown", e => {
+  if (e.code !== "Space" || e.target !== document.body) return;
+  e.preventDefault();
+  if (S.phase === "playing") pause(); else play();
+});
+
+/* ---------------------------------------------- dragging a sled up or down its hill */
+let drag = null;
+function toScene(e){
+  const r = canvas.getBoundingClientRect();
+  return { x:(e.clientX - r.left) / r.width * W, y:(e.clientY - r.top) / r.height * H };
+}
+function anchor(id){ const x = xOfS(SL[id].s); return { x, y:GY - trackH(x) }; }
+function sledAt(p){
+  if (S.phase !== "idle") return null;
+  for (const id of two() ? ["blue", "red"] : ["red"]){
+    const a = anchor(id);
+    if (Math.hypot(p.x - a.x, p.y - (a.y - 34)) < 66) return id;
+  }
+  return null;
+}
+/* the height (m) of the point on the hill closest to (px, py) */
+function heightNear(id, px, py){
+  const lx = id === "red" ? px : W - px;
+  let best = HX1, bd = Infinity;
+  for (let x = hillXAt(H_MAX); x <= HX1; x += 1){
+    const d = (x - lx) ** 2 + (GY - hill(x) - py) ** 2;
+    if (d < bd){ bd = d; best = x; }
+  }
+  if ((HX1 - lx) ** 2 + (GY - py) ** 2 < bd) best = HX1;
+  return clamp(Math.round(hill(best) / PPM / H_STEP) * H_STEP, 0, H_MAX);
+}
+function setHeight(id, h){
+  const key = id === "red" ? "hR" : "hB";
+  h = clamp(h, 0, H_MAX);
+  if (CFG[key] === h) return;
+  CFG[key] = h;
+  placeSled(id);
+  dirty = true;
+}
+canvas.addEventListener("pointerdown", e => {
+  const p = toScene(e), id = sledAt(p);
+  if (!id) return;
+  const a = anchor(id);
+  drag = { id, dx:p.x - a.x, dy:p.y - a.y };
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+  canvas.style.cursor = "grabbing";
+  e.preventDefault();
+});
+canvas.addEventListener("pointermove", e => {
+  const p = toScene(e);
+  if (drag){ setHeight(drag.id, heightNear(drag.id, p.x - drag.dx, p.y - drag.dy)); return; }
+  canvas.style.cursor = sledAt(p) ? "grab" : "default";
+});
+const endDrag = () => { if (drag){ drag = null; canvas.style.cursor = "grab"; } };
+canvas.addEventListener("pointerup", endDrag);
+canvas.addEventListener("pointercancel", endDrag);
+canvas.addEventListener("keydown", e => {
+  const step = { ArrowUp:1, ArrowRight:1, ArrowDown:-1, ArrowLeft:-1 }[e.key];
+  if (!step || S.phase !== "idle") return;
+  e.preventDefault();
+  const id = two() && e.shiftKey ? "blue" : "red";
+  setHeight(id, (id === "red" ? CFG.hR : CFG.hB) + step * H_STEP);
+});
+
+/* ==================================================================
+   SIZE + MAIN LOOP
+   ================================================================== */
+let dirty = true, lastT = 0;
+function resize(){
+  const w = canvas.getBoundingClientRect().width;
+  if (!w) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const bw = Math.max(300, Math.round(w * dpr));
+  if (bw === canvas.width) return;
+  canvas.width = bw; canvas.height = Math.round(bw * H / W);
+  k = bw / W;
+  buildBg();
+  dirty = true;
+}
+function frame(now){
+  const dt = lastT ? Math.min(0.05, (now - lastT) / 1000) : 0;
+  lastT = now;
+  let anim = false;
+  if (S.phase === "playing"){ advance(dt * TIME_SCALE); anim = true; }
+  if ((S.phase === "playing" || S.phase === "done") && updateFx(dt * TIME_SCALE)) anim = true;
+  if (anim || dirty){ draw(); readouts(); dirty = false; }
+  requestAnimationFrame(frame);
+}
+
+/* ------------------------------------------------ light / dark toggle */
+const themeBtn = el("themeBtn");
+const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+const SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+const inFrame = window.parent !== window;
+function isDark(){
+  const t = document.documentElement.getAttribute("data-theme");
+  if (t) return t === "dark";
+  return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+}
+function pal(){ return isDark() ? PAL.dark : PAL.light; }
+const paintToggle = () => {
+  const d = isDark();
+  themeBtn.innerHTML = d ? SUN : MOON;
+  themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+};
+const repaint = () => { paintToggle(); if (TS){ buildBg(); dirty = true; } };
+const applyTheme = t => { document.documentElement.setAttribute("data-theme", t); repaint(); };
+themeBtn.addEventListener("click", () => {
+  const next = isDark() ? "light" : "dark";
+  applyTheme(next);
+  try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+  /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+  if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+});
+/* the page around this sim switched its light / dark mode: follow it (not saved, so the sim on its own keeps its own choice) */
+window.addEventListener("message", e => {
+  if (!inFrame || e.source !== window.parent) return;
+  const t = e.data && e.data.simTheme;
+  if ((t === "light" || t === "dark") && t !== (isDark() ? "dark" : "light")) applyTheme(t);
+});
+if (window.matchMedia){
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const onSys = () => { if (!document.documentElement.getAttribute("data-theme")) repaint(); };
+  if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+}
+
+/* ==================================================================
+   BOOT
+   ================================================================== */
+paintToggle();
+resize();
+applyMode();
+if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+else window.addEventListener("resize", resize);
+requestAnimationFrame(frame);
+})();
+</script>
+<script>
+/* Shown inside the textbook's Sims page: tell that page which sim is open, so its address can name the sim. */
+(function(){
+  if (window.parent === window) return;
+  window.addEventListener('pageshow', function(){
+    try { window.parent.postMessage({ simLibrary: { path: location.pathname, title: document.title } }, '*'); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
