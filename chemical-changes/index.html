@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chemical Changes Lab</title>
+
+<!--
+  ============================================================================
+  CHEMICAL CHANGES LAB  (single file, no dependencies besides the Poppins font)
+
+  Built to work like the Chemical Changes Gizmo. Pick Reactant 1 and Reactant 2
+  (15 pairs), pick a setup, drag tools to the bench, then press Play.
+    Setups   Normal setup (open to the air), Gas collection (a stoppered flask
+             piped to a test tube standing in a water trough) or, for potassium
+             iodide and dish soap only, Closed system (a sealed glass box).
+    Tools    Thermometer (Start / Current temperature), Phenol red (a dropper
+             samples the flask; the beaker turns yellow = acidic, orange =
+             neutral, pink = basic), Glowing splint and Burning splint (gas
+             collection only, once the reaction is over).
+    Scale    Everything on the bench is on the scale. Lifting the tweezers,
+             a beaker, the weigh paper or a dropper takes its mass off the
+             scale until it is put back, as in the Gizmo. In Normal setup any
+             gas that forms escapes, so the final mass is a little lower. In
+             Gas collection and Closed system the gas is trapped.
+
+  NUMBERS
+    Read from the Gizmo recording:
+      Sodium + water: 388.0 g on the scale, thermometer 15 g, phenol red
+        beaker 30 g + dropper 5 g, tweezers 21 g, sodium 2 g, 0.1 g of hydrogen
+        escapes, 21 to 59 C, Neutral to Basic. Gas collection 2402.0 g.
+      Hydrogen peroxide + potassium iodide and dish soap: 411.6 g, closed box
+        adds 1000 g, soap dropper 15 g, peroxide beaker 50 g + 20 g of peroxide,
+        21 to 71 C, Neutral to Neutral. Potassium iodide alone: 336.6 g.
+      Calcium chloride + sodium hydroxide 324.3 g; + sodium bicarbonate with
+        gas collection 2920.0 g.
+    Everything else (other masses, gas lost, temperatures, pH, gas tests) is
+    estimated from the real chemistry, until a recording shows the Gizmo's.
+    Temperature and mass follow  change x (1 - e^(-3x)) / (1 - e^(-3)),
+    x = reaction time / duration, so most of the change comes early.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================== TOKENS ============================== */
+:root{
+  --bg:#f3f2ec; --card:#ffffff; --field:#f7f7f3;
+  --ink:#151515; --ink-2:#4b4a45; --muted:#7c7a73;
+  --line:rgba(20,20,20,.14);
+  --accent:#2a6fd6; --accent-2:#1f58ad; --on-accent:#ffffff;
+  --good:#17804a; --warn:#b35c00;
+  --wall-1:#e6ebf1; --wall-2:#f2e4cf; --stripe:rgba(255,255,255,.5);
+  --bench:#c9cfd6; --bench-top:#a9b1ba; --scene-ink:#1b1d22;
+  --glass:rgba(255,255,255,.38); --glass-line:#8d9aa8;
+  --box:rgba(170,205,240,.16); --box-line:rgba(90,130,175,.75);
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121412; --card:#1c1f1c; --field:#252925;
+    --ink:#eef0ea; --ink-2:#b6bab0; --muted:#8d9288;
+    --line:rgba(255,255,255,.14);
+    --accent:#5b9bff; --accent-2:#3f7fe6; --on-accent:#0b1220;
+    --good:#46d36f; --warn:#ffb15c;
+    --wall-1:#252b34; --wall-2:#33291f; --stripe:rgba(255,255,255,.05);
+    --bench:#3a414a; --bench-top:#4d5661; --scene-ink:#eef0ea;
+    --glass:rgba(190,210,230,.12); --glass-line:#8a98a8;
+    --box:rgba(120,170,230,.12); --box-line:rgba(140,180,230,.7);
+    --shadow:0 1px 3px rgba(0,0,0,.4);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121412; --card:#1c1f1c; --field:#252925;
+  --ink:#eef0ea; --ink-2:#b6bab0; --muted:#8d9288;
+  --line:rgba(255,255,255,.14);
+  --accent:#5b9bff; --accent-2:#3f7fe6; --on-accent:#0b1220;
+  --good:#46d36f; --warn:#ffb15c;
+  --wall-1:#252b34; --wall-2:#33291f; --stripe:rgba(255,255,255,.05);
+  --bench:#3a414a; --bench-top:#4d5661; --scene-ink:#eef0ea;
+  --glass:rgba(190,210,230,.12); --glass-line:#8a98a8;
+  --box:rgba(120,170,230,.12); --box-line:rgba(140,180,230,.7);
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:700 17px/1.45 "Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:min(1900px,97vw);margin:0 auto;padding:16px 0 40px}
+@media (max-width:700px){.wrap{max-width:none;padding:12px 16px 32px}}
+button,select,input{font:inherit;color:inherit}
+
+/* -------- header -------- */
+header.top{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+header.top .eyebrow{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+header.top h1{margin:0;font-size:clamp(26px,3vw,36px);font-weight:800;line-height:1.1;letter-spacing:-.01em}
+header.top p{margin:4px 0 0;color:var(--ink-2);font-size:clamp(15px,1.2vw,17px);font-weight:600}
+.spacer{flex:1 1 auto}
+.themebtn{flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);
+  color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow)}
+.themebtn:hover{border-color:var(--accent)}
+.themebtn svg{width:21px;height:21px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.label{font-size:14px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:0 0 8px}
+
+/* -------- layout -------- */
+.main{display:grid;gap:14px;align-items:start;grid-template-columns:minmax(0,1fr);grid-template-areas:"ctrl" "scene" "data"}
+@media (min-width:980px){.main{grid-template-columns:300px minmax(0,1fr);grid-template-areas:"ctrl scene" "data data"}}
+@media (min-width:1380px){.main{grid-template-columns:300px minmax(0,1.55fr) minmax(0,1fr);grid-template-areas:"ctrl scene data"}}
+.ctrlcard{grid-area:ctrl;display:flex;flex-direction:column;gap:16px}
+.scenecard{grid-area:scene;display:flex;flex-direction:column;gap:10px}
+.datacard{grid-area:data;display:flex;flex-direction:column;gap:12px}
+
+/* -------- left panel -------- */
+select.pick{width:100%;background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;
+  font-size:16.5px;font-weight:800;cursor:pointer}
+select.pick:focus{border-color:var(--accent);outline:none}
+select.pick:disabled{opacity:.55;cursor:not-allowed}
+.check,.radio{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:16px}
+.check input,.radio input{width:19px;height:19px;margin:0;accent-color:var(--accent);flex:none}
+.radio.off{opacity:.5;cursor:not-allowed}
+.opts{display:grid;gap:8px}
+.eqbox{background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:16.5px;font-weight:800;
+  text-align:center;line-height:1.55}
+.eqbox small{display:block;font-size:14px;color:var(--ink-2);font-weight:700}
+
+/* -------- the bench -------- */
+.scenebox{border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--wall-1)}
+#scene{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+#scene text{font-family:inherit}
+.s-wall{fill:url(#wallGrad)}
+.s-stripe{stroke:var(--stripe);stroke-width:34;stroke-linecap:round}
+.s-bench{fill:var(--bench)}
+.s-benchtop{fill:var(--bench-top)}
+.s-gfill{fill:var(--glass)}
+.s-gline{fill:none;stroke:var(--glass-line);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.s-sheen{fill:none;stroke:rgba(255,255,255,.75);stroke-width:3;stroke-linecap:round}
+.s-lab{fill:var(--scene-ink);font-size:15px;font-weight:800}
+.s-lab2{fill:var(--scene-ink);font-size:13.5px;font-weight:700;opacity:.85}
+.s-box{fill:var(--box);stroke:var(--box-line);stroke-width:2.4}
+.s-boxback{fill:var(--box);stroke:var(--box-line);stroke-width:1.4;opacity:.7}
+.ctlrow{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap}
+.ctlrow .lab{font-size:17px}
+.iconbtn{width:54px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--field);color:var(--ink);
+  display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
+.iconbtn svg{width:21px;height:21px}
+.iconbtn:hover:not(:disabled){border-color:var(--accent)}
+.iconbtn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.iconbtn.primary:hover:not(:disabled){background:var(--accent-2)}
+.iconbtn:disabled{opacity:.38;cursor:not-allowed}
+.iconbtn:active:not(:disabled){transform:translateY(1px)}
+.btn{background:var(--field);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:7px 13px;
+  cursor:pointer;font-weight:800;font-size:15.5px;line-height:1.15}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.status{flex:1 1 220px;font-size:15px;font-weight:600;color:var(--ink-2);min-width:0}
+/* tool tray, like the Gizmo's tool cards */
+.tray{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.tray{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tool{border:1.5px solid var(--line);border-radius:12px;background:var(--field);padding:8px 10px;display:flex;flex-direction:column;gap:4px;
+  min-height:108px;position:relative}
+.tool .tname{font-size:15px;font-weight:800;padding-right:34px}
+.tool .tsub{font-size:13.5px;font-weight:600;color:var(--ink-2);line-height:1.4;font-variant-numeric:tabular-nums;padding-right:30px}
+.tool .tsub b{color:var(--ink);font-weight:800}
+.tool .ticon{position:absolute;right:6px;top:6px;width:32px;height:46px;pointer-events:none}
+.tool.drag{cursor:grab;touch-action:none}
+.tool.drag:hover{border-color:var(--accent)}
+.tool:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.tool.off{cursor:default}
+.tool.off .tname,.tool.off .ticon{opacity:.45}
+.ghost{position:fixed;left:0;top:0;pointer-events:none;z-index:50}
+
+/* -------- lab notebook -------- */
+.nbhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.nbhead .label{margin:0}
+.nbnote{font-size:14px;font-weight:600;color:var(--ink-2);margin:0}
+.entries{display:flex;flex-direction:column;gap:10px}
+.empty{margin:0;font-size:15px;font-weight:600;color:var(--muted);border:1.5px dashed var(--line);border-radius:12px;padding:16px;text-align:center}
+.entry{border:1.5px solid var(--line);border-radius:12px;background:var(--field);padding:10px 12px}
+.entry.live{border-color:var(--accent)}
+.ehead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.ehead b{font-size:16px;font-weight:800}
+.ehead span{font-size:13.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.erow{display:grid;grid-template-columns:116px minmax(0,1fr);gap:8px;font-size:14.5px;padding:3px 0;border-top:1px solid var(--line)}
+.erow dt{font-weight:800;color:var(--ink-2)}
+.erow dd{margin:0;font-weight:600;display:flex;flex-wrap:wrap;gap:2px 14px;font-variant-numeric:tabular-nums}
+.erow dd b{font-weight:800}
+.chip{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+.btnrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.msg{color:var(--good);font-size:15px}
+
+/* -------- dropdown sections -------- */
+.notes{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.notes summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 18px;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.notes summary::-webkit-details-marker{display:none}
+.notes summary svg{width:18px;height:18px;flex:none;transition:transform .18s ease}
+.notes[open] summary svg{transform:rotate(180deg)}
+.notes[open] summary{border-bottom:1px solid var(--line)}
+.notes-body{padding:12px 18px 16px}
+.notes p,.notes li{font-size:16.5px;color:var(--ink-2);font-weight:500;line-height:1.55;margin:0}
+.notes p + p{margin-top:9px}
+.notes ol,.notes ul{margin:0;padding-left:24px}
+.notes li{margin:7px 0}
+.notes strong{color:var(--ink);font-weight:800}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <span class="eyebrow">Motion lab &middot; chemical reactions</span>
+      <h1>Chemical Changes Lab</h1>
+      <p>Mix two substances and look for signs of a chemical change. Test what forms, and keep an eye on the scale.</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="themebtn" id="themeBtn" type="button" aria-label="Switch to dark mode"></button>
+  </header>
+
+  <div class="main">
+    <!-- ===================== LEFT PANEL ===================== -->
+    <section class="card ctrlcard" aria-label="Setup">
+      <div>
+        <label class="label" for="r1">Reactant 1</label>
+        <select class="pick" id="r1"></select>
+      </div>
+      <div>
+        <label class="label" for="r2">Reactant 2</label>
+        <select class="pick" id="r2"></select>
+      </div>
+      <div>
+        <p class="label">Experimental setup</p>
+        <div class="opts" role="radiogroup" aria-label="Experimental setup">
+          <label class="radio" id="radNormal"><input type="radio" name="setup" value="normal" checked> Normal setup</label>
+          <label class="radio" id="radOther"><input type="radio" name="setup" value="gas"> <span id="otherName">Gas collection</span></label>
+        </div>
+      </div>
+      <div>
+        <p class="label">Options</p>
+        <div class="opts">
+          <label class="check"><input type="checkbox" id="optLabels" checked> Label reactants</label>
+          <label class="check"><input type="checkbox" id="optEq"> Show chemical equation</label>
+          <div class="eqbox" id="eqbox" hidden></div>
+          <label class="check" id="balRow" hidden><input type="checkbox" id="optBal"> Show balanced equation</label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== THE BENCH ===================== -->
+    <section class="card scenecard" aria-label="Lab bench">
+      <div class="scenebox">
+        <svg id="scene" viewBox="40 8 680 394" role="img" aria-label="A lab bench on a scale, with the reactants"></svg>
+      </div>
+      <div class="ctlrow">
+        <span class="lab">Controls:</span>
+        <button class="iconbtn primary" id="playBtn" type="button" aria-label="Play: mix the reactants" title="Play">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg></button>
+        <button class="iconbtn" id="pauseBtn" type="button" aria-label="Pause" title="Pause" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1" fill="currentColor"/></svg></button>
+        <button class="iconbtn" id="resetBtn" type="button" aria-label="Reset" title="Reset" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.6 9.2A7.2 7.2 0 1 1 5 14.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M3.2 4.6l1.9 5.9 5.9-1.9z" fill="currentColor"/></svg></button>
+        <span class="status" id="status" role="status"></span>
+      </div>
+      <div class="tray" aria-label="Tools">
+        <div class="tool" id="tool-thermo" data-tool="thermo" role="button" tabindex="0">
+          <span class="tname">Thermometer</span>
+          <span class="tsub" id="sub-thermo"></span>
+          <svg class="ticon" viewBox="0 0 44 64" aria-hidden="true"><rect x="18" y="3" width="8" height="48" rx="4" fill="#fbfdff" stroke="#8d9aa8" stroke-width="1.6"/><rect x="20.4" y="26" width="3.2" height="27" fill="#c8102e"/><circle cx="22" cy="54" r="6.5" fill="#c8102e" stroke="#7d0a1c" stroke-width="1.2"/></svg>
+        </div>
+        <div class="tool" id="tool-phenol" data-tool="phenol" role="button" tabindex="0">
+          <span class="tname">Phenol red</span>
+          <span class="tsub" id="sub-phenol"></span>
+          <svg class="ticon" viewBox="0 0 44 64" aria-hidden="true"><path d="M7 26 L37 26 L37 60 Q37 62 35 62 L9 62 Q7 62 7 60 Z" fill="rgba(255,255,255,.6)" stroke="#8d9aa8" stroke-width="1.5"/><rect x="8.5" y="40" width="27" height="20.5" fill="#ee8a2c"/><path d="M27 52 L25.5 22 L30.5 22 L29.5 52 Z" fill="rgba(255,255,255,.7)" stroke="#8d9aa8" stroke-width="1"/><path d="M24.5 22 L24.5 10 Q24.5 4 28 4 Q31.5 4 31.5 10 L31.5 22 Z" fill="#1d1e22"/></svg>
+        </div>
+        <div class="tool" id="tool-glow" data-tool="glow" role="button" tabindex="0" hidden>
+          <span class="tname">Glowing splint</span>
+          <span class="tsub" id="sub-glow"></span>
+          <svg class="ticon" viewBox="0 0 44 64" aria-hidden="true"><path d="M8 58 L34 10" stroke="#a9874f" stroke-width="5.5" stroke-linecap="round"/><path d="M8 58 L34 10" stroke="#ddc08a" stroke-width="3.5" stroke-linecap="round"/><circle cx="34" cy="10" r="4.5" fill="#ff7a1a"/><circle cx="34" cy="10" r="8" fill="#ff9a2a" opacity=".35"/></svg>
+        </div>
+        <div class="tool" id="tool-burn" data-tool="burn" role="button" tabindex="0" hidden>
+          <span class="tname">Burning splint</span>
+          <span class="tsub" id="sub-burn"></span>
+          <svg class="ticon" viewBox="0 0 44 64" aria-hidden="true"><path d="M8 58 L32 16" stroke="#a9874f" stroke-width="5.5" stroke-linecap="round"/><path d="M8 58 L32 16" stroke="#ddc08a" stroke-width="3.5" stroke-linecap="round"/><path d="M32 18 Q24 10 32 0 Q40 10 32 18 Z" fill="#ff8a1a"/><path d="M32 17 Q28 11 32 5 Q36 11 32 17 Z" fill="#ffe066"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== LAB NOTEBOOK ===================== -->
+    <section class="card datacard" aria-label="Lab notebook">
+      <div class="nbhead">
+        <p class="label">Lab notebook</p>
+        <p class="nbnote">Readings from your tools, newest on top.</p>
+      </div>
+      <div class="entries" id="entries"></div>
+      <div class="btnrow">
+        <button class="btn" id="copyBtn" type="button">Copy table</button>
+        <button class="btn" id="saveBtn" type="button">Save as a CSV file</button>
+        <button class="btn" id="clearBtn" type="button">Clear</button>
+        <span class="msg" id="msg" role="status"></span>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== HOW TO / WHY ===================== -->
+  <details class="notes" open>
+    <summary>How to use this simulation <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <ol>
+        <li>Pick <strong>Reactant 1</strong> and <strong>Reactant 2</strong>. One reactant is in the flask. The other one sits next to it.</li>
+        <li>Pick a setup. <strong>Normal setup</strong> is open to the air. <strong>Gas collection</strong> catches any gas in a test tube. <strong>Closed system</strong> seals everything inside a glass box.</li>
+        <li>Before you start, drag the <strong>Thermometer</strong> and <strong>Phenol red</strong> to the lab bench. Their cards show the <strong>Start</strong> temperature and the <strong>Start pH</strong>.</li>
+        <li>Read the <strong>scale</strong>. Then press <strong>Play</strong> (the triangle) to mix the reactants. Look for bubbles, color changes, new solids, light and heat.</li>
+        <li>When the reaction is over, read the scale again. Drag <strong>Phenol red</strong> to the bench again to find the <strong>End pH</strong>.</li>
+        <li>In <strong>Gas collection</strong>, drag the <strong>Glowing splint</strong> or the <strong>Burning splint</strong> to the test tube to find out what the gas is.</li>
+        <li>The <strong>Lab notebook</strong> keeps your readings for each reaction. Press <strong>Reset</strong> to run a reaction again.</li>
+      </ol>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>Signs of a chemical change <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <p>A <strong>chemical change</strong> makes new substances. The new substances have new properties. A <strong>physical change</strong> can change how something looks, but it is still the same substance.</p>
+      <p>Clues that a chemical change happened: a gas forms (bubbles), a color changes, light is given off, a new smell appears, the temperature changes, or a <strong>precipitate</strong> forms. A precipitate is a solid that appears when two liquids mix.</p>
+      <p>A clue is not proof. Some solids make water hotter or colder when they dissolve, but no new substance forms. Dissolving is a physical change.</p>
+      <p>A reaction that gives off heat is <strong>exothermic</strong>. The temperature goes up. A change that takes in heat is <strong>endothermic</strong>. The temperature goes down.</p>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>Testing pH and gases <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <p><strong>Phenol red</strong> is an <strong>indicator</strong>, a dye that changes color with pH. It turns <strong>yellow</strong> in an acid, stays <strong>orange</strong> when the liquid is neutral, and turns <strong>pink</strong> in a base.</p>
+      <p>In <strong>Gas collection</strong>, the gas travels through a tube into a test tube full of water. The gas pushes the water out, so you can see how much gas formed.</p>
+      <p>A <strong>glowing splint</strong> bursts into flame in <strong>oxygen</strong>. A <strong>burning splint</strong> makes a loud pop in <strong>hydrogen</strong>, because hydrogen burns very fast. A burning splint goes out in <strong>carbon dioxide</strong> and in other gases that do not let things burn.</p>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>Conservation of mass <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <p>The <strong>law of conservation of mass</strong> says that matter is not created or destroyed in a chemical reaction. The atoms just rearrange into new substances. So the total mass stays the same.</p>
+      <p>In <strong>Normal setup</strong>, a gas can float away into the air. Then the scale shows a little less mass at the end. The mass did not disappear. It left with the gas.</p>
+      <p>In <strong>Gas collection</strong> or a <strong>Closed system</strong>, the gas is trapped. Watch the scale stay the same.</p>
+      <p>Everything on the bench sits on the scale. When the tweezers, a beaker or a dropper is lifted, the scale reads less until it is put back down.</p>
+    </div>
+  </details>
+
+</div>
+
+<script>
+(() => {
+"use strict";
+/* ==================================================================
+   HELPERS
+   ================================================================== */
+const el = id => document.getElementById(id);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => { t = clamp(t, 0, 1); return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; };
+const easeOut = t => { t = clamp(t, 0, 1); return 1 - (1 - t) * (1 - t); };
+const f1 = v => (Math.round(v * 10 + 1e-7) / 10).toFixed(1);
+const n1 = v => (Math.round(v * 10) / 10).toString();
+/* reactions slow down as they go: most of the change comes early */
+const curve = x => { x = clamp(x, 0, 1); return (1 - Math.exp(-3 * x)) / (1 - Math.exp(-3)); };
+const rgba = c => `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])},${c[3].toFixed(3)})`;
+const mixC = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
+const hash = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+/* ==================================================================
+   THE REACTIONS
+   ================================================================== */
+const C = {
+  water:[170,205,235,.5], kero:[236,222,150,.5], ki:[212,226,104,.74], amber:[198,124,40,.8],
+  h2o2:[182,212,238,.5], agno3:[214,224,234,.5], hcl:[196,222,240,.55], base:[200,220,240,.55],
+  blue:[90,158,232,.62], cl2:[188,218,58,.42],
+};
+const PH = { A:{ name:"Acidic", col:"#f2cd35" }, N:{ name:"Neutral", col:"#ee8a2c" }, B:{ name:"Basic", col:"#de3a82" } };
+const GASES = {
+  H2:{ glow:"out", burn:"pop" }, O2:{ glow:"relight", burn:"bright" },
+  CO2:{ glow:"out", burn:"out" }, NH3:{ glow:"out", burn:"out" }, N2:{ glow:"out", burn:"out" },
+};
+const RESULT = { glow:{ relight:"It bursts into flame!", out:"The glow goes out." },
+                 burn:{ pop:"A loud squeaky pop!", bright:"It burns brighter.", out:"The flame goes out." } };
+const R1 = [
+  { id:"na", name:"Sodium", r2:[["water", "Water"], ["cl2", "Chlorine"], ["kero", "Kerosene"]] },
+  { id:"h2o2", name:"Hydrogen peroxide", r2:[["ki", "Potassium iodide"], ["kisoap", "Potassium iodide and dish soap"], ["liver", "Raw liver"]] },
+  { id:"ag", name:"Silver nitrate", r2:[["hcl", "Hydrochloric acid"], ["cu", "Copper"], ["au", "Gold"]] },
+  { id:"cacl2", name:"Calcium chloride", r2:[["water", "Water"], ["nahco3", "Sodium bicarbonate"], ["naoh", "Sodium hydroxide"]] },
+  { id:"nh4", name:"Ammonium nitrate", r2:[["water", "Water"], ["koh", "Potassium hydroxide"], ["zn", "Zinc, sodium chloride"]] },
+];
+const EQ_PEROX = ["H<sub>2</sub>O<sub>2</sub> &rarr; H<sub>2</sub>O + O<sub>2</sub>", "2H<sub>2</sub>O<sub>2</sub> &rarr; 2H<sub>2</sub>O + O<sub>2</sub>"];
+const SODIUM = { how:"tweezers", from:"jar", item:"sodium", label:["Sodium"], name:"sodium", h:21, m:2 };
+const CACL2 = { how:"paper", item:"pellets", label:["Calcium", "chloride"], name:"calcium chloride", h:1, m:5 };
+const NH4NO3 = m => ({ how:"paper", item:"crystals", label:["Ammonium", "nitrate"], name:"ammonium nitrate", h:1, m });
+const AGNO3 = { kind:"liquid", col:C.agno3, label:["Silver nitrate", "solution"] };
+/* flask: what starts in the flask.  add: what goes in, how, and its holder (h) and its own (m) mass in grams.
+   base / gasM / closedM: scale reading for each setup.  loss: grams of gas that escape in Normal setup.
+   T1: final temperature (start 21 C).  dur: seconds.  ph: [start, end] or null when there is no liquid. */
+const RX = {
+  "na:water":{ flask:{ kind:"liquid", col:C.water, label:["Water"] }, add:SODIUM,
+    base:388.0, gasM:2402.0, loss:0.1, T1:59, dur:5, ph:["N", "B"], gas:"H2", gamt:0.85, fx:{ skate:true },
+    eq:["Na + H<sub>2</sub>O &rarr; NaOH + H<sub>2</sub>", "2Na + 2H<sub>2</sub>O &rarr; 2NaOH + H<sub>2</sub>"] },
+  "na:cl2":{ flask:{ kind:"gas", col:C.cl2, label:["Chlorine gas"] }, add:SODIUM,
+    base:372.4, gasM:2386.4, loss:0, T1:74, dur:5, ph:null, gas:null, fx:{ burnCl:true, smoke:true },
+    eq:["Na + Cl<sub>2</sub> &rarr; NaCl", "2Na + Cl<sub>2</sub> &rarr; 2NaCl"] },
+  "na:kero":{ flask:{ kind:"liquid", col:C.kero, label:["Kerosene"] }, add:SODIUM,
+    base:371.8, gasM:2385.8, loss:0, T1:21, dur:3, ph:["N", "N"], gas:null, fx:{ sink:true },
+    eq:["Na + kerosene &rarr; no reaction", "Na + kerosene &rarr; no reaction"] },
+  "h2o2:ki":{ flask:{ kind:"liquid", col:C.ki, label:["Potassium iodide", "solution"] },
+    add:{ how:"pour", item:"liquid", col:C.h2o2, label:["Hydrogen peroxide"], name:"hydrogen peroxide", h:50, m:20 },
+    base:336.6, gasM:2321.6, loss:2.8, T1:71, dur:6, ph:["N", "N"], gas:"O2", gamt:0.9, fx:{ bubbles:1, foam:14, colorTo:C.amber },
+    eq:EQ_PEROX, note:"Catalyst: KI" },
+  "h2o2:kisoap":{ flask:{ kind:"liquid", col:C.ki, label:["Potassium iodide", "solution"] },
+    add:{ how:"pour", soap:true, soapH:15, item:"liquid", col:C.h2o2, label:["Hydrogen", "peroxide"], name:"dish soap and hydrogen peroxide", h:50, m:20 },
+    base:411.6, closedM:1411.6, loss:2.8, T1:71, dur:7, ph:["N", "N"], gas:"O2", closed:true, fx:{ bubbles:1, toothpaste:true, colorTo:C.amber },
+    eq:EQ_PEROX, note:"Catalyst: KI" },
+  "h2o2:liver":{ flask:{ kind:"liquid", col:C.h2o2, label:["Hydrogen", "peroxide"] },
+    add:{ how:"tweezers", from:"dish", item:"liver", label:["Raw liver"], name:"raw liver", h:21, m:10 },
+    base:352.9, gasM:2366.9, loss:0.7, T1:33, dur:6, ph:["N", "N"], gas:"O2", gamt:0.6, fx:{ bubbles:0.85, foam:22, atItem:true },
+    eq:EQ_PEROX, note:"Catalyst: catalase (in the liver)" },
+  "ag:hcl":{ flask:AGNO3,
+    add:{ how:"pour", item:"liquid", col:C.hcl, label:["Hydrochloric", "acid"], name:"hydrochloric acid", h:50, m:20 },
+    base:344.1, gasM:2329.1, loss:0, T1:23, dur:5, ph:["N", "A"], gas:null, fx:{ precip:true },
+    eq:["AgNO<sub>3</sub> + HCl &rarr; AgCl + HNO<sub>3</sub>", "AgNO<sub>3</sub> + HCl &rarr; AgCl + HNO<sub>3</sub>"] },
+  "ag:cu":{ flask:AGNO3, add:{ how:"tweezers", from:"dish", item:"cu", label:["Copper wire"], name:"copper wire", h:21, m:5 },
+    base:365.2, gasM:2379.2, loss:0, T1:22, dur:8, ph:["N", "N"], gas:null, fx:{ crystals:true, colorTo:C.blue },
+    eq:["Cu + AgNO<sub>3</sub> &rarr; Cu(NO<sub>3</sub>)<sub>2</sub> + Ag", "Cu + 2AgNO<sub>3</sub> &rarr; Cu(NO<sub>3</sub>)<sub>2</sub> + 2Ag"] },
+  "ag:au":{ flask:AGNO3, add:{ how:"tweezers", from:"dish", item:"au", label:["Gold wire"], name:"gold wire", h:21, m:5 },
+    base:365.9, gasM:2379.9, loss:0, T1:21, dur:4, ph:["N", "N"], gas:null, fx:{},
+    eq:["Au + AgNO<sub>3</sub> &rarr; no reaction", "Au + AgNO<sub>3</sub> &rarr; no reaction"] },
+  "cacl2:water":{ flask:{ kind:"liquid", col:C.water, label:["Water"] }, add:CACL2,
+    base:318.0, gasM:2352.0, loss:0, T1:37, dur:5, ph:["N", "N"], gas:null, fx:{ dissolve:true },
+    eq:["CaCl<sub>2</sub>(s) &rarr; Ca<sup>2+</sup>(aq) + Cl<sup>&minus;</sup>(aq)", "CaCl<sub>2</sub>(s) &rarr; Ca<sup>2+</sup>(aq) + 2Cl<sup>&minus;</sup>(aq)"] },
+  "cacl2:nahco3":{ flask:{ kind:"liquid", col:C.base, label:["Sodium", "bicarbonate", "solution"] }, add:CACL2,
+    base:342.6, gasM:2920.0, loss:1.8, T1:26, dur:6, ph:["B", "A"], gas:"CO2", gamt:0.55, fx:{ dissolve:true, bubbles:0.7, foam:6, precip:true },
+    eq:["CaCl<sub>2</sub> + NaHCO<sub>3</sub> &rarr;<br>CaCO<sub>3</sub> + NaCl + H<sub>2</sub>O + CO<sub>2</sub>", "CaCl<sub>2</sub> + 2NaHCO<sub>3</sub> &rarr;<br>CaCO<sub>3</sub> + 2NaCl + H<sub>2</sub>O + CO<sub>2</sub>"] },
+  "cacl2:naoh":{ flask:{ kind:"liquid", col:C.base, label:["Sodium", "hydroxide", "solution"] }, add:CACL2,
+    base:324.3, gasM:2358.3, loss:0, T1:36, dur:5, ph:["B", "B"], gas:null, fx:{ dissolve:true, precip:true },
+    eq:["CaCl<sub>2</sub> + NaOH &rarr; Ca(OH)<sub>2</sub> + NaCl", "CaCl<sub>2</sub> + 2NaOH &rarr; Ca(OH)<sub>2</sub> + 2NaCl"] },
+  "nh4:water":{ flask:{ kind:"liquid", col:C.water, label:["Water"] }, add:NH4NO3(10),
+    base:319.5, gasM:2353.5, loss:0, T1:7, dur:5, ph:["N", "N"], gas:null, fx:{ dissolve:true },
+    eq:["NH<sub>4</sub>NO<sub>3</sub>(s) &rarr;<br>NH<sub>4</sub><sup>+</sup>(aq) + NO<sub>3</sub><sup>&minus;</sup>(aq)", "NH<sub>4</sub>NO<sub>3</sub>(s) &rarr;<br>NH<sub>4</sub><sup>+</sup>(aq) + NO<sub>3</sub><sup>&minus;</sup>(aq)"] },
+  "nh4:koh":{ flask:{ kind:"liquid", col:C.base, label:["Potassium", "hydroxide", "solution"] }, add:NH4NO3(10),
+    base:331.7, gasM:2365.7, loss:0.3, T1:13, dur:6, ph:["B", "B"], gas:"NH3", gamt:0.15, fx:{ dissolve:true, bubbles:0.3, smell:true },
+    eq:["NH<sub>4</sub>NO<sub>3</sub> + KOH &rarr;<br>KNO<sub>3</sub> + NH<sub>3</sub> + H<sub>2</sub>O", "NH<sub>4</sub>NO<sub>3</sub> + KOH &rarr;<br>KNO<sub>3</sub> + NH<sub>3</sub> + H<sub>2</sub>O"] },
+  "nh4:zn":{ flask:{ kind:"powder", label:["Zinc and", "sodium", "chloride"] }, add:NH4NO3(5),
+    base:296.4, gasM:2330.4, loss:4.0, T1:128, dur:6, delay:0.9, ph:null, gas:"N2", gamt:0.7, fx:{ flame:true, smoke:true },
+    eq:["NH<sub>4</sub>NO<sub>3</sub> + Zn &rarr; ZnO + N<sub>2</sub> + H<sub>2</sub>O", "NH<sub>4</sub>NO<sub>3</sub> + Zn &rarr; ZnO + N<sub>2</sub> + 2H<sub>2</sub>O"], note:"Catalyst: NaCl" },
+};
+const T0 = 21, THERMO_M = 15, PR_BEAKER = 30, PR_DROP = 5;
+const SETUP_NAME = { normal:"Normal setup", gas:"Gas collection", closed:"Closed system" };
+
+/* ==================================================================
+   STATE
+   ================================================================== */
+const G = { r1:"na", r2:"water", setup:"normal", labels:true, eq:false, bal:false, clock:0, log:[], run:null };
+function freshRun(){
+  return { phase:"setup", tt:0, thermo:false, phen:false, phCol:"N", phStart:null, phEnd:null,
+           drop:null, splint:null, glow:null, burn:null, entry:null };
+}
+G.run = freshRun();
+const rx = () => RX[G.r1 + ":" + G.r2];
+const r1Name = id => R1.find(x => x.id === id).name;
+const r2Name = (a, b) => R1.find(x => x.id === a).r2.find(x => x[0] === b)[1];
+
+/* how reactant 1 gets into the flask, how long it takes, and when it lands (s) */
+function plan(){
+  const r = rx();
+  if (G.setup === "gas") return { kind:"valve", T:2.0, land:1.1 };
+  if (r.add.how === "tweezers") return { kind:"tweezers", T:3.4, land:0.76 * 3.4 };
+  if (r.add.how === "pour") return r.add.soap ? { kind:"soap", T:6.0, land:2.6 + 0.47 * 3.4 } : { kind:"pour", T:3.4, land:0.47 * 3.4 };
+  return { kind:"paper", T:3.0, land:0.5 * 3.0 };
+}
+const started = () => G.run.phase !== "setup";
+const reactT = () => started() ? G.run.tt - plan().land : -1;           // seconds since the reactants met
+function progress(){                                                    // 0 to 1 through the reaction
+  const r = rx(), rt = reactT();
+  return rt < 0 ? 0 : clamp((rt - (r.delay || 0)) / r.dur, 0, 1);
+}
+const tempNow = () => T0 + (rx().T1 - T0) * curve(progress());
+/* how much of the added substance has gone in (0 to 1), for pours */
+function poured(){
+  const P = plan(), tt = G.run.tt;
+  if (!started()) return 0;
+  if (P.kind === "pour") return clamp((tt / 3.4 - 0.42) / 0.18, 0, 1);
+  if (P.kind === "soap") return clamp(((tt - 2.6) / 3.4 - 0.42) / 0.18, 0, 1);
+  if (P.kind === "paper") return clamp((tt / 3.0 - 0.44) / 0.18, 0, 1);
+  if (P.kind === "valve") return clamp((tt / 2.0 - 0.2) / 0.35, 0, 1);
+  return 0;
+}
+/* the scale: everything on the bench, minus what is lifted, minus gas that escaped */
+function transferOffset(){
+  const r = rx(), a = r.add, P = plan(), tt = G.run.tt;
+  if (!started() || P.kind === "valve") return 0;
+  if (P.kind === "tweezers"){
+    const k = tt / P.T;
+    return (k > 0.06 && k < 0.99 ? -a.h : 0) + (k >= 0.34 && k < 0.70 ? -a.m : 0);
+  }
+  let off = 0, k;
+  if (P.kind === "soap"){ const k1 = tt / 2.6; if (k1 > 0.04 && k1 < 0.99) off -= a.soapH; k = (tt - 2.6) / 3.4; }
+  else k = tt / (P.kind === "paper" ? 3.0 : 3.4);
+  if (k > 0.04 && k < 0.99) off -= a.h + a.m * (1 - poured());
+  return off;
+}
+function massNow(){
+  const r = rx(), u = G.run;
+  let m = G.setup === "gas" ? r.gasM : G.setup === "closed" ? r.closedM : r.base;
+  if (u.thermo) m += THERMO_M;
+  if (u.phen) m += PR_BEAKER + PR_DROP - (u.drop && u.drop.k > 0.04 && u.drop.k < 0.97 ? PR_DROP : 0);
+  m += transferOffset();
+  if (G.setup === "normal") m -= r.loss * curve(progress());
+  return m;
+}
+
+/* ==================================================================
+   THE BENCH (svg 760 x 470).  Everything stands on the scale at y = BASE.
+   ================================================================== */
+const svg = el("scene");
+const BASE = 328, LVL = 268;
+const geoF = () => ({ cx:G.setup === "gas" ? 248 : 262, base:BASE, bw:64, nw:17, sh:206, top:150 });
+function halfW(f, y){ return y <= f.sh ? f.nw : f.nw + (f.bw - f.nw) * clamp((y - f.sh) / (f.base - 10 - f.sh), 0, 1); }
+function flaskOutline(f){
+  const cx = f.cx, nw = f.nw, bw = f.bw, b = f.base;
+  return `M${cx - nw - 6},${f.top} L${cx - nw},${f.top + 6} L${cx - nw},${f.sh} L${cx - bw},${b - 10} Q${cx - bw},${b} ${cx - bw + 10},${b} `
+       + `L${cx + bw - 10},${b} Q${cx + bw},${b} ${cx + bw},${b - 10} L${cx + nw},${f.sh} L${cx + nw},${f.top + 6} L${cx + nw + 6},${f.top}`;
+}
+function flaskInner(f){
+  const cx = f.cx, nw = f.nw - 2.5, bw = f.bw - 2.5, b = f.base - 2.5;
+  return `M${cx - nw},${f.top} L${cx - nw},${f.sh} L${cx - bw},${b - 9} Q${cx - bw},${b} ${cx - bw + 9},${b} `
+       + `L${cx + bw - 9},${b} Q${cx + bw},${b} ${cx + bw},${b - 9} L${cx + nw},${f.sh} L${cx + nw},${f.top} Z`;
+}
+/* rotate a local point (lx, ly) by deg, then move it to (x, y) */
+function rotP(x, y, deg, lx, ly){
+  const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  return [x + lx * c - ly * s, y + lx * s + ly * c];
+}
+/* key frames [k, x, y, rot]: smooth motion between them */
+function kf(fr, k){
+  k = clamp(k, 0, 1);
+  for (let i = 0; i < fr.length - 1; i++){
+    const a = fr[i], b = fr[i + 1];
+    if (k <= b[0]){
+      const e = ease((k - a[0]) / Math.max(1e-6, b[0] - a[0]));
+      return [lerp(a[1], b[1], e), lerp(a[2], b[2], e), lerp(a[3], b[3], e)];
+    }
+  }
+  const z = fr[fr.length - 1]; return [z[1], z[2], z[3]];
+}
+
+function buildStatic(){
+  const f = geoF();
+  let s = `<defs><linearGradient id="wallGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--wall-2)"/><stop offset="1" stop-color="var(--wall-1)"/></linearGradient>`
+        + `<radialGradient id="glow"><stop offset="0" stop-color="#fffbe0" stop-opacity="1"/><stop offset=".35" stop-color="#ffd84a" stop-opacity=".85"/><stop offset="1" stop-color="#ff9a1a" stop-opacity="0"/></radialGradient>`
+        + `<clipPath id="flaskIn"><path d="${flaskInner(f)}"/></clipPath>`
+        + `<clipPath id="tubeIn"><rect x="547.5" y="0" width="25" height="400" rx="12"/></clipPath>`
+        + `</defs><rect class="s-wall" x="0" y="0" width="760" height="470"/>`
+        + `<line class="s-stripe" x1="-60" y1="60" x2="300" y2="420"/><line class="s-stripe" x1="-40" y1="420" x2="330" y2="40"/>`
+        + `<line class="s-stripe" x1="430" y1="-40" x2="800" y2="330"/><line class="s-stripe" x1="520" y1="460" x2="800" y2="180"/>`
+        + `<rect class="s-bench" x="0" y="364" width="760" height="106"/><rect class="s-benchtop" x="0" y="362" width="760" height="5"/>`
+        /* the scale: a long black platform with a readout in front */
+        + `<path d="M76,320 L684,320 L694,332 L66,332 Z" fill="#26282d"/><path d="M76,320 L684,320" stroke="#4a4d55" stroke-width="1.5"/>`
+        + `<rect x="62" y="331" width="636" height="36" rx="5" fill="#141518"/>`
+        + `<rect x="62" y="339" width="636" height="3" fill="#3a3d44"/><rect x="62" y="357" width="636" height="2" fill="#2c2f35"/>`
+        + `<rect x="80" y="366" width="26" height="7" rx="2" fill="#0d0e10"/><rect x="654" y="366" width="26" height="7" rx="2" fill="#0d0e10"/>`
+        + `<rect x="314" y="336" width="132" height="27" rx="5" fill="#fbfbfb" stroke="#5a5d63" stroke-width="2"/>`
+        + `<text id="massTxt" x="380" y="355.5" text-anchor="middle" style="font-size:17px;font-weight:800;fill:#111;font-variant-numeric:tabular-nums">0.0 g</text>`
+        + `<circle cx="676" cy="349" r="3.6" fill="#ff8a1a"/>`
+        + `<g id="dyn"></g>`;
+  svg.innerHTML = s;
+}
+
+/* ---------------- small drawings ---------------- */
+function lump(x, y){
+  return `<rect x="${(x - 6).toFixed(1)}" y="${(y - 4.5).toFixed(1)}" width="12" height="9" rx="3.5" fill="#b9bdc3" stroke="#737880" stroke-width="1"/>`
+       + `<rect x="${(x - 3.5).toFixed(1)}" y="${(y - 3).toFixed(1)}" width="5" height="2" rx="1" fill="#e6e8eb"/>`;
+}
+function itemSvg(item, x, y, sc){
+  sc = sc || 1;
+  const g = body => `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${sc.toFixed(3)})">${body}</g>`;
+  if (item === "sodium") return g(lump(0, 0));
+  if (item === "liver") return g(`<path d="M-14,2 Q-16,-6 -6,-7 Q2,-10 10,-6 Q17,-3 14,3 Q6,7 -4,6 Q-12,6 -14,2 Z" fill="#7d2025" stroke="#4a0f13" stroke-width="1.2"/><path d="M-7,-3 Q-2,-6 4,-4" stroke="#b14a4f" stroke-width="1.6" fill="none" stroke-linecap="round"/>`);
+  if (item === "cu" || item === "au"){
+    const col = item === "cu" ? "#c46a2b" : "#d2a326", hi = item === "cu" ? "#e9a070" : "#f6d66a";
+    let s = "";
+    for (let i = 0; i < 6; i++) s += `<ellipse cx="${-12.5 + i * 5}" cy="0" rx="3.4" ry="6" fill="none" stroke="${col}" stroke-width="2.2"/>`;
+    s += `<path d="M-16,4 L-20,6 M16,-4 L20,-6" stroke="${col}" stroke-width="2.2" stroke-linecap="round"/><path d="M-13,-5 L12,-5" stroke="${hi}" stroke-width=".9" opacity=".7"/>`;
+    return g(s);
+  }
+  return "";
+}
+const HEAP = [[-14,-15],[-7,-16],[0,-17],[7,-16],[14,-15],[-17,-19],[-10,-20],[-3,-21],[4,-21],[11,-20],[18,-19],[-7,-25],[0,-26],[7,-25],[-3,-30],[4,-30]];
+function grain(item, x, y, r){
+  if (item === "crystals") return `<rect x="${(x - r).toFixed(1)}" y="${(y - r).toFixed(1)}" width="${(2 * r).toFixed(1)}" height="${(2 * r).toFixed(1)}" rx=".6" fill="#fdfdfb" stroke="#b9bec6" stroke-width=".8" transform="rotate(${((x * 37) % 60).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+  return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="#fdfdfb" stroke="#b9bec6" stroke-width=".8"/>`;
+}
+function jar(cx, picked){
+  const x0 = cx - 24, x1 = cx + 24, b = BASE;
+  const outline = `M${cx - 17},236 L${cx - 16},246 Q${x0},250 ${x0},264 L${x0},${b - 6} Q${x0},${b} ${x0 + 6},${b} L${x1 - 6},${b} Q${x1},${b} ${x1},${b - 6} L${x1},264 Q${x1},250 ${cx + 16},246 L${cx + 17},236`;
+  let s = `<path class="s-gfill" d="${outline} Z"/>`
+        + `<path d="M${x0 + 2},290 L${x1 - 2},290 L${x1 - 2},${b - 6} Q${x1 - 2},${b - 2} ${x1 - 6},${b - 2} L${x0 + 6},${b - 2} Q${x0 + 2},${b - 2} ${x0 + 2},${b - 6} Z" fill="rgba(236,222,150,.4)"/>`
+        + lump(cx - 12, b - 8) + lump(cx + 1, b - 9) + lump(cx + 13, b - 8);
+  if (!picked) s += lump(cx, b - 17);
+  return s + `<path class="s-gline" d="${outline}"/><path class="s-sheen" d="M${x0 + 6},272 L${x0 + 6},${b - 14}" opacity=".7"/>`;
+}
+function dish(cx, item, show){
+  let s = `<path d="M${cx - 34},${BASE - 8} Q${cx},${BASE + 5} ${cx + 34},${BASE - 8} Q${cx},${BASE - 2} ${cx - 34},${BASE - 8} Z" fill="var(--glass)" stroke="var(--glass-line)" stroke-width="1.8"/>`;
+  if (show) s += itemSvg(item, cx, BASE - 9, 1);
+  return s;
+}
+/* a beaker; local origin at the middle of its bottom */
+function beakerG(x, y, rot, w, h, liqH, col){
+  const x0 = -w / 2, x1 = w / 2, top = -h, tilted = Math.abs(rot) > 25;
+  let s = `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(1)})">`
+        + `<path class="s-gfill" d="M${x0},${top} L${x0},-4 Q${x0},0 ${x0 + 4},0 L${x1 - 4},0 Q${x1},0 ${x1},-4 L${x1},${top} Z"/>`;
+  if (liqH > 0.4){
+    if (!tilted) s += `<rect x="${x0 + 2}" y="${(-liqH - 1).toFixed(1)}" width="${w - 4}" height="${(liqH - 0.5).toFixed(1)}" rx="2" fill="${col}"/>`;
+    else s += `<rect x="${x0 + 2}" y="${top + 4}" width="${Math.max(2, liqH * 0.8).toFixed(1)}" height="${(h * 0.55).toFixed(1)}" fill="${col}"/>`;
+  }
+  s += `<path class="s-gline" d="M${x0 - 5},${top} L${x0},${top + 5} L${x0},-4 Q${x0},0 ${x0 + 4},0 L${x1 - 4},0 Q${x1},0 ${x1},-4 L${x1},${top}"/>`
+     + `<path d="M${x1 - 12},${top + h * 0.3} H${x1 - 4} M${x1 - 9},${top + h * 0.5} H${x1 - 4} M${x1 - 12},${top + h * 0.7} H${x1 - 4}" stroke="var(--glass-line)" stroke-width="1.2"/>`;
+  return s + `</g>`;
+}
+/* a weigh paper with a heap of solid; local origin at the middle of its bottom */
+function paperG(x, y, rot, heap, item){
+  let s = `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(1)})"><path d="M-40,0 L40,0 L32,-12 L-32,-12 Z" fill="#f6f7f8" stroke="#a7afb8" stroke-width="1.5"/>`;
+  const n = Math.round(HEAP.length * heap);
+  for (let i = 0; i < n; i++) s += grain(item, HEAP[i][0], HEAP[i][1] + 3, 3);
+  return s + `</g>`;
+}
+/* a dropper; (x, y) is its tip */
+function dropperG(x, y, rot, fill, len){
+  len = len || 42;
+  return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(1)})">`
+       + `<path d="M-1.4,0 L-2.8,-8 L-2.8,${-len} L2.8,${-len} L2.8,-8 L1.4,0 Z" fill="rgba(255,255,255,.6)" stroke="#8d9aa8" stroke-width="1.1"/>`
+       + (fill ? `<path d="M-1.2,-1 L-2.4,-8 L-2.4,-20 L2.4,-20 L2.4,-8 L1.2,-1 Z" fill="${fill}"/>` : "")
+       + `<rect x="-4.6" y="${-len - 4}" width="9.2" height="5" rx="1.5" fill="#26272b"/>`
+       + `<path d="M-5.2,${-len - 4} L-5.2,${-len - 15} Q-5.2,${-len - 21} 0,${-len - 21} Q5.2,${-len - 21} 5.2,${-len - 15} L5.2,${-len - 4} Z" fill="#1d1e22"/></g>`;
+}
+/* tweezers; (x, y) is the tip, rot 0 = handle straight up */
+function tweezersG(x, y, rot){
+  return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(1)})">`
+       + `<path d="M-0.6,0 L-2.4,0 L-6.8,-112 L-3.4,-112 Z" fill="#aab0b8" stroke="#5e646c" stroke-width=".9"/>`
+       + `<path d="M0.6,0 L2.4,0 L6.8,-112 L3.4,-112 Z" fill="#aab0b8" stroke="#5e646c" stroke-width=".9"/>`
+       + `<rect x="-7" y="-119" width="14" height="8" rx="3.5" fill="#8f959e" stroke="#5e646c" stroke-width=".9"/>`
+       + `<path d="M-5.6,-70 L-4.2,-46 M5.6,-70 L4.2,-46" stroke="#6f757d" stroke-width="1.2"/></g>`;
+}
+function thermometer(x, top, bulbY, T, tagLeft){
+  const len = bulbY - top, fr = clamp((T + 10) / 160, 0, 1);
+  const yOf = c => bulbY - 7 - (len - 16) * (c + 10) / 160;
+  let s = `<rect x="${x - 4.5}" y="${top}" width="9" height="${len}" rx="4.5" fill="#fbfdff" stroke="var(--glass-line)" stroke-width="1.4"/>`;
+  for (let c = 0; c <= 140; c += 20) s += `<line x1="${x + 4.5}" y1="${yOf(c).toFixed(1)}" x2="${x + 1}" y2="${yOf(c).toFixed(1)}" stroke="#8d9aa8" stroke-width="1"/>`;
+  const colTop = bulbY - 7 - (len - 16) * fr;
+  s += `<rect x="${x - 1.6}" y="${colTop.toFixed(1)}" width="3.2" height="${(bulbY - colTop).toFixed(1)}" fill="#c8102e"/>`
+     + `<circle cx="${x}" cy="${bulbY}" r="6" fill="#c8102e" stroke="#7d0a1c" stroke-width="1"/>`;
+  return s;
+}
+/* the reading beside the top of the thermometer (drawn last, so foam and smoke never hide it) */
+function thermoTag(x, top, T, tagLeft){
+  const tx = tagLeft ? x - 72 : x + 9;
+  return `<rect x="${tx}" y="${top - 2}" width="63" height="24" rx="7" fill="var(--card)" stroke="var(--line)" stroke-width="1.5"/>`
+       + `<text x="${tx + 31.5}" y="${top + 15}" text-anchor="middle" style="font-size:14.5px;font-weight:800;fill:var(--ink);font-variant-numeric:tabular-nums">${Math.round(T)} &#176;C</text>`;
+}
+function flame(x, y, sc, alpha){
+  const fl = 1 + 0.09 * Math.sin(G.clock * 23 + x) + 0.05 * Math.sin(G.clock * 37);
+  const h = 18 * sc * fl, w = 6.5 * sc;
+  return `<g opacity="${alpha.toFixed(2)}"><path d="M${x},${y + 2} Q${x - w},${y - h * 0.35} ${x},${y - h} Q${x + w},${y - h * 0.35} ${x},${y + 2} Z" fill="#ff8a1a"/>`
+       + `<path d="M${x},${y + 1} Q${x - w * 0.5},${y - h * 0.3} ${x},${y - h * 0.62} Q${x + w * 0.5},${y - h * 0.3} ${x},${y + 1} Z" fill="#ffe36a"/></g>`;
+}
+function bubbles(f, n, ytop, ybot, speed, seed, xc, spread){
+  let s = "";
+  for (let i = 0; i < n; i++){
+    const ph = (G.clock * speed + hash(i + seed * 7) + i * 0.0137) % 1;
+    const y = ybot - ph * (ybot - ytop);
+    const hw = xc == null ? halfW(f, y) - 7 : spread;
+    const x = (xc == null ? f.cx : xc) + (hash(i * 3.3 + seed) * 2 - 1) * hw + Math.sin(ph * 9 + i) * 2;
+    s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.3 + 2.3 * hash(i + 0.5)).toFixed(1)}" fill="rgba(255,255,255,.8)" stroke="rgba(120,140,160,.55)" stroke-width=".7"/>`;
+  }
+  return s;
+}
+/* the elephant toothpaste foam: blobs [dx, y, r, start time] that grow and spill out of the flask */
+const FOAM = [[0,152,15,0.6],[0,134,20,0.75],[-4,114,24,0.9],[10,98,22,1.05],[-12,84,20,1.2],[6,70,18,1.35],
+  [-26,130,22,1.1],[28,126,22,1.15],[-44,152,24,1.4],[46,150,24,1.45],[-56,184,26,1.7],[58,182,26,1.75],
+  [-64,218,28,2.0],[66,216,28,2.05],[-70,254,30,2.3],[72,252,30,2.35],[-74,290,30,2.6],[76,288,30,2.65],
+  [-40,302,28,2.85],[42,302,28,2.9],[0,304,30,2.95],[-104,308,22,3.1],[106,308,22,3.15],[-130,314,16,3.35],[132,314,16,3.4]];
+
+/* ---------------- the whole bench, every frame ---------------- */
+function drawDyn(){
+  const r = rx(), u = G.run, f = geoF(), P = plan(), fx = r.fx, gas = G.setup === "gas", closed = G.setup === "closed";
+  const tt = u.tt, rt = reactT(), landed = rt >= 0, delay = r.delay || 0;
+  const prog = progress(), cp = curve(prog);
+  const act = landed && rt >= delay && prog < 1 ? Math.pow(1 - prog, 0.7) : 0;      // how busy the reaction is right now
+  const T = tempNow(), pf = poured();
+  const lvl = r.flask.kind === "liquid" ? LVL - (r.add.item === "liquid" ? 5 * pf : 0) : f.base - 14;
+  const itemX = f.cx - 12;
+  const cx = f.cx;
+  let s = "";
+
+  /* light from sodium burning in chlorine spills out around the flask */
+  if (fx.burnCl && landed){
+    const gI = clamp(rt / 0.25, 0, 1) * (1 - clamp((prog - 0.18) / 0.45, 0, 1));
+    if (gI > 0.01) s += `<circle cx="${cx - 12}" cy="${BASE - 30}" r="${(130 + 14 * Math.sin(G.clock * 17)).toFixed(1)}" fill="url(#glow)" opacity="${(0.75 * gI).toFixed(2)}"/>`;
+  }
+  /* closed system: the back of the glass box */
+  if (closed) s += `<path class="s-boxback" d="M112,58 H668 V318 H112 Z"/><path d="M92,40 L112,58 M688,40 L668,58 M92,328 L112,318 M688,328 L668,318" stroke="var(--box-line)" stroke-width="1.4" opacity=".6"/>`;
+
+  /* gas collection: the water trough, the test tube and the delivery tube */
+  if (gas){
+    const gfrac = r.gas ? r.gamt * curve(clamp(rt / (r.dur * 0.9), 0, 1)) * (rt >= delay ? 1 : 0) : 0;
+    const sp = u.splint, lift = sp ? 96 * (sp.k < 0.22 ? ease(sp.k / 0.22) : sp.k > 0.78 ? 1 - ease((sp.k - 0.78) / 0.2) : 1) : 0;
+    const iface = 114 + gfrac * (298 - 114);
+    s += `<rect x="440" y="226" width="240" height="102" rx="6" class="s-gfill"/>`;
+    s += `<path d="M${cx + 12},190 L${cx + 12},124 Q${cx + 12},110 ${cx + 26},110 L404,110 Q414,110 419,118 L538,310 Q543,318 552,317 L560,316" fill="none" stroke="#8d9aa8" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>`
+       + `<path d="M${cx + 12},190 L${cx + 12},124 Q${cx + 12},110 ${cx + 26},110 L404,110 Q414,110 419,118 L538,310 Q543,318 552,317 L560,316" fill="none" stroke="#eef3f8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+    s += `<path d="M530,326 L536,300 L584,300 L590,326" fill="rgba(255,255,255,.35)" stroke="var(--glass-line)" stroke-width="1.6"/><rect x="552" y="298" width="16" height="4" fill="rgba(255,255,255,.7)"/>`;
+    /* the test tube (lifted out for a splint test) */
+    const ty = -lift;
+    s += `<g transform="translate(0 ${ty.toFixed(1)})">`;
+    if (!sp) s += `<g clip-path="url(#tubeIn)"><rect x="547" y="${iface.toFixed(1)}" width="26" height="${(300 - iface).toFixed(1)}" fill="rgba(140,195,235,.62)"/></g>`;
+    if (!sp && act > 0 && r.gas) s += `<g clip-path="url(#tubeIn)">${bubbles(f, Math.round(3 + 7 * act), iface + 4, 300, 1.4, 5, 560, 7)}</g>`;
+    s += `<path d="M547,300 L547,124 Q547,110 560,110 Q573,110 573,124 L573,300" fill="var(--glass)" stroke="var(--glass-line)" stroke-width="2"/>`
+       + `<path class="s-sheen" d="M552,128 L552,290" opacity=".6"/></g>`;
+    if (r.gas && act > 0) s += bubbles(f, Math.round(2 + 4 * act), 300, 318, 1.8, 9, 558, 3);
+    s += `<rect x="441" y="246" width="238" height="80" rx="4" fill="rgba(140,195,235,.5)"/><rect x="441" y="245" width="238" height="2.5" fill="rgba(255,255,255,.7)"/>`
+       + `<path class="s-gline" d="M440,226 L440,322 Q440,328 446,328 L674,328 Q680,328 680,322 L680,226"/>`;
+  }
+
+  /* phenol red: a small beaker of indicator with its dropper */
+  if (u.phen){
+    s += `<path class="s-gfill" d="M131,282 L131,324 Q131,328 135,328 L165,328 Q169,328 169,324 L169,282 Z"/>`
+       + `<rect x="133" y="304" width="34" height="22" rx="2" fill="${PH[u.phCol].col}" opacity=".92"/>`;
+    if (!u.drop) s += dropperG(157, 318, 8, null, 40);
+    s += `<path class="s-gline" d="M127,282 L131,286 L131,324 Q131,328 135,328 L165,328 Q169,328 169,324 L169,282"/>`;
+  }
+
+  /* ---- the flask and what is inside it ---- */
+  s += `<path class="s-gfill" d="${flaskOutline(f)} Z"/>`;
+  let IN = "";
+  if (r.flask.kind === "liquid"){
+    let col = r.flask.col;
+    if (fx.colorTo) col = mixC(col, fx.colorTo, cp);
+    IN += `<rect x="${cx - f.bw}" y="${lvl.toFixed(1)}" width="${2 * f.bw}" height="${(f.base - lvl).toFixed(1)}" fill="${rgba(col)}"/>`;
+  } else if (r.flask.kind === "gas"){
+    IN += `<rect x="${cx - f.bw}" y="${f.top}" width="${2 * f.bw}" height="${f.base - f.top}" fill="${rgba([C.cl2[0], C.cl2[1], C.cl2[2], C.cl2[3] * (1 - cp)])}"/>`;
+  } else {
+    const pc = mixC([142,146,152,1], [232,233,228,1], fx.flame ? cp : 0);
+    IN += `<path d="M${cx - f.bw + 3},${f.base - 1} Q${cx},${f.base - 30} ${cx + f.bw - 3},${f.base - 1} Z" fill="${rgba(pc)}"/>`;
+    for (let i = 0; i < 18; i++) IN += `<circle cx="${(cx - 48 + hash(i) * 96).toFixed(1)}" cy="${(f.base - 3 - hash(i + 9) * 9).toFixed(1)}" r="1.3" fill="${cp > 0.5 && fx.flame ? "#f7f7f2" : "#d7dade"}"/>`;
+  }
+  /* a precipitate: a white cloud that slowly settles */
+  if (fx.precip && landed){
+    const milk = clamp(rt / 1.1, 0, 1), settle = clamp((rt - r.dur * 0.3) / (r.dur * 0.7), 0, 1);
+    IN += `<rect x="${cx - f.bw}" y="${lvl.toFixed(1)}" width="${2 * f.bw}" height="${(f.base - lvl).toFixed(1)}" fill="rgba(246,246,242,${(0.62 * milk * (1 - 0.55 * settle)).toFixed(3)})"/>`;
+    for (let i = 0; i < 46; i++){
+      const y0 = lvl + 6 + hash(i + 2) * (f.base - lvl - 14), y = lerp(y0, f.base - 5 - hash(i) * 4, ease(settle));
+      const x = cx + (hash(i * 1.7) * 2 - 1) * (halfW(f, y) - 7);
+      IN += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.4 + hash(i + 4) * 1.4).toFixed(1)}" fill="rgba(255,255,255,${(0.95 * milk).toFixed(2)})"/>`;
+    }
+    IN += `<rect x="${cx - f.bw}" y="${(f.base - 2 - 8 * settle).toFixed(1)}" width="${2 * f.bw}" height="${(8 * settle + 2).toFixed(1)}" fill="rgba(250,250,247,${(0.95 * settle).toFixed(2)})"/>`;
+  }
+  /* salt from sodium + chlorine */
+  if (fx.burnCl && landed) IN += `<rect x="${cx - f.bw}" y="${(f.base - 2 - 6 * cp).toFixed(1)}" width="${2 * f.bw}" height="${(6 * cp + 2).toFixed(1)}" fill="rgba(252,252,250,${(0.95 * cp).toFixed(2)})"/>`;
+
+  /* the added substance, once it is in the flask */
+  const item = r.add.item, inFlaskItem = item === "sodium" || item === "liver" || item === "cu" || item === "au";
+  if (landed && inFlaskItem){
+    if (fx.skate){
+      /* the sodium melts into a ball that zips around on the water, fizzing, until it is used up */
+      const life = clamp(rt / (r.dur * 0.8), 0, 1), rad = 1 - life;
+      if (rad > 0.05){
+        const sx = cx + Math.sin(rt * 2.6) * (halfW(f, lvl) - 16) * 0.85 + Math.sin(rt * 9) * 3, sy = lvl - 1;
+        for (let i = 0; i < 10; i++){                       // a fizzing trail behind it
+          const ph = (G.clock * 2.2 + i / 10) % 1, back = Math.cos(rt * 2.6) > 0 ? -1 : 1;
+          IN += `<circle cx="${(sx + back * ph * 22 + Math.sin(i * 2.1) * 3).toFixed(1)}" cy="${(sy + 3 + Math.sin(i * 1.3) * 2 - ph * 3).toFixed(1)}" r="${(1.3 + ph * 2).toFixed(1)}" fill="rgba(255,255,255,.9)" stroke="rgba(110,130,150,.6)" stroke-width=".7"/>`;
+        }
+        for (let i = 0; i < 5; i++){                        // white mist rising off it
+          const ph = (G.clock * 0.9 + i / 5) % 1;
+          IN += `<circle cx="${(sx + Math.sin(i * 2 + ph * 3) * 7).toFixed(1)}" cy="${(sy - 8 - ph * 46).toFixed(1)}" r="${(5 + ph * 10).toFixed(1)}" fill="rgba(255,255,255,${(0.7 * (1 - ph) * Math.sqrt(rad)).toFixed(2)})"/>`;
+        }
+        IN += `<circle cx="${sx.toFixed(1)}" cy="${sy}" r="${(7 * rad + 1.2).toFixed(1)}" fill="#e3e6ea" stroke="#6f747b" stroke-width="1.2"/>`
+            + `<circle cx="${(sx - 2 * rad).toFixed(1)}" cy="${(sy - 2 * rad).toFixed(1)}" r="${(2.2 * rad + 0.4).toFixed(1)}" fill="#fff"/>`;
+      }
+    } else {
+      let y = f.base - 8;
+      if (r.flask.kind === "liquid") y = lerp(lvl, f.base - 8, easeOut(rt / 0.7));
+      let sc = 1;
+      if (fx.burnCl) sc = Math.max(0, 1 - cp * 1.2);
+      if (sc > 0.02) IN += itemSvg(item, itemX, y, sc);
+      if (fx.crystals){                                   // silver crystals grow on the copper
+        const n = Math.round(34 * cp);
+        for (let i = 0; i < n; i++){
+          const x = itemX - 16 + hash(i + 1) * 32, yy = y - 5 + hash(i + 7) * 10, a = hash(i + 3) * Math.PI * 2, L = (3 + hash(i + 5) * 6) * cp;
+          IN += `<path d="M${x.toFixed(1)},${yy.toFixed(1)} l${(Math.cos(a) * L).toFixed(1)},${(Math.sin(a) * L - L * 0.4).toFixed(1)}" stroke="#d9dde2" stroke-width="1.8" stroke-linecap="round"/>`;
+        }
+      }
+      if (fx.atItem && act > 0) IN += bubbles(f, Math.round(4 + 22 * act * fx.bubbles), lvl + 2, y, 1 + act, 3, itemX, 16);
+    }
+  }
+  /* a solid poured in: it settles in a heap, then dissolves if it can */
+  if ((item === "pellets" || item === "crystals") && pf > 0){
+    const sc = fx.dissolve ? 1 - cp : fx.flame ? 1 - cp : 1;
+    if (sc > 0.03){
+      const heapY = r.flask.kind === "powder" ? f.base - 22 : f.base - 6;
+      const n = Math.round(12 * pf);
+      for (let i = 0; i < n; i++) IN += grain(item, cx - 16 + (i % 6) * 6.4 + (i > 5 ? 3 : 0), heapY - (i > 5 ? 5 : 0), 2.8 * sc);
+    }
+  }
+  /* bubbles through the liquid */
+  if (fx.bubbles && !fx.atItem && act > 0) IN += bubbles(f, Math.round(34 * fx.bubbles * act), lvl + 2, f.base - 6, 0.9 + act, 1);
+  /* a foam layer on top */
+  if (fx.foam && landed && !fx.toothpaste){
+    const fh = fx.foam * easeOut(rt / 1.2) * (0.45 + 0.55 * Math.max(act, 0)), w = halfW(f, lvl - fh);
+    let top = "";
+    for (let k = 0; k <= 8; k++){ const x = cx - w + k * w / 4; top += `Q${(x - w / 8).toFixed(1)},${(lvl - fh - 6).toFixed(1)} ${x.toFixed(1)},${(lvl - fh).toFixed(1)} `; }
+    IN += `<path d="M${cx - f.bw},${lvl + 2} L${cx - w},${(lvl - fh).toFixed(1)} ${top} L${cx + f.bw},${lvl + 2} Z" fill="#fbfbf5" stroke="#cfd5dc" stroke-width="1.2"/>`;
+    for (let i = 0; i < Math.round(fh); i++) IN += `<circle cx="${(cx - w + 4 + hash(i) * (2 * w - 8)).toFixed(1)}" cy="${(lvl - hash(i + 3) * fh).toFixed(1)}" r="${(1.5 + hash(i + 1) * 2).toFixed(1)}" fill="none" stroke="#d6dbe1" stroke-width=".9"/>`;
+  }
+  /* elephant toothpaste: foam fills the flask */
+  if (fx.toothpaste && landed){
+    const ft = lvl - (lvl - f.top + 10) * easeOut(rt / 0.75);
+    IN += `<rect x="${cx - f.bw}" y="${ft.toFixed(1)}" width="${2 * f.bw}" height="${(f.base - ft).toFixed(1)}" fill="#cfe993"/>`;
+    for (let i = 0; i < 26; i++){ const y = ft + hash(i + 2) * (f.base - ft - 6); IN += `<circle cx="${(cx + (hash(i) * 2 - 1) * (halfW(f, y) - 6)).toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.5 + hash(i + 5) * 2.5).toFixed(1)}" fill="none" stroke="#b3d576" stroke-width="1"/>`; }
+  }
+  /* light, fire and smoke */
+  const clGlow = fx.burnCl && landed ? clamp(rt / 0.25, 0, 1) * (1 - clamp((prog - 0.18) / 0.45, 0, 1)) : 0;
+  if (clGlow > 0.01){                                   // sodium burns in chlorine with a bright yellow light
+    IN += `<rect x="${cx - f.bw}" y="${f.top}" width="${2 * f.bw}" height="${f.base - f.top}" fill="rgba(255,236,140,${(0.55 * clGlow).toFixed(3)})"/>`
+        + `<circle cx="${itemX}" cy="${f.base - 12}" r="${(80 + 12 * Math.sin(G.clock * 20)).toFixed(1)}" fill="url(#glow)" opacity="${clGlow.toFixed(2)}"/>`
+        + flame(itemX - 6, f.base - 8, 2.2, clGlow) + flame(itemX + 7, f.base - 8, 1.7, clGlow);
+  }
+  if (fx.flame && rt >= delay){
+    const fI = clamp((rt - delay) / 0.3, 0, 1) * (1 - clamp((prog - 0.45) / 0.5, 0, 1));
+    if (fI > 0.01){
+      IN += `<circle cx="${cx}" cy="${f.base - 24}" r="${(86 + 10 * Math.sin(G.clock * 17)).toFixed(1)}" fill="url(#glow)" opacity="${fI.toFixed(2)}"/>`;
+      for (let i = 0; i < 6; i++) IN += flame(cx - 34 + i * 13.6, f.base - 16 - (i % 2) * 4, (2.4 + 2.2 * hash(i + 2)) * fI + 0.6, fI);
+    }
+  }
+  if (fx.smoke && rt >= delay){
+    const sI = clamp((rt - delay) / 0.5, 0, 1) * (1 - 0.75 * clamp((prog - 0.4) / 0.6, 0, 1));
+    IN += `<rect x="${cx - f.bw}" y="${f.top}" width="${2 * f.bw}" height="${f.base - f.top}" fill="rgba(246,246,244,${(0.55 * sI).toFixed(3)})"/>`;
+  }
+  s += `<g clip-path="url(#flaskIn)">${IN}</g>`;
+  if (r.flask.kind === "liquid" && !fx.toothpaste) s += `<rect x="${(cx - halfW(f, lvl) + 3).toFixed(1)}" y="${(lvl - 1).toFixed(1)}" width="${(2 * halfW(f, lvl) - 6).toFixed(1)}" height="2.5" fill="rgba(255,255,255,.6)"/>`;
+
+  /* the thermometer stands in the flask (through the stopper in gas collection) */
+  if (u.thermo) s += gas ? thermometer(cx - 9, 112, f.base - 14, T, true) : thermometer(cx + 6, 96, f.base - 14, T, false);
+  s += `<path class="s-gline" d="${flaskOutline(f)}"/><path class="s-sheen" d="M${cx - f.nw + 5},${f.top + 12} L${cx - f.nw + 5},${f.sh}" opacity=".65"/>`;
+  /* frost on the outside when it gets cold */
+  if (T < 15){
+    const a = clamp((15 - T) / 7, 0, 1);
+    for (let i = 0; i < 30; i++){
+      const y = f.sh + 14 + hash(i + 11) * (f.base - f.sh - 22), side = i % 2 ? 1 : -1;
+      IN = `<circle cx="${(cx + side * (halfW(f, y) + 1.5)).toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.2 + hash(i) * 1.4).toFixed(1)}" fill="rgba(255,255,255,${(0.9 * a).toFixed(2)})" stroke="rgba(140,165,190,${(0.7 * a).toFixed(2)})" stroke-width=".6"/>`;
+      s += IN;
+    }
+  }
+
+  /* gas collection: rubber stopper, the funnel with a tap, and reactant 1 inside it */
+  if (gas){
+    const vx = cx + 1, k = started() ? clamp(tt / P.T, 0, 1) : 0, open = ease(k / 0.2);
+    s += `<path d="M${vx - 3.5},96 L${vx - 3.5},196 L${vx + 3.5},196 L${vx + 3.5},96" fill="rgba(255,255,255,.5)" stroke="var(--glass-line)" stroke-width="1.5"/>`;
+    /* what is in the funnel */
+    if (item === "liquid"){
+      const left = 1 - pf;
+      if (left > 0.02) s += `<rect x="${vx - 12}" y="${(94 - 30 * left).toFixed(1)}" width="24" height="${(30 * left).toFixed(1)}" rx="5" fill="${rgba(r.add.col)}"/>`;
+      if (pf > 0 && pf < 1) s += `<rect x="${vx - 1.5}" y="96" width="3" height="${(lvl - 96).toFixed(1)}" fill="${rgba(r.add.col)}"/>`;
+    } else if (item === "pellets" || item === "crystals"){
+      const n = Math.round(10 * (1 - pf));
+      for (let i = 0; i < n; i++) s += grain(item, vx - 9 + (i % 5) * 4.5, 90 - Math.floor(i / 5) * 5, 2.4);
+      if (pf > 0 && pf < 1) for (let i = 0; i < 6; i++){ const ph = (G.clock * 2.5 + i / 6) % 1; s += grain(item, vx + Math.sin(i) * 1.2, lerp(96, f.base - 10, ph), 2); }
+    } else {
+      const kk = tt / P.T;
+      if (!started() || kk < 0.2) s += itemSvg(item, vx, 86, item === "sodium" ? 0.8 : 0.55);
+      else if (kk < 0.55){
+        const y = kk < 0.42 ? lerp(86, 196, (kk - 0.2) / 0.22) : lerp(196, r.flask.kind === "liquid" ? lvl : f.base - 8, (kk - 0.42) / 0.13);
+        s += itemSvg(item, vx, y, item === "sodium" ? 0.8 : 0.55);
+      }
+    }
+    s += `<path d="M${vx - 6},42 L${vx - 6},50 Q${vx - 14},53 ${vx - 14},62 L${vx - 14},88 Q${vx - 14},96 ${vx - 5},97 L${vx + 5},97 Q${vx + 14},96 ${vx + 14},88 L${vx + 14},62 Q${vx + 14},53 ${vx + 6},50 L${vx + 6},42" fill="var(--glass)" stroke="var(--glass-line)" stroke-width="1.8"/>`
+       + `<rect x="${vx - 8}" y="36" width="16" height="7" rx="2" fill="#7c2a33"/>`
+       + `<rect x="${vx - 5}" y="101" width="10" height="9" rx="2" fill="#5b6068"/>`
+       + `<g transform="rotate(${(90 * open).toFixed(1)} ${vx} 105.5)"><rect x="${vx - 13}" y="103.5" width="26" height="4" rx="2" fill="#30343a"/></g>`;
+    s += `<path d="M${cx - 22},137 L${cx + 22},137 L${cx + 17},176 Q${cx},179 ${cx - 17},176 Z" fill="#a52f3b" stroke="#6e1a23" stroke-width="1.4"/>`
+       + `<path d="M${cx - 21},142 L${cx + 21},142" stroke="#c4505b" stroke-width="1.4" opacity=".7"/>`
+       + `<ellipse cx="${vx}" cy="137.5" rx="6" ry="2.4" fill="#3b1a1f"/><ellipse cx="${cx + 12}" cy="137.5" rx="5" ry="2.2" fill="#3b1a1f"/>`
+       + (u.thermo ? `<ellipse cx="${cx - 9}" cy="137.5" rx="6.5" ry="2.4" fill="#3b1a1f"/>` : "");
+  }
+
+  /* reactant 1 waiting on the bench (normal setup and closed system) */
+  const kT = started() ? clamp(tt / P.T, 0, 1) : 0;
+  if (!gas){
+    if (P.kind === "tweezers"){
+      const picked = kT >= 0.34;
+      if (r.add.from === "jar") s += jar(420, picked); else s += dish(430, item, !picked);
+    } else if (P.kind === "paper"){
+      /* drawn with the moving things below */
+    } else if (P.kind === "soap"){
+      const k1 = clamp(tt / 2.6, 0, 1), out = started() && k1 > 0 && k1 < 1;
+      s += `<path class="s-gfill" d="M382,268 Q382,258 391,256 L391,248 L409,248 L409,256 Q418,258 418,268 L418,324 Q418,328 414,328 L386,328 Q382,328 382,324 Z"/>`
+         + `<path d="M384,276 L416,276 L416,323 Q416,326 413,326 L387,326 Q384,326 384,323 Z" fill="rgba(110,200,120,.72)"/>`;
+      if (!out) s += dropperG(400, 318, 0, "rgba(110,200,120,.8)", 74);
+      s += `<path class="s-gline" d="M391,248 L391,256 Q382,258 382,268 L382,324 Q382,328 386,328 L414,328 Q418,328 418,324 L418,268 Q418,258 409,256 L409,248"/>`;
+    }
+  }
+
+  /* elephant toothpaste foam spilling out */
+  if (fx.toothpaste && landed){
+    let A = "", B = "", Hh = "";
+    for (const b of FOAM){
+      const rr = b[2] * easeOut((rt - b[3]) / 0.45);
+      if (rr < 0.5) continue;
+      A += `<circle cx="${cx + b[0]}" cy="${b[1]}" r="${(rr + 1.8).toFixed(1)}"/>`;
+      B += `<circle cx="${cx + b[0]}" cy="${b[1]}" r="${rr.toFixed(1)}"/>`;
+      Hh += `<circle cx="${(cx + b[0] - rr * 0.35).toFixed(1)}" cy="${(b[1] - rr * 0.4).toFixed(1)}" r="${(rr * 0.22).toFixed(1)}"/>`;
+    }
+    s += `<g fill="#a7cc62">${A}</g><g fill="#cfe993">${B}</g><g fill="rgba(255,255,255,.45)">${Hh}</g>`;
+  }
+  /* steam, smoke and smell rise out of an open flask */
+  if (!gas && !closed){
+    const mouthY = fx.toothpaste && landed ? 56 : f.top - 4;
+    if (T > 42){
+      const a = clamp((T - 42) / 20, 0, 1);
+      for (let i = 0; i < 3; i++){
+        const ph = (G.clock * 0.35 + i / 3) % 1, x = cx - 12 + i * 12, y = mouthY - ph * 60;
+        s += `<path d="M${x},${y.toFixed(1)} q12,-14 -2,-28" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="5" stroke-linecap="round" opacity="${(0.8 * a * (1 - ph)).toFixed(2)}"/>`;
+      }
+    }
+    if (fx.smoke && rt >= delay){
+      const sI = clamp((rt - delay) / 0.5, 0, 1) * (1 - clamp((prog - 0.35) / 0.6, 0, 1));
+      for (let i = 0; i < 9; i++){
+        const ph = (G.clock * 0.28 + i / 9) % 1, x = cx + Math.sin(i * 2.3 + ph * 3) * (6 + 46 * ph), y = f.top - 2 - ph * 120;
+        s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(8 + 22 * ph).toFixed(1)}" fill="rgba(240,240,238,${(0.75 * sI * (1 - ph)).toFixed(2)})"/>`;
+      }
+    }
+    if (fx.smell && landed){
+      const a = clamp(rt / 1.2, 0, 1) * 0.85;
+      for (let i = 0; i < 3; i++){
+        const ph = (G.clock * 0.3 + i / 3) % 1, x = cx - 16 + i * 16, y = f.top - 8 - ph * 34;
+        s += `<path d="M${x},${y.toFixed(1)} q-6,-8 0,-16 q6,-8 0,-16" fill="none" stroke="var(--scene-ink)" stroke-width="2" stroke-linecap="round" opacity="${(a * (1 - ph) * 0.7).toFixed(2)}"/>`;
+      }
+      s += `<text class="s-lab2" x="${cx - 26}" y="${f.top - 30}" text-anchor="end" opacity="${a.toFixed(2)}">Sharp smell</text>`;
+    }
+  }
+
+  /* ---- things that move ---- */
+  if (!gas && P.kind === "tweezers"){
+    const sx = r.add.from === "jar" ? 420 : 430, sy = r.add.from === "jar" ? BASE - 17 : BASE - 9;
+    const fr = [[0, 488, 325, 86], [0.08, 494, 300, 62], [0.24, sx, sy - 112, 0], [0.34, sx, sy, 0], [0.46, sx, sy - 120, 0],
+                [0.62, cx + 14, 152, 26], [0.70, cx + 14, 156, 26], [0.82, 540, 230, 55], [1, 488, 325, 86]];
+    const [x, y, rot] = kf(fr, kT);
+    if (kT >= 0.34 && kT < 0.70) s += itemSvg(item, x, y + 2, 1);
+    if (kT >= 0.70 && !landed){
+      const tip = kf(fr, 0.70), e = clamp((kT - 0.70) / 0.06, 0, 1);
+      const endY = r.flask.kind === "liquid" ? lvl - 2 : f.base - 8;
+      s += itemSvg(item, lerp(tip[0], itemX, e), lerp(tip[1] + 2, endY, e * e), 1);
+    }
+    s += tweezersG(x, y, rot);
+  }
+  if (!gas && (P.kind === "pour" || P.kind === "soap")){
+    if (P.kind === "soap"){
+      const k1 = started() ? clamp(tt / 2.6, 0, 1) : 0;
+      if (k1 > 0 && k1 < 1){
+        const fr = [[0, 400, 318, 0], [0.2, 400, 214, 0], [0.45, cx + 10, 146, 24], [0.62, cx + 10, 146, 24], [0.8, 400, 214, 0], [1, 400, 318, 0]];
+        const [x, y, rot] = kf(fr, k1);
+        if (k1 > 0.47 && k1 < 0.66) for (let i = 0; i < 3; i++){
+          const ph = ((k1 - 0.47) / 0.06 + i / 3) % 1;
+          s += `<ellipse cx="${(x - 1).toFixed(1)}" cy="${lerp(y + 4, lvl, ph).toFixed(1)}" rx="2.2" ry="3" fill="rgba(110,200,120,.9)"/>`;
+        }
+        s += dropperG(x, y, rot, k1 < 0.6 ? "rgba(110,200,120,.85)" : null, 74);
+      }
+    }
+    const bx = P.kind === "soap" ? 498 : 440;
+    const k = started() ? clamp((P.kind === "soap" ? tt - 2.6 : tt) / 3.4, 0, 1) : 0;
+    const fr = [[0, bx, BASE, 0], [0.06, bx, BASE - 8, 0], [0.3, cx + 76, 136, 0], [0.42, cx + 76, 136, -70], [0.6, cx + 76, 136, -78], [0.72, cx + 76, 136, 0], [1, bx, BASE, 0]];
+    const [x, y, rot] = kf(fr, k), col = rgba(r.add.col);
+    if (pf > 0 && pf < 1){
+      const lip = rotP(x, y, rot, -31, -66);
+      s += `<path d="M${lip[0].toFixed(1)},${lip[1].toFixed(1)} Q${(lip[0] - 4).toFixed(1)},${(lip[1] + 14).toFixed(1)} ${(lip[0] - 3).toFixed(1)},${lvl.toFixed(1)}" fill="none" stroke="${col}" stroke-width="4.5" stroke-linecap="round" opacity=".95"/>`;
+    }
+    s += beakerG(x, y, rot, 56, 66, 16 * (1 - pf), col);
+  }
+  if (!gas && P.kind === "paper"){
+    const fr = [[0, 440, 326, 0], [0.06, 440, 316, 0], [0.32, cx + 30, 111, 0], [0.44, cx + 30, 111, -55], [0.62, cx + 30, 111, -60], [0.74, cx + 30, 111, 0], [1, 440, 326, 0]];
+    const [x, y, rot] = kf(fr, kT);
+    if (pf > 0 && pf < 1){
+      const tip = rotP(x, y, rot, -40, -6), endY = r.flask.kind === "liquid" ? lvl : f.base - 22;
+      for (let i = 0; i < 9; i++){ const ph = (G.clock * 2.6 + i / 9) % 1; s += grain(item, tip[0] + Math.sin(i * 2.7) * 3, lerp(tip[1], endY, ph), 2.4); }
+    }
+    s += paperG(x, y, rot, 1 - pf, item);
+  }
+  /* phenol red test: the dropper takes a sample from the flask and drips it into the indicator */
+  if (u.drop){
+    const k = u.drop.k, sampleY = r.flask.kind === "liquid" ? lvl + 14 : f.base - 20;
+    const fr = [[0, 157, 318, 8], [0.14, 150, 236, 0], [0.32, cx - 8, 124, 0], [0.46, cx - 8, sampleY, 0], [0.58, cx - 8, sampleY, 0],
+                [0.72, cx - 8, 124, 0], [0.86, 150, 236, 0], [0.93, 150, 300, 0], [1, 157, 318, 8]];
+    const [x, y, rot] = kf(fr, k);
+    let sample = r.flask.col ? rgba(mixC(r.flask.col, fx.colorTo || r.flask.col, cp)) : null;
+    if (fx.toothpaste && landed) sample = "rgba(207,233,147,.9)";
+    s += dropperG(x, y, rot, k > 0.5 && k < 0.92 ? sample : null, 40);
+  }
+  /* splint test at the mouth of the lifted test tube */
+  if (u.splint){
+    const sp = u.splint, k = sp.k, out = RESULT[sp.kind] && GASES[r.gas] ? GASES[r.gas][sp.kind] : "out";
+    if (k > 0.16 && k < 0.96){
+      const e = k < 0.42 ? ease((k - 0.16) / 0.26) : k > 0.72 ? 1 - ease((k - 0.72) / 0.22) : 1;
+      const tx = lerp(712, 562, e), ty = lerp(318, 210, e);
+      const end = [tx + 128 * Math.cos(0.62), ty + 128 * Math.sin(0.62)];
+      s += `<path d="M${tx.toFixed(1)},${ty.toFixed(1)} L${end[0].toFixed(1)},${end[1].toFixed(1)}" stroke="#a9874f" stroke-width="6" stroke-linecap="round"/>`
+         + `<path d="M${tx.toFixed(1)},${ty.toFixed(1)} L${end[0].toFixed(1)},${end[1].toFixed(1)}" stroke="#ddc08a" stroke-width="3.6" stroke-linecap="round"/>`;
+      const after = k >= 0.5;
+      let ember = 0, fl = 0, flSc = 1;
+      if (sp.kind === "glow"){
+        if (!after) ember = 1;
+        else if (out === "relight"){ fl = clamp((k - 0.5) / 0.08, 0, 1); flSc = 1.4; }
+        else ember = 1 - clamp((k - 0.5) / 0.08, 0, 1);
+      } else {
+        fl = 1;
+        if (after && out === "out") fl = 1 - clamp((k - 0.5) / 0.08, 0, 1);
+        if (after && out === "bright") flSc = 1 + 0.8 * clamp((k - 0.5) / 0.1, 0, 1);
+      }
+      if (ember > 0) s += `<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="9" fill="#ff9a2a" opacity="${(0.35 * ember).toFixed(2)}"/><circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="4.2" fill="#ff6a12" opacity="${ember.toFixed(2)}"/>`;
+      if (fl > 0) s += flame(tx, ty, flSc, fl);
+      if (after && out === "out" && k < 0.85){
+        const ph = (k - 0.5) / 0.35;
+        s += `<path d="M${tx},${(ty - 4 - 30 * ph).toFixed(1)} q-6,-10 0,-20 q6,-10 0,-20" fill="none" stroke="rgba(140,140,140,.7)" stroke-width="3" stroke-linecap="round" opacity="${(1 - ph).toFixed(2)}"/>`;
+      }
+      if (out === "pop" && k > 0.48 && k < 0.64){
+        const ph = (k - 0.48) / 0.16, R = 14 + 22 * ph;
+        let pts = "";
+        for (let i = 0; i < 20; i++){ const a = i * Math.PI / 10, rr = i % 2 ? R * 0.45 : R; pts += `${(560 + Math.cos(a) * rr).toFixed(1)},${(206 + Math.sin(a) * rr).toFixed(1)} `; }
+        s += `<polygon points="${pts}" fill="#fff4a6" stroke="#ffb31a" stroke-width="2" opacity="${(1 - ph * 0.6).toFixed(2)}"/>`
+           + `<text x="512" y="196" text-anchor="end" style="font-size:24px;font-weight:800;fill:#e0601a" opacity="${(1 - ph * 0.5).toFixed(2)}">POP!</text>`;
+      }
+    }
+  }
+
+  /* closed system: the front of the glass box */
+  if (closed) s += `<path class="s-box" d="M92,40 H688 V328 H92 Z"/><path d="M98,46 L98,320" stroke="rgba(255,255,255,.6)" stroke-width="4" stroke-linecap="round"/><path d="M92,40 H688" stroke="rgba(255,255,255,.55)" stroke-width="3"/>`;
+
+  if (u.thermo) s += gas ? thermoTag(cx - 9, 112, T, true) : thermoTag(cx + 6, 96, T, false);
+
+  /* labels */
+  if (G.labels){
+    const lines = (arr, x, y, anchor) => arr.map((t, i) => `<text class="s-lab" x="${x}" y="${y + i * 18}" text-anchor="${anchor}">${t}</text>`).join("");
+    if (gas){
+      s += lines(r.flask.label, cx - 70, 236, "end");
+      s += lines(r.add.label, cx - 22, 66, "end");
+    } else {
+      s += lines(r.flask.label, cx - 40, 214, "end");
+      if (P.kind === "tweezers") s += lines(r.add.label, r.add.from === "jar" ? 452 : 470, 294, "start");
+      else if (P.kind === "paper") s += lines(r.add.label, 488, 296, "start");
+      else if (P.kind === "pour") s += lines(r.add.label, 476, 294, "start");
+      else { s += lines(["Dish soap"], 400, 214, "middle"); s += lines(r.add.label, 532, 286, "start"); }
+    }
+  }
+  el("dyn").innerHTML = s;
+  el("massTxt").textContent = f1(massNow()) + " g";
+}
+
+/* ==================================================================
+   TOOLS: drag them from the tray to the bench (or press them)
+   ================================================================== */
+const TOOLS = ["thermo", "phenol", "glow", "burn"];
+const HINT = { thermo:"Drag to the lab bench to measure temperature.", phenol:"Drag to the lab bench to test the pH of the solution.",
+               glow:"Drag to the test tube to test the gas.", burn:"Drag to the test tube to test the gas." };
+function canUse(kind){
+  const r = rx(), u = G.run;
+  if (kind === "thermo") return u.phase === "setup" && !u.thermo;
+  if (kind === "phenol") return !!r.ph && G.setup !== "gas" && !u.drop && ((u.phase === "setup" && !u.phStart) || (u.phase === "done" && !u.phEnd));
+  return G.setup === "gas" && u.phase === "done" && !!r.gas && !u.splint && !u[kind];
+}
+function useTool(kind){
+  const r = rx(), u = G.run;
+  if (!canUse(kind)){ const why = whyNot(kind); if (why) say(why); return; }
+  if (kind === "thermo") u.thermo = true;
+  else if (kind === "phenol"){ u.phen = true; u.drop = { k:0, end:u.phase === "done" }; }
+  else u.splint = { kind, k:0 };
+  statusMsg = "";
+  if (u.entry) syncEntry();
+  kick(); refresh();
+}
+function whyNot(kind){
+  const r = rx(), u = G.run;
+  if (u.phase === "run" || u.phase === "paused") return "Wait until the reaction is over.";
+  if (kind === "thermo") return u.thermo ? "The thermometer is already in the flask." : "Put the thermometer in before you press Play. Press Reset to start over.";
+  if (kind === "phenol"){
+    if (!r.ph) return "There is no liquid in the flask to test.";
+    if (G.setup === "gas") return "Pick Normal setup to test the pH.";
+    if (u.drop) return "";
+    if (u.phase === "setup") return "You already have the Start pH. Press Play.";
+    return "You already have the End pH.";
+  }
+  if (G.setup !== "gas") return "Pick Gas collection to test a gas.";
+  if (u.phase !== "done") return "Run the reaction first, so there is gas to test.";
+  if (!r.gas) return "No gas was collected, so there is nothing to test.";
+  return u.splint ? "" : "You already did this test. Press Reset to try again.";
+}
+let drag = null;
+const GHOSTS = {
+  thermo:`<svg width="22" height="150" viewBox="0 0 22 150"><rect x="6.5" y="2" width="9" height="136" rx="4.5" fill="#fbfdff" stroke="#8d9aa8" stroke-width="1.6"/><rect x="9.4" y="80" width="3.2" height="60" fill="#c8102e"/><circle cx="11" cy="140" r="6" fill="#c8102e"/></svg>`,
+  phenol:`<svg width="52" height="80" viewBox="0 0 52 80"><path d="M8 30 L44 30 L44 76 Q44 78 42 78 L10 78 Q8 78 8 76 Z" fill="rgba(255,255,255,.7)" stroke="#8d9aa8" stroke-width="1.6"/><rect x="9.5" y="52" width="33" height="24.5" fill="#ee8a2c"/><path d="M31 70 L29.5 22 L34.5 22 L33.5 70 Z" fill="rgba(255,255,255,.8)" stroke="#8d9aa8"/><path d="M28.5 22 L28.5 8 Q28.5 2 32 2 Q35.5 2 35.5 8 L35.5 22 Z" fill="#1d1e22"/></svg>`,
+  glow:`<svg width="80" height="70" viewBox="0 0 80 70"><path d="M8 8 L72 62" stroke="#a9874f" stroke-width="6" stroke-linecap="round"/><path d="M8 8 L72 62" stroke="#ddc08a" stroke-width="3.6" stroke-linecap="round"/><circle cx="8" cy="8" r="5" fill="#ff6a12"/></svg>`,
+  burn:`<svg width="80" height="80" viewBox="0 0 80 80"><path d="M8 18 L72 72" stroke="#a9874f" stroke-width="6" stroke-linecap="round"/><path d="M8 18 L72 72" stroke="#ddc08a" stroke-width="3.6" stroke-linecap="round"/><path d="M8 20 Q1 11 8 0 Q15 11 8 20 Z" fill="#ff8a1a"/><path d="M8 19 Q4.5 13 8 7 Q11.5 13 8 19 Z" fill="#ffe36a"/></svg>`,
+};
+function startDrag(kind, e){
+  if (!canUse(kind)) return;
+  drag = { kind, x0:e.clientX, y0:e.clientY, moved:false, ghost:null };
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+}
+function moveDrag(e){
+  if (!drag) return;
+  if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 6){
+    drag.moved = true;
+    drag.ghost = document.createElement("div");
+    drag.ghost.className = "ghost"; drag.ghost.innerHTML = GHOSTS[drag.kind];
+    document.body.appendChild(drag.ghost);
+  }
+  if (drag.ghost){
+    const g = drag.ghost.firstChild, w = +g.getAttribute("width"), h = +g.getAttribute("height");
+    drag.ghost.style.transform = `translate(${e.clientX - w / 2}px, ${e.clientY - h * 0.85}px)`;
+  }
+}
+function endDrag(e){
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (d.ghost) d.ghost.remove();
+  if (!d.moved){ useTool(d.kind); return; }                 // a press without dragging uses the tool too
+  const b = svg.getBoundingClientRect();
+  if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom){ say("Drop it on the lab bench."); return; }
+  useTool(d.kind);
+}
+for (const k of TOOLS){
+  const node = el("tool-" + k);
+  node.addEventListener("pointerdown", e => startDrag(k, e));
+  node.addEventListener("pointermove", moveDrag);
+  node.addEventListener("pointerup", endDrag);
+  node.addEventListener("pointercancel", () => { if (drag && drag.ghost) drag.ghost.remove(); drag = null; });
+  node.addEventListener("pointerenter", () => { if (canUse(k)) say(HINT[k]); });
+  node.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); useTool(k); } });
+}
+
+/* ==================================================================
+   CARDS, STATUS, NOTEBOOK
+   ================================================================== */
+let statusMsg = "", sayTimer = 0;
+function say(m){
+  statusMsg = m; refreshStatus();
+  clearTimeout(sayTimer); sayTimer = setTimeout(() => { statusMsg = ""; refreshStatus(); }, 3500);
+}
+function setHTML(node, h){ if (node._h !== h){ node.innerHTML = h; node._h = h; } }
+function refreshTools(){
+  const r = rx(), u = G.run, gas = G.setup === "gas";
+  let t;
+  if (u.thermo) t = `Start: <b>${T0} &deg;C</b>` + (started() ? `<br>Current: <b>${Math.round(tempNow())} &deg;C</b>` : "");
+  else t = u.phase === "setup" ? "Drag it into the flask." : "Add it before you press Play.";
+  setHTML(el("sub-thermo"), t);
+  if (!r.ph) t = "There is no liquid in the flask to test.";
+  else if (gas) t = "Pick Normal setup to test the pH.";
+  else if (u.drop && !u.drop.read) t = "Testing the pH...";
+  else if (!u.phStart && !u.phEnd) t = u.phase === "setup" ? "Drag it to the bench to test the pH." : u.phase === "done" ? "Drag it to the bench to find the End pH." : "Wait until the reaction is over.";
+  else t = (u.phStart ? `Start pH: <b>${PH[u.phStart].name}</b>` : "Start pH: not tested")
+         + (u.phEnd ? `<br>End pH: <b>${PH[u.phEnd].name}</b>` : u.phase === "done" && !u.drop ? "<br>Drag it again for the End pH." : "");
+  setHTML(el("sub-phenol"), t);
+  for (const k of ["glow", "burn"]){
+    let s;
+    if (u[k]) s = `Result: <b>${RESULT[k][u[k]]}</b>`;
+    else if (u.phase !== "done") s = "Collect a gas first.";
+    else if (!r.gas) s = "No gas was collected.";
+    else s = "Drag it to the test tube.";
+    setHTML(el("sub-" + k), s);
+    el("tool-" + k).hidden = !gas;
+  }
+  for (const k of TOOLS){
+    const ok = canUse(k), node = el("tool-" + k);
+    node.classList.toggle("drag", ok); node.classList.toggle("off", !ok);
+    node.setAttribute("aria-disabled", String(!ok));
+    node.setAttribute("aria-label", node.querySelector(".tname").textContent + ". " + node.querySelector(".tsub").textContent + (ok ? " Press to use it." : ""));
+  }
+}
+function autoStatus(){
+  const r = rx(), u = G.run;
+  if (u.phase === "setup") return "Read the scale. Then press Play to mix the reactants.";
+  if (u.phase === "paused") return "Paused. Press Play to keep going.";
+  if (u.phase === "run") return reactT() < 0 ? `Adding the ${r.add.name}...` : G.setup === "gas" ? "Watch the flask and the test tube closely." : "Watch the flask closely.";
+  if (u.drop) return "Testing the pH...";
+  if (u.splint) return "Testing the gas...";
+  if (G.setup === "gas" && r.gas && (!u.glow || !u.burn)) return "Finished. Read the scale, then test the gas with a splint.";
+  if (r.ph && G.setup !== "gas" && !u.phEnd) return "Finished. Read the scale, then find the End pH.";
+  return "Finished. Press Reset to run it again, or pick new reactants.";
+}
+function refreshStatus(){ const t = statusMsg || autoStatus(), st = el("status"); if (st.textContent !== t) st.textContent = t; }
+function sync(){
+  const r = rx(), u = G.run, busy = u.phase === "run" || u.phase === "paused";
+  el("playBtn").disabled = !(u.phase === "setup" || u.phase === "paused") || !!u.drop;
+  el("pauseBtn").disabled = u.phase !== "run";
+  el("resetBtn").disabled = (u.phase === "setup" && !u.thermo && !u.phen) || !!u.drop || !!u.splint;
+  el("r1").disabled = el("r2").disabled = busy;
+  document.querySelectorAll('input[name="setup"]').forEach(i => { i.disabled = busy; });
+  el("radNormal").classList.toggle("off", busy); el("radOther").classList.toggle("off", busy);
+  const other = r.closed ? "closed" : "gas";
+  el("otherName").textContent = SETUP_NAME[other];
+  document.querySelector('input[name="setup"][value]:not([value="normal"])').value = other;
+  document.querySelectorAll('input[name="setup"]').forEach(i => { i.checked = i.value === G.setup; });
+  el("eqbox").hidden = !G.eq; el("balRow").hidden = !G.eq;
+  setHTML(el("eqbox"), r.eq[G.bal ? 1 : 0] + (r.note ? `<small>${r.note}</small>` : ""));
+}
+/* the notebook keeps one entry for each reaction and setup */
+function syncEntry(){
+  const u = G.run, e = u.entry;
+  if (!e) return;
+  e.Tstart = u.thermo ? T0 : null;
+  e.Tend = u.thermo && u.phase === "done" ? Math.round(tempNow()) : null;
+  e.phStart = u.phStart; e.phEnd = u.phEnd; e.glow = u.glow; e.burn = u.burn;
+  e.live = u.phase !== "done";
+}
+function entryHTML(e){
+  const ph = (v, none) => v ? `<b><i class="chip" style="background:${PH[v].col}"></i>${PH[v].name}</b>` : `<b>${none}</b>`;
+  let rows = `<div class="erow"><dt>Temperature</dt><dd>${e.Tstart == null ? "<span>Not measured</span>" : `<span>Start <b>${e.Tstart} &deg;C</b></span><span>End <b>${e.Tend == null ? "..." : e.Tend + " &deg;C"}</b></span>`}</dd></div>`;
+  if (e.hasPh) rows += `<div class="erow"><dt>pH</dt><dd>${!e.phStart && !e.phEnd && !e.live ? "<span>Not tested</span>" : `<span>Start ${ph(e.phStart, "not tested")}</span><span>End ${ph(e.phEnd, e.live ? "..." : "not tested")}</span>`}</dd></div>`;
+  rows += `<div class="erow"><dt>Mass</dt><dd><span>Before <b>${f1(e.mBefore)} g</b></span><span>After <b>${e.mAfter == null ? "..." : f1(e.mAfter) + " g"}</b></span></dd></div>`;
+  if (e.setup === "gas"){
+    rows += `<div class="erow"><dt>Glowing splint</dt><dd><span>${e.glow ? RESULT.glow[e.glow] : e.live ? "..." : e.hasGas ? "Not tested" : "No gas to test"}</span></dd></div>`
+          + `<div class="erow"><dt>Burning splint</dt><dd><span>${e.burn ? RESULT.burn[e.burn] : e.live ? "..." : e.hasGas ? "Not tested" : "No gas to test"}</span></dd></div>`;
+  }
+  return `<div class="entry${e.live ? " live" : ""}"><div class="ehead"><b>${r1Name(e.r1)} + ${r2Name(e.r1, e.r2)}</b><span>${SETUP_NAME[e.setup]}</span></div><dl style="margin:0">${rows}</dl></div>`;
+}
+function refreshNotebook(){
+  setHTML(el("entries"), G.log.length ? G.log.map(entryHTML).join("") : `<p class="empty">Run a reaction. Your readings will show up here.</p>`);
+}
+const HEAD = ["Reactant 1", "Reactant 2", "Setup", "Start temperature (C)", "End temperature (C)", "Start pH", "End pH", "Mass before (g)", "Mass after (g)", "Glowing splint", "Burning splint"];
+function rows(sep){
+  const q = v => { v = v == null ? "" : String(v); return sep === "," && /[",]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+  return [HEAD.join(sep)].concat(G.log.slice().reverse().map(e => [r1Name(e.r1), r2Name(e.r1, e.r2), SETUP_NAME[e.setup], e.Tstart, e.Tend,
+    e.phStart ? PH[e.phStart].name : "", e.phEnd ? PH[e.phEnd].name : "", f1(e.mBefore), e.mAfter == null ? "" : f1(e.mAfter),
+    e.glow ? RESULT.glow[e.glow] : "", e.burn ? RESULT.burn[e.burn] : ""].map(q).join(sep)));
+}
+el("copyBtn").onclick = async () => {
+  if (!G.log.length){ el("msg").textContent = "Run a reaction first."; return; }
+  const text = rows("\t").join("\n");
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {}
+  if (!ok){
+    const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); try { ok = document.execCommand("copy"); } catch (e) {} ta.remove();
+  }
+  el("msg").textContent = ok ? "Copied. Paste it into a spreadsheet." : "Could not copy. Try Save as a CSV file.";
+};
+el("saveBtn").onclick = () => {
+  if (!G.log.length){ el("msg").textContent = "Run a reaction first."; return; }
+  const blob = new Blob([rows(",").join("\r\n") + "\r\n"], { type:"text/csv" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "chemical-changes.csv";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  el("msg").textContent = "Saved. Look in your Downloads folder.";
+};
+let clearArmed = 0;
+el("clearBtn").onclick = () => {
+  if (!G.log.length) return;
+  if (Date.now() - clearArmed > 3000){ clearArmed = Date.now(); el("msg").textContent = "Press Clear again to erase the notebook."; return; }
+  G.log = G.log.filter(e => e === G.run.entry && e.live); clearArmed = 0;
+  el("msg").textContent = "Notebook cleared.";
+  refresh();
+};
+
+/* ==================================================================
+   CONTROLS
+   ================================================================== */
+function refresh(){
+  drawDyn(); refreshTools(); refreshStatus(); sync(); refreshNotebook();
+}
+function play(){
+  const u = G.run, r = rx();
+  if (u.phase === "paused"){ u.phase = "run"; statusMsg = ""; kick(); refresh(); return; }
+  if (u.phase !== "setup" || u.drop) return;
+  const key = G.r1 + ":" + G.r2 + ":" + G.setup;
+  G.log = G.log.filter(e => e.key !== key);
+  u.entry = { key, r1:G.r1, r2:G.r2, setup:G.setup, mBefore:massNow(), mAfter:null, hasPh:!!r.ph && G.setup !== "gas", hasGas:!!r.gas, live:true };
+  G.log.unshift(u.entry);
+  u.phase = "run"; u.tt = 0; statusMsg = "";
+  syncEntry(); kick(); refresh();
+}
+function pause(){ const u = G.run; if (u.phase === "run"){ u.phase = "paused"; refresh(); } }
+function finish(){
+  const u = G.run;
+  u.phase = "done";
+  if (u.entry){ u.entry.mAfter = massNow(); syncEntry(); }
+}
+function reset(){
+  if (G.run.entry && G.run.entry.live) G.log = G.log.filter(e => e !== G.run.entry);   // a run stopped part way is not kept
+  G.run = freshRun(); statusMsg = "";
+  buildStatic(); refresh();
+}
+function fillR2(){
+  const opts = R1.find(x => x.id === G.r1).r2;
+  el("r2").innerHTML = opts.map(o => `<option value="${o[0]}">${o[1]}</option>`).join("");
+  el("r2").value = G.r2;
+}
+el("r1").innerHTML = R1.map(o => `<option value="${o.id}">${o.name}</option>`).join("");
+el("r1").addEventListener("change", e => {
+  G.r1 = e.target.value; G.r2 = R1.find(x => x.id === G.r1).r2[0][0]; fillR2(); pickedReaction();
+});
+el("r2").addEventListener("change", e => { G.r2 = e.target.value; pickedReaction(); });
+function pickedReaction(){
+  const r = rx();
+  if (G.setup !== "normal" && G.setup !== (r.closed ? "closed" : "gas")) G.setup = "normal";
+  reset();
+}
+document.querySelectorAll('input[name="setup"]').forEach(i => i.addEventListener("change", () => {
+  if (!i.checked) return;
+  G.setup = i.value; reset();
+}));
+el("playBtn").onclick = play;
+el("pauseBtn").onclick = pause;
+el("resetBtn").onclick = reset;
+el("optLabels").addEventListener("change", e => { G.labels = e.target.checked; refresh(); });
+el("optEq").addEventListener("change", e => { G.eq = e.target.checked; refresh(); });
+el("optBal").addEventListener("change", e => { G.bal = e.target.checked; refresh(); });
+document.addEventListener("keydown", e => {
+  if (e.code !== "Space" || e.target !== document.body) return;
+  e.preventDefault();
+  if (G.run.phase === "run") pause(); else play();
+});
+
+/* ==================================================================
+   THE CLOCK
+   ================================================================== */
+let lastT = 0, looping = false;
+function busy(){
+  const u = G.run;
+  if (u.phase === "run" || u.drop || u.splint) return true;
+  /* keep steam, smoke and smell moving after the reaction */
+  return u.phase === "done" && G.setup === "normal" && (tempNow() > 42 || rx().fx.smell);
+}
+function kick(){ if (!looping){ looping = true; lastT = 0; requestAnimationFrame(tick); } }
+function tick(now){
+  const dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0;
+  lastT = now;
+  const u = G.run, r = rx();
+  if (u.phase !== "paused") G.clock += dt;
+  if (u.phase === "run"){
+    u.tt += dt;
+    const P = plan();
+    if (u.tt >= P.T && u.tt - P.land >= (r.delay || 0) + r.dur + 0.3) finish();
+    if (u.entry) syncEntry();
+  }
+  if (u.drop){
+    u.drop.k += dt / 2.4;
+    if (u.drop.k >= 0.93 && !u.drop.read){
+      u.drop.read = true;
+      const v = r.ph[u.drop.end ? 1 : 0];
+      u.phCol = v;
+      if (u.drop.end) u.phEnd = v; else u.phStart = v;
+      if (u.entry) syncEntry();
+    }
+    if (u.drop.k >= 1) u.drop = null;
+  }
+  if (u.splint){
+    u.splint.k += dt / 2.8;
+    if (u.splint.k >= 0.6 && !u.splint.read){ u.splint.read = true; u[u.splint.kind] = GASES[r.gas][u.splint.kind]; if (u.entry) syncEntry(); }
+    if (u.splint.k >= 1) u.splint = null;
+  }
+  refresh();
+  if (busy()) requestAnimationFrame(tick); else looping = false;
+}
+
+/* ------------------------------------------------ light / dark toggle */
+const themeBtn = el("themeBtn");
+const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+const SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+const inFrame = window.parent !== window;
+const isDark = () => {
+  const t = document.documentElement.getAttribute("data-theme");
+  if (t) return t === "dark";
+  return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+};
+const paintToggle = () => {
+  const d = isDark();
+  themeBtn.innerHTML = d ? SUN : MOON;
+  themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+};
+const applyTheme = t => { document.documentElement.setAttribute("data-theme", t); paintToggle(); };
+themeBtn.addEventListener("click", () => {
+  const next = isDark() ? "light" : "dark";
+  applyTheme(next);
+  try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+  /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+  if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+});
+/* the page around this sim switched its light / dark mode: follow it (not saved, so the sim on its own keeps its own choice) */
+window.addEventListener("message", e => {
+  if (!inFrame || e.source !== window.parent) return;
+  const t = e.data && e.data.simTheme;
+  if ((t === "light" || t === "dark") && t !== (isDark() ? "dark" : "light")) applyTheme(t);
+});
+if (window.matchMedia){
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const onSys = () => { if (!document.documentElement.getAttribute("data-theme")) paintToggle(); };
+  if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+}
+
+/* ==================================================================
+   BOOT
+   ================================================================== */
+paintToggle();
+fillR2();
+buildStatic();
+refresh();
+})();
+</script>
+<script>
+/* Shown inside the textbook's Sims page: tell that page which sim is open, so its address can name the sim. */
+(function(){
+  if (window.parent === window) return;
+  window.addEventListener('pageshow', function(){
+    try { window.parent.postMessage({ simLibrary: { path: location.pathname, title: document.title } }, '*'); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
