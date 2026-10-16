@@ -3,1260 +3,1012 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Interactive simulation of the hydrogen peroxide + yeast and vinegar + baking soda reactions, with a live thermometer, pH strip, timed data table, and graph.">
-<title>Reaction Heat &amp; pH Lab</title>
+<title>Reaction Heat and pH Lab</title>
+
+<!--
+  ============================================================================
+  REACTION HEAT AND pH LAB  (single file, no dependencies besides the Poppins font)
+
+  The two reactions from "The pH of Endothermic and Exothermic Reactions Lab":
+    Part 1  50 mL hydrogen peroxide + 2.5 g yeast (exothermic: it warms up)
+    Part 2  50 mL vinegar, warmed in a hot water bath to 32 to 38 C,
+            + 2 g baking soda (endothermic: it cools down)
+  Students drag tools from the tray onto the bench: a thermometer, pH paper
+  (strips are dipped, then matched to a 0 to 14 color chart) and a stopwatch.
+  Play pours the solid from the weigh boat on the scale into the beaker. The
+  temperature is logged every 15 s for 2.5 min, in the same table as the lab.
+
+  THE MODEL (each run differs a little, like real data)
+    Part 1  T = T0 + rise x (1 - e^(-t / tau)) - drift x t / 150
+            T0 20.6 to 22.4 C, rise 7.2 to 9.6 C, tau 30 to 42 s, drift 0.6 to 1.6 C
+    Part 2  warming: T = Tbath - (Tbath - T0) x e^(-w / 45), Tbath 44 to 48 C,
+            w = time since the thermometer went in; out of the bath it cools
+            slowly toward the room. Reaction: T = Tstart - drop x (1 - e^(-t / tau)),
+            drop 8 to 10.6 C, tau 34 to 48 s.
+    pH paper  hot water 7, hydrogen peroxide 5, hydrogen peroxide and yeast 6,
+            vinegar 3, baking soda and vinegar 5 (2 g of baking soda does not use
+            up all 50 mL of vinegar, so the mixture stays a little acidic).
+    Speed   real time (2.5 min) or 5 times faster; the stopwatch follows it.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+/* ============================== TOKENS ============================== */
+:root{
+  --bg:#f3f2ec; --card:#ffffff; --field:#f7f7f3;
+  --ink:#151515; --ink-2:#4b4a45; --muted:#7c7a73;
+  --line:rgba(20,20,20,.14);
+  --accent:#2a6fd6; --accent-2:#1f58ad; --on-accent:#ffffff;
+  --p1:#d9472b; --p2:#2462c9; --good:#17804a; --warn:#b35c00;
+  --wall-1:#e8ecf2; --wall-2:#f1e3cf; --stripe:rgba(255,255,255,.5);
+  --bench:#c9cfd6; --bench-top:#a9b1ba; --scene-ink:#1b1d22;
+  --glass:rgba(255,255,255,.4); --glass-line:#8d9aa8;
+  --plot:#eef9ea; --grid:#c6dbc0; --grid-2:#dcebd7; --axis:#4f564b; --tick:#5f665b;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121412; --card:#1c1f1c; --field:#252925;
+    --ink:#eef0ea; --ink-2:#b6bab0; --muted:#8d9288;
+    --line:rgba(255,255,255,.14);
+    --accent:#5b9bff; --accent-2:#3f7fe6; --on-accent:#0b1220;
+    --p1:#ff7a5c; --p2:#7ea6ff; --good:#46d36f; --warn:#ffb15c;
+    --wall-1:#252b34; --wall-2:#33291f; --stripe:rgba(255,255,255,.05);
+    --bench:#3a414a; --bench-top:#4d5661; --scene-ink:#eef0ea;
+    --glass:rgba(190,210,230,.1); --glass-line:#8a98a8;
+    --plot:#172019; --grid:#2f3d31; --grid-2:#233025; --axis:#b3bdae; --tick:#a3ad9e;
+    --shadow:0 1px 3px rgba(0,0,0,.4);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121412; --card:#1c1f1c; --field:#252925;
+  --ink:#eef0ea; --ink-2:#b6bab0; --muted:#8d9288;
+  --line:rgba(255,255,255,.14);
+  --accent:#5b9bff; --accent-2:#3f7fe6; --on-accent:#0b1220;
+  --p1:#ff7a5c; --p2:#7ea6ff; --good:#46d36f; --warn:#ffb15c;
+  --wall-1:#252b34; --wall-2:#33291f; --stripe:rgba(255,255,255,.05);
+  --bench:#3a414a; --bench-top:#4d5661; --scene-ink:#eef0ea;
+  --glass:rgba(190,210,230,.1); --glass-line:#8a98a8;
+  --plot:#172019; --grid:#2f3d31; --grid-2:#233025; --axis:#b3bdae; --tick:#a3ad9e;
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+  color-scheme:dark;
+}
 
-  :root{
-    --bg:#eef1f6;
-    --surface:#ffffff;
-    --surface-2:#e7ebf2;
-    --surface-3:#dbe1ec;
-    --border:#ccd5e3;
-    --ink:#1b2433;
-    --ink-2:#4c5872;
-    --ink-3:#7c869c;
-    --brand:#2f4a68;
-    --brand-strong:#233953;
-    --brand-ink:#ffffff;
-    --c1:#E2542F;
-    --c1-soft:#fbe3da;
-    --c2:#2F8FC4;
-    --c2-soft:#dcedf8;
-    --good:#2f8f52;
-    --warn:#b9740c;
-    --brand-soft:#e1e7f2;
-    --radius:16px;
-    --shadow:0 1px 2px rgba(20,30,55,.05), 0 10px 28px rgba(20,30,55,.08);
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --bg:#10141b;
-      --surface:#171e29;
-      --surface-2:#1e2733;
-      --surface-3:#26313f;
-      --border:#2d3849;
-      --ink:#eef1f7;
-      --ink-2:#b6c0d3;
-      --ink-3:#7e8aa3;
-      --brand:#8badcf;
-      --brand-strong:#a9c3e0;
-      --brand-ink:#0f151d;
-      --c1:#D9683F;
-      --c1-soft:#3a2721;
-      --c2:#3F9FCE;
-      --c2-soft:#1b2c37;
-      --good:#4fb579;
-      --warn:#e0a63f;
-      --brand-soft:#1f2c3f;
-      --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.45);
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg:#10141b;
-    --surface:#171e29;
-    --surface-2:#1e2733;
-    --surface-3:#26313f;
-    --border:#2d3849;
-    --ink:#eef1f7;
-    --ink-2:#b6c0d3;
-    --ink-3:#7e8aa3;
-    --brand:#8badcf;
-    --brand-strong:#a9c3e0;
-    --brand-ink:#0f151d;
-    --c1:#D9683F;
-    --c1-soft:#3a2721;
-    --c2:#3F9FCE;
-    --c2-soft:#1b2c37;
-    --good:#4fb579;
-    --warn:#e0a63f;
-    --brand-soft:#1f2c3f;
-    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.45);
-  }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:700 17px/1.45 "Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:min(1900px,97vw);margin:0 auto;padding:16px 0 40px}
+@media (max-width:700px){.wrap{max-width:none;padding:12px 16px 32px}}
+button,select,input{font:inherit;color:inherit}
 
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--ink);
-    font-family:'Poppins', system-ui, -apple-system, sans-serif;
-    font-weight:700;
-    line-height:1.45;
-    -webkit-font-smoothing:antialiased;
-  }
-  .page{
-    max-width:min(1900px, 97vw);
-    margin:0 auto;
-    padding:clamp(16px,3vw,40px) clamp(14px,3vw,40px) 64px;
-    display:flex;
-    flex-direction:column;
-    gap:clamp(20px,2.4vw,34px);
-  }
-  .prose{font-weight:500;}
-  a{color:var(--brand-strong);}
+/* -------- header -------- */
+header.top{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+header.top .eyebrow{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+header.top h1{margin:0;font-size:clamp(26px,3vw,36px);font-weight:800;line-height:1.1;letter-spacing:-.01em}
+header.top p{margin:4px 0 0;color:var(--ink-2);font-size:clamp(15px,1.2vw,17px);font-weight:600}
+.spacer{flex:1 1 auto}
+.themebtn{flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);
+  color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow)}
+.themebtn:hover{border-color:var(--accent)}
+.themebtn svg{width:21px;height:21px}
 
-  /* ---------- Header ---------- */
-  .hero{
-    background:linear-gradient(135deg, var(--brand) 0%, var(--brand-strong) 100%);
-    color:var(--brand-ink);
-    border-radius:var(--radius);
-    padding:clamp(22px,3vw,40px) clamp(22px,4vw,48px);
-    box-shadow:var(--shadow);
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-  }
-  .hero .eyebrow{
-    text-transform:uppercase;
-    letter-spacing:.14em;
-    font-size:12.5px;
-    opacity:.85;
-  }
-  .hero h1{
-    margin:0;
-    font-size:clamp(26px,3.6vw,42px);
-    text-wrap:balance;
-    letter-spacing:-.01em;
-  }
-  .hero p{
-    margin:0;
-    max-width:78ch;
-    font-weight:500;
-    font-size:clamp(14.5px,1.4vw,17px);
-    opacity:.94;
-  }
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.label{font-size:14px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:0 0 8px}
 
-  /* ---------- Quick reference ---------- */
-  .quickref{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(230px,1fr));
-    gap:14px;
-  }
-  .ref-card{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:16px 18px;
-    box-shadow:var(--shadow);
-  }
-  .ref-card h3{
-    margin:0 0 8px;
-    font-size:13px;
-    text-transform:uppercase;
-    letter-spacing:.1em;
-    color:var(--ink-3);
-  }
-  .chip-row{display:flex;flex-wrap:wrap;gap:7px;}
-  .chip{
-    background:var(--surface-2);
-    border:1px solid var(--border);
-    color:var(--ink-2);
-    padding:5px 11px;
-    border-radius:999px;
-    font-size:13px;
-    font-weight:600;
-  }
-  .term-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;}
-  .term-list li{font-size:13.5px;font-weight:500;color:var(--ink-2);}
-  .term-list b{color:var(--ink);font-weight:700;}
+/* -------- layout -------- */
+.main{display:grid;gap:14px;align-items:start;grid-template-columns:minmax(0,1fr);grid-template-areas:"ctrl" "scene" "data"}
+@media (min-width:980px){.main{grid-template-columns:300px minmax(0,1fr);grid-template-areas:"ctrl scene" "data data"}}
+@media (min-width:1380px){.main{grid-template-columns:300px minmax(0,1.12fr) minmax(0,1fr);grid-template-areas:"ctrl scene data"}}
+.ctrlcard{grid-area:ctrl;display:flex;flex-direction:column;gap:14px}
+.scenecard{grid-area:scene;display:flex;flex-direction:column;gap:10px}
+.datacard{grid-area:data;display:flex;flex-direction:column;gap:12px}
 
-  /* ---------- Stations ---------- */
-  .section-head{display:flex;flex-direction:column;gap:4px;}
-  .section-head h2{margin:0;font-size:clamp(19px,2vw,25px);letter-spacing:-.01em;}
-  .section-head .sub{margin:0;font-weight:500;color:var(--ink-2);font-size:14px;max-width:80ch;}
+/* -------- left panel -------- */
+select.pick{width:100%;background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;
+  font-size:16.5px;font-weight:800;cursor:pointer}
+select.pick:focus{border-color:var(--accent);outline:none}
+select.pick:disabled{opacity:.55;cursor:not-allowed}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:7px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:9px;align-items:start;font-size:15px;line-height:1.4;
+  font-weight:600;color:var(--ink-2);counter-increment:st}
+.steps li::before{content:counter(st);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13.5px;
+  font-weight:800;background:var(--field);border:1.5px solid var(--line);color:var(--ink-2)}
+.steps li.now{color:var(--ink)}
+.steps li.now::before{border-color:var(--accent);color:var(--accent)}
+.steps li.ok{color:var(--muted)}
+.steps li.ok::before{content:"\2713";background:var(--good);border-color:var(--good);color:#fff}
+.steps .btn{margin-top:6px}
+.check,.radio{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:16px}
+.check input,.radio input{width:19px;height:19px;margin:0;accent-color:var(--accent);flex:none}
+.opts{display:grid;gap:7px}
+.eqbox{background:var(--field);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:16px;font-weight:700;
+  text-align:center;line-height:1.5}
+.eqbox small{display:block;font-size:13.5px;color:var(--ink-2);font-weight:600}
 
-  .stations{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(420px,1fr));
-    gap:18px;
-  }
-  .station{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    padding:20px 22px 22px;
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-    border-top:5px solid var(--sc);
-  }
-  .station-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-  .station-title h3{margin:0;font-size:18px;}
-  .station-title .tag{
-    font-size:11.5px;
-    text-transform:uppercase;
-    letter-spacing:.1em;
-    color:var(--sc);
-    background:var(--sc-soft);
-    padding:3px 9px;
-    border-radius:999px;
-  }
-  .station-status{font-size:13.5px;font-weight:600;color:var(--ink-2);}
-  .station-status em{color:var(--sc);font-style:normal;}
+/* -------- the bench -------- */
+.scenebox{border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--wall-1)}
+#scene{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+#scene text{font-family:inherit}
+.s-wall{fill:url(#wallGrad)}
+.s-stripe{stroke:var(--stripe);stroke-width:30;stroke-linecap:round}
+.s-bench{fill:var(--bench)}
+.s-benchtop{fill:var(--bench-top)}
+.s-glass{fill:var(--glass);stroke:var(--glass-line);stroke-width:2.2}
+.s-grad{stroke:var(--glass-line);stroke-width:1.4}
+.s-gradt{fill:var(--glass-line);font-size:11px;font-weight:700}
+.s-lab{fill:var(--scene-ink);font-size:15px;font-weight:800}
+.s-lab2{fill:var(--scene-ink);font-size:13px;font-weight:600;opacity:.85}
+.ctlrow{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap}
+.ctlrow .lab{font-size:17px}
+.iconbtn{width:54px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--field);color:var(--ink);
+  display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
+.iconbtn svg{width:21px;height:21px}
+.iconbtn:hover:not(:disabled){border-color:var(--accent)}
+.iconbtn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.iconbtn.primary:hover:not(:disabled){background:var(--accent-2)}
+.iconbtn:disabled{opacity:.38;cursor:not-allowed}
+.iconbtn:active:not(:disabled){transform:translateY(1px)}
+.btn{background:var(--field);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:7px 13px;
+  cursor:pointer;font-weight:800;font-size:15.5px;line-height:1.15}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.go{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.status{flex:1 1 220px;font-size:15px;font-weight:600;color:var(--ink-2);min-width:0}
+.status.warn{color:var(--warn)}
+/* tool tray, like the video's tool cards */
+.tray{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.tray{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.tool.sw{grid-column:1 / -1}}
+.tool{border:1.5px solid var(--line);border-radius:12px;background:var(--field);padding:8px 10px;display:flex;flex-direction:column;gap:4px;
+  min-height:118px;position:relative}
+.tool .tname{font-size:15px;font-weight:800}
+.tool .tsub{font-size:13.5px;font-weight:600;color:var(--ink-2);line-height:1.35;font-variant-numeric:tabular-nums}
+.tool .tsub b{color:var(--ink);font-weight:800}
+.drag{cursor:grab;touch-action:none}
+.drag:hover{border-color:var(--accent)}
+.drag:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.tool.used{opacity:.75}
+.tool .ticon{position:absolute;right:6px;top:6px;width:30px;height:42px;pointer-events:none;opacity:.95}
+.tool.drag .tsub{padding-right:30px}
+.swtime{font-size:clamp(22px,2vw,28px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em;
+  background:var(--card);border:1.5px solid var(--line);border-radius:8px;text-align:center;padding:1px 4px}
+.swbtns{display:flex;gap:6px}
+.swbtns .btn{flex:1 1 0;padding:5px 6px;font-size:14px}
+.ghost{position:fixed;left:0;top:0;pointer-events:none;z-index:50;transform:translate(-50%,-50%)}
 
-  .rig{
-    display:flex;
-    gap:18px;
-    align-items:flex-end;
-    background:var(--surface-2);
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:16px;
-  }
-  .rig svg{display:block;overflow:visible;}
-  .readouts{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    flex:1;
-    min-width:0;
-  }
-  .readout{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    gap:8px;
-    padding:9px 12px;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:10px;
-  }
-  .readout .label{font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-3);}
-  .readout .val{font-size:22px;font-variant-numeric:tabular-nums;font-weight:800;color:var(--ink);}
-  .readout .val small{font-size:13px;font-weight:600;color:var(--ink-3);}
+/* -------- data -------- */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{padding:9px 16px;border-radius:9px;border:1.5px solid var(--line);background:var(--field);color:var(--ink-2);
+  cursor:pointer;font-size:15px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.tab:hover{border-color:var(--accent)}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--card)}
+.tabpanel{display:flex;flex-direction:column;gap:12px}
+.chartrow{display:grid;grid-template-columns:repeat(15,minmax(0,1fr));gap:3px;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--field)}
+.chip{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.chip i{display:block;width:100%;aspect-ratio:1 / 1.15;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.charttitle{text-align:center;font-size:15px;font-weight:800;margin-top:-4px}
+.strips{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.strips{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.slot{border:1.5px solid var(--line);border-radius:10px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--field);text-align:center}
+.slot.fresh{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.slot .sname{font-size:13.5px;font-weight:800;line-height:1.25;min-height:2.5em;display:flex;align-items:center}
+.slot svg{width:26px;height:96px}
+.slot .snote{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.dipbtns{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:15px}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:16px;font-variant-numeric:tabular-nums}
+th,td{text-align:center;padding:5px 8px;border-bottom:1px solid var(--line)}
+th{background:var(--field);font-size:14px;line-height:1.25;font-weight:800;border-bottom:3px solid var(--ink-2)}
+th.c1{border-bottom-color:var(--p1)} th.c2{border-bottom-color:var(--p2)}
+td{font-weight:600}
+td:first-child{font-weight:800;background:color-mix(in srgb,var(--field) 70%,transparent)}
+td.now{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+tbody tr:last-child td{border-bottom:0}
+.btnrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.msg{color:var(--good);font-size:15px}
+.chart{display:block;width:100%;max-width:640px;height:auto;margin:0 auto}
+.chart text{font-family:inherit}
+.c-bg{fill:var(--plot)}
+.c-minor{stroke:var(--grid-2);stroke-width:1}
+.c-major{stroke:var(--grid);stroke-width:1.3}
+.c-axis{stroke:var(--axis);stroke-width:2.2;fill:none}
+.c-arrow{fill:var(--axis)}
+.c-tick{fill:var(--tick);font-size:15px;font-weight:600}
+.c-title{fill:var(--ink);font-size:16px;font-weight:800}
+.c-l1{fill:none;stroke:var(--p1);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.c-l2{fill:none;stroke:var(--p2);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.c-d1{fill:var(--p1)} .c-d2{fill:var(--p2)}
+.legend{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;font-size:15px}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:16px;height:16px;border-radius:3px;display:inline-block}
 
-  .ph-strip{
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-  }
-  .ph-strip .strip-track{
-    position:relative;
-    height:16px;
-    border-radius:999px;
-    background:linear-gradient(90deg,
-      #b21e1e 0%, #e2542f 14%, #f0972f 25%, #e8c53a 36%, #cbd94a 43%,
-      #4caf6b 50%, #2f9e8e 60%, #2f8fc4 72%, #3f5fc9 84%, #7d4fc2 100%);
-    border:1px solid var(--border);
-  }
-  .ph-strip .pointer{
-    position:absolute;
-    top:-7px;
-    width:2px;
-    height:30px;
-    background:var(--ink);
-    transform:translateX(-1px);
-    opacity:0;
-    transition:left .5s cubic-bezier(.4,0,.2,1), opacity .3s;
-  }
-  .ph-strip .pointer::after{
-    content:'';
-    position:absolute;
-    left:50%;
-    top:-6px;
-    width:0;height:0;
-    transform:translateX(-50%);
-    border-left:5px solid transparent;
-    border-right:5px solid transparent;
-    border-bottom:6px solid var(--ink);
-  }
-  .ph-strip .scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-3);font-weight:600;}
-  .ph-readout{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;color:var(--ink-2);min-height:20px;}
-  .ph-readout .ph-num{font-size:16px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
-
-  .steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px;}
-  .steps li{
-    display:flex;
-    gap:8px;
-    font-size:13px;
-    font-weight:600;
-    color:var(--ink-3);
-    align-items:flex-start;
-  }
-  .steps li .mark{width:18px;flex-shrink:0;}
-  .steps li.done{color:var(--ink-2);}
-  .steps li.active{color:var(--ink);}
-  .steps li.active .mark{color:var(--sc);}
-
-  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:2px;}
-  button{
-    font-family:inherit;
-    font-weight:700;
-    letter-spacing:.02em;
-    border-radius:10px;
-    border:1px solid transparent;
-    padding:11px 18px;
-    font-size:13.5px;
-    cursor:pointer;
-    transition:transform .12s ease, filter .12s ease, opacity .12s ease;
-  }
-  button:active{transform:translateY(1px);}
-  button:disabled{opacity:.45;cursor:not-allowed;}
-  button:focus-visible{outline:2px solid var(--sc, var(--brand));outline-offset:2px;}
-  .btn-primary{background:var(--sc);color:#fff;}
-  .btn-primary:hover:not(:disabled){filter:brightness(1.06);}
-  .btn-ghost{background:var(--surface);color:var(--ink-2);border-color:var(--border);}
-  .btn-ghost:hover:not(:disabled){background:var(--surface-3);}
-  .btn-text{background:transparent;color:var(--ink-3);border:none;padding:8px 4px;text-decoration:underline;text-underline-offset:3px;}
-
-  /* bubble animation */
-  .bubble{
-    animation:rise linear infinite;
-    opacity:0;
-  }
-  .liquid.reacting .bubble{opacity:.85;}
-  @keyframes rise{
-    0%{transform:translateY(0);opacity:0;}
-    12%{opacity:.9;}
-    100%{transform:translateY(-46px);opacity:0;}
-  }
-  @media (prefers-reduced-motion: reduce){
-    .bubble{animation:none;opacity:0;}
-  }
-
-  /* ---------- Speed / global controls ---------- */
-  .control-bar{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    gap:12px;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:12px 18px;
-    box-shadow:var(--shadow);
-  }
-  .seg{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px;}
-  .seg button{
-    background:transparent;color:var(--ink-2);border:none;padding:7px 14px;font-size:12.5px;
-    text-transform:uppercase;letter-spacing:.06em;border-radius:7px;
-  }
-  .seg button.on{background:var(--brand);color:var(--brand-ink);}
-  .control-bar .hint{font-size:12.5px;font-weight:500;color:var(--ink-3);}
-
-  /* ---------- Data section ---------- */
-  .data-section{
-    display:grid;
-    grid-template-columns:minmax(280px,360px) 1fr;
-    gap:18px;
-  }
-  @media (max-width:900px){ .data-section{grid-template-columns:1fr;} }
-  .card{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    padding:18px 20px;
-  }
-  .card h3{margin:0 0 12px;font-size:14.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);}
-  table{width:100%;border-collapse:collapse;font-size:13.5px;}
-  th,td{text-align:right;padding:7px 6px;font-variant-numeric:tabular-nums;}
-  th:first-child,td:first-child{text-align:left;}
-  thead th{color:var(--ink-3);font-size:11px;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--border);font-weight:700;}
-  tbody td{border-bottom:1px solid var(--border);color:var(--ink-2);font-weight:600;}
-  tbody td.filled{color:var(--ink);}
-  tbody td.c1{color:var(--c1);}
-  tbody td.c2{color:var(--c2);}
-  .table-wrap{overflow-x:auto;}
-
-  .chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;}
-  .legend-item{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink-2);}
-  .swatch{width:20px;height:3px;border-radius:2px;display:inline-block;}
-  .chart-wrap{position:relative;overflow-x:auto;}
-  svg.chart{width:100%;height:auto;min-width:520px;}
-  .tooltip{
-    position:absolute;
-    pointer-events:none;
-    background:var(--ink);
-    color:var(--bg);
-    font-size:12px;
-    font-weight:600;
-    padding:8px 11px;
-    border-radius:9px;
-    box-shadow:var(--shadow);
-    opacity:0;
-    transition:opacity .1s;
-    white-space:nowrap;
-    z-index:5;
-  }
-  .tooltip .t-row{display:flex;gap:8px;align-items:center;}
-  .tooltip .t-swatch{width:8px;height:8px;border-radius:50%;}
-
-  /* ---------- Drawer (How to use / Questions) ---------- */
-  .drawer{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    overflow:hidden;
-  }
-  .drawer-tabs{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    padding:12px;
-    background:var(--surface-2);
-  }
-  .drawer-tab{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    background:var(--surface);
-    border:1px solid var(--border);
-    color:var(--ink-2);
-    padding:10px 18px;
-    border-radius:10px;
-    font-size:14px;
-  }
-  .drawer-tab:hover:not(:disabled){background:var(--surface-3);}
-  .drawer-tab[aria-expanded="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand-strong);}
-  .drawer-tab .chev{width:14px;height:14px;flex:0 0 14px;transition:transform .18s ease;}
-  .drawer-tab[aria-expanded="true"] .chev{transform:rotate(180deg);}
-  .drawer-panel{display:none;padding:22px 24px 26px;border-top:1px solid var(--border);}
-  .drawer-panel.on{display:block;}
-  .drawer-panel .lead{font-weight:500;color:var(--ink-2);font-size:14.5px;max-width:82ch;margin:0 0 16px;}
-
-  .num-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px 28px;}
-  .num-list li{display:flex;gap:12px;align-items:flex-start;}
-  .num-list .num{
-    flex:0 0 24px;width:24px;height:24px;border-radius:50%;
-    background:var(--brand);color:var(--brand-ink);
-    font-size:12px;font-weight:800;
-    display:grid;place-items:center;margin-top:1px;
-  }
-  .num-list .body{font-weight:500;font-size:14.5px;line-height:1.42;color:var(--ink-2);}
-  .num-list .body strong{color:var(--ink);font-weight:700;}
-
-  .gq{
-    background:var(--brand-soft);
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:12px 16px;
-    margin:0 0 14px;
-    font-size:15.5px;
-    font-weight:700;
-    line-height:1.4;
-    color:var(--ink);
-  }
-  .gq span{display:block;font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px;}
-
-  .runline{
-    margin:0 0 18px;
-    font-size:14px;
-    font-weight:500;
-    color:var(--ink-2);
-    padding:8px 0 8px 13px;
-    border-left:3px solid var(--brand);
-  }
-  .runline b{color:var(--ink);}
-
-  .q-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;}
-  .q-item{
-    display:flex;
-    gap:12px;
-    background:var(--surface-2);
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:14px 16px;
-  }
-  .q-item .num{
-    flex:0 0 26px;width:26px;height:26px;border-radius:50%;
-    background:var(--brand);color:var(--brand-ink);
-    font-size:13px;font-weight:800;
-    display:grid;place-items:center;margin-top:1px;
-  }
-  .q-item .q-body{flex:1;min-width:0;}
-  .q-item label{display:block;font-size:13.5px;font-weight:600;color:var(--ink-2);margin-bottom:8px;}
-  .q-item textarea{
-    width:100%;
-    min-height:70px;
-    resize:vertical;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:10px;
-    color:var(--ink);
-    font-family:inherit;
-    font-weight:500;
-    font-size:13.5px;
-    padding:10px 12px;
-  }
-  .q-item textarea:focus-visible{outline:2px solid var(--brand);outline-offset:1px;}
-  .save-hint{font-size:11.5px;color:var(--ink-3);font-weight:500;margin-top:4px;}
-
-  footer.note{
-    text-align:center;
-    font-size:12.5px;
-    font-weight:500;
-    color:var(--ink-3);
-  }
+/* -------- dropdown sections -------- */
+.notes{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.notes summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 18px;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.notes summary::-webkit-details-marker{display:none}
+.notes summary svg{width:18px;height:18px;flex:none;transition:transform .18s ease}
+.notes[open] summary svg{transform:rotate(180deg)}
+.notes[open] summary{border-bottom:1px solid var(--line)}
+.notes-body{padding:12px 18px 16px}
+.notes p,.notes li{font-size:16.5px;color:var(--ink-2);font-weight:500;line-height:1.55;margin:0}
+.notes p + p{margin-top:9px}
+.notes ol,.notes ul{margin:0;padding-left:24px}
+.notes li{margin:7px 0}
+.notes strong{color:var(--ink);font-weight:800}
+.eq{display:inline-block;background:var(--field);border:1px solid var(--line);border-radius:6px;padding:1px 8px;color:var(--ink);font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
 <body>
-<div class="page">
+<div class="wrap">
 
-  <header class="hero">
-    <div class="eyebrow">Chemistry &middot; Chemical Reactions</div>
-    <h1>Reaction Heat &amp; pH Lab Simulation</h1>
-    <p>Run both reactions below just like the bench lab: pour the reactant, test its pH, trigger the reaction, and
-      watch the thermometer while the timer logs a reading every 15 seconds for 2.5 minutes. Use the data table and
-      graph you build to decide which reaction released heat and which one absorbed it.</p>
+  <header class="top">
+    <div>
+      <span class="eyebrow">Motion lab &middot; chemical reactions</span>
+      <h1>Reaction Heat and pH Lab</h1>
+      <p>Test the pH with pH paper, then mix the reactants and watch the thermometer. Does each reaction give off heat or take it in?</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="themebtn" id="themeBtn" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
-  <section class="quickref">
-    <div class="ref-card">
-      <h3>Materials</h3>
-      <div class="chip-row">
-        <span class="chip">2 beakers</span><span class="chip">Yeast</span><span class="chip">Goggles</span>
-        <span class="chip">Thermometer</span><span class="chip">Hydrogen peroxide</span><span class="chip">Cups</span>
-        <span class="chip">Vinegar</span><span class="chip">Clock</span><span class="chip">Baking soda</span>
-        <span class="chip">Plastic beaker</span><span class="chip">Scale</span><span class="chip">Hot tap water</span>
-        <span class="chip">pH strips</span>
+  <div class="main">
+    <!-- ===================== LEFT PANEL ===================== -->
+    <section class="card ctrlcard" aria-label="Setup">
+      <div>
+        <label class="label" for="part">Reaction</label>
+        <select class="pick" id="part">
+          <option value="1">Part 1: Hydrogen peroxide + yeast</option>
+          <option value="2">Part 2: Vinegar + baking soda</option>
+        </select>
       </div>
-    </div>
-    <div class="ref-card">
-      <h3>Key vocabulary</h3>
-      <ul class="term-list">
-        <li><b>Celsius scale</b> &mdash; temperature scale where water freezes at 0&deg;C and boils at 100&deg;C</li>
-        <li><b>Exothermic reaction</b> &mdash; releases energy in the form of heat</li>
-        <li><b>Endothermic reaction</b> &mdash; absorbs energy in the form of heat</li>
-        <li><b>Chemical change</b> &mdash; substances combine or break apart to form new substances</li>
-        <li><b>pH</b> &mdash; a measure of how acidic or basic a substance is</li>
-      </ul>
-    </div>
-  </section>
+      <div>
+        <p class="label">Steps</p>
+        <ol class="steps" id="steps"></ol>
+      </div>
+      <div>
+        <p class="label">Options</p>
+        <div class="opts">
+          <label class="check"><input type="checkbox" id="optLabels" checked> Label reactants</label>
+          <label class="check"><input type="checkbox" id="optEq"> Show chemical equation</label>
+          <div class="eqbox" id="eqbox" hidden></div>
+        </div>
+      </div>
+      <div>
+        <p class="label">Speed</p>
+        <div class="opts" role="radiogroup" aria-label="Speed">
+          <label class="radio"><input type="radio" name="speed" value="1" checked> Real time (2.5 min)</label>
+          <label class="radio"><input type="radio" name="speed" value="5"> 5 times faster</label>
+        </div>
+      </div>
+    </section>
 
-  <section class="stations-section">
-    <div class="section-head" style="margin-bottom:14px;">
-      <h2>Run the reactions</h2>
-      <p class="sub">Work through each station's steps in order. Every station keeps its own timer, thermometer and pH strip.</p>
-    </div>
-    <div class="stations" id="stations"></div>
-  </section>
+    <!-- ===================== THE BENCH ===================== -->
+    <section class="card scenecard" aria-label="Lab bench">
+      <div class="scenebox">
+        <svg id="scene" viewBox="56 40 620 340" role="img" aria-label="A lab bench with a beaker, a scale and a weigh boat"></svg>
+      </div>
+      <div class="ctlrow">
+        <span class="lab">Controls:</span>
+        <button class="iconbtn primary" id="playBtn" type="button" aria-label="Play: add the solid to the beaker" title="Play">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg></button>
+        <button class="iconbtn" id="pauseBtn" type="button" aria-label="Pause" title="Pause" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1" fill="currentColor"/></svg></button>
+        <button class="iconbtn" id="resetBtn" type="button" aria-label="Reset this part" title="Reset">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.6 9.2A7.2 7.2 0 1 1 5 14.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M3.2 4.6l1.9 5.9 5.9-1.9z" fill="currentColor"/></svg></button>
+        <button class="btn" id="bathBtn" type="button" hidden>Take it out of the water bath</button>
+        <span class="status" id="status" role="status"></span>
+      </div>
+      <div class="tray" aria-label="Tools">
+        <div class="tool drag" id="toolThermo" role="button" tabindex="0" aria-label="Thermometer. Drag it into the beaker, or press to put it in.">
+          <span class="tname">Thermometer</span>
+          <span class="tsub" id="thermoInfo">Drag it into the beaker.</span>
+          <svg class="ticon" viewBox="0 0 44 60" aria-hidden="true"><rect x="18" y="2" width="8" height="46" rx="4" fill="#fff" stroke="#8d9aa8" stroke-width="1.6"/><rect x="20.5" y="22" width="3" height="28" fill="#c8102e"/><circle cx="22" cy="51" r="6.5" fill="#c8102e" stroke="#7d0a1c" stroke-width="1.2"/></svg>
+        </div>
+        <div class="tool drag" id="toolPaper" role="button" tabindex="0" aria-label="pH paper. Drag a strip into a liquid, or press to dip one in the beaker.">
+          <span class="tname">pH paper</span>
+          <span class="tsub" id="paperInfo">Drag a strip into a liquid.</span>
+          <svg class="ticon" viewBox="0 0 44 60" aria-hidden="true"><path d="M8 26 L36 26 L33 58 L11 58 Z" fill="rgba(255,255,255,.7)" stroke="#8d9aa8" stroke-width="1.5"/><rect x="13" y="4" width="6" height="40" rx="1.5" fill="#fff" stroke="#9aa4b0" stroke-width="1" transform="rotate(-8 16 24)"/><rect x="20" y="2" width="6" height="42" rx="1.5" fill="#fff" stroke="#9aa4b0" stroke-width="1"/><rect x="26" y="5" width="6" height="40" rx="1.5" fill="#fff" stroke="#9aa4b0" stroke-width="1" transform="rotate(9 29 25)"/></svg>
+        </div>
+        <div class="tool sw" id="toolWatch" aria-label="Stopwatch">
+          <span class="tname">Stopwatch</span>
+          <output class="swtime" id="swTime" aria-live="off">00:00.00</output>
+          <div class="swbtns">
+            <button class="btn" id="swStart" type="button">Start</button>
+            <button class="btn" id="swReset" type="button">Reset</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <div class="control-bar">
-    <div class="seg" id="speedSeg">
-      <button data-speed="1">Real time &middot; 2:30</button>
-      <button data-speed="6" class="on">Fast-forward &middot; ~25s</button>
-    </div>
-    <div class="hint">Playback speed applies to any station that is currently timing a reaction.</div>
-    <button class="btn-text" id="resetAll" type="button">Reset both stations</button>
+    <!-- ===================== DATA ===================== -->
+    <section class="card datacard" aria-label="Data">
+      <div class="tabs" role="tablist" aria-label="Data views">
+        <button class="tab" role="tab" id="tab-ph" aria-controls="p-ph" aria-selected="true" data-tab="ph" type="button">pH paper</button>
+        <button class="tab" role="tab" id="tab-table" aria-controls="p-table" aria-selected="false" data-tab="table" type="button">Table</button>
+        <button class="tab" role="tab" id="tab-graph" aria-controls="p-graph" aria-selected="false" data-tab="graph" type="button">Graph</button>
+      </div>
+
+      <div class="tabpanel" id="p-ph" role="tabpanel" aria-labelledby="tab-ph">
+        <div class="chartrow" id="phChart" aria-label="pH color chart from 0 to 14"></div>
+        <div class="charttitle">pH color chart</div>
+        <p class="label" style="margin:4px 0 0">Your test strips</p>
+        <div class="strips" id="strips"></div>
+        <div class="dipbtns" id="dipBtns"></div>
+      </div>
+
+      <div class="tabpanel" id="p-table" role="tabpanel" aria-labelledby="tab-table" hidden>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Time<br>(min)</th><th class="c1">Hydrogen Peroxide &amp; Yeast<br>Temperature (&deg;C)</th><th class="c2">Vinegar &amp; Baking Soda<br>Temperature (&deg;C)</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="btnrow">
+          <button class="btn" id="copyBtn" type="button">Copy table</button>
+          <button class="btn" id="saveBtn" type="button">Save as a CSV file</button>
+          <span class="msg" id="msg" role="status"></span>
+        </div>
+      </div>
+
+      <div class="tabpanel" id="p-graph" role="tabpanel" aria-labelledby="tab-graph" hidden>
+        <svg class="chart" id="graph" viewBox="0 0 520 380" role="img" aria-label="Graph of temperature against time for both reactions"></svg>
+        <div class="legend"><span><i style="background:var(--p1)"></i>Hydrogen peroxide &amp; yeast</span><span><i style="background:var(--p2)"></i>Vinegar &amp; baking soda</span></div>
+      </div>
+    </section>
   </div>
 
-  <section class="data-section">
-    <div class="card">
-      <h3>Temperature Measurements</h3>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Time (min)</th><th>Part 1 (&deg;C)</th><th>Part 2 (&deg;C)</th></tr>
-          </thead>
-          <tbody id="dataTable"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Temperature vs. Time</h3>
-      <div class="chart-legend">
-        <span class="legend-item"><span class="swatch" style="background:var(--c1)"></span>Part 1 &middot; H&#8322;O&#8322; + Yeast</span>
-        <span class="legend-item"><span class="swatch" style="background:var(--c2)"></span>Part 2 &middot; Vinegar + Baking Soda</span>
-      </div>
-      <div class="chart-wrap" id="chartWrap">
-        <svg class="chart" id="chart" viewBox="0 0 900 380" preserveAspectRatio="xMinYMin meet" role="img" aria-label="Line chart of temperature versus time for both reactions"></svg>
-        <div class="tooltip" id="tooltip"></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="drawer" id="drawer">
-    <div class="drawer-tabs">
-      <button class="drawer-tab" id="howBtn" type="button" aria-expanded="false" aria-controls="howPanel">
-        How to use this
-        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
-      <button class="drawer-tab" id="qBtn" type="button" aria-expanded="false" aria-controls="qPanel">
-        Questions to answer
-        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
-    </div>
-
-    <div class="drawer-panel" id="howPanel">
-      <p class="lead">Run each station just like the bench lab, then use what you recorded to answer the questions in the other tab.</p>
-      <ol class="num-list">
-        <li><span class="num">1</span><span class="body"><strong>Follow the steps in order.</strong> Each station lists its next action with a 🥽 marker &mdash; click the highlighted button to perform that step.</span></li>
-        <li><span class="num">2</span><span class="body"><strong>Test pH whenever the button appears.</strong> The colored strip and number update to show whether the substance is acidic, neutral, or basic.</span></li>
-        <li><span class="num">3</span><span class="body"><strong>Starting the reaction starts the timer.</strong> Once you add the yeast or baking soda, the clock and thermometer run on their own &mdash; watch the readout for the live temperature.</span></li>
-        <li><span class="num">4</span><span class="body"><strong>Choose your playback speed</strong> in the bar above the data table: real time matches the 2.5-minute lab exactly, fast-forward compresses it to about 25 seconds.</span></li>
-        <li><span class="num">5</span><span class="body"><strong>Watch the table and graph fill in</strong> automatically every simulated 15 seconds, just like you would record it by hand in the lab.</span></li>
-        <li><span class="num">6</span><span class="body"><strong>Hover over the graph</strong> to read exact temperatures at any time for both reactions at once.</span></li>
-        <li><span class="num">7</span><span class="body"><strong>Use "Reset"</strong> on a station to run that reaction again, or "Reset both stations" to start the whole simulation over.</span></li>
-        <li><span class="num">8</span><span class="body"><strong>Answer the questions</strong> in the "Questions to answer" tab &mdash; your typed answers are saved automatically in this browser.</span></li>
+  <!-- ===================== HOW TO / WHY ===================== -->
+  <details class="notes" open>
+    <summary>How to use this simulation <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <ol>
+        <li>Pick <strong>Part 1</strong> or <strong>Part 2</strong> under <strong>Reaction</strong>. Follow the <strong>Steps</strong> list. Each step gets a check mark when you finish it.</li>
+        <li>To test pH, drag a strip from the <strong>pH paper</strong> card into a liquid. The strip changes color. Open the <strong>pH paper</strong> tab and match each strip to the <strong>pH color chart</strong>. Write down the color and the pH.</li>
+        <li>Drag the <strong>Thermometer</strong> into the beaker. Its card shows the <strong>Start</strong> temperature and the temperature <strong>Now</strong>.</li>
+        <li>In Part 2, the vinegar sits in a hot water bath. Wait until it reads <strong>32 to 38 &deg;C</strong>, then press <strong>Take it out of the water bath</strong>.</li>
+        <li>Press <strong>Play</strong> (the triangle) to pour the yeast or baking soda into the beaker. The <strong>Stopwatch</strong> starts by itself. You can also start, stop and reset it.</li>
+        <li>Read the temperature every 15 seconds for 2.5 minutes. The <strong>Table</strong> tab saves every reading too, and the <strong>Graph</strong> tab draws them.</li>
+        <li>Press <strong>Pause</strong> to freeze time. Press <strong>Reset</strong> to run the part again. Choose <strong>5 times faster</strong> if you are in a hurry.</li>
       </ol>
     </div>
+  </details>
 
-    <div class="drawer-panel" id="qPanel"></div>
-  </section>
+  <details class="notes">
+    <summary>Exothermic and endothermic <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <p>A <strong>chemical change</strong> makes new substances. One sign of a chemical change is a change in energy, like heat or light.</p>
+      <p>An <strong>exothermic</strong> reaction releases energy as heat. The mixture and the thermometer get warmer.</p>
+      <p>An <strong>endothermic</strong> reaction absorbs energy as heat. It pulls heat from its surroundings, so the mixture gets colder.</p>
+      <p>In an exothermic reaction, the products end up with less energy than the reactants, because energy left as heat. In an endothermic reaction, the products end up with more energy than the reactants, because energy was taken in.</p>
+      <p>Most reactions are fastest right after the reactants mix, so the temperature changes the most at the start. Later the reaction slows down, and the temperature changes less.</p>
+    </div>
+  </details>
 
-  <footer class="note">Simulated reaction data is randomized within realistic ranges each run &mdash; rerun a station to compare trials.</footer>
+  <details class="notes">
+    <summary>pH and pH paper <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <p><strong>pH</strong> measures how acidic or basic a substance is. The scale goes from 0 to 14.</p>
+      <p>A pH below 7 is an <strong>acid</strong>. The lower the number, the stronger the acid. A pH of 7 is <strong>neutral</strong>, like pure water. A pH above 7 is a <strong>base</strong>.</p>
+      <p><strong>pH paper</strong> has chemicals in it that change color. Dip a strip in a liquid, then compare its color to the chart. The closest color tells you the pH.</p>
+    </div>
+  </details>
+
+  <details class="notes">
+    <summary>The chemistry <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+    <div class="notes-body">
+      <ul>
+        <li>Part 1: <span class="eq">2H<sub>2</sub>O<sub>2</sub> &rarr; 2H<sub>2</sub>O + O<sub>2</sub></span>. Yeast has catalase, a protein that speeds up this reaction. The bubbles are oxygen gas.</li>
+        <li>Part 2: <span class="eq">NaHCO<sub>3</sub> + CH<sub>3</sub>COOH &rarr; CH<sub>3</sub>COONa + H<sub>2</sub>O + CO<sub>2</sub></span>. Baking soda reacts with the acid in vinegar. The bubbles are carbon dioxide gas.</li>
+        <li>The vinegar is warmed first so it has heat to give. That makes the cooling easier to see.</li>
+      </ul>
+    </div>
+  </details>
+
 </div>
 
 <script>
-(function(){
-  "use strict";
+(() => {
+"use strict";
+/* ==================================================================
+   CONSTANTS
+   ================================================================== */
+const PH_COLORS = ["#c8174f","#e02b3a","#ea5a22","#f28c1d","#f5ad1f","#ead22c","#c3cf2f","#6ab845",
+                   "#3c9f5d","#2f9a8f","#2c7e99","#285e8a","#22406d","#1c2b56","#261a45"];
+const PH_NAMES = ["dark pink","red","red orange","orange","light orange","yellow","yellow green","green",
+                  "dark green","teal","blue green","blue","dark blue","navy","dark purple"];
+const SUBST = {                                     // what a strip can test, in the lab's table order
+  h2o2: { name:"Hydrogen peroxide", ph:5 },
+  h2o2y:{ name:"Hydrogen peroxide and yeast", ph:6 },
+  vin:  { name:"Vinegar", ph:3 },
+  vinbs:{ name:"Baking soda and vinegar", ph:5 },
+  water:{ name:"Water", ph:7 },
+};
+const ORDER = ["h2o2", "h2o2y", "vin", "vinbs", "water"];
+const MARKS = [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150];   // seconds: every 15 s for 2.5 min
+const POUR_MS = 1600;
 
-  /* ---------------- helpers ---------------- */
-  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
-  const lerp=(a,b,t)=>a+(b-a)*t;
-  const rand=(lo,hi)=>lo+Math.random()*(hi-lo);
+const el = id => document.getElementById(id);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const f1 = v => (Math.round(v * 10 + 1e-7) / 10).toFixed(1);
 
-  function fmtTime(sec){
-    sec=Math.max(0,Math.round(sec));
-    const m=Math.floor(sec/60), s=sec%60;
-    return m+":"+String(s).padStart(2,'0');
+/* ==================================================================
+   STATE (each part keeps its own; the strips and table belong to both)
+   ================================================================== */
+const G = { part:1, speed:1, labels:true, eq:false, tab:"ph", fresh:"", sw:{ t:0, on:false }, strips:{}, dip:null, clock:0 };
+function freshPart(n){
+  const p = { n, phase:"setup", thermo:false, t:0, T:0, Tstart:null, data:Array(MARKS.length).fill(null), pour:0, pourStart:0, warn:"" };
+  p.T0 = rand(20.6, 22.4); p.T = p.T0;
+  if (n === 1){ p.rise = rand(7.2, 9.6); p.tau = rand(30, 42); p.drift = rand(0.6, 1.6); }
+  else { p.bath = "in"; p.w = 0; p.Tb = rand(44, 48); p.drop = rand(8, 10.6); p.tau = rand(34, 48); }
+  return p;
+}
+const PARTS = { 1:freshPart(1), 2:freshPart(2) };
+const cur = () => PARTS[G.part];
+/* temperature of a part at reaction time t (s) */
+function tempAt(p, t){
+  if (p.n === 1) return p.T0 + p.rise * (1 - Math.exp(-t / p.tau)) - p.drift * t / 150;
+  return p.Tstart - p.drop * (1 - Math.exp(-t / p.tau));
+}
+const started = p => p.phase === "pouring" || p.phase === "running" || p.phase === "paused" || p.phase === "done";
+const mixed = p => p.phase === "running" || p.phase === "paused" || p.phase === "done" || (p.phase === "pouring" && p.pour > 0.55);
+
+/* ==================================================================
+   THE BENCH (svg 720 x 440)
+   ================================================================== */
+const svg = el("scene");
+const BENCH_Y = 332;
+/* Part 1: a 250 mL plastic beaker; Part 2: a 500 mL water bath holding a small glass beaker of vinegar */
+const GEO = {
+  1:{ x0:170, x1:330, top:140, bot:330, perMl:0.68, ml:50, thermoX:236, thermoTop:62 },
+  2:{ x0:208, x1:296, top:172, bot:326, perMl:0.93, ml:50, thermoX:276, thermoTop:74,
+      bx0:150, bx1:354, btop:110, bbot:330, bathSurf:236 },
+};
+const SCALE = { x0:430, x1:650, top:292 };
+const BOAT = { x:545, y:292 };
+const levelY = (g, ml) => g.bot - 4 - ml * g.perMl;
+
+function beakerPath(x0, x1, top, bot, lip){
+  return `M${x0 - lip},${top} L${x0},${top + 6} L${x0},${bot - 10} Q${x0},${bot} ${x0 + 10},${bot} L${x1 - 10},${bot} Q${x1},${bot} ${x1},${bot - 10} L${x1},${top + 6} L${x1 + 2},${top}`;
+}
+function buildStatic(){
+  const g = GEO[G.part];
+  let s = `<defs><linearGradient id="wallGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--wall-1)"/><stop offset="1" stop-color="var(--wall-2)"/></linearGradient>`
+        + `<clipPath id="inClip"><path d="M${g.x0 + 2},${g.top} L${g.x0 + 2},${g.bot - 10} Q${g.x0 + 2},${g.bot - 2} ${g.x0 + 10},${g.bot - 2} L${g.x1 - 10},${g.bot - 2} Q${g.x1 - 2},${g.bot - 2} ${g.x1 - 2},${g.bot - 10} L${g.x1 - 2},${g.top} Z"/></clipPath>`;
+  if (G.part === 2) s += `<clipPath id="bathClip"><path d="M${g.bx0 + 2},${g.btop} L${g.bx0 + 2},${g.bbot - 10} Q${g.bx0 + 2},${g.bbot - 2} ${g.bx0 + 10},${g.bbot - 2} L${g.bx1 - 10},${g.bbot - 2} Q${g.bx1 - 2},${g.bbot - 2} ${g.bx1 - 2},${g.bbot - 10} L${g.bx1 - 2},${g.btop} Z"/></clipPath>`;
+  s += `</defs><rect class="s-wall" x="0" y="0" width="720" height="440"/>`
+     + `<line class="s-stripe" x1="-40" y1="40" x2="300" y2="400"/><line class="s-stripe" x1="-40" y1="380" x2="280" y2="20"/><line class="s-stripe" x1="460" y1="-30" x2="760" y2="300"/>`
+     + `<rect class="s-bench" x="0" y="${BENCH_Y}" width="720" height="108"/><rect class="s-benchtop" x="0" y="${BENCH_Y - 3}" width="720" height="6"/>`
+     /* the scale */
+     + `<rect x="${SCALE.x0}" y="${SCALE.top + 8}" width="${SCALE.x1 - SCALE.x0}" height="${BENCH_Y - SCALE.top - 8}" rx="8" fill="#2b2f36"/>`
+     + `<rect x="${SCALE.x0 + 14}" y="${SCALE.top}" width="${SCALE.x1 - SCALE.x0 - 28}" height="10" rx="3" fill="#59616b"/>`
+     + `<rect x="${SCALE.x0 + 50}" y="${SCALE.top + 15}" width="120" height="22" rx="4" fill="#c9d4c2" stroke="#11151a" stroke-width="2"/>`
+     + `<circle cx="${SCALE.x1 - 22}" cy="${SCALE.top + 26}" r="4" fill="#f29a2e"/>`
+     + `<text id="massTxt" x="${SCALE.x0 + 160}" y="${SCALE.top + 32}" text-anchor="end" style="font-size:16px;font-weight:800;fill:#14181d;font-variant-numeric:tabular-nums">2.50 g</text>`;
+  if (G.part === 1){
+    s += `<g id="liq"></g><path class="s-glass" d="${beakerPath(g.x0, g.x1, g.top, g.bot, 10)}"/>`;
+    for (let ml = 50; ml <= 250; ml += 50){
+      const y = levelY(g, ml);
+      s += `<line class="s-grad" x1="${g.x1 - 22}" y1="${y}" x2="${g.x1 - 6}" y2="${y}"/><text class="s-gradt" x="${g.x1 - 25}" y="${y + 4}" text-anchor="end">${ml}</text>`;
+    }
+  } else {
+    s += `<g id="bathLiq"></g><path class="s-glass" d="${beakerPath(g.bx0, g.bx1, g.btop, g.bbot, 10)}"/>`
+       + `<g id="liq"></g><path class="s-glass" d="${beakerPath(g.x0, g.x1, g.top, g.bot, 6)}"/>`;
+    for (let ml = 100; ml <= 500; ml += 100){
+      const y = g.bbot - 4 - ml * 0.4;
+      s += `<line class="s-grad" x1="${g.bx1 - 20}" y1="${y}" x2="${g.bx1 - 6}" y2="${y}"/>`;
+    }
   }
-  function fmtMin(sec){
-    const m=sec/60;
-    return (Math.round(m*100)/100).toString();
-  }
+  s += `<g id="dyn"></g>`;
+  svg.innerHTML = s;
+}
 
-  const PH_STOPS=[
-    [0,'#8f1414'],[1,'#b21e1e'],[2,'#cf3524'],[3,'#e2542f'],[4,'#ef7c2c'],
-    [5,'#f0972f'],[6,'#e8c53a'],[7,'#4caf6b'],[8,'#2f9e8e'],[9,'#2f8fc4'],
-    [10,'#3f5fc9'],[11,'#5a4fc2'],[12,'#7d4fc2'],[13,'#6a3ba3'],[14,'#4a2e7a']
-  ];
-  function phColor(ph){
-    ph=clamp(ph,0,14);
-    for(let i=0;i<PH_STOPS.length-1;i++){
-      const [p0,c0]=PH_STOPS[i], [p1,c1]=PH_STOPS[i+1];
-      if(ph>=p0 && ph<=p1){
-        const t=(ph-p0)/(p1-p0);
-        return mixHex(c0,c1,t);
+/* liquid colors: before and after mixing */
+const LIQ = { 1:["rgba(205,228,242,.7)", "rgba(222,196,146,.82)"], 2:["rgba(244,236,196,.72)", "rgba(240,236,224,.85)"] };
+function bubbleSet(n, x0, x1, ybot, ytop, speed, seed){
+  let s = "";
+  for (let i = 0; i < n; i++){
+    const ph = (G.clock * speed + i * 0.137 + seed) % 1;
+    const x = x0 + 8 + ((i * 47 + seed * 100) % Math.max(1, (x1 - x0 - 16)));
+    const y = ybot - ph * (ybot - ytop);
+    s += `<circle cx="${(x + Math.sin(ph * 8 + i) * 2.5).toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.6 + 2.6 * ph).toFixed(1)}" fill="rgba(255,255,255,.85)"/>`;
+  }
+  return s;
+}
+function thermometer(x, top, bulbY, T){
+  const len = bulbY - 8 - top, f = clamp(T / 50, 0, 1), col = (len - 6) * f;
+  let s = `<rect x="${x - 5}" y="${top}" width="10" height="${len + 6}" rx="5" fill="#fcfdff" stroke="var(--glass-line)" stroke-width="1.6"/>`;
+  for (let c = 10; c <= 50; c += 10){ const y = bulbY - 8 - (len - 6) * c / 50; s += `<line x1="${x + 5}" y1="${y}" x2="${x + 9}" y2="${y}" stroke="var(--glass-line)" stroke-width="1.2"/>`; }
+  s += `<rect x="${x - 2}" y="${(bulbY - 6 - col).toFixed(1)}" width="4" height="${(col + 6).toFixed(1)}" fill="#c8102e"/>`
+     + `<circle cx="${x}" cy="${bulbY}" r="8" fill="#c8102e" stroke="#7d0a1c" stroke-width="1.2"/>`
+     + `<rect x="${x + 12}" y="${top - 4}" width="76" height="26" rx="7" fill="var(--card)" stroke="var(--line)" stroke-width="1.5"/>`
+     + `<text x="${x + 50}" y="${top + 14}" text-anchor="middle" style="font-size:15px;font-weight:800;fill:var(--ink);font-variant-numeric:tabular-nums">${f1(T)} &#176;C</text>`;
+  return s;
+}
+function boat(x, y, rot, powder){
+  const col = G.part === 1 ? "#d6b67c" : "#fbfbf8", edge = G.part === 1 ? "#a8844a" : "#c9ccd2";
+  let s = `<g transform="translate(${x} ${y}) rotate(${rot})">`
+        + `<path d="M-46,0 L46,0 L36,-14 L-36,-14 Z" fill="#eef1f4" stroke="#9aa4b0" stroke-width="1.6"/>`;
+  if (powder) s += `<path d="M-28,-14 Q0,-${G.part === 1 ? 30 : 27} 28,-14 Z" fill="${col}" stroke="${edge}" stroke-width="1"/>`
+                + (G.part === 1 ? `<g fill="#b38f55"><circle cx="-10" cy="-19" r="1.6"/><circle cx="4" cy="-22" r="1.6"/><circle cx="14" cy="-17" r="1.6"/><circle cx="-2" cy="-16" r="1.4"/></g>` : "");
+  return s + `</g>`;
+}
+function drawDyn(){
+  const p = cur(), g = GEO[G.part], mix = mixed(p);
+  const lvl = levelY(g, g.ml);
+  /* the liquid in the beaker, with bubbles and foam once it reacts */
+  let L = `<g clip-path="url(#inClip)"><rect x="${g.x0}" y="${lvl}" width="${g.x1 - g.x0}" height="${g.bot - lvl}" fill="${LIQ[G.part][mix ? 1 : 0]}"/>`
+        + `<rect x="${g.x0}" y="${lvl - 1}" width="${g.x1 - g.x0}" height="3" fill="rgba(255,255,255,.6)"/>`;
+  if (mix){
+    const t = p.phase === "pouring" ? 0 : p.t, r = Math.exp(-t / (G.part === 1 ? p.tau * 1.3 : p.tau * 0.6));
+    const foam = G.part === 1 ? 64 * (1 - Math.exp(-(t + 1) / 14)) * (0.65 + 0.35 * r)
+                              : 46 * (1 - Math.exp(-(t + 0.5) / 2)) * Math.exp(-t / 28) + 4;
+    L += bubbleSet(Math.round(3 + 26 * r), g.x0, g.x1, g.bot - 6, lvl + 2, 0.7 + r, 0.31);
+    /* foam on top: a bumpy layer of small bubbles */
+    let top = "";
+    for (let k = 0; k <= 8; k++){ const x = g.x0 + k * (g.x1 - g.x0) / 8; top += `Q${x - (g.x1 - g.x0) / 16},${lvl - foam - 7} ${x},${lvl - foam} `; }
+    L += `<path d="M${g.x0},${lvl + 2} L${g.x0},${lvl - foam} ${top} L${g.x1},${lvl + 2} Z" fill="${G.part === 1 ? "#fffaf0" : "#ffffff"}" stroke="${G.part === 1 ? "#cdb88f" : "#c3c9d1"}" stroke-width="1.6"/>`;
+    for (let i = 0; i < Math.round(foam / 3); i++){
+      const fx = g.x0 + 6 + ((i * 37) % (g.x1 - g.x0 - 12)), fy = lvl - ((i * 23) % Math.max(4, foam - 4)) - 2;
+      L += `<circle cx="${fx}" cy="${fy}" r="${2 + (i % 3)}" fill="none" stroke="${G.part === 1 ? "#d9c7a0" : "#cfd5dc"}" stroke-width="1"/>`;
+    }
+  }
+  L += `</g>`;
+  el("liq").innerHTML = L;
+  /* Part 2: the hot water bath around the small beaker */
+  if (G.part === 2){
+    let B = "";
+    if (p.bath === "in"){
+      B = `<g clip-path="url(#bathClip)"><rect x="${g.bx0}" y="${g.bathSurf}" width="${g.bx1 - g.bx0}" height="${g.bbot - g.bathSurf}" fill="rgba(160,205,238,.62)"/>`
+        + `<rect x="${g.bx0}" y="${g.bathSurf - 1}" width="${g.bx1 - g.bx0}" height="3" fill="rgba(255,255,255,.6)"/></g>`;
+      for (let i = 0; i < 3; i++){                  // steam: the water is hot
+        const ph = (G.clock * 0.3 + i * 0.33) % 1, x = 180 + i * 70, y = g.btop - 4 - ph * 60;
+        B += `<path d="M${x},${y} q14,-16 -2,-32" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="5" stroke-linecap="round" opacity="${(0.85 * (1 - ph)).toFixed(2)}"/>`;
       }
     }
-    return PH_STOPS[PH_STOPS.length-1][1];
+    el("bathLiq").innerHTML = B;
   }
-  function mixHex(a,b,t){
-    const pa=hexToRgb(a), pb=hexToRgb(b);
-    const r=Math.round(lerp(pa[0],pb[0],t));
-    const g=Math.round(lerp(pa[1],pb[1],t));
-    const bl=Math.round(lerp(pa[2],pb[2],t));
-    return 'rgb('+r+','+g+','+bl+')';
-  }
-  function hexToRgb(h){
-    h=h.replace('#','');
-    return [parseInt(h.substring(0,2),16),parseInt(h.substring(2,4),16),parseInt(h.substring(4,6),16)];
-  }
-  function phLabel(ph){
-    if(ph<3) return 'Strongly acidic';
-    if(ph<6) return 'Acidic';
-    if(ph<=8) return 'Near neutral';
-    if(ph<=11) return 'Basic';
-    return 'Strongly basic';
-  }
-
-  // diverging thermometer color around room temperature
-  function thermoColor(t){
-    const cold='#2f8fc4', mid='#7c869c', warm='#e2542f';
-    const base=22, span=13;
-    if(t<=base){
-      const k=clamp((base-t)/span,0,1);
-      return mixHex(getCss('--ink-3')||mid, cold, k);
-    }else{
-      const k=clamp((t-base)/span,0,1);
-      return mixHex(getCss('--ink-3')||mid, warm, k);
-    }
-  }
-  function getCss(varName){
-    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-  }
-
-  /* ---------------- reaction models ---------------- */
-  // Part 1: hydrogen peroxide + yeast (catalase-driven decomposition)
-  function makeModel1(){
-    const T0=rand(20.5,22.5);
-    const rise=rand(7.2,9.6);
-    const tau=rand(30,42);
-    const decline=rand(0.6,1.6);
-    return function(t){ // t in seconds, 0..150
-      return T0 + rise*(1-Math.exp(-t/tau)) - decline*(t/150);
-    };
-  }
-  // Part 2: vinegar + baking soda, pre-warmed then reacted
-  function makeModel2(warmTemp){
-    const drop=rand(8,10.6);
-    const tau=rand(34,48);
-    const floor=rand(21.5,23.5);
-    return function(t){
-      const v=warmTemp - drop*(1-Math.exp(-t/tau));
-      return Math.max(v,floor-0.3);
-    };
-  }
-
-  /* ---------------- SVG builders ---------------- */
-  function svgBeaker(id,liquidColorVar){
-    return `
-    <svg width="96" height="128" viewBox="0 0 96 128" aria-hidden="true">
-      <defs>
-        <clipPath id="clip-${id}">
-          <path d="M14 8 H82 V16 L74 108 Q73 118 62 118 H34 Q23 118 22 108 L14 16 Z"/>
-        </clipPath>
-      </defs>
-      <g clip-path="url(#clip-${id})">
-        <rect id="liquid-${id}" class="liquid" x="10" y="118" width="76" height="0" fill="${liquidColorVar}"/>
-        <g id="bubbles-${id}" fill="#ffffff" opacity=".9">
-          <circle class="bubble" cx="34" cy="105" r="2.4" style="animation-duration:1.6s;animation-delay:0s;"/>
-          <circle class="bubble" cx="46" cy="110" r="3.2" style="animation-duration:1.9s;animation-delay:.3s;"/>
-          <circle class="bubble" cx="58" cy="104" r="2.1" style="animation-duration:1.4s;animation-delay:.6s;"/>
-          <circle class="bubble" cx="40" cy="112" r="1.8" style="animation-duration:1.7s;animation-delay:.9s;"/>
-          <circle class="bubble" cx="52" cy="108" r="2.6" style="animation-duration:2.1s;animation-delay:.2s;"/>
-          <circle class="bubble" cx="64" cy="112" r="2.0" style="animation-duration:1.5s;animation-delay:1.1s;"/>
-        </g>
-      </g>
-      <path d="M14 8 H82 V16 L74 108 Q73 118 62 118 H34 Q23 118 22 108 L14 16 Z"
-            fill="none" stroke="var(--ink-3)" stroke-width="2.5" stroke-linejoin="round"/>
-      <line x1="14" y1="8" x2="82" y2="8" stroke="var(--ink-3)" stroke-width="2.5" stroke-linecap="round"/>
-    </svg>`;
-  }
-  function svgThermo(id){
-    return `
-    <svg width="34" height="128" viewBox="0 0 34 128" aria-hidden="true">
-      <rect x="12" y="4" width="10" height="90" rx="5" fill="var(--surface)" stroke="var(--ink-3)" stroke-width="2"/>
-      <circle cx="17" cy="108" r="14" fill="var(--surface)" stroke="var(--ink-3)" stroke-width="2"/>
-      <rect id="merc-${id}" x="14.5" y="94" width="5" height="0" fill="var(--ink-3)"/>
-      <circle id="bulb-${id}" cx="17" cy="108" r="10" fill="var(--ink-3)"/>
-      <g stroke="var(--ink-3)" stroke-width="1.3" opacity=".55">
-        <line x1="22" y1="16" x2="27" y2="16"/>
-        <line x1="22" y1="34" x2="26" y2="34"/>
-        <line x1="22" y1="52" x2="27" y2="52"/>
-        <line x1="22" y1="70" x2="26" y2="70"/>
-        <line x1="22" y1="88" x2="27" y2="88"/>
-      </g>
-    </svg>`;
-  }
-
-  /* ---------------- station config ---------------- */
-  const STATION_DEFS=[
-    {
-      key:'p1', css1:'--c1', cssSoft:'--c1-soft',
-      title:'Part 1 &middot; Hydrogen Peroxide + Yeast',
-      liquidColor:'rgba(200,225,235,.55)',
-      steps:[
-        {id:'pour', label:'Pour 50 mL Hydrogen Peroxide'},
-        {id:'ph1', label:'Test pH of Hydrogen Peroxide'},
-        {id:'add', label:'Add Yeast &amp; Start Timer'},
-        {id:'running', label:'Reaction running&hellip;'},
-        {id:'ph2', label:'Test Final pH'},
-        {id:'done', label:'Complete'}
-      ],
-      phInitial:()=>rand(4.5,5.1), phInitialName:'Hydrogen Peroxide',
-      phFinal:()=>rand(5.3,5.9), phFinalName:'Hydrogen Peroxide + Yeast',
-      needsWarm:false,
-      makeModel:()=>makeModel1()
-    },
-    {
-      key:'p2', css1:'--c2', cssSoft:'--c2-soft',
-      title:'Part 2 &middot; Vinegar + Baking Soda',
-      liquidColor:'rgba(235,225,180,.5)',
-      steps:[
-        {id:'pour', label:'Pour 50 mL Vinegar'},
-        {id:'ph1', label:'Test pH of Vinegar'},
-        {id:'warm', label:'Warm in Hot Water Bath (32&ndash;38&deg;C)'},
-        {id:'add', label:'Add Baking Soda &amp; Start Timer'},
-        {id:'running', label:'Reaction running&hellip;'},
-        {id:'ph2', label:'Test Final pH'},
-        {id:'done', label:'Complete'}
-      ],
-      phInitial:()=>rand(2.3,2.9), phInitialName:'Vinegar',
-      phFinal:()=>rand(7.6,8.3), phFinalName:'Vinegar + Baking Soda',
-      needsWarm:true,
-      waterPh:7.0,
-      makeModel:(warm)=>makeModel2(warm)
-    }
-  ];
-
-  const TIME_POINTS=[0,15,30,45,60,75,90,105,120,135,150]; // seconds, matches 0..2.5 min every 15s
-
-  /* ---------------- state ---------------- */
-  let speed=6;
-  const stations={};
-
-  function freshState(def){
-    return {
-      def, stepIndex:0, elapsed:0, warmElapsed:0, warmed:false, warmTarget:null,
-      running:false, done:false, rafId:null, lastTs:null,
-      phInitial:null, phFinal:null, model:null, data:[]
-    };
-  }
-
-  /* ---------------- render station shell ---------------- */
-  function stationHTML(def){
-    return `
-    <article class="station" style="--sc:var(${def.css1});--sc-soft:var(${def.cssSoft});" data-key="${def.key}">
-      <div class="station-title">
-        <h3>${def.title}</h3>
-        <span class="tag">Station ${def.key==='p1'?'1':'2'}</span>
-      </div>
-      <div class="station-status" id="status-${def.key}">Ready to begin.</div>
-
-      <div class="rig">
-        ${svgBeaker(def.key,def.liquidColor)}
-        ${svgThermo(def.key)}
-        <div class="readouts">
-          <div class="readout"><span class="label">Temperature</span><span class="val" id="temp-${def.key}">&ndash;<small>&deg;C</small></span></div>
-          <div class="readout"><span class="label">Timer</span><span class="val" id="timer-${def.key}">0:00<small>/2:30</small></span></div>
-        </div>
-      </div>
-
-      <div class="ph-strip">
-        <div class="strip-track"><div class="pointer" id="ph-pointer-${def.key}"></div></div>
-        <div class="scale"><span>0</span><span>7</span><span>14</span></div>
-        <div class="ph-readout" id="ph-readout-${def.key}">No pH test run yet.</div>
-      </div>
-
-      <ol class="steps" id="steps-${def.key}"></ol>
-
-      <div class="btn-row">
-        <button class="btn-primary" id="action-${def.key}" type="button"></button>
-        <button class="btn-ghost" id="reset-${def.key}" type="button">Reset</button>
-      </div>
-    </article>`;
-  }
-
-  function renderSteps(st){
-    const ul=document.getElementById('steps-'+st.def.key);
-    ul.innerHTML=st.def.steps.map((s,i)=>{
-      let cls='';
-      if(i<st.stepIndex) cls='done';
-      else if(i===st.stepIndex) cls='active';
-      const mark = i<st.stepIndex ? '&#10003;' : (i===st.stepIndex ? '&#129517;' : '&middot;');
-      return `<li class="${cls}"><span class="mark">${mark}</span><span>${s.label}</span></li>`;
-    }).join('');
-  }
-
-  function currentStepId(st){ return st.def.steps[st.stepIndex].id; }
-
-  function setStatus(st,text){
-    document.getElementById('status-'+st.def.key).innerHTML=text;
-  }
-
-  function updateActionButton(st){
-    const btn=document.getElementById('action-'+st.def.key);
-    const id=currentStepId(st);
-    const map={
-      pour:'Pour reactant', ph1:'Test pH', warm:'Warm in hot water bath',
-      add:'Add & start timer', running:'Reaction running&hellip;', ph2:'Test final pH', done:'Reset to run again'
-    };
-    // use step's own label as button text (without markup) where sensible
-    const raw=st.def.steps[st.stepIndex].label.replace(/&hellip;/g,'...').replace(/&amp;/g,'&').replace(/&ndash;/g,'-').replace(/&deg;/g,'°');
-    btn.textContent = id==='running' ? 'Reaction running...' : (id==='done' ? 'Run again' : raw);
-    btn.disabled = (id==='running');
-  }
-
-  function setLiquidLevel(key,frac){
-    const el=document.getElementById('liquid-'+key);
-    const full=110, top=118;
-    const h=full*clamp(frac,0,1);
-    el.setAttribute('height',h);
-    el.setAttribute('y',top-h);
-  }
-  function setThermo(key,t){
-    const lo=15, hi=42;
-    const frac=clamp((t-lo)/(hi-lo),0,1);
-    const trackTop=16, trackBottom=94, maxH=trackBottom-trackTop;
-    const h=maxH*frac;
-    const merc=document.getElementById('merc-'+key);
-    merc.setAttribute('y',trackBottom-h);
-    merc.setAttribute('height',h+6);
-    const color=thermoColor(t);
-    merc.setAttribute('fill',color);
-    document.getElementById('bulb-'+key).setAttribute('fill',color);
-  }
-  function setTempReadout(key,t){
-    document.getElementById('temp-'+key).innerHTML= (t==null? '&ndash;<small>&deg;C</small>' : t.toFixed(1)+'<small>&deg;C</small>');
-  }
-  function setTimerReadout(key,sec){
-    document.getElementById('timer-'+key).innerHTML= fmtTime(sec)+'<small>/2:30</small>';
-  }
-  function setPh(key,ph,name){
-    const pointer=document.getElementById('ph-pointer-'+key);
-    pointer.style.left=(clamp(ph,0,14)/14*100)+'%';
-    pointer.style.opacity='1';
-    document.getElementById('ph-readout-'+key).innerHTML =
-      `<span class="ph-num">pH ${ph.toFixed(1)}</span><span>${name} &middot; ${phLabel(ph)}</span>`;
-  }
-
-  /* ---------------- table & chart ---------------- */
-  function buildTable(){
-    const tbody=document.getElementById('dataTable');
-    tbody.innerHTML=TIME_POINTS.map(sec=>{
-      const min=fmtMin(sec);
-      return `<tr><td>${min}</td><td id="cell-p1-${sec}">&mdash;</td><td id="cell-p2-${sec}">&mdash;</td></tr>`;
-    }).join('');
-  }
-  function updateTableCell(key,sec,val){
-    const cell=document.getElementById('cell-'+key+'-'+sec);
-    if(!cell) return;
-    cell.textContent=val.toFixed(1)+'°C';
-    cell.classList.add('filled',key==='p1'?'c1':'c2');
-  }
-  function clearTableColumn(key){
-    TIME_POINTS.forEach(sec=>{
-      const cell=document.getElementById('cell-'+key+'-'+sec);
-      cell.textContent='—';
-      cell.classList.remove('filled','c1','c2');
-    });
-  }
-
-  // chart geometry
-  const CHART={x0:56,x1:876,y0:24,y1:322,tMin:0,tMax:150,vMin:15,vMax:45};
-  function chartX(t){ return CHART.x0 + (t-CHART.tMin)/(CHART.tMax-CHART.tMin)*(CHART.x1-CHART.x0); }
-  function chartY(v){ return CHART.y1 - (v-CHART.vMin)/(CHART.vMax-CHART.vMin)*(CHART.y1-CHART.y0); }
-
-  function buildChartFrame(){
-    const svg=document.getElementById('chart');
-    let gridlines='';
-    for(let v=CHART.vMin;v<=CHART.vMax;v+=5){
-      const y=chartY(v);
-      gridlines+=`<line x1="${CHART.x0}" y1="${y}" x2="${CHART.x1}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
-      gridlines+=`<text x="${CHART.x0-10}" y="${y+4}" text-anchor="end" font-size="12" font-weight="600" fill="var(--ink-3)">${v}</text>`;
-    }
-    let xticks='';
-    for(let sec=0;sec<=150;sec+=30){
-      const x=chartX(sec);
-      xticks+=`<line x1="${x}" y1="${CHART.y1}" x2="${x}" y2="${CHART.y1+5}" stroke="var(--ink-3)" stroke-width="1"/>`;
-      xticks+=`<text x="${x}" y="${CHART.y1+22}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink-3)">${(sec/60).toFixed(2).replace(/0+$/,'').replace(/\.$/,'')||'0'}</text>`;
-    }
-    svg.innerHTML = `
-      <g id="gridlines">${gridlines}</g>
-      <line x1="${CHART.x0}" y1="${CHART.y1}" x2="${CHART.x1}" y2="${CHART.y1}" stroke="var(--ink-3)" stroke-width="1.5"/>
-      <g id="xticks">${xticks}</g>
-      <text x="${(CHART.x0+CHART.x1)/2}" y="${CHART.y1+46}" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--ink-2)">Time (minutes)</text>
-      <text x="18" y="${(CHART.y0+CHART.y1)/2}" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--ink-2)" transform="rotate(-90 18 ${(CHART.y0+CHART.y1)/2})">Temperature (°C)</text>
-      <path id="line-p1" fill="none" stroke="var(--c1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <path id="line-p2" fill="none" stroke="var(--c2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <g id="pts-p1"></g>
-      <g id="pts-p2"></g>
-      <text id="label-p1" font-size="12.5" font-weight="700" fill="var(--c1)" opacity="0"></text>
-      <text id="label-p2" font-size="12.5" font-weight="700" fill="var(--c2)" opacity="0"></text>
-      <line id="crosshair" x1="0" y1="${CHART.y0}" x2="0" y2="${CHART.y1}" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3,3" opacity="0"/>
-      <rect id="hover-capture" x="${CHART.x0}" y="${CHART.y0}" width="${CHART.x1-CHART.x0}" height="${CHART.y1-CHART.y0}" fill="transparent"/>
-    `;
-  }
-
-  function redrawChartFor(key){
-    const st=stations[key];
-    const path=document.getElementById('line-'+key);
-    const pts=document.getElementById('pts-'+key);
-    if(st.data.length===0){ path.setAttribute('d',''); pts.innerHTML=''; document.getElementById('label-'+key).setAttribute('opacity',0); return; }
-    let d='';
-    let ptsHtml='';
-    st.data.forEach((pt,i)=>{
-      const x=chartX(pt.t), y=chartY(pt.temp);
-      d += (i===0?'M':'L')+x.toFixed(1)+','+y.toFixed(1)+' ';
-      ptsHtml += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="var(${key==='p1'?'--c1':'--c2'})" stroke="var(--surface)" stroke-width="1.5"/>`;
-    });
-    path.setAttribute('d',d.trim());
-    pts.innerHTML=ptsHtml;
-    const last=st.data[st.data.length-1];
-    const lbl=document.getElementById('label-'+key);
-    const lx=clamp(chartX(last.t)+8,CHART.x0,CHART.x1-90);
-    lbl.setAttribute('x',lx);
-    lbl.setAttribute('y',chartY(last.temp)-10);
-    lbl.textContent = key==='p1' ? 'Part 1' : 'Part 2';
-    lbl.setAttribute('opacity', st.data.length>1 ? 1 : 0);
-  }
-
-  function setupChartHover(){
-    const svg=document.getElementById('chart');
-    const wrap=document.getElementById('chartWrap');
-    const tip=document.getElementById('tooltip');
-    const cap=document.getElementById('hover-capture');
-    function handle(evt){
-      const rect=svg.getBoundingClientRect();
-      const scaleX=900/rect.width;
-      const localX=(evt.clientX-rect.left)*scaleX;
-      const t=clamp((localX-CHART.x0)/(CHART.x1-CHART.x0)*(CHART.tMax-CHART.tMin),0,150);
-      const nearestSec=TIME_POINTS.reduce((a,b)=>Math.abs(b-t)<Math.abs(a-t)?b:a);
-      const p1=stations.p1.data.find(p=>p.t===nearestSec);
-      const p2=stations.p2.data.find(p=>p.t===nearestSec);
-      if(!p1 && !p2){ document.getElementById('crosshair').setAttribute('opacity',0); tip.style.opacity=0; return; }
-      document.getElementById('crosshair').setAttribute('x1',chartX(nearestSec));
-      document.getElementById('crosshair').setAttribute('x2',chartX(nearestSec));
-      document.getElementById('crosshair').setAttribute('opacity',1);
-      let rows='';
-      if(p1) rows+=`<div class="t-row"><span class="t-swatch" style="background:var(--c1)"></span>Part 1: ${p1.temp.toFixed(1)}°C</div>`;
-      if(p2) rows+=`<div class="t-row"><span class="t-swatch" style="background:var(--c2)"></span>Part 2: ${p2.temp.toFixed(1)}°C</div>`;
-      tip.innerHTML = `<div style="margin-bottom:4px;opacity:.75;">t = ${fmtMin(nearestSec)} min</div>${rows}`;
-      const px=(chartX(nearestSec)/900)*rect.width;
-      const py=(chartY((p1?p1.temp:p2.temp))/380)*rect.height;
-      tip.style.left=clamp(px+14,0,rect.width-160)+'px';
-      tip.style.top=Math.max(py-46,0)+'px';
-      tip.style.opacity=1;
-    }
-    cap.addEventListener('mousemove',handle);
-    cap.addEventListener('mouseleave',()=>{ tip.style.opacity=0; document.getElementById('crosshair').setAttribute('opacity',0); });
-  }
-
-  /* ---------------- reaction loop ---------------- */
-  function logPoint(st,sec,temp){
-    if(st.data.find(p=>p.t===sec)) return;
-    st.data.push({t:sec,temp});
-    updateTableCell(st.def.key,sec,temp);
-    redrawChartFor(st.def.key);
-  }
-
-  function startReactionTimer(st){
-    st.running=true;
-    st.lastTs=null;
-    updateActionButton(st);
-    setStatus(st,'Reaction in progress &mdash; recording every 15 seconds.');
-    function frame(ts){
-      if(!st.running) return;
-      if(st.lastTs==null) st.lastTs=ts;
-      const dt=(ts-st.lastTs)/1000;
-      st.lastTs=ts;
-      st.elapsed=clamp(st.elapsed + dt*speed, 0, 150);
-      const temp=st.model(st.elapsed);
-      setTempReadout(st.def.key,temp);
-      setThermo(st.def.key,temp);
-      setTimerReadout(st.def.key,st.elapsed);
-      TIME_POINTS.forEach(sec=>{
-        if(st.elapsed>=sec) logPoint(st,sec,st.model(sec));
-      });
-      if(st.elapsed>=150){
-        st.running=false;
-        st.stepIndex++; // move to ph2 step
-        renderSteps(st);
-        updateActionButton(st);
-        setStatus(st,'Reaction complete. Ready for a final pH check.');
-        return;
-      }
-      st.rafId=requestAnimationFrame(frame);
-    }
-    st.rafId=requestAnimationFrame(frame);
-  }
-
-  function runWarmSequence(st){
-    st.def.waterPh!=null && null; // noop, water pH shown on completion
-    setStatus(st,'Warming vinegar in the hot water bath&hellip;');
-    const startTemp=rand(20.5,22.5);
-    const target=rand(33,37);
-    st.warmTarget=target;
-    const durationMs=1600;
-    const startTs=performance.now();
-    function frame(ts){
-      const p=clamp((ts-startTs)/durationMs,0,1);
-      const eased=1-Math.pow(1-p,3);
-      const temp=lerp(startTemp,target,eased);
-      setTempReadout(st.def.key,temp);
-      setThermo(st.def.key,temp);
-      if(p<1){ requestAnimationFrame(frame); }
-      else{
-        st.warmed=true;
-        st.elapsedWarmTemp=target;
-        st.stepIndex++;
-        renderSteps(st);
-        updateActionButton(st);
-        setStatus(st, `Water bath ready — water pH ${st.def.waterPh.toFixed(1)} (neutral). Vinegar warmed to ${target.toFixed(1)}°C.`);
-      }
-    }
-    requestAnimationFrame(frame);
-  }
-
-  /* ---------------- step handlers ---------------- */
-  function handleAction(key){
-    const st=stations[key];
-    const id=currentStepId(st);
-    if(id==='pour'){
-      setLiquidLevel(key,1);
-      st.stepIndex++;
-      setStatus(st,'Poured. Ready to test pH.');
-    } else if(id==='ph1'){
-      const ph=st.def.phInitial();
-      st.phInitial=ph;
-      setPh(key,ph,st.def.phInitialName);
-      st.stepIndex++;
-      setStatus(st, st.def.needsWarm ? 'pH recorded. Warm the beaker in the hot water bath next.' : 'pH recorded. Ready to add yeast and start timing.');
-    } else if(id==='warm'){
-      runWarmSequence(st);
-      return; // stepIndex advanced inside sequence
-    } else if(id==='add'){
-      st.model = st.def.needsWarm ? st.def.makeModel(st.warmTarget) : st.def.makeModel();
-      document.getElementById('bubbles-'+key).parentElement.classList.add('reacting');
-      st.elapsed=0;
-      logPoint(st,0,st.model(0));
-      setTempReadout(key,st.model(0));
-      setThermo(key,st.model(0));
-      st.stepIndex++;
-      renderSteps(st);
-      startReactionTimer(st);
-      return;
-    } else if(id==='ph2'){
-      const ph=st.def.phFinal();
-      st.phFinal=ph;
-      setPh(key,ph,st.def.phFinalName);
-      document.querySelector('#stations [data-key="'+key+'"] .liquid').classList.remove('reacting');
-      st.stepIndex++;
-      st.done=true;
-      setStatus(st,'Station complete. Compare this pH to the starting reading.');
-    } else if(id==='done'){
-      resetStation(key);
-      return;
-    }
-    renderSteps(st);
-    updateActionButton(st);
-  }
-
-  function resetStation(key){
-    const def=STATION_DEFS.find(d=>d.key===key);
-    if(stations[key] && stations[key].rafId) cancelAnimationFrame(stations[key].rafId);
-    stations[key]=freshState(def);
-    setLiquidLevel(key,0);
-    setTempReadout(key,null);
-    setTimerReadout(key,0);
-    const pointer=document.getElementById('ph-pointer-'+key);
-    pointer.style.opacity=0;
-    document.getElementById('ph-readout-'+key).textContent='No pH test run yet.';
-    document.querySelector('#stations [data-key="'+key+'"] .liquid').classList.remove('reacting');
-    clearTableColumn(key);
-    redrawChartFor(key);
-    setThermo(key,21);
-    renderSteps(stations[key]);
-    updateActionButton(stations[key]);
-    setStatus(stations[key],'Ready to begin.');
-  }
-
-  /* ---------------- questions panel ---------------- */
-  const GUIDING_QUESTION='How can you tell, from your own data, whether a chemical reaction released heat or absorbed it?';
-  const QUESTIONS=[
-    {id:'ivar', label:'What is the independent (manipulated) variable?'},
-    {id:'dvar', label:'What is the dependent (responding) variable?'},
-    {id:'trend', label:'When did the temperature change the most, and when did it change the least, in Part 1 and Part 2? Compare time 0 to 2.5 minutes for both parts.'},
-    {id:'concl1', label:'Is the hydrogen peroxide and yeast mixture endothermic or exothermic? What is your evidence?'},
-    {id:'concl2', label:'Is the vinegar and baking soda reaction endothermic or exothermic? What is your evidence?'},
-    {id:'energy', label:'For the vinegar and baking soda reaction, is the energy of the reactants greater than or less than the energy of the products?'},
-    {id:'predict', label:'If you reran Part 1 with twice as much yeast, would you expect the temperature to rise faster, slower, or about the same? Explain your reasoning.'},
-    {id:'compare', label:"A classmate's Part 2 graph drops more sharply than yours did. What could they have done differently in the procedure to cause a bigger temperature change?"}
-  ];
-  const LS_PREFIX='reaction-lab-sim-answer-';
-
-  function computeRunline(){
-    const p1=stations.p1, p2=stations.p2;
-    const p1has=p1 && p1.data.length>1;
-    const p2has=p2 && p2.data.length>1;
-    if(!p1has && !p2has){
-      return 'Run at least one station above, then come back &mdash; these questions will use the temperatures you actually recorded.';
-    }
-    function part(label,st){
-      const first=st.data[0].temp, last=st.data[st.data.length-1].temp;
-      const delta=last-first;
-      return label+' went from '+first.toFixed(1)+'&deg;C to '+last.toFixed(1)+'&deg;C ('+(delta>=0?'+':'&minus;')+Math.abs(delta).toFixed(1)+'&deg;C)';
-    }
-    const parts=[];
-    parts.push(p1has ? part('Part 1',p1) : "Part 1 hasn't been run yet");
-    parts.push(p2has ? part('Part 2',p2) : "Part 2 hasn't been run yet");
-    return '<b>Your run so far:</b> '+parts.join('; ')+'.';
-  }
-
-  function buildQuestions(){
-    const panel=document.getElementById('qPanel');
-    panel.innerHTML =
-      '<p class="gq"><span>Guiding question</span>'+GUIDING_QUESTION+'</p>'+
-      '<p class="runline" id="runline"></p>'+
-      '<div class="q-grid" id="qGrid"></div>';
-    document.getElementById('runline').innerHTML=computeRunline();
-    const grid=document.getElementById('qGrid');
-    grid.innerHTML = QUESTIONS.map((q,i)=>`
-      <div class="q-item">
-        <span class="num">${i+1}</span>
-        <div class="q-body">
-          <label for="q-${q.id}">${q.label}</label>
-          <textarea id="q-${q.id}" placeholder="Type your answer...">${''}</textarea>
-          <div class="save-hint">Saved automatically in this browser.</div>
-        </div>
-      </div>
-    `).join('');
-    QUESTIONS.forEach(q=>{
-      const ta=document.getElementById('q-'+q.id);
-      try{
-        const saved=localStorage.getItem(LS_PREFIX+q.id);
-        if(saved) ta.value=saved;
-      }catch(e){}
-      ta.addEventListener('input',()=>{
-        try{ localStorage.setItem(LS_PREFIX+q.id, ta.value); }catch(e){}
-      });
-    });
-  }
-
-  /* ---------------- drawer (accordion) ---------------- */
-  function setupDrawer(){
-    const pairs=[['#howBtn','#howPanel'],['#qBtn','#qPanel']];
-    function toggle(btnSel,panelSel){
-      const btn=document.querySelector(btnSel), pane=document.querySelector(panelSel);
-      btn.addEventListener('click',()=>{
-        const open=pane.classList.contains('on');
-        pairs.forEach(([b,p])=>{
-          document.querySelector(p).classList.remove('on');
-          document.querySelector(b).setAttribute('aria-expanded','false');
-        });
-        if(!open){
-          if(panelSel==='#qPanel') buildQuestions();
-          pane.classList.add('on');
-          btn.setAttribute('aria-expanded','true');
-          pane.scrollIntoView({behavior:'smooth',block:'nearest'});
+  /* weigh boat (on the scale, or pouring), thermometer, a dipping strip, labels */
+  let D = "";
+  if (p.phase === "pouring" || (p.phase === "setup") || !started(p)){
+    const k = p.phase === "pouring" ? p.pour : 0;
+    const tx = (g.x0 + g.x1) / 2 + 30, ty = g.top - 40;
+    let x = BOAT.x, y = BOAT.y, rot = 0, powder = true;
+    if (k > 0){
+      if (k < 0.4){ const e = k / 0.4; x = BOAT.x + (tx - BOAT.x) * e; y = BOAT.y + (ty - BOAT.y) * e - Math.sin(e * Math.PI) * 30; rot = -70 * e; }
+      else if (k < 0.8){ x = tx; y = ty; rot = -70 - 15 * Math.sin((k - 0.4) * 20); powder = k < 0.62; }
+      else { const e = (k - 0.8) / 0.2; x = tx + (BOAT.x - tx) * e; y = ty + (BOAT.y - ty) * e; rot = -70 * (1 - e); powder = false; }
+      if (k > 0.38 && k < 0.82){                    // the powder falling in
+        const pc = G.part === 1 ? "#c9a467" : "#ffffff";
+        for (let i = 0; i < 18; i++){
+          const ph = (G.clock * 2.2 + i / 18) % 1;
+          D += `<circle cx="${(x - 40 + Math.sin(i * 3.1) * 6).toFixed(1)}" cy="${(y + 10 + ph * (lvl - y - 10)).toFixed(1)}" r="2.2" fill="${pc}" stroke="rgba(0,0,0,.15)" stroke-width=".6"/>`;
         }
-      });
+      }
     }
-    pairs.forEach(([b,p])=>toggle(b,p));
+    D += boat(x, y, rot, powder);
+  } else D += boat(BOAT.x, BOAT.y, 0, false);
+  if (p.thermo) D += thermometer(g.thermoX, g.thermoTop, g.bot - 14, p.T);
+  if (G.dip){                                       // a strip going in and out of a liquid
+    const d = G.dip, k = clamp((performance.now() - d.t0) / 1300, 0, 1);
+    const bottom = k < 0.3 ? d.surf - 40 + (54 * k / 0.3) : k < 0.62 ? d.surf + 14 : d.surf + 14 - (k - 0.62) / 0.38 * 90;
+    const wet = k >= 0.24;
+    D += `<g opacity="${k > 0.8 ? ((1 - k) / 0.2).toFixed(2) : 1}"><rect x="${d.x - 6}" y="${bottom - 84}" width="12" height="84" rx="2" fill="#fff" stroke="#9aa4b0" stroke-width="1.2"/>`
+       + `<rect x="${d.x - 6}" y="${bottom - 20}" width="12" height="20" rx="2" fill="${wet ? PH_COLORS[d.ph] : "#f4f1e6"}"/></g>`;
   }
-
-  /* ---------------- speed toggle ---------------- */
-  function setupSpeedToggle(){
-    const seg=document.getElementById('speedSeg');
-    seg.addEventListener('click',(e)=>{
-      const btn=e.target.closest('button[data-speed]');
-      if(!btn) return;
-      speed=Number(btn.dataset.speed);
-      seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b===btn));
-    });
+  if (G.labels){
+    const after = mix;
+    if (G.part === 1){
+      D += `<text class="s-lab" x="160" y="${lvl - 30}" text-anchor="end">Hydrogen</text>`
+         + `<text class="s-lab" x="160" y="${lvl - 12}" text-anchor="end">peroxide</text>`
+         + `<text class="s-lab2" x="160" y="${lvl + 6}" text-anchor="end">${after ? "+ yeast" : "50 mL"}</text>`;
+      if (!started(p)) D += `<text class="s-lab" x="${BOAT.x}" y="${BOAT.y - 40}" text-anchor="middle">Yeast</text><text class="s-lab2" x="${BOAT.x}" y="${BOAT.y - 58}" text-anchor="middle">2.5 g</text>`;
+    } else {
+      D += `<text class="s-lab" x="${g.x0 - 64}" y="${lvl - 64}" text-anchor="end">Vinegar</text>`
+         + (after ? `<text class="s-lab2" x="${g.x0 - 64}" y="${lvl - 46}" text-anchor="end">+ baking</text><text class="s-lab2" x="${g.x0 - 64}" y="${lvl - 30}" text-anchor="end">soda</text>`
+                  : `<text class="s-lab2" x="${g.x0 - 64}" y="${lvl - 46}" text-anchor="end">50 mL</text>`)
+         + `<path d="M${g.x0 - 60},${lvl - 52} L${g.x0 + 6},${lvl + 8}" stroke="var(--scene-ink)" stroke-width="1.4" opacity=".6"/>`;
+      if (p.bath === "in") D += `<text class="s-lab" x="140" y="${g.bathSurf + 50}" text-anchor="end">Hot water</text><text class="s-lab2" x="140" y="${g.bathSurf + 68}" text-anchor="end">200 mL</text>`;
+      if (!started(p)) D += `<text class="s-lab" x="${BOAT.x}" y="${BOAT.y - 40}" text-anchor="middle">Baking soda</text><text class="s-lab2" x="${BOAT.x}" y="${BOAT.y - 58}" text-anchor="middle">2 g</text>`;
+    }
   }
+  el("dyn").innerHTML = D;
+  const onScale = !started(p) || p.phase === "setup";
+  el("massTxt").textContent = onScale ? (G.part === 1 ? "2.50 g" : "2.00 g") : "0.00 g";
+}
 
-  /* ---------------- init ---------------- */
-  function init(){
-    const container=document.getElementById('stations');
-    container.innerHTML=STATION_DEFS.map(stationHTML).join('');
-    STATION_DEFS.forEach(def=>{ stations[def.key]=freshState(def); });
-
-    STATION_DEFS.forEach(def=>{
-      renderSteps(stations[def.key]);
-      updateActionButton(stations[def.key]);
-      setThermo(def.key,21);
-      document.getElementById('action-'+def.key).addEventListener('click',()=>handleAction(def.key));
-      document.getElementById('reset-'+def.key).addEventListener('click',()=>resetStation(def.key));
-    });
-
-    buildTable();
-    buildChartFrame();
-    setupChartHover();
-    STATION_DEFS.forEach(def=>redrawChartFor(def.key));
-    setupDrawer();
-    setupSpeedToggle();
-
-    document.getElementById('resetAll').addEventListener('click',()=>{
-      STATION_DEFS.forEach(def=>resetStation(def.key));
-    });
+/* ==================================================================
+   DRAGGING TOOLS FROM THE TRAY
+   ================================================================== */
+function toSvg(cx, cy){
+  const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+/* which liquid is under a point on the bench */
+function zoneAt(x, y){
+  const g = GEO[G.part], p = cur();
+  if (x >= g.x0 && x <= g.x1 && y >= g.top - 40 && y <= g.bot + 8) return "beaker";
+  if (G.part === 2 && p.bath === "in" && x >= g.bx0 && x <= g.bx1 && y >= g.btop - 40 && y <= g.bbot + 8) return "bath";
+  return null;
+}
+function liquidKey(zone){
+  const p = cur();
+  if (zone === "bath") return "water";
+  if (G.part === 1) return mixed(p) ? "h2o2y" : "h2o2";
+  return mixed(p) ? "vinbs" : "vin";
+}
+let drag = null;
+const GHOSTS = {
+  thermo:`<svg width="30" height="150" viewBox="0 0 30 150"><rect x="10" y="2" width="10" height="132" rx="5" fill="#fff" stroke="#8d9aa8" stroke-width="1.6"/><rect x="13" y="70" width="4" height="66" fill="#c8102e"/><circle cx="15" cy="138" r="8" fill="#c8102e"/></svg>`,
+  paper:`<svg width="20" height="100" viewBox="0 0 20 100"><rect x="4" y="2" width="12" height="94" rx="2" fill="#fff" stroke="#9aa4b0" stroke-width="1.2"/><rect x="4" y="76" width="12" height="20" rx="2" fill="#f4f1e6"/></svg>`,
+};
+function startDrag(kind, e){
+  if (kind === "thermo" && cur().thermo) return;
+  drag = { kind, x0:e.clientX, y0:e.clientY, moved:false, ghost:null, id:e.pointerId };
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+}
+function moveDrag(e){
+  if (!drag) return;
+  if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 6){
+    drag.moved = true;
+    drag.ghost = document.createElement("div");
+    drag.ghost.className = "ghost"; drag.ghost.innerHTML = GHOSTS[drag.kind];
+    document.body.appendChild(drag.ghost);
   }
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',init);
-  }else{
-    init();
+  if (drag.ghost) drag.ghost.style.transform = `translate(${e.clientX - 15}px, ${e.clientY - (drag.kind === "thermo" ? 130 : 86)}px)`;
+}
+function endDrag(e){
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (d.ghost) d.ghost.remove();
+  if (!d.moved){ useTool(d.kind, "beaker", null); return; }   // a press without dragging: use it on the beaker
+  /* drop where the pointer is (it holds the tool near its bottom end) */
+  const r = svg.getBoundingClientRect();
+  if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+  const pt = toSvg(e.clientX, e.clientY);
+  const zone = zoneAt(pt.x, pt.y);
+  if (!zone){ say(d.kind === "thermo" ? "Drop the thermometer into the beaker." : "Drop the strip into a liquid."); return; }
+  useTool(d.kind, zone, pt.x);
+}
+function useTool(kind, zone, x){
+  const p = cur(), g = GEO[G.part];
+  if (kind === "thermo"){
+    if (p.thermo) return;
+    p.thermo = true;
+    if (G.part === 2 && p.bath === "in") p.w = 0;   // the vinegar starts warming in the bath now
+  } else {
+    if (G.dip) return;
+    const key = liquidKey(zone);
+    const surf = zone === "bath" ? g.bathSurf : levelY(g, g.ml);
+    const xx = x == null ? (zone === "bath" ? g.bx0 + 24 : g.x0 + 30) : (zone === "bath" ? (x < g.x0 ? clamp(x, g.bx0 + 12, g.x0 - 12) : clamp(x, g.x1 + 12, g.bx1 - 12)) : clamp(x, g.x0 + 14, g.x1 - 14));
+    G.dip = { x:xx, surf, ph:SUBST[key].ph, key, t0:performance.now() };
+    setTimeout(() => {                                // the strip comes out: keep it, and show it beside the chart
+      G.strips[key] = SUBST[key].ph; G.fresh = key; G.dip = null;
+      showTab("ph"); refresh();
+    }, 1300);
   }
+  refresh();
+}
+el("toolThermo").addEventListener("pointerdown", e => startDrag("thermo", e));
+el("toolPaper").addEventListener("pointerdown", e => startDrag("paper", e));
+for (const id of ["toolThermo", "toolPaper"]){
+  el(id).addEventListener("pointermove", moveDrag);
+  el(id).addEventListener("pointerup", endDrag);
+  el(id).addEventListener("pointercancel", () => { if (drag && drag.ghost) drag.ghost.remove(); drag = null; });
+  el(id).addEventListener("keydown", e => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault(); useTool(id === "toolThermo" ? "thermo" : "paper", "beaker", null);
+  });
+}
+
+/* ==================================================================
+   STEPS, STATUS, TOOL CARDS
+   ================================================================== */
+let statusMsg = "", sayTimer = 0;
+function say(m){                                    // a short hint that clears itself
+  statusMsg = m; refreshStatus();
+  clearTimeout(sayTimer); sayTimer = setTimeout(() => { statusMsg = ""; refreshStatus(); }, 3500);
+}
+/* only touch the page when the markup changes, so buttons are not rebuilt under the pointer */
+function setHTML(node, h){ if (node._h !== h){ node.innerHTML = h; node._h = h; } }
+function stepsFor(p){
+  const s = G.strips, run = started(p) && p.phase !== "pouring", done = p.phase === "done";
+  if (p.n === 1) return [
+    ["Check the pH of the hydrogen peroxide with a pH strip.", s.h2o2 != null],
+    ["Put the thermometer in the beaker.", p.thermo],
+    ["Write down the starting temperature, then press Play to add the yeast.", run],
+    ["Read the temperature every 15 seconds for 2.5 minutes.", done],
+    ["Check the pH of the hydrogen peroxide and yeast.", s.h2o2y != null],
+  ];
+  return [
+    ["Check the pH of the hot water.", s.water != null],
+    ["Check the pH of the vinegar.", s.vin != null],
+    ["Put the thermometer in the vinegar. The hot water bath warms it.", p.thermo],
+    ["When it reads 32 to 38 °C, take it out of the water bath.", p.bath === "out", "bath"],
+    ["Write down the starting temperature, then press Play to add the baking soda.", run],
+    ["Read the temperature every 15 seconds for 2.5 minutes.", done],
+    ["Check the pH of the baking soda and vinegar.", s.vinbs != null],
+  ];
+}
+function refreshSteps(){
+  const list = stepsFor(cur());
+  const now = list.findIndex(x => !x[1]);
+  setHTML(el("steps"), list.map((x, i) => `<li class="${x[1] ? "ok" : i === now ? "now" : ""}"><span>${x[0]}</span></li>`).join(""));
+}
+function autoStatus(p){
+  if (p.phase === "pouring") return G.part === 1 ? "Adding the yeast..." : "Adding the baking soda...";
+  if (p.phase === "running") return `Reacting. The table saves the temperature every 15 seconds.`;
+  if (p.phase === "paused") return "Paused. Press Play to keep going.";
+  if (p.phase === "done") return `2.5 minutes are up. Check the pH of the mixture.`;
+  if (!p.thermo) return G.part === 1 ? "Drag the thermometer into the beaker." : "Drag the thermometer into the vinegar.";
+  if (G.part === 2 && p.bath === "in") return p.T < 32 ? "Warming... wait for 32 to 38 °C." : p.T <= 38 ? "Ready: take it out of the water bath now." : "Over 38 °C. Take it out of the water bath.";
+  return "Ready. Press Play to add the " + (G.part === 1 ? "yeast." : "baking soda.");
+}
+function refreshStatus(){
+  const p = cur(), st = el("status"), warn = p.phase === "setup" ? p.warn : "";
+  const t = statusMsg || warn || autoStatus(p);
+  if (st.textContent !== t) st.textContent = t;
+  st.classList.toggle("warn", !statusMsg && !!warn);
+}
+function refreshTools(){
+  const p = cur();
+  setHTML(el("thermoInfo"), p.thermo
+    ? `Start: <b>${p.Tstart == null ? "--" : f1(p.Tstart) + " °C"}</b><br>Now: <b>${f1(p.T)} °C</b>`
+    : (G.part === 1 ? "Drag it into the beaker." : "Drag it into the vinegar."));
+  el("toolThermo").classList.toggle("used", p.thermo);
+  const last = G.fresh ? SUBST[G.fresh].name : "";
+  el("paperInfo").textContent = last ? `Last strip: ${last}` : "Drag a strip into a liquid.";
+}
+
+/* ==================================================================
+   pH PAPER TAB
+   ================================================================== */
+el("phChart").innerHTML = PH_COLORS.map((c, i) => `<span class="chip"><i style="background:${c}"></i>${i}</span>`).join("");
+function stripSvg(ph){
+  return `<svg viewBox="0 0 26 96" aria-hidden="true"><rect x="5" y="2" width="16" height="92" rx="2" fill="#fff" stroke="#9aa4b0" stroke-width="1.2"/>`
+       + `<rect x="5" y="66" width="16" height="28" rx="2" fill="${ph == null ? "#f4f1e6" : PH_COLORS[ph]}"/></svg>`;
+}
+function refreshStrips(){
+  setHTML(el("strips"), ORDER.map(k => {
+    const ph = G.strips[k];
+    return `<div class="slot${G.fresh === k ? " fresh" : ""}"><span class="sname">${SUBST[k].name}</span>${stripSvg(ph)}`
+      + `<span class="snote">${ph == null ? "Not tested yet" : "Color: " + PH_NAMES[ph]}</span></div>`;
+  }).join(""));
+  const p = cur();
+  let b = `<span>Dip a strip in:</span><button class="btn" type="button" data-dip="beaker">${G.part === 1 ? "the beaker" : "the vinegar"}</button>`;
+  if (G.part === 2 && p.bath === "in") b += `<button class="btn" type="button" data-dip="bath">the hot water</button>`;
+  setHTML(el("dipBtns"), b);
+}
+el("dipBtns").addEventListener("click", e => {
+  const b = e.target.closest("[data-dip]");
+  if (b) useTool("paper", b.dataset.dip, null);
+});
+
+/* ==================================================================
+   TABLE + GRAPH
+   ================================================================== */
+function refreshTable(){
+  const p = cur();
+  el("tbody").innerHTML = MARKS.map((s, i) => {
+    const a = PARTS[1].data[i], b = PARTS[2].data[i];
+    const live = (p.phase === "running" || p.phase === "paused") && p.data[i] == null && (i === 0 || p.data[i - 1] != null);
+    return `<tr><td>${s / 60}</td><td class="${live && G.part === 1 ? "now" : ""}">${a == null ? "" : f1(a)}</td><td class="${live && G.part === 2 ? "now" : ""}">${b == null ? "" : f1(b)}</td></tr>`;
+  }).join("");
+}
+const PX0 = 66, PX1 = 488, PY0 = 34, PY1 = 316, YMIN = 15, YMAX = 50;
+const GX = t => PX0 + t / 150 * (PX1 - PX0), GY = v => PY1 - (clamp(v, YMIN, YMAX) - YMIN) / (YMAX - YMIN) * (PY1 - PY0);
+function drawGraph(){
+  let s = `<rect class="c-bg" x="${PX0}" y="${PY0}" width="${PX1 - PX0}" height="${PY1 - PY0}"/>`;
+  for (let v = YMIN; v <= YMAX; v += 2.5) s += `<line class="${v % 5 ? "c-minor" : "c-major"}" x1="${PX0}" y1="${GY(v)}" x2="${PX1}" y2="${GY(v)}"/>`;
+  for (let t = 15; t <= 150; t += 15) s += `<line class="${t % 30 ? "c-minor" : "c-major"}" x1="${GX(t)}" y1="${PY0}" x2="${GX(t)}" y2="${PY1}"/>`;
+  for (let v = YMIN; v <= YMAX; v += 5) s += `<text class="c-tick" x="${PX0 - 9}" y="${GY(v) + 5}" text-anchor="end">${v}</text>`;
+  for (let t = 0; t <= 150; t += 30) s += `<text class="c-tick" x="${GX(t)}" y="${PY1 + 22}" text-anchor="middle">${t / 60}</text>`;
+  s += `<path class="c-axis" d="M${PX0},${PY1} H${PX1 + 8}"/><path class="c-arrow" d="M${PX1 + 18},${PY1} l-11,-5.5 v11 z"/>`
+     + `<path class="c-axis" d="M${PX0},${PY1} V${PY0 - 10}"/><path class="c-arrow" d="M${PX0},${PY0 - 20} l-5.5,11 h11 z"/>`
+     + `<text class="c-title" x="${PX0 + 12}" y="${PY0 - 8}">Temperature (&#176;C)</text>`
+     + `<text class="c-title" x="${(PX0 + PX1) / 2}" y="${PY1 + 48}" text-anchor="middle">Time (min)</text>`;
+  [[PARTS[1], "1"], [PARTS[2], "2"]].forEach(([p, k]) => {
+    const pts = MARKS.map((t, i) => p.data[i] == null ? null : [GX(t), GY(p.data[i])]).filter(Boolean);
+    if (pts.length > 1) s += `<polyline class="c-l${k}" points="${pts.map(q => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" ")}"/>`;
+    for (const q of pts) s += `<circle class="c-d${k}" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="4"/>`;
+  });
+  el("graph").innerHTML = s;
+}
+const HEAD = ["Time (min)", "Hydrogen Peroxide & Yeast Temperature (C)", "Vinegar & Baking Soda Temperature (C)"];
+const rows = sep => [HEAD.join(sep), ...MARKS.map((s, i) => [s / 60, PARTS[1].data[i] == null ? "" : f1(PARTS[1].data[i]), PARTS[2].data[i] == null ? "" : f1(PARTS[2].data[i])].join(sep))];
+el("copyBtn").onclick = async () => {
+  const text = rows("\t").join("\n");
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {}
+  if (!ok){
+    const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); try { ok = document.execCommand("copy"); } catch (e) {} ta.remove();
+  }
+  el("msg").textContent = ok ? "Copied. Paste it into a spreadsheet." : "Could not copy. Try Save as a CSV file.";
+};
+el("saveBtn").onclick = () => {
+  const blob = new Blob([rows(",").join("\r\n") + "\r\n"], { type:"text/csv" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "reaction-temperatures.csv";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  el("msg").textContent = "Saved. Look in your Downloads folder.";
+};
+
+/* ==================================================================
+   CONTROLS
+   ================================================================== */
+function showTab(id){
+  G.tab = id;
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === id)));
+  ["ph", "table", "graph"].forEach(k => { el("p-" + k).hidden = k !== id; });
+}
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { showTab(b.dataset.tab); refresh(); }));
+const EQ = {
+  1:`2H<sub>2</sub>O<sub>2</sub> &rarr; 2H<sub>2</sub>O + O<sub>2</sub><small>Catalyst: catalase in the yeast</small>`,
+  2:`NaHCO<sub>3</sub> + CH<sub>3</sub>COOH &rarr;<br>CH<sub>3</sub>COONa + H<sub>2</sub>O + CO<sub>2</sub><small>baking soda + vinegar</small>`,
+};
+function sync(){
+  const p = cur();
+  el("playBtn").disabled = !((p.phase === "setup" && p.thermo && (G.part === 1 || p.bath === "out")) || p.phase === "paused");
+  el("pauseBtn").disabled = !(p.phase === "running" || p.phase === "pouring");
+  el("part").disabled = p.phase === "pouring" || p.phase === "running" || p.phase === "paused";
+  el("bathBtn").hidden = !(G.part === 2 && p.bath === "in" && p.thermo);
+  el("eqbox").hidden = !G.eq; el("eqbox").innerHTML = EQ[G.part];
+  el("swStart").textContent = G.sw.on ? "Stop" : "Start";
+}
+function refresh(){
+  drawDyn(); refreshSteps(); refreshTools(); refreshStrips(); refreshStatus(); sync();
+  el("swTime").textContent = swText();
+  if (G.tab === "table") refreshTable();
+  if (G.tab === "graph") drawGraph();
+}
+function swText(){
+  const cs = Math.floor(G.sw.t * 100 + 1e-6), m = Math.floor(cs / 6000), s = Math.floor(cs / 100) % 60, c = cs % 100;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(c).padStart(2, "0")}`;
+}
+function play(){
+  const p = cur();
+  if (p.phase === "paused"){ p.phase = "running"; statusMsg = ""; refresh(); return; }
+  if (el("playBtn").disabled) return;
+  p.phase = "pouring"; p.pour = 0; p.pourStart = performance.now(); statusMsg = "";
+  refresh();
+}
+function pause(){
+  const p = cur();
+  if (p.phase === "running"){ p.phase = "paused"; refresh(); }     // time stops, so the stopwatch stops with it
+}
+function reset(){
+  PARTS[G.part] = freshPart(G.part);
+  if (G.part === 1){ delete G.strips.h2o2; delete G.strips.h2o2y; }
+  else { delete G.strips.vin; delete G.strips.vinbs; delete G.strips.water; }
+  if (!G.strips[G.fresh]) G.fresh = "";
+  G.sw = { t:0, on:false }; statusMsg = "";
+  buildStatic(); refresh();
+}
+el("playBtn").onclick = play;
+el("pauseBtn").onclick = pause;
+el("resetBtn").onclick = reset;
+el("bathBtn").onclick = () => {
+  const p = cur();
+  if (G.part !== 2 || p.bath !== "in") return;
+  p.bath = "out";
+  p.warn = (p.T < 32 || p.T > 38) ? `The lab says 32 to 38 °C. You took it out at ${f1(p.T)} °C. You can go on, or press Reset to try again.` : "";
+  refresh();
+};
+el("part").addEventListener("change", e => {
+  G.part = +e.target.value; G.sw = { t:0, on:false }; statusMsg = "";
+  buildStatic(); refresh();
+});
+el("optLabels").addEventListener("change", e => { G.labels = e.target.checked; refresh(); });
+el("optEq").addEventListener("change", e => { G.eq = e.target.checked; refresh(); });
+document.querySelectorAll('input[name="speed"]').forEach(r => r.addEventListener("change", () => { if (r.checked) G.speed = +r.value; }));
+el("swStart").onclick = () => { G.sw.on = !G.sw.on; refresh(); };
+el("swReset").onclick = () => { G.sw.t = 0; refresh(); };
+document.addEventListener("keydown", e => {
+  if (e.code !== "Space" || e.target !== document.body) return;
+  e.preventDefault();
+  const p = cur(); if (p.phase === "running") pause(); else play();
+});
+
+/* ==================================================================
+   THE CLOCK
+   ================================================================== */
+let lastT = 0;
+function tick(now){
+  const dtReal = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0;
+  lastT = now;
+  const p = cur(), dt = dtReal * G.speed;
+  let anim = !!G.dip;
+  if (p.phase !== "paused"){
+    G.clock += dtReal;
+    if (G.sw.on){ G.sw.t += dt; }
+    if (p.phase === "pouring"){
+      anim = true;
+      p.pour = clamp((now - p.pourStart) / POUR_MS, 0, 1);
+      if (p.pour >= 1){                               // the solid is in: the reaction clock starts at 0
+        p.phase = "running"; p.t = 0; p.Tstart = p.T; p.data[0] = p.T;
+        G.sw = { t:0, on:true };
+      }
+    } else if (p.phase === "running"){
+      anim = true;
+      p.t = Math.min(150, p.t + dt);
+      p.T = tempAt(p, p.t);
+      MARKS.forEach((m, i) => { if (p.data[i] == null && p.t >= m - 1e-9) p.data[i] = tempAt(p, m); });
+      if (p.t >= 150){ p.phase = "done"; G.sw.on = false; G.sw.t = 150; }
+    } else if (p.phase === "setup" && G.part === 2){
+      if (p.bath === "in" && p.thermo){ p.w += dt; p.T = p.Tb - (p.Tb - p.T0) * Math.exp(-p.w / 45); anim = true; }
+      else if (p.bath === "out"){ p.T += (p.T0 - p.T) * dt / 900; anim = true; }
+      else anim = true;                               // the steam keeps moving
+    }
+    if (G.sw.on) anim = true;
+  }
+  if (anim) refresh();
+  requestAnimationFrame(tick);
+}
+
+/* ------------------------------------------------ light / dark toggle */
+const themeBtn = el("themeBtn");
+const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+const SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+const inFrame = window.parent !== window;
+const isDark = () => {
+  const t = document.documentElement.getAttribute("data-theme");
+  if (t) return t === "dark";
+  return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+};
+const paintToggle = () => {
+  const d = isDark();
+  themeBtn.innerHTML = d ? SUN : MOON;
+  themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+};
+const applyTheme = t => { document.documentElement.setAttribute("data-theme", t); paintToggle(); };
+themeBtn.addEventListener("click", () => {
+  const next = isDark() ? "light" : "dark";
+  applyTheme(next);
+  try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+  /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+  if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+});
+/* the page around this sim switched its light / dark mode: follow it (not saved, so the sim on its own keeps its own choice) */
+window.addEventListener("message", e => {
+  if (!inFrame || e.source !== window.parent) return;
+  const t = e.data && e.data.simTheme;
+  if ((t === "light" || t === "dark") && t !== (isDark() ? "dark" : "light")) applyTheme(t);
+});
+if (window.matchMedia){
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const onSys = () => { if (!document.documentElement.getAttribute("data-theme")) paintToggle(); };
+  if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+}
+
+/* ==================================================================
+   BOOT
+   ================================================================== */
+paintToggle();
+buildStatic();
+refresh();
+requestAnimationFrame(tick);
 })();
 </script>
-
 <script>
 /* Shown inside the textbook's Sims page: tell that page which sim is open, so its address can name the sim. */
 (function(){
