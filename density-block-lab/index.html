@@ -39,29 +39,81 @@
   --steel:#C9CDD1; --lcd:#7FB6D8;
   --wood:#E3C48D; --wood-d:#B08F4D;
   --epoxy:#22251F; --tape:#E8B93C;
+  --head-bg:#1B1D1C; --head-ink:#F4F5F0; --on-blue:#fff; --on-ink:#F4F5F0;
+  --ro-bg:#000; --ro-line:#35392F; --ro-k:#8C9284; --ro-v:#DDE3D2;
+  --field:#EFF1E9; --input-bg:#fff; --card:#fff; --row-line:#EDEFE7; --row-new:#FCF3D9;
+  --blank:#B8BDB2; --sw-line:rgba(0,0,0,.35); --notes-ink:#33362F;
+  /* canvas colors (read by the script) */
+  --c-wall1:#F1F2EC; --c-wall2:#E4E7DD; --c-label:#1B1D1C; --c-unit:#3A2E17;
+  --c-arrow:#1552B8; --c-arrow-dash:rgba(21,82,184,.55); --c-label-bg:rgba(251,251,247,.93);
+  --c-plot:#FDFDF9; --c-grid:#E4E8DC; --c-grid-2:#CCD2C4; --c-guide:rgba(21,82,184,.22);
+  --c-axis:#1B1D1C; --c-tick:#5A5F58; --c-empty:#8A9082;
   --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
   padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
 }
+body{margin:0;background:#DDE0D6}
+/* dark colors: the system's dark setting unless light is chosen, or dark chosen on purpose */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){color-scheme:dark}
+  :root:not([data-theme="light"]) body{background:#121412}
+  :root:not([data-theme="light"]) .cvlab{
+    --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+    --ink:#EEF0EA; --ink-2:#B6BAB0;
+    --blue:#3F7FE6; --blue-d:#2A63C2; --tape:#F0C64A;
+    --head-bg:#0A0B0A; --head-ink:#F4F5F0; --on-blue:#fff; --on-ink:#1C1F1C;
+    --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
+    --field:#252925; --input-bg:#252925; --card:#232723; --row-line:#2A2F29; --row-new:#3A3320;
+    --blank:#7A8076; --sw-line:rgba(235,240,230,.45); --notes-ink:#C9CCC3;
+    --c-wall1:#20241F; --c-wall2:#1A1D19; --c-label:#EEF0EA; --c-unit:#E3C48D;
+    --c-arrow:#7FB0FF; --c-arrow-dash:rgba(127,176,255,.6); --c-label-bg:rgba(28,31,28,.92);
+    --c-plot:#171A17; --c-grid:#262B25; --c-grid-2:#363D35; --c-guide:rgba(127,176,255,.25);
+    --c-axis:#C9CEC2; --c-tick:#A9AFA4; --c-empty:#8D9288;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{color-scheme:dark}
+:root[data-theme="dark"] body{background:#121412}
+:root[data-theme="dark"] .cvlab{
+  --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+  --ink:#EEF0EA; --ink-2:#B6BAB0;
+  --blue:#3F7FE6; --blue-d:#2A63C2; --tape:#F0C64A;
+  --head-bg:#0A0B0A; --head-ink:#F4F5F0; --on-blue:#fff; --on-ink:#1C1F1C;
+  --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
+  --field:#252925; --input-bg:#252925; --card:#232723; --row-line:#2A2F29; --row-new:#3A3320;
+  --blank:#7A8076; --sw-line:rgba(235,240,230,.45); --notes-ink:#C9CCC3;
+  --c-wall1:#20241F; --c-wall2:#1A1D19; --c-label:#EEF0EA; --c-unit:#E3C48D;
+  --c-arrow:#7FB0FF; --c-arrow-dash:rgba(127,176,255,.6); --c-label-bg:rgba(28,31,28,.92);
+  --c-plot:#171A17; --c-grid:#262B25; --c-grid-2:#363D35; --c-guide:rgba(127,176,255,.25);
+  --c-axis:#C9CEC2; --c-tick:#A9AFA4; --c-empty:#8D9288;
+  color-scheme:dark;
+}
 .cvlab *{box-sizing:border-box}
 .cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
 .cvlab p{margin:0}
 .cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+.cvlab-head{background:var(--head-bg);color:var(--head-ink);border-radius:5px 5px 0 0;padding:12px 16px;
   display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.cvlab-title{flex:1 1 auto}
 .cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--tape);margin-bottom:2px}
 .cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
 .cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
-.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:92px}
+.cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:3px;padding:5px 10px;min-width:92px}
 .cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
-  text-transform:uppercase;color:#8C9284}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+  text-transform:uppercase;color:var(--ro-k)}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:var(--ro-v);
   font-variant-numeric:tabular-nums;white-space:nowrap}
 .cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
+.cvlab-themebtn{
+  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
+  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
+}
+.cvlab-themebtn:hover{border-color:var(--tape)}
+.cvlab-themebtn svg{width:21px;height:21px}
 
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 5px 5px;padding:10px 10px 12px}
@@ -86,8 +138,8 @@
 .cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
 .cvlab-btn:active:not(:disabled){transform:translateY(1px)}
 .cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
-.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:#fff;min-width:150px}
-.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:#fff}
+.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:var(--on-blue);min-width:150px}
+.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:var(--on-blue)}
 .cvlab-btn-sm{font-size:15px;padding:5px 10px;border-width:1px}
 
 .cvlab-grid{display:grid;gap:12px;margin-top:12px;
@@ -107,20 +159,20 @@
   display:flex;align-items:center;gap:6px;background:var(--paper);color:var(--ink);
   font-family:var(--font-m);font-size:13px;font-weight:700;text-align:left;
   transition:background .12s ease,color .12s ease}
-.cvlab-mat:hover{background:#EFF1E9}
+.cvlab-mat:hover{background:var(--field)}
 .cvlab-mat.is-on{color:#fff;border-color:var(--ink)}
 .cvlab-mat i{display:block;width:11px;height:11px;border-radius:2px;flex:none;
-  border:1px solid rgba(0,0,0,.35)}
+  border:1px solid var(--sw-line)}
 .cvlab-mat b{margin-left:auto;font-weight:700;font-size:11.5px;opacity:.75}
 
 .cvlab-counts{display:flex;gap:5px}
 .cvlab-cbtn{flex:1;cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:3px;
   padding:9px 2px;font-family:var(--font-m);font-size:15px;font-weight:700;color:var(--ink);
   transition:background .12s ease,color .12s ease}
-.cvlab-cbtn:hover{background:#EFF1E9}
-.cvlab-cbtn.is-on{background:var(--ink);color:#F4F5F0}
+.cvlab-cbtn:hover{background:var(--field)}
+.cvlab-cbtn.is-on{background:var(--ink);color:var(--on-ink)}
 
-.cvlab-live{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:#EFF1E9;
+.cvlab-live{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:var(--field);
   border-radius:3px;padding:7px 9px;line-height:1.7}
 .cvlab-live b{color:var(--ink)}
 
@@ -128,7 +180,7 @@
 .cvlab-field span{font-family:var(--font-m);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--ink-2)}
 .cvlab select{font-family:var(--font-b);font-size:15.5px;padding:6px 8px;border:1px solid var(--ink);
-  border-radius:3px;background:#fff;color:var(--ink);width:100%}
+  border-radius:3px;background:var(--input-bg);color:var(--ink);width:100%}
 .cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
 .cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
 .cvlab-opts input{margin:3px 0 0;accent-color:var(--blue);flex:none}
@@ -137,42 +189,52 @@
   text-align:center;padding:5px;border-radius:3px 3px 0 0;letter-spacing:.06em}
 .cvlab-tablewrap{overflow:auto;border:1px solid var(--rule);border-top:0;border-radius:0 0 3px 3px}
 .cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13px}
-.cvlab thead th{background:#EFF1E9;font-size:10.5px;letter-spacing:.02em;font-weight:700;
+.cvlab thead th{background:var(--field);font-size:10.5px;letter-spacing:.02em;font-weight:700;
   padding:5px 3px;text-align:right;border-bottom:1px solid var(--rule);color:var(--ink-2);
   white-space:nowrap}
 .cvlab thead th:first-child{text-align:left}
 .cvlab tbody td{padding:4px 3px;text-align:right;font-variant-numeric:tabular-nums;
-  border-bottom:1px solid #EDEFE7;white-space:nowrap}
+  border-bottom:1px solid var(--row-line);white-space:nowrap}
 .cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
 .cvlab tbody tr:last-child td{border-bottom:0}
-.cvlab tbody tr.is-new td{background:#FCF3D9}
-.cvlab tbody td.blank{color:#B8BDB2}
+.cvlab tbody tr.is-new td{background:var(--row-new)}
+.cvlab tbody td.blank{color:var(--blank)}
 .cvlab-mean{font-family:var(--font-m);font-size:14px;color:var(--ink-2)}
 .cvlab-mean b{color:var(--ink);font-size:16px}
 
 #cvlab-db{height:clamp(220px,26vw,280px)}
 .cvlab-key{display:flex;flex-wrap:wrap;gap:5px}
 .cvlab-chip{font-family:var(--font-m);font-size:12px;border:1px solid var(--rule);border-radius:3px;
-  padding:3px 5px;display:flex;align-items:center;gap:4px;background:#fff}
+  padding:3px 5px;display:flex;align-items:center;gap:4px;background:var(--card)}
 .cvlab-chip i{display:block;width:8px;height:8px;border-radius:50%;flex:none}
 .cvlab-chip b{font-weight:700}
 
 .cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
   padding:10px 14px}
 .cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:var(--notes-ink)}
 .cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
 .cvlab-notes li{margin:3px 0}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#DDE0D6">
+<body>
 
 <div class="cvlab" id="cvlab">
 
   <header class="cvlab-head">
-    <div>
+    <div class="cvlab-title">
       <span class="cvlab-eyebrow">Matter lab &middot; density</span>
       <h1>Density blocks &mdash; mass, volume, density</h1>
     </div>
@@ -182,6 +244,7 @@
       <div class="cvlab-ro"><span class="cvlab-ro-k">Balance</span><span class="cvlab-ro-v" id="cvlab-ro-mass">138.00 g</span></div>
       <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Density</span><span class="cvlab-ro-v" id="cvlab-ro-den">8.83</span></div>
     </div>
+    <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="cvlab-bench">
@@ -318,6 +381,23 @@
   var elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote"), elKey = $("cvlab-key");
   var roMat = $("cvlab-ro-mat"), roN = $("cvlab-ro-n"),
       roMass = $("cvlab-ro-mass"), roDen = $("cvlab-ro-den");
+
+  /* ------------------------------------------------ theme colors (read from CSS tokens) */
+  var P = {};
+  /* each material's graph color, a little brighter for the dark theme */
+  var HEAD_DARK = { brass:"#7E9BFF", aluminum:"#FF6B5E", wood:"#FFA54D", iron:"#4CC46C",
+                    nylon:"#C77BDB", copper:"#4FC3EE", pvc:"#FF6E99", acrylic:"#A3D94F" };
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute("data-theme");
+    return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function readPalette(){
+    var cs = getComputedStyle($("cvlab"));
+    ["c-wall1","c-wall2","c-label","c-unit","c-arrow","c-arrow-dash","c-label-bg","c-plot","c-grid","c-grid-2",
+     "c-guide","c-axis","c-tick","c-empty"].forEach(function(k){ P[k] = cs.getPropertyValue("--"+k).trim(); });
+  }
+  readPalette();
+  function headOf(M){ return isDarkNow() ? HEAD_DARK[M.key] : M.head; }
 
   /* ------------------------------------------------ helpers */
   function mat(){ return MATS[mi]; }
@@ -536,7 +616,7 @@
     for(var i=0;i<MATS.length;i++){
       var md = meanDensity(MATS[i].key);
       if(md === null) continue;
-      html += '<span class="cvlab-chip"><i style="background:' + MATS[i].head + '"></i>'
+      html += '<span class="cvlab-chip"><i style="background:' + headOf(MATS[i]) + '"></i>'
             + MATS[i].name + (elHide.checked ? "" : " <b>" + fmt(md) + "</b>") + '</span>';
     }
     elKey.innerHTML = html;
@@ -561,7 +641,7 @@
     var ctx = sctx;
     ctx.clearRect(0,0,w,h);
     var wall = ctx.createLinearGradient(0,0,0,G.baseY);
-    wall.addColorStop(0,"#F1F2EC"); wall.addColorStop(1,"#E4E7DD");
+    wall.addColorStop(0,P["c-wall1"]); wall.addColorStop(1,P["c-wall2"]);
     ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.baseY);
     var top = ctx.createLinearGradient(0,G.baseY,0,h);
     top.addColorStop(0,"#33372F"); top.addColorStop(1,"#1D201B");
@@ -673,7 +753,7 @@
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var c2=0; c2<=20; c2+=5) ctx.fillText(String(c2), x1-1.5, Y(c2));
     if(!G.compact){
-      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillStyle = P["c-unit"]; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
       ctx.fillText("cm", (x0+x1)/2, Y(20) - 2);
     }
   }
@@ -710,7 +790,7 @@
     }
     /* the label on the front of the stack */
     if(!G.compact && n >= 1){
-      ctx.fillStyle = "#1B1D1C";
+      ctx.fillStyle = P["c-label"];
       ctx.font = "700 " + Math.max(6.5, 0.72*k).toFixed(1) + "px " + monoStack();
       ctx.textAlign = "center"; ctx.textBaseline = "top";
       ctx.fillText(M.name.toUpperCase(), cx, Y(G.panY + EDGE*n) - 1.6*k);
@@ -724,13 +804,13 @@
     var yb = Y(G.panY), yt = Y(G.panY + EDGE*n);
     /* carry the base and the top across to the ruler, so the height is a difference */
     ctx.save();
-    ctx.setLineDash([3,3]); ctx.strokeStyle = "rgba(21,82,184,.55)"; ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]); ctx.strokeStyle = P["c-arrow-dash"]; ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(X(12.8), yb); ctx.lineTo(X(19.0), yb);
     ctx.moveTo(X(12.8), yt); ctx.lineTo(X(19.0), yt);
     ctx.stroke();
     ctx.restore();
-    ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1.4;
+    ctx.strokeStyle = P["c-arrow"]; ctx.lineWidth = 1.4;
     ctx.beginPath();
     ctx.moveTo(ax, yb); ctx.lineTo(ax, yt);
     ctx.moveTo(ax-3, yb-5); ctx.lineTo(ax, yb); ctx.lineTo(ax+3, yb-5);
@@ -742,9 +822,9 @@
     ctx.font = "700 " + Math.max(7, 0.8*k).toFixed(1) + "px " + monoStack();
     var tw = ctx.measureText(txt).width;
     var ly = (yb+yt)/2;
-    ctx.fillStyle = "rgba(251,251,247,.93)";
+    ctx.fillStyle = P["c-label-bg"];
     roundRect(ctx, ax+5, ly-7.5, tw+7, 15, 2); ctx.fill();
-    ctx.fillStyle = "#1552B8"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillStyle = P["c-arrow"]; ctx.textAlign = "left"; ctx.textBaseline = "middle";
     ctx.fillText(txt, ax+8.5, ly);
   }
 
@@ -766,42 +846,42 @@
     var PY = function(m){ return mT + ph - (m/yMax)*ph; };
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var m1=0; m1<=yMax+1e-9; m1+=yStep/2){ var y=Math.round(PY(m1))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
     for(var v1=0; v1<=xMax; v1+=5){ var x=Math.round(PX(v1))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
     ctx.stroke();
     /* the four volumes a stack can actually have */
-    ctx.strokeStyle = "rgba(21,82,184,.22)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = P["c-guide"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var c=1;c<=4;c++){ var xv=Math.round(PX(V1*c))+0.5; ctx.moveTo(xv,mT); ctx.lineTo(xv,mT+ph); }
     ctx.stroke();
-    ctx.strokeStyle = "#CCD2C4";
+    ctx.strokeStyle = P["c-grid-2"];
     ctx.beginPath();
     for(var m2=0; m2<=yMax+1e-9; m2+=yStep){ var y2=Math.round(PY(m2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
     for(var v2=0; v2<=xMax; v2+=10){ var x2=Math.round(PX(v2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
     ctx.stroke();
 
-    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var m3=0; m3<=yMax+1e-9; m3+=yStep) ctx.fillText(String(Math.round(m3)), mL-6, PY(m3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var v3=0; v3<=xMax; v3+=10) ctx.fillText(String(v3), PX(v3), mT+ph+6);
     ctx.save();
     ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-axis"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("MASS (g)", 0, 0);
     ctx.restore();
-    ctx.fillStyle = "#1B1D1C";
+    ctx.fillStyle = P["c-axis"];
     ctx.fillText("VOLUME (cm\u00B3)", mL+pw/2, mT+ph+19);
 
     if(!anyData()){
-      ctx.fillStyle = "#8A9082";
+      ctx.fillStyle = P["c-empty"];
       ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Record a measurement and its point lands here.", mL+pw/2, mT+ph/2);
@@ -819,19 +899,19 @@
         for(var a=0;a<rs.length;a++){ var vv=volOf(rs[a]); sxy += vv*rs[a].mass; sxx += vv*vv; }
         var slope = sxx>0 ? sxy/sxx : 0;
         var vEnd = Math.min(xMax, yMax/Math.max(slope,1e-9));
-        ctx.strokeStyle = M.head; ctx.lineWidth = sel ? 2.2 : 1.4;
+        ctx.strokeStyle = headOf(M); ctx.lineWidth = sel ? 2.2 : 1.4;
         ctx.beginPath(); ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(vEnd), PY(slope*vEnd)); ctx.stroke();
       }
       for(var b=0;b<rs.length;b++){
         var cx = PX(volOf(rs[b])), cy = PY(Math.min(yMax, rs[b].mass));
-        ctx.fillStyle = M.head;
+        ctx.fillStyle = headOf(M);
         ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.6 : 3.4, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.4;
+        ctx.strokeStyle = P["c-plot"]; ctx.lineWidth = 1.4;
         ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.6 : 3.4, 0, Math.PI*2); ctx.stroke();
       }
       if(sel){
         var last = rs[rs.length-1];
-        ctx.fillStyle = M.head;
+        ctx.fillStyle = headOf(M);
         ctx.font = "700 10.5px " + monoStack();
         ctx.textAlign = "right"; ctx.textBaseline = "bottom";
         ctx.fillText(M.name, Math.min(PX(volOf(last)), mL+pw-4),
@@ -859,21 +939,21 @@
     var PY = function(d){ return mT + ph - (d/yMax)*ph; };
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var d1=0; d1<=yMax+1e-9; d1+=yStep/2){ var y=Math.round(PY(d1))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
     ctx.stroke();
-    ctx.strokeStyle = "#CCD2C4";
+    ctx.strokeStyle = P["c-grid-2"];
     ctx.beginPath();
     for(var d2=0; d2<=yMax+1e-9; d2+=yStep){ var y2=Math.round(PY(d2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
     for(var c=1;c<=4;c++){ var x2=Math.round(PX(c))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
     ctx.stroke();
 
-    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var d3=0; d3<=yMax+1e-9; d3+=yStep){
       ctx.fillText(yMax >= 4 ? String(Math.round(d3)) : d3.toFixed(1), mL-6, PY(d3));
@@ -882,22 +962,22 @@
     for(var c2=1;c2<=4;c2++) ctx.fillText(String(c2), PX(c2), mT+ph+6);
     ctx.save();
     ctx.translate(11, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-axis"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("DENSITY (g/cm\u00B3)", 0, 0);
     ctx.restore();
-    ctx.fillStyle = "#1B1D1C";
+    ctx.fillStyle = P["c-axis"];
     ctx.fillText("NUMBER OF BLOCKS", mL+pw/2, mT+ph+19);
 
     if(hide){
-      ctx.fillStyle = "#8A9082";
+      ctx.fillStyle = P["c-empty"];
       ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Work the densities out first, then untick the box.", mL+pw/2, mT+ph/2);
       return;
     }
     if(!anyData()){
-      ctx.fillStyle = "#8A9082";
+      ctx.fillStyle = P["c-empty"];
       ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Flat lines will appear here.", mL+pw/2, mT+ph/2);
@@ -909,7 +989,7 @@
       if(!rs.length) continue;
       var sel = (q === mi);
       ctx.globalAlpha = sel ? 1 : 0.34;
-      ctx.strokeStyle = M.head; ctx.lineWidth = sel ? 2.2 : 1.4;
+      ctx.strokeStyle = headOf(M); ctx.lineWidth = sel ? 2.2 : 1.4;
       ctx.beginPath();
       for(var a=0;a<rs.length;a++){
         var qx = PX(rs[a].n), qy = PY(Math.min(yMax, denOf(rs[a])));
@@ -918,14 +998,14 @@
       ctx.stroke();
       for(var b=0;b<rs.length;b++){
         var cx = PX(rs[b].n), cy = PY(Math.min(yMax, denOf(rs[b])));
-        ctx.fillStyle = M.head;
+        ctx.fillStyle = headOf(M);
         ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.4 : 3.2, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.3;
+        ctx.strokeStyle = P["c-plot"]; ctx.lineWidth = 1.3;
         ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.4 : 3.2, 0, Math.PI*2); ctx.stroke();
       }
       if(sel){
         var lastR = rs[rs.length-1];
-        ctx.fillStyle = M.head;
+        ctx.fillStyle = headOf(M);
         ctx.font = "700 10px " + monoStack();
         ctx.textAlign = "left"; ctx.textBaseline = "middle";
         ctx.fillText(M.name, Math.min(PX(lastR.n)+8, w-52), PY(Math.min(yMax, denOf(lastR))));
@@ -999,6 +1079,38 @@
   if(document.fonts && document.fonts.ready){
     document.fonts.ready.then(function(){ dirty = true; drawScene(); drawMV(); drawDB(); });
   }
+
+  /* ------------------------------------------------ light / dark toggle */
+  var themeBtn = $("cvlab-theme");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.innerHTML = d ? SUN : MOON;
+    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+  }
+  function repaint(){ readPalette(); paintToggle(); refreshAll(); }
+  function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
+  themeBtn.addEventListener("click", function(){
+    var next = isDarkNow() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+  });
+  /* the page around this sim switched its light / dark mode: follow it (not saved) */
+  window.addEventListener("message", function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var th = e.data && e.data.simTheme;
+    if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
+    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
   buildMats();
   buildCounts();

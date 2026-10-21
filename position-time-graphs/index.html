@@ -14,8 +14,9 @@
        <iframe src="motion-sensor-lab.html"
                style="width:100%;height:1200px;border:0" loading="lazy"
                title="Motion sensor position vs time simulation"></iframe>
-  2) Or paste the style block, the cvlab div, and the script block into an
-     existing page. Every CSS rule is scoped under .cvlab.
+  2) Or paste the style block, the theme script, the cvlab div, and the script
+     block into an existing page. Layout rules are scoped under .cvlab; the page
+     color and the light/dark choice live on :root.
 
   THE SETUP
      A motion sensor sits at the edge of the lab station, wired to a Chromebook,
@@ -48,6 +49,19 @@
   --wood-d:#B08F4D;
   --tape:#E8B93C;
   --sonar:#2E86C8;
+  --warn:#A6462F;
+  --head-bg:#1B1D1C; --head-ink:#F4F5F0;
+  --ro-bg:#000; --ro-line:#35392F; --ro-k:#8C9284; --ro-v:#DDE3D2;
+  --field:#fff; --notes-ink:#33362F;
+  /* canvas colors (read by the script) */
+  --c-wall1:#F4F5F0; --c-wall2:#E4E7DD; --c-floor:#D3D7CB; --c-floorline:#B9BEB1;
+  --c-caption:#8A8F82; --c-kick:#2A2D27; --c-outline:rgba(0,0,0,0); --c-stick-rim:rgba(0,0,0,0);
+  --c-beam:#1552B8; --c-beam-warn:#A6462F; --c-sonar:#2E86C8;
+  --c-halo:rgba(251,251,247,.80); --c-label:rgba(251,251,247,.93);
+  --c-shadow:rgba(27,29,28,.20); --c-figure:#5A5F58;
+  --c-plot:#FDFDF9; --c-screen:#F7FBF4; --c-grid:#E4E8DC; --c-screen-grid:#D5E2CE; --c-grid-2:#CCD2C4;
+  --c-axis:#1B1D1C; --c-tick:#5A5F58; --c-empty:#8A9082; --c-blind:rgba(166,70,47,.10);
+  --c-run:#1552B8; --c-ghost:#A9AFA2; --c-target:#B0742A; --c-sweep:rgba(21,82,184,.35);
   --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-m:"Poppins",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -62,6 +76,49 @@
   line-height:1.45;
   -webkit-font-smoothing:antialiased;
 }
+/* page around the sim; dark sets: system dark unless light is chosen, or dark chosen */
+:root{--page:#DDE0D6;color-scheme:light}
+body{margin:0;background:var(--page)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--page:#121412;color-scheme:dark}
+  :root:not([data-theme="light"]) .cvlab{
+    --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+    --ink:#EEF0EA; --ink-2:#B6BAB0;
+    --blue:#3F7FE6; --blue-d:#2A63C2;
+    --tape:#F0C64A; --sonar:#5FB0EE; --warn:#FF7A62;
+    --head-bg:#0A0B0A; --head-ink:#F4F5F0;
+    --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
+    --field:#171A17; --notes-ink:#C9CCC3;
+    --c-wall1:#1F231F; --c-wall2:#191C19; --c-floor:#2A2E29; --c-floorline:#3C423A;
+    --c-caption:#A9AFA4; --c-kick:#0C0D0C; --c-outline:rgba(235,240,230,.55); --c-stick-rim:#E3C48D;
+    --c-beam:#7FB0FF; --c-beam-warn:#FF7A62; --c-sonar:#5FB0EE;
+    --c-halo:rgba(23,26,23,.80); --c-label:rgba(28,31,28,.93);
+    --c-shadow:rgba(0,0,0,.45); --c-figure:#8D9288;
+    --c-plot:#171A17; --c-screen:#171A17; --c-grid:#262B25; --c-screen-grid:#2E352D; --c-grid-2:#363D35;
+    --c-axis:#C9CEC2; --c-tick:#A9AFA4; --c-empty:#8D9288; --c-blind:rgba(255,122,98,.14);
+    --c-run:#6FA3FF; --c-ghost:#868D82; --c-target:#F0A85A; --c-sweep:rgba(111,163,255,.40);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{--page:#121412;color-scheme:dark}
+:root[data-theme="dark"] .cvlab{
+  --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+  --ink:#EEF0EA; --ink-2:#B6BAB0;
+  --blue:#3F7FE6; --blue-d:#2A63C2;
+  --tape:#F0C64A; --sonar:#5FB0EE; --warn:#FF7A62;
+  --head-bg:#0A0B0A; --head-ink:#F4F5F0;
+  --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
+  --field:#171A17; --notes-ink:#C9CCC3;
+  --c-wall1:#1F231F; --c-wall2:#191C19; --c-floor:#2A2E29; --c-floorline:#3C423A;
+  --c-caption:#A9AFA4; --c-kick:#0C0D0C; --c-outline:rgba(235,240,230,.55); --c-stick-rim:#E3C48D;
+  --c-beam:#7FB0FF; --c-beam-warn:#FF7A62; --c-sonar:#5FB0EE;
+  --c-halo:rgba(23,26,23,.80); --c-label:rgba(28,31,28,.93);
+  --c-shadow:rgba(0,0,0,.45); --c-figure:#8D9288;
+  --c-plot:#171A17; --c-screen:#171A17; --c-grid:#262B25; --c-screen-grid:#2E352D; --c-grid-2:#363D35;
+  --c-axis:#C9CEC2; --c-tick:#A9AFA4; --c-empty:#8D9288; --c-blind:rgba(255,122,98,.14);
+  --c-run:#6FA3FF; --c-ghost:#868D82; --c-target:#F0A85A; --c-sweep:rgba(111,163,255,.40);
+  color-scheme:dark;
+}
 .cvlab *{box-sizing:border-box}
 .cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
 .cvlab p{margin:0}
@@ -69,7 +126,7 @@
 
 /* ---------- header faceplate ------------------------------------------ */
 .cvlab-head{
-  background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+  background:var(--head-bg);color:var(--head-ink);border-radius:5px 5px 0 0;padding:12px 16px;
   display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;
 }
 .cvlab-eyebrow{
@@ -78,17 +135,24 @@
 }
 .cvlab-head h1{font-size:clamp(21px,3.2vw,31px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
 .cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
-.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:96px}
+.cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:3px;padding:5px 10px;min-width:96px}
 .cvlab-ro-k{
   display:block;font-family:var(--font-m);font-size:9px;letter-spacing:.14em;
-  text-transform:uppercase;color:#8C9284;
+  text-transform:uppercase;color:var(--ro-k);
 }
 .cvlab-ro-v{
-  display:block;font-family:var(--font-m);font-size:16px;font-weight:700;color:#DDE3D2;
+  display:block;font-family:var(--font-m);font-size:16px;font-weight:700;color:var(--ro-v);
   font-variant-numeric:tabular-nums;white-space:nowrap;
 }
 .cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
 .cvlab-ro-rec .cvlab-ro-v{color:#E8646E}
+.cvlab-themebtn{
+  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
+  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
+}
+.cvlab-themebtn:hover{border-color:var(--tape)}
+.cvlab-themebtn svg{width:21px;height:21px}
+.cvlab-readouts .cvlab-themebtn{align-self:center}
 
 /* ---------- scene ----------------------------------------------------- */
 .cvlab-bench{
@@ -103,7 +167,7 @@
 .cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;border-top:1px dashed var(--rule)}
 .cvlab-status{flex:1 1 240px;min-width:200px;font-size:14px;color:var(--ink-2)}
 .cvlab-status strong{color:var(--ink);font-weight:700}
-.cvlab-status.is-warn strong{color:#A6462F}
+.cvlab-status.is-warn strong{color:var(--warn)}
 
 /* ---------- buttons --------------------------------------------------- */
 .cvlab-btn{
@@ -141,7 +205,7 @@
 .cvlab-field span{font-family:var(--font-m);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
 .cvlab select{
   font-family:var(--font-b);font-size:13.5px;padding:6px 8px;border:1px solid var(--ink);
-  border-radius:3px;background:#fff;color:var(--ink);width:100%;
+  border-radius:3px;background:var(--field);color:var(--ink);width:100%;
 }
 #cvlab-graph{height:clamp(260px,32vw,440px)}
 .cvlab-key{display:flex;flex-wrap:wrap;gap:12px;font-family:var(--font-m);font-size:11px;color:var(--ink-2)}
@@ -150,14 +214,24 @@
 /* ---------- how-to-use instructions ----------------------------------- */
 .cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;padding:10px 14px}
 .cvlab-notes h3{font-size:16px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
-.cvlab-notes p,.cvlab-notes li{font-size:13.5px;color:#33362F}
+.cvlab-notes p,.cvlab-notes li{font-size:13.5px;color:var(--notes-ink)}
 .cvlab-notes ol{margin:4px 0 0;padding-left:20px}
 .cvlab-notes li{margin:5px 0}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#DDE0D6">
+<body>
 
 <div class="cvlab" id="cvlab">
 
@@ -171,6 +245,7 @@
       <div class="cvlab-ro"><span class="cvlab-ro-k">Stopwatch</span><span class="cvlab-ro-v" id="cvlab-ro-time">0.00 s</span></div>
       <div class="cvlab-ro" id="cvlab-ro-speedwrap"><span class="cvlab-ro-k">Speed</span><span class="cvlab-ro-v" id="cvlab-ro-speed">&mdash;</span></div>
       <div class="cvlab-ro cvlab-ro-rec"><span class="cvlab-ro-k">Sensor</span><span class="cvlab-ro-v" id="cvlab-ro-state">Idle</span></div>
+      <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
     </div>
   </header>
 
@@ -228,9 +303,9 @@
       <canvas id="cvlab-graph" role="img"
         aria-label="Graph of position in centimetres against time in seconds, drawn live as the student moves."></canvas>
       <div class="cvlab-key" id="cvlab-key">
-        <span><i style="border-color:#1552B8"></i>This run</span>
-        <span><i style="border-color:#A9AFA2"></i>Last run</span>
-        <span><i style="border-color:#B0742A;border-top-style:dashed"></i>Target</span>
+        <span><i style="border-color:var(--c-run)"></i>This run</span>
+        <span><i style="border-color:var(--c-ghost)"></i>Last run</span>
+        <span><i style="border-color:var(--c-target);border-top-style:dashed"></i>Target</span>
       </div>
       <p class="cvlab-note">The sensor samples 20 times a second, the same rate as the real probe.</p>
     </section>
@@ -300,6 +375,21 @@
   var elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote");
   var roPos = $("cvlab-ro-pos"), roTime = $("cvlab-ro-time"), roSpeed = $("cvlab-ro-speed"),
       roState = $("cvlab-ro-state"), roSpeedWrap = $("cvlab-ro-speedwrap");
+
+  /* ------------------------------------------------ theme colors (read from CSS tokens) */
+  var P = {};
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute("data-theme");
+    return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function readPalette(){
+    var cs = getComputedStyle($("cvlab"));
+    ["c-wall1","c-wall2","c-floor","c-floorline","c-caption","c-kick","c-outline","c-stick-rim","c-beam","c-beam-warn",
+     "c-sonar","c-halo","c-label","c-shadow","c-figure","c-plot","c-screen","c-grid","c-screen-grid",
+     "c-grid-2","c-axis","c-tick","c-empty","c-blind","c-run","c-ghost","c-target","c-sweep"
+    ].forEach(function(k){ P[k] = cs.getPropertyValue("--"+k).trim(); });
+  }
+  readPalette();
 
   /* ------------------------------------------------ images */
   var imgs = {}, imgsReady = 0;
@@ -432,10 +522,10 @@
 
     /* wall + floor */
     var wall = ctx.createLinearGradient(0,0,0,G.floorY);
-    wall.addColorStop(0,"#F4F5F0"); wall.addColorStop(1,"#E4E7DD");
+    wall.addColorStop(0,P["c-wall1"]); wall.addColorStop(1,P["c-wall2"]);
     ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.floorY);
-    ctx.fillStyle = "#D3D7CB"; ctx.fillRect(0,G.floorY,w,h-G.floorY);
-    ctx.strokeStyle = "#B9BEB1"; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-floor"]; ctx.fillRect(0,G.floorY,w,h-G.floorY);
+    ctx.strokeStyle = P["c-floorline"]; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0,G.floorY+0.5); ctx.lineTo(w,G.floorY+0.5); ctx.stroke();
 
     drawSticks(ctx);
@@ -495,6 +585,12 @@
     ctx.textAlign = "center"; ctx.textBaseline = "bottom";
     for(var c=0; c<=RANGE_CM; c+=labStep){
       var lab = c <= 100 ? c : c - 100;
+      if(c === 0 || c === RANGE_CM){     /* end labels hang off the wood: a wood rim keeps them readable on dark */
+        ctx.save();
+        ctx.strokeStyle = P["c-stick-rim"]; ctx.lineWidth = 3; ctx.lineJoin = "round";
+        ctx.strokeText(String(lab), X(c), y+hh-1.5);
+        ctx.restore();
+      }
       ctx.fillText(String(lab), X(c), y+hh-1.5);
     }
 
@@ -502,7 +598,7 @@
     ctx.strokeStyle = "#8A6C34"; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(X(100), y-3); ctx.lineTo(X(100), y+hh+3); ctx.stroke();
     if(!G.compact){
-      ctx.fillStyle = "#8A8F82";
+      ctx.fillStyle = P["c-caption"];
       ctx.font = "700 9px " + monoStack();
       ctx.textBaseline = "top"; ctx.textAlign = "center";
       ctx.fillText("METER STICK 1", X(50), y+hh+4);
@@ -530,11 +626,12 @@
       roundRect(ctx, cw*0.44, dy + (dh-5)*0.55, cw*0.32, Math.max(2.5,dh*0.09), 2); ctx.fill();
     }
     /* toe kick */
-    ctx.fillStyle = "#2A2D27"; ctx.fillRect(0, floor-Math.max(4,G.counterH*0.07), cw, Math.max(4,G.counterH*0.07));
+    ctx.fillStyle = P["c-kick"]; ctx.fillRect(0, floor-Math.max(4,G.counterH*0.07), cw, Math.max(4,G.counterH*0.07));
 
     /* black epoxy top, overhanging the front edge at 0 cm */
     ctx.fillStyle = "#33372F";
     roundRect(ctx, 0, top, cw+2, topH, 1.5); ctx.fill();
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();   /* edge on dark, clear on light */
     ctx.fillStyle = "#22251F";
     roundRect(ctx, 0, top, cw+2, topH*0.72, 1.5); ctx.fill();
 
@@ -561,6 +658,7 @@
     /* battery body */
     ctx.fillStyle = "#1B1D1A";
     roundRect(ctx, bx, by + hgt*0.42, bw, hgt*0.58, 2.5); ctx.fill();
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = "#33372F";
     roundRect(ctx, bx + bw*0.14, by + hgt*0.60, bw*0.72, hgt*0.30, 1.5); ctx.fill();
     ctx.fillStyle = "#3FA796";                      /* the green Vernier stripe */
@@ -577,6 +675,7 @@
     ctx.lineTo( bw*1.02,  hgt*0.03);
     ctx.lineTo(-bw*0.58,  hgt*0.03);
     ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
     /* gold transducer */
     var gx = bw*0.62, gy = -hgt*0.20, rx = hgt*0.25, ry = hgt*0.21;
     var gr = ctx.createRadialGradient(gx-rx*0.3, gy-ry*0.3, 1, gx, gy, rx*1.15);
@@ -625,7 +724,7 @@
     var reach = Math.min(72, Math.max(14, X(x) - X(0) - 6));
     var phase = reduceMotion ? 0.45 : ((now()/950) % 1);
     ctx.save();
-    ctx.strokeStyle = "#2E86C8"; ctx.lineWidth = 2;
+    ctx.strokeStyle = P["c-sonar"]; ctx.lineWidth = 2;
     for(var i=0;i<3;i++){
       var f = (phase + i/3) % 1;
       ctx.globalAlpha = 0.55*(1-f);
@@ -640,7 +739,7 @@
 
   /* behind the student: the beam from the sensor out to the target */
   function drawBeam(ctx){
-    var px = X(x), col = blindOn() ? "#A6462F" : "#1552B8";
+    var px = X(x), col = blindOn() ? P["c-beam-warn"] : P["c-beam"];
     ctx.save();
     ctx.setLineDash([4,4]); ctx.lineWidth = 1.2; ctx.strokeStyle = col;
     ctx.beginPath(); ctx.moveTo(X(0), G.beamY); ctx.lineTo(px, G.beamY); ctx.stroke();
@@ -654,10 +753,10 @@
   /* in front of everything: the drop line to the meter stick and the reading */
   function drawDropLine(ctx){
     var px = X(x), blind = blindOn();
-    var col = blind ? "#A6462F" : "#1552B8";
+    var col = blind ? P["c-beam-warn"] : P["c-beam"];
 
     ctx.save();
-    ctx.lineWidth = 3.4; ctx.strokeStyle = "rgba(251,251,247,.80)";
+    ctx.lineWidth = 3.4; ctx.strokeStyle = P["c-halo"];
     ctx.beginPath(); ctx.moveTo(px, G.beamY); ctx.lineTo(px, G.floorY + G.stickH + 4); ctx.stroke();
     ctx.setLineDash([4,4]); ctx.lineWidth = 1.4; ctx.strokeStyle = col;
     ctx.beginPath(); ctx.moveTo(px, G.beamY); ctx.lineTo(px, G.floorY + G.stickH + 4); ctx.stroke();
@@ -671,7 +770,7 @@
     var lx = clamp(px - tw - 12, 4, G.w - tw - 10);
     if(px < X(0) + tw + 24) lx = clamp(px + 12, 4, G.w - tw - 10);
     var ly = G.beamY - fs*1.55;
-    ctx.fillStyle = "rgba(251,251,247,.93)";
+    ctx.fillStyle = P["c-label"];
     roundRect(ctx, lx-6, ly-3, tw+12, fs+7, 3); ctx.fill();
     ctx.strokeStyle = col; ctx.lineWidth = 1;
     roundRect(ctx, lx-6, ly-3, tw+12, fs+7, 3); ctx.stroke();
@@ -691,13 +790,13 @@
     var topY = G.floorY - drawH*sp.feetF;
 
     /* contact shadow */
-    ctx.fillStyle = "rgba(27,29,28,.20)";
+    ctx.fillStyle = P["c-shadow"];
     ctx.beginPath();
     ctx.ellipse(X(x), G.floorY+1.5, drawH*0.11, drawH*0.018, 0, 0, Math.PI*2);
     ctx.fill();
 
     if(!im || !im.complete || !im.naturalWidth){
-      ctx.fillStyle = "#5A5F58";
+      ctx.fillStyle = P["c-figure"];
       roundRect(ctx, X(x)-drawH*0.10, topY, drawH*0.20, drawH*0.99, 4); ctx.fill();
       return;
     }
@@ -720,18 +819,18 @@
     var py = function(d){ return R.y + mT + ph - (d/RANGE_CM)*ph; };
 
     ctx.save();
-    ctx.fillStyle = detail ? "#FDFDF9" : "#F7FBF4";
+    ctx.fillStyle = detail ? P["c-plot"] : P["c-screen"];
     ctx.fillRect(R.x+mL, R.y+mT, pw, ph);
 
     /* grid */
-    ctx.strokeStyle = detail ? "#E4E8DC" : "#D5E2CE"; ctx.lineWidth = 1;
+    ctx.strokeStyle = detail ? P["c-grid"] : P["c-screen-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     var minorD = detail ? 20 : 50, minorT = detail ? 0.5 : 5;
     for(var d=0; d<=RANGE_CM; d+=minorD){ var yy=Math.round(py(d))+0.5; ctx.moveTo(R.x+mL,yy); ctx.lineTo(R.x+mL+pw,yy); }
     for(var tt=0; tt<=MAX_T; tt+=minorT){ var xx=Math.round(px(tt))+0.5; ctx.moveTo(xx,R.y+mT); ctx.lineTo(xx,R.y+mT+ph); }
     ctx.stroke();
     if(detail){
-      ctx.strokeStyle = "#CCD2C4";
+      ctx.strokeStyle = P["c-grid-2"];
       ctx.beginPath();
       for(var d2=0; d2<=RANGE_CM; d2+=50){ var y2=Math.round(py(d2))+0.5; ctx.moveTo(R.x+mL,y2); ctx.lineTo(R.x+mL+pw,y2); }
       for(var t2=0; t2<=MAX_T; t2+=1){ var x2=Math.round(px(t2))+0.5; ctx.moveTo(x2,R.y+mT); ctx.lineTo(x2,R.y+mT+ph); }
@@ -740,24 +839,24 @@
 
     /* blind spot strip on the graph */
     if(elBlind.checked){
-      ctx.fillStyle = "rgba(166,70,47,.10)";
+      ctx.fillStyle = P["c-blind"];
       ctx.fillRect(R.x+mL, py(BLIND_CM), pw, py(0)-py(BLIND_CM));
     }
 
     /* axes */
     if(detail){
-      ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(R.x+mL+0.5, R.y+mT); ctx.lineTo(R.x+mL+0.5, R.y+mT+ph); ctx.lineTo(R.x+mL+pw, R.y+mT+ph);
       ctx.stroke();
-      ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+      ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
       ctx.textAlign = "right"; ctx.textBaseline = "middle";
       for(var d3=0; d3<=RANGE_CM; d3+=50) ctx.fillText(String(d3), R.x+mL-7, py(d3));
       ctx.textAlign = "center"; ctx.textBaseline = "top";
       for(var t3=0; t3<=MAX_T; t3+=1) ctx.fillText(String(t3), px(t3), R.y+mT+ph+6);
       ctx.save();
       ctx.translate(R.x+12, R.y+mT+ph/2); ctx.rotate(-Math.PI/2);
-      ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+      ctx.fillStyle = P["c-axis"]; ctx.font = "700 10px " + monoStack();
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("POSITION (cm)", 0, 0);
       ctx.restore();
@@ -769,7 +868,7 @@
     if(tg){
       ctx.save();
       ctx.setLineDash(detail ? [7,5] : [3,3]);
-      ctx.strokeStyle = "#B0742A"; ctx.lineWidth = detail ? 2 : 1.4;
+      ctx.strokeStyle = P["c-target"]; ctx.lineWidth = detail ? 2 : 1.4;
       ctx.beginPath();
       for(var i=0;i<tg.length;i++){
         var qx = px(tg[i][0]), qy = py(tg[i][1]);
@@ -779,22 +878,22 @@
     }
 
     /* the previous run, then this one */
-    if(ghost) trace(ghost, "#A9AFA2", detail?1.8:1.2);
-    trace(samples, "#1552B8", detail?2.6:1.8);
+    if(ghost) trace(ghost, P["c-ghost"], detail?1.8:1.2);
+    trace(samples, P["c-run"], detail?2.6:1.8);
 
     /* sweep line + live dot */
     if(running || samples.length){
       var cx = px(Math.min(t, MAX_T));
-      ctx.strokeStyle = "rgba(21,82,184,.35)"; ctx.lineWidth = 1;
+      ctx.strokeStyle = P["c-sweep"]; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(cx, R.y+mT); ctx.lineTo(cx, R.y+mT+ph); ctx.stroke();
       if(running && !blindOn()){
-        ctx.fillStyle = "#1552B8";
+        ctx.fillStyle = P["c-run"];
         ctx.beginPath(); ctx.arc(cx, py(x), detail?3.6:2.4, 0, Math.PI*2); ctx.fill();
       }
     }
 
     if(detail && samples.length === 0 && !ghost){
-      ctx.fillStyle = "#8A9082";
+      ctx.fillStyle = P["c-empty"];
       ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Start the stopwatch, then move the student. The line draws itself.",
@@ -956,6 +1055,39 @@
   if(document.fonts && document.fonts.ready){
     document.fonts.ready.then(function(){ dirty = true; drawScene(); drawGraph(); });
   }
+
+  /* ------------------------------------------------ light / dark toggle */
+  var themeBtn = $("cvlab-theme");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.innerHTML = d ? SUN : MOON;
+    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+  }
+  /* new colors for both canvases; the run, the last run and the target are kept */
+  function repaint(){ readPalette(); paintToggle(); dirty = true; drawScene(); drawGraph(); }
+  function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
+  themeBtn.addEventListener("click", function(){
+    var next = isDarkNow() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    /* shown in a frame (the textbook's Sims page): tell that page, so it switches too */
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+  });
+  /* the page around this sim switched its light / dark mode: follow it (not saved) */
+  window.addEventListener("message", function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var th = e.data && e.data.simTheme;
+    if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
+    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
   syncUI(); drawScene(); drawGraph();
   requestAnimationFrame(frame);

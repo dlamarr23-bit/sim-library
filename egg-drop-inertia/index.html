@@ -27,6 +27,79 @@
     --glass:#cfe0ee;
     --water:#f4f0e6;
     --table:#b98a5e;
+    --accent-ink:#1f4fc4;
+    --soft:#f7f9fd;
+    --preset:#f1f4fa;
+    --preset-hover:#e4ebf9;
+    --disabled:#aab4c8;
+    --track:#e5e9f2;
+    --on-fill:#fff;
+    --scene-1:#eaf1fb;
+    --scene-2:#dfe8f6;
+    --card-shadow:0 2px 14px rgba(20,30,60,0.08);
+    /* canvas colors (read by the script) */
+    --c-wall-1:#eef3fb;
+    --c-wall-2:#e2e9f5;
+    --c-table:#c99a6d;
+    --c-glass:rgba(210,228,245,0.55);
+    --c-glass-edge:rgba(120,150,190,0.9);
+  }
+  /* dark mode: follows the computer's setting, unless a light / dark choice was made */
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --bg:#101214;
+      --card:#1a1c1f;
+      --ink:#eef0ea;
+      --muted:#b6bab0;
+      --accent-ink:#86acff;
+      --success:#3cc97a;
+      --success-bg:#15301f;
+      --danger:#ff6b61;
+      --danger-bg:#3b1c1c;
+      --line:#343a40;
+      --soft:#22252a;
+      --preset:#24282e;
+      --preset-hover:#2d333b;
+      --disabled:#3a4150;
+      --track:#2a2e35;
+      --on-fill:#101214;
+      --scene-1:#1f242b;
+      --scene-2:#191d23;
+      --card-shadow:0 2px 14px rgba(0,0,0,0.45);
+      --c-wall-1:#20252c;
+      --c-wall-2:#181c22;
+      --c-table:#b08458;
+      --c-glass:rgba(170,200,230,0.30);
+      --c-glass-edge:rgba(160,190,225,0.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#101214;
+    --card:#1a1c1f;
+    --ink:#eef0ea;
+    --muted:#b6bab0;
+    --accent-ink:#86acff;
+    --success:#3cc97a;
+    --success-bg:#15301f;
+    --danger:#ff6b61;
+    --danger-bg:#3b1c1c;
+    --line:#343a40;
+    --soft:#22252a;
+    --preset:#24282e;
+    --preset-hover:#2d333b;
+    --disabled:#3a4150;
+    --track:#2a2e35;
+    --on-fill:#101214;
+    --scene-1:#1f242b;
+    --scene-2:#191d23;
+    --card-shadow:0 2px 14px rgba(0,0,0,0.45);
+    --c-wall-1:#20252c;
+    --c-wall-2:#181c22;
+    --c-table:#b08458;
+    --c-glass:rgba(170,200,230,0.30);
+    --c-glass-edge:rgba(160,190,225,0.9);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -47,6 +120,23 @@
   header.hero{
     text-align:center;
     margin-bottom:22px;
+    position:relative;
+  }
+  /* light / dark toggle: a pill at the top right of the header */
+  .theme-toggle{
+    position:absolute;top:0;right:0;
+    display:inline-flex;align-items:center;gap:7px;
+    background:var(--card);border:1px solid var(--line);border-radius:999px;
+    padding:7px 14px 7px 11px;cursor:pointer;
+    font-family:inherit;font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;
+  }
+  .theme-toggle:hover{border-color:var(--accent);}
+  .theme-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .theme-toggle .icon{display:flex;}
+  .theme-toggle svg{width:17px;height:17px;}
+  @media (max-width:640px){
+    .theme-toggle{padding:8px;}
+    .theme-toggle .label{display:none;}
   }
   header.hero .kicker{
     display:inline-block;
@@ -74,7 +164,7 @@
   .card{
     background:var(--card);
     border-radius:18px;
-    box-shadow:0 2px 14px rgba(20,30,60,0.08);
+    box-shadow:var(--card-shadow);
     padding:24px 26px;
     margin-bottom:22px;
   }
@@ -104,7 +194,7 @@
     .lab-grid{grid-template-columns:1fr;}
   }
   .scene-box{
-    background:linear-gradient(#eaf1fb, #dfe8f6);
+    background:linear-gradient(var(--scene-1), var(--scene-2));
     border-radius:14px;
     padding:10px;
     border:1px solid var(--line);
@@ -114,7 +204,7 @@
     height:auto;
     display:block;
     border-radius:10px;
-    background:#f7f9fd;
+    background:var(--soft);
   }
   .legend{
     display:flex;
@@ -138,7 +228,7 @@
     font-size:15px;
   }
   .control-row .val{
-    color:var(--accent-dark);
+    color:var(--accent-ink);
     font-size:18px;
     font-weight:800;
   }
@@ -159,7 +249,7 @@
   .preset-btn{
     flex:1;
     min-width:110px;
-    background:#f1f4fa;
+    background:var(--preset);
     border:1px solid var(--line);
     border-radius:10px;
     padding:9px 6px;
@@ -169,7 +259,7 @@
     color:var(--ink);
     cursor:pointer;
   }
-  .preset-btn:hover{background:#e4ebf9;}
+  .preset-btn:hover{background:var(--preset-hover);}
   .action-row{
     display:flex;gap:12px;margin-top:6px;
   }
@@ -188,10 +278,10 @@
     cursor:pointer;
   }
   button.primary:hover{background:var(--accent-dark);}
-  button.primary:disabled{background:#aab4c8;cursor:not-allowed;}
+  button.primary:disabled{background:var(--disabled);cursor:not-allowed;}
   button.secondary{
     flex:1;
-    background:#fff;
+    background:var(--card);
     color:var(--ink);
     border:2px solid var(--line);
     border-radius:12px;
@@ -205,7 +295,7 @@
 
   .predict-box{
     margin-top:18px;
-    background:#f7f9fd;
+    background:var(--soft);
     border:1px dashed var(--line);
     border-radius:12px;
     padding:14px 16px;
@@ -221,7 +311,7 @@
     margin-top:12px;
   }
   .readout{
-    background:#fff;
+    background:var(--card);
     border:1px solid var(--line);
     border-radius:10px;
     padding:10px 12px;
@@ -263,7 +353,7 @@
     gap:16px;
   }
   .force-card{
-    background:#f7f9fd;
+    background:var(--soft);
     border:1px solid var(--line);
     border-radius:14px;
     padding:16px 18px;
@@ -299,7 +389,7 @@
   }
   @media (max-width:700px){.compare-wrap{grid-template-columns:1fr;}}
   .compare-card{
-    background:#f7f9fd;
+    background:var(--soft);
     border-radius:14px;
     padding:16px 18px;
     border:1px solid var(--line);
@@ -310,7 +400,7 @@
     font-weight:800;
   }
   .bar-track{
-    background:#e5e9f2;
+    background:var(--track);
     border-radius:8px;
     height:22px;
     overflow:hidden;
@@ -320,7 +410,7 @@
     height:100%;
     border-radius:8px 0 0 8px;
     display:flex;align-items:center;
-    color:#fff;font-size:12px;font-weight:800;
+    color:var(--on-fill);font-size:12px;font-weight:800;
     padding-left:8px;
     transition:width .4s ease;
   }
@@ -357,7 +447,7 @@
 
   .chart-rows{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
   .chart-row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:10px;font-size:12.5px;font-weight:700;color:var(--muted);}
-  .chart-track{position:relative;height:20px;background:#e5e9f2;border-radius:6px;overflow:visible;}
+  .chart-track{position:relative;height:20px;background:var(--track);border-radius:6px;overflow:visible;}
   .chart-fill{position:absolute;top:0;left:0;height:100%;border-radius:6px;}
   .chart-fill.success{background:var(--success);}
   .chart-fill.fail{background:var(--danger);}
@@ -407,7 +497,7 @@
     -webkit-tap-highlight-color:transparent;
   }
   details.card > summary::-webkit-details-marker{display:none;}
-  details.card > summary:hover{background:#f7f9fd;border-radius:18px;}
+  details.card > summary:hover{background:var(--soft);border-radius:18px;}
   details.card > summary .chevron{
     margin-left:auto;
     font-size:15px;
@@ -436,11 +526,25 @@
     margin-top:10px;
   }
 </style>
+<script>
+  /* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+     (?theme=light or dark, so both sides match), else the one saved on this computer */
+  (function(){
+    var t = null;
+    try { t = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') { try { t = localStorage.getItem('motionlab-theme'); } catch (e) {} }
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
 </head>
 <body>
 <div class="wrap">
 
   <header class="hero">
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
+      <span class="icon" aria-hidden="true"></span>
+      <span class="label">Dark mode</span>
+    </button>
     <span class="kicker">Motion Lab</span>
     <h1>Egg Drop Inertia</h1>
     <p>An egg balances on a tube, on a tray, on top of a glass of water. If you flick the tray away just right, the egg drops straight down into the glass instead of falling off the table. Use the simulator below to find out how hard you really have to hit it &mdash; and why the egg doesn't break when it lands.</p>
@@ -679,6 +783,19 @@
     });
   });
 
+  // ---------- THEME COLORS (read from the CSS tokens) ----------
+  var P = {};
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute('data-theme');
+    return a === 'dark' || (!a && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function readPalette(){
+    var cs = getComputedStyle(document.documentElement);
+    ['c-wall-1','c-wall-2','c-table','c-glass','c-glass-edge'].forEach(function(k){ P[k] = cs.getPropertyValue('--'+k).trim(); });
+  }
+  readPalette();
+  var redrawScene = null;   // redraws whatever the scene shows now (set below), used after a theme change
+
   // ---------- DRAWING ----------
   function roundRect(x,y,w,h,r){
     ctx.beginPath();
@@ -694,12 +811,12 @@
     ctx.clearRect(0,0,W,Ht);
     // wall
     var g = ctx.createLinearGradient(0,0,0,Ht);
-    g.addColorStop(0,'#eef3fb');
-    g.addColorStop(1,'#e2e9f5');
+    g.addColorStop(0,P['c-wall-1']);
+    g.addColorStop(1,P['c-wall-2']);
     ctx.fillStyle = g;
     ctx.fillRect(0,0,W,Ht);
     // table
-    ctx.fillStyle = '#c99a6d';
+    ctx.fillStyle = P['c-table'];
     ctx.fillRect(0, 430, W, Ht-430);
     ctx.fillStyle = 'rgba(0,0,0,0.06)';
     ctx.fillRect(0, 430, W, 6);
@@ -709,8 +826,8 @@
     // glass body (trapezoid)
     var topW = glassW, botW = glassW*0.82;
     var topY = glassTopY, botY = 430;
-    ctx.fillStyle = 'rgba(210,228,245,0.55)';
-    ctx.strokeStyle = 'rgba(120,150,190,0.9)';
+    ctx.fillStyle = P['c-glass'];
+    ctx.strokeStyle = P['c-glass-edge'];
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(glassCX-topW/2, topY);
@@ -886,6 +1003,7 @@
   }
 
   drawIdle();
+  redrawScene = drawIdle;
   updatePrediction();
 
   // ---------- ANIMATION ----------
@@ -922,6 +1040,7 @@
     var T3 = 900;  // result phase, ms
     var total = TW + T1 + T2 + T3;
     var start = null;
+    redrawScene = function(){ draw(total); };   // after the run, a theme change redraws its last frame
 
     function draw(elapsedTotal){
       drawBackground();
@@ -1034,6 +1153,7 @@
     resultBanner.classList.remove('show','success','fail');
     resultBanner.textContent = '';
     drawIdle();
+    redrawScene = drawIdle;
     updatePrediction();
   });
 
@@ -1064,6 +1184,40 @@
       '</div>';
     chartRows.appendChild(row);
   }
+
+  // ---------- LIGHT / DARK TOGGLE ----------
+  var themeBtn = document.getElementById('themeToggle');
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.querySelector('.icon').innerHTML = d ? SUN : MOON;
+    themeBtn.querySelector('.label').textContent = d ? 'Light mode' : 'Dark mode';
+    themeBtn.setAttribute('aria-label', d ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  // mid-run, the next animation frame picks up the new colors by itself
+  function repaint(){ readPalette(); paintToggle(); if(!animating && redrawScene) redrawScene(); }
+  function applyTheme(th){ document.documentElement.setAttribute('data-theme', th); repaint(); }
+  themeBtn.addEventListener('click', function(){
+    var next = isDarkNow() ? 'light' : 'dark';
+    applyTheme(next);
+    try { localStorage.setItem('motionlab-theme', next); } catch (e) {}
+    // shown in a frame (the textbook's Sims page): tell that page, so it switches too
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, '*'); } catch (e) {}
+  });
+  // the page around this sim switched its light / dark mode: follow it (not saved)
+  window.addEventListener('message', function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var th = e.data && e.data.simTheme;
+    if ((th === 'light' || th === 'dark') && th !== (isDarkNow() ? 'dark' : 'light')) applyTheme(th);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    var onSys = function(){ if (!document.documentElement.getAttribute('data-theme')) repaint(); };
+    if (mq.addEventListener) mq.addEventListener('change', onSys); else if (mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
 })();
 </script>

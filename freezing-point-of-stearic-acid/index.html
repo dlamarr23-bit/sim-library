@@ -40,29 +40,84 @@
   --sol:#F5F5EF; --sol-d:#CFCFC4;
   --glass:#DCE7E6; --steel:#B9BEB6; --epoxy:#22251F;
   --tape:#E8B93C;
+  --head-bg:#1B1D1C; --head-ink:#F4F5F0; --on-blue:#fff;
+  --ro-bg:#000; --ro-line:#35392F; --ro-k:#8C9284; --ro-v:#DDE3D2; --ro-hi:#F08B7E;
+  --field:#EFF1E9; --input-bg:#fff; --card:#fff; --row-line:#EDEFE7; --row-new:#FCF3D9; --notes-ink:#33362F;
+  --sw-liq:#FBF3D8; --sw-mix:#E7EFF6; --sw-sol:#E9EBE6;
+  /* canvas colors (read by the script) */
+  --c-wall1:#F1F2EC; --c-wall2:#E4E7DD; --c-outline:rgba(0,0,0,0); --c-jaw:#2A2D28;
+  --c-scale:rgba(70,80,80,.85); --c-scale-text:rgba(60,70,70,.95);
+  --c-plot:#FDFDF9; --c-band-liq:#FBF3D8; --c-band-mix:#E7EFF6; --c-band-sol:#EAECE6; --c-band-text:#7C8278;
+  --c-grid:#E4E8DC; --c-grid-2:#CCD2C4; --c-fp:#C0392B; --c-fp-text:#A6323C;
+  --c-axis:#1B1D1C; --c-tick:#5A5F58; --c-empty:#8A9082; --c-curve:#1552B8;
   --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
   padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
 }
+body{margin:0;background:#DDE0D6}
+/* dark colors: the system's dark setting unless light is chosen, or dark chosen on purpose */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){color-scheme:dark}
+  :root:not([data-theme="light"]) body{background:#121412}
+  :root:not([data-theme="light"]) .cvlab{
+    --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+    --ink:#EEF0EA; --ink-2:#B6BAB0;
+    --blue:#3F7FE6; --blue-d:#2A63C2; --tape:#F0C64A;
+    --head-bg:#0A0B0A; --head-ink:#F4F5F0; --on-blue:#fff;
+    --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2; --ro-hi:#F08B7E;
+    --field:#252925; --input-bg:#252925; --card:#222622; --row-line:#2A2F29; --row-new:#3A3320; --notes-ink:#C9CCC3;
+    --sw-liq:#36301D; --sw-mix:#1E2C39; --sw-sol:#2A2E29;
+    --c-wall1:#20241F; --c-wall2:#1A1D19; --c-outline:rgba(235,240,230,.55); --c-jaw:#8A908A;
+    --c-scale:rgba(190,200,195,.85); --c-scale-text:rgba(210,216,212,.95);
+    --c-plot:#171A17; --c-band-liq:#36301D; --c-band-mix:#1E2C39; --c-band-sol:#2A2E29; --c-band-text:#A9AFA4;
+    --c-grid:#262B25; --c-grid-2:#363D35; --c-fp:#F06A5A; --c-fp-text:#FF8A80;
+    --c-axis:#C9CEC2; --c-tick:#A9AFA4; --c-empty:#8D9288; --c-curve:#7FB0FF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{color-scheme:dark}
+:root[data-theme="dark"] body{background:#121412}
+:root[data-theme="dark"] .cvlab{
+  --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+  --ink:#EEF0EA; --ink-2:#B6BAB0;
+  --blue:#3F7FE6; --blue-d:#2A63C2; --tape:#F0C64A;
+  --head-bg:#0A0B0A; --head-ink:#F4F5F0; --on-blue:#fff;
+  --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2; --ro-hi:#F08B7E;
+  --field:#252925; --input-bg:#252925; --card:#222622; --row-line:#2A2F29; --row-new:#3A3320; --notes-ink:#C9CCC3;
+  --sw-liq:#36301D; --sw-mix:#1E2C39; --sw-sol:#2A2E29;
+  --c-wall1:#20241F; --c-wall2:#1A1D19; --c-outline:rgba(235,240,230,.55); --c-jaw:#8A908A;
+  --c-scale:rgba(190,200,195,.85); --c-scale-text:rgba(210,216,212,.95);
+  --c-plot:#171A17; --c-band-liq:#36301D; --c-band-mix:#1E2C39; --c-band-sol:#2A2E29; --c-band-text:#A9AFA4;
+  --c-grid:#262B25; --c-grid-2:#363D35; --c-fp:#F06A5A; --c-fp-text:#FF8A80;
+  --c-axis:#C9CEC2; --c-tick:#A9AFA4; --c-empty:#8D9288; --c-curve:#7FB0FF;
+  color-scheme:dark;
+}
 .cvlab *{box-sizing:border-box}
 .cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
 .cvlab p{margin:0}
 .cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+.cvlab-head{background:var(--head-bg);color:var(--head-ink);border-radius:5px 5px 0 0;padding:12px 16px;
   display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.cvlab-title{flex:1 1 auto}
 .cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--tape);margin-bottom:2px}
 .cvlab-head h1{font-size:clamp(19px,2.9vw,29px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
 .cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
-.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:94px}
+.cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:3px;padding:5px 10px;min-width:94px}
 .cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
-  text-transform:uppercase;color:#8C9284}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+  text-transform:uppercase;color:var(--ro-k)}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:var(--ro-v);
   font-variant-numeric:tabular-nums;white-space:nowrap}
-.cvlab-ro-hi .cvlab-ro-v{color:#F08B7E}
+.cvlab-ro-hi .cvlab-ro-v{color:var(--ro-hi)}
+.cvlab-themebtn{
+  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
+  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
+}
+.cvlab-themebtn:hover{border-color:var(--tape)}
+.cvlab-themebtn svg{width:21px;height:21px}
 
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 5px 5px;padding:10px 10px 12px}
@@ -87,8 +142,8 @@
 .cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
 .cvlab-btn:active:not(:disabled){transform:translateY(1px)}
 .cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
-.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:#fff;min-width:158px}
-.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:#fff}
+.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:var(--on-blue);min-width:158px}
+.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:var(--on-blue)}
 .cvlab-btn-sm{font-size:15px;padding:5px 10px;border-width:1px}
 
 .cvlab-grid{display:grid;gap:12px;margin-top:12px;
@@ -107,33 +162,33 @@
 .cvlab-field span{font-family:var(--font-m);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--ink-2)}
 .cvlab select{font-family:var(--font-b);font-size:15.5px;padding:6px 8px;border:1px solid var(--ink);
-  border-radius:3px;background:#fff;color:var(--ink);width:100%}
+  border-radius:3px;background:var(--input-bg);color:var(--ink);width:100%}
 .cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
 .cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
 .cvlab-opts input{margin:3px 0 0;accent-color:var(--blue);flex:none}
 
 .cvlab-tablewrap{max-height:340px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
 .cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13px}
-.cvlab thead th{position:sticky;top:0;background:#EFF1E9;font-size:10.5px;letter-spacing:.03em;
+.cvlab thead th{position:sticky;top:0;background:var(--field);font-size:10.5px;letter-spacing:.03em;
   font-weight:700;padding:5px 4px;text-align:right;border-bottom:1px solid var(--rule);
   color:var(--ink-2);white-space:nowrap}
 .cvlab thead th:first-child{text-align:left}
 .cvlab thead th:nth-child(3){text-align:left}
 .cvlab tbody td{padding:3px 4px;text-align:right;font-variant-numeric:tabular-nums;
-  border-bottom:1px solid #EDEFE7;white-space:nowrap}
+  border-bottom:1px solid var(--row-line);white-space:nowrap}
 .cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
 .cvlab tbody td.state{text-align:left;font-size:12px}
 .cvlab tbody tr:last-child td{border-bottom:0}
-.cvlab tbody tr.is-new td{background:#FCF3D9}
+.cvlab tbody tr.is-new td{background:var(--row-new)}
 .cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
-.cvlab-sw-liq{background:#FBF3D8}
-.cvlab-sw-mix{background:#E7EFF6}
-.cvlab-sw-sol{background:#E9EBE6}
+.cvlab-sw-liq{background:var(--sw-liq)}
+.cvlab-sw-mix{background:var(--sw-mix)}
+.cvlab-sw-sol{background:var(--sw-sol)}
 
 .cvlab-stages{display:flex;flex-direction:column;gap:7px}
 .cvlab-stage-card{border:1px solid var(--rule);border-left-width:5px;border-radius:3px;padding:8px 10px;
-  background:#fff;transition:background .15s ease}
-.cvlab-stage-card.is-now{background:#FCF3D9;border-color:var(--tape);border-left-color:var(--tape)}
+  background:var(--card);transition:background .15s ease}
+.cvlab-stage-card.is-now{background:var(--row-new);border-color:var(--tape);border-left-color:var(--tape)}
 .cvlab-stage-card.is-done{opacity:.72}
 .cvlab-stage-card h3{font-size:16px;text-transform:uppercase;letter-spacing:.05em;margin:0 0 2px}
 .cvlab-stage-card p{font-family:var(--font-m);font-size:13px;color:var(--ink-2);line-height:1.6}
@@ -142,19 +197,29 @@
 .cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
   padding:10px 14px}
 .cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:var(--notes-ink)}
 .cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
 .cvlab-notes li{margin:3px 0}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#DDE0D6">
+<body>
 
 <div class="cvlab" id="cvlab">
 
   <header class="cvlab-head">
-    <div>
+    <div class="cvlab-title">
       <span class="cvlab-eyebrow">Matter lab &middot; phase change</span>
       <h1>Freezing point of stearic acid</h1>
     </div>
@@ -164,6 +229,7 @@
       <div class="cvlab-ro"><span class="cvlab-ro-k">State</span><span class="cvlab-ro-v" id="cvlab-ro-st">All liquid</span></div>
       <div class="cvlab-ro"><span class="cvlab-ro-k">Solid</span><span class="cvlab-ro-v" id="cvlab-ro-f">0%</span></div>
     </div>
+    <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="cvlab-bench">
@@ -284,6 +350,20 @@
   var elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote");
   var roT = $("cvlab-ro-t"), roTemp = $("cvlab-ro-T"),
       roSt = $("cvlab-ro-st"), roF = $("cvlab-ro-f");
+
+  /* ------------------------------------------------ theme colors (read from CSS tokens) */
+  var P = {};
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute("data-theme");
+    return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function readPalette(){
+    var cs = getComputedStyle($("cvlab"));
+    ["c-wall1","c-wall2","c-outline","c-jaw","c-scale","c-scale-text","c-plot","c-band-liq","c-band-mix",
+     "c-band-sol","c-band-text","c-grid","c-grid-2","c-fp","c-fp-text","c-axis","c-tick","c-empty","c-curve"]
+      .forEach(function(k){ P[k] = cs.getPropertyValue("--"+k).trim(); });
+  }
+  readPalette();
 
   /* ------------------------------------------------ helpers */
   function fmt(v,p){ return v.toFixed(p===undefined?1:p); }
@@ -501,7 +581,7 @@
     var ctx = sctx;
     ctx.clearRect(0,0,w,h);
     var wall = ctx.createLinearGradient(0,0,0,G.baseY);
-    wall.addColorStop(0,"#F1F2EC"); wall.addColorStop(1,"#E4E7DD");
+    wall.addColorStop(0,P["c-wall1"]); wall.addColorStop(1,P["c-wall2"]);
     ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.baseY);
     var bt = ctx.createLinearGradient(0,G.baseY,0,h);
     bt.addColorStop(0,"#33372F"); bt.addColorStop(1,"#1D201B");
@@ -529,12 +609,14 @@
     var cy = Y(20.5);
     ctx.fillStyle = "#262924";
     roundRect(ctx, rodX-1.0*k, cy-1.4*k, 2.0*k, 2.8*k, 1.5); ctx.fill();
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = "#3A3E37";
     roundRect(ctx, rodX+0.7*k, cy-0.34*k, 6.6*k, 0.68*k, 1); ctx.fill();
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = "#9DA3A0";
     ctx.beginPath(); ctx.arc(rodX-1.6*k, cy, 0.7*k, 0, Math.PI*2); ctx.fill();
     /* the jaws grip the glass */
-    ctx.strokeStyle = "#2A2D28"; ctx.lineWidth = Math.max(2, 0.34*k);
+    ctx.strokeStyle = P["c-jaw"]; ctx.lineWidth = Math.max(2, 0.34*k);
     ctx.beginPath();
     ctx.arc(X(TUBE_CX), cy, TUBE_OD*0.62*k, Math.PI*0.72, Math.PI*1.95); ctx.stroke();
   }
@@ -584,6 +666,7 @@
     roundRect(ctx, bx-0.55*k, Y(6.6), 1.1*k, 1.9*k, 0.15*k); ctx.fill();
     ctx.fillStyle = "#3A3E37";
     roundRect(ctx, bx-2.9*k, Y(0.45), 5.8*k, 0.45*k, 1); ctx.fill();
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
   }
 
   /* the inner bore of the tube, used as a clip for the contents */
@@ -714,8 +797,8 @@
     ctx.strokeStyle = "#8E2A1F"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(cx, bulbY, bulbR, 0, Math.PI*2); ctx.stroke();
     /* scale marks above the tube mouth, where they can be seen */
-    ctx.strokeStyle = "rgba(70,80,80,.85)"; ctx.lineWidth = 1;
-    ctx.fillStyle = "rgba(60,70,70,.95)";
+    ctx.strokeStyle = P["c-scale"]; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-scale-text"];
     ctx.font = "700 " + Math.max(5.5, 0.62*k).toFixed(1) + "px " + monoStack();
     ctx.textAlign = "left"; ctx.textBaseline = "middle";
     for(var d=0; d<=110; d+=10){
@@ -744,6 +827,7 @@
     var by = Math.max(3, Y(33.5));
     ctx.fillStyle = "#1B1D1C";
     roundRect(ctx, bx, by, bw, bh, 3); ctx.fill();
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = "#F08B7E"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.font = "700 " + fs + "px " + monoStack();
     ctx.fillText(txt, bx + bw/2, by + fs*0.72);
@@ -765,13 +849,13 @@
     var reached = stage === "heating" ? 0 : t;
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
+    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
 
     /* the three states, shaded only as far as the run has actually got */
     var bands = [
-      { a:0,     b:p.t1, fill:"#FBF3D8", label:"all liquid" },
-      { a:p.t1,  b:p.t2, fill:"#E7EFF6", label:"liquid + solid" },
-      { a:p.t2,  b:RUN_S, fill:"#EAECE6", label:"all solid" }
+      { a:0,     b:p.t1, fill:P["c-band-liq"], label:"all liquid" },
+      { a:p.t1,  b:p.t2, fill:P["c-band-mix"], label:"liquid + solid" },
+      { a:p.t2,  b:RUN_S, fill:P["c-band-sol"], label:"all solid" }
     ];
     for(var i=0;i<bands.length;i++){
       var a = bands[i].a, b = Math.min(bands[i].b, reached);
@@ -779,18 +863,18 @@
       ctx.fillStyle = bands[i].fill;
       ctx.fillRect(PX(a), mT, PX(b)-PX(a), ph);
       if(!(PX(b)-PX(a) > 42)) continue;
-      ctx.fillStyle = "#7C8278";
+      ctx.fillStyle = P["c-band-text"];
       ctx.font = "700 9.5px " + monoStack();
       ctx.textAlign = "center"; ctx.textBaseline = "bottom";
       ctx.fillText(bands[i].label.toUpperCase(), (PX(a)+PX(b))/2, mT - 5);
     }
 
-    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var T=T_LO; T<=T_HI; T+=5){ var y=Math.round(PY(T))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
     for(var tt=0; tt<=RUN_S; tt+=60){ var x=Math.round(PX(tt))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
     ctx.stroke();
-    ctx.strokeStyle = "#CCD2C4";
+    ctx.strokeStyle = P["c-grid-2"];
     ctx.beginPath();
     for(var T2=T_LO; T2<=T_HI; T2+=10){ var y2=Math.round(PY(T2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
     for(var t2=0; t2<=RUN_S; t2+=120){ var x2=Math.round(PX(t2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
@@ -799,47 +883,47 @@
     /* the freezing point, once the acid has actually reached it */
     if(reached >= p.t1){
       ctx.save();
-      ctx.setLineDash([6,4]); ctx.strokeStyle = "#C0392B"; ctx.lineWidth = 1.3;
+      ctx.setLineDash([6,4]); ctx.strokeStyle = P["c-fp"]; ctx.lineWidth = 1.3;
       ctx.beginPath(); ctx.moveTo(mL, PY(T_FREEZE)); ctx.lineTo(mL+pw, PY(T_FREEZE)); ctx.stroke();
       ctx.restore();
-      ctx.fillStyle = "#A6323C"; ctx.font = "700 10px " + monoStack();
+      ctx.fillStyle = P["c-fp-text"]; ctx.font = "700 10px " + monoStack();
       ctx.textAlign = "right"; ctx.textBaseline = "bottom";
       ctx.fillText("freezing point " + fmt(T_FREEZE) + " \u00B0C", mL+pw-4, PY(T_FREEZE)-4);
     }
 
-    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var T3=T_LO; T3<=T_HI; T3+=10) ctx.fillText(String(T3), mL-6, PY(T3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var t3=0; t3<=RUN_S; t3+=120) ctx.fillText(String(t3), PX(t3), mT+ph+6);
     ctx.save();
     ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-axis"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("TEMPERATURE (\u00B0C)", 0, 0);
     ctx.restore();
-    ctx.fillStyle = "#1B1D1C";
+    ctx.fillStyle = P["c-axis"];
     ctx.fillText("TIME (s)", mL+pw/2, mT+ph+19);
 
     if(!live || shown < 1){
-      ctx.fillStyle = "#8A9082";
+      ctx.fillStyle = P["c-empty"];
       ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Take the heat away and the curve draws itself.", mL+pw/2, mT+ph/2);
       return;
     }
 
-    ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 2.4; ctx.lineJoin = "round";
+    ctx.strokeStyle = P["c-curve"]; ctx.lineWidth = 2.4; ctx.lineJoin = "round";
     ctx.beginPath();
     for(var j=0;j<shown;j++){
       var qx = PX(j*STEP_S), qy = PY(clamp(live[j], T_LO, T_HI));
       if(j===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
     }
     ctx.stroke();
-    ctx.fillStyle = "#1552B8";
+    ctx.fillStyle = P["c-curve"];
     for(var m=0;m<shown;m++){
       ctx.beginPath();
       ctx.arc(PX(m*STEP_S), PY(clamp(live[m], T_LO, T_HI)), 2.2, 0, Math.PI*2);
@@ -917,6 +1001,38 @@
   if(document.fonts && document.fonts.ready){
     document.fonts.ready.then(function(){ dirty = true; drawScene(); drawCurve(); });
   }
+
+  /* ------------------------------------------------ light / dark toggle */
+  var themeBtn = $("cvlab-theme");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.innerHTML = d ? SUN : MOON;
+    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+  }
+  function repaint(){ readPalette(); paintToggle(); dirty = true; drawScene(); drawCurve(); }
+  function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
+  themeBtn.addEventListener("click", function(){
+    var next = isDarkNow() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+  });
+  /* the page around this sim switched its light / dark mode: follow it (not saved) */
+  window.addEventListener("message", function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var th = e.data && e.data.simTheme;
+    if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
+    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
   reset();
   requestAnimationFrame(frame);

@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Inertia Car Lab</title>
 <style>*,*::before,*::after{box-sizing:border-box;}html{-webkit-text-size-adjust:100%;}body{margin:0;}img,svg,canvas{display:block;max-width:100%;}</style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,9 +47,12 @@
   --shadow:0 1px 2px rgba(15,26,38,.06), 0 8px 24px rgba(15,26,38,.07);
   --shadow-lift:0 2px 4px rgba(15,26,38,.08), 0 14px 38px rgba(15,26,38,.12);
   --focus:#0F63C8;
+  --chip-edge:rgba(0,0,0,.45);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --chip-edge:rgba(233,240,248,.6);
     --paper:#0D141D;
     --card:#17212E;
     --card-2:#1D2938;
@@ -67,6 +80,8 @@
   }
 }
 :root[data-theme="dark"]{
+  color-scheme: dark;
+  --chip-edge:rgba(233,240,248,.6);
   --paper:#0D141D;
   --card:#17212E;
   --card-2:#1D2938;
@@ -155,6 +170,18 @@ h1{
 }
 .qbox .lab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-deep);font-weight:800;}
 .qbox p{margin:2px 0 0;font-size:clamp(15px,1.15vw,19px);font-weight:800;line-height:1.25;}
+/* light / dark switch, above the lab question */
+.mast-side{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+.theme-toggle{
+  appearance:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 14px 7px 11px;border-radius:999px;
+  background:var(--card);border:2px solid var(--line-2);color:var(--ink-2);
+  font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;
+}
+.theme-toggle:hover{border-color:var(--accent);color:var(--ink);}
+.theme-toggle svg{width:16px;height:16px;}
+@media (max-width:760px){.mast-side{align-items:flex-start;}}
 
 /* ---------- cards ---------- */
 .card{
@@ -439,9 +466,15 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
       <h1>Describing Inertia</h1>
       <p class="deck">A poker chip is taped to the front deck of a rolling car. A second, loose chip rests on top of it. Tap the car and watch what the loose chip does.</p>
     </div>
-    <div class="qbox">
-      <div class="lab">Lab question</div>
-      <p>What is inertia?</p>
+    <div class="mast-side">
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
+        <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg></span>
+        <span class="label">Dark mode</span>
+      </button>
+      <div class="qbox">
+        <div class="lab">Lab question</div>
+        <p>What is inertia?</p>
+      </div>
     </div>
   </header>
 
@@ -666,7 +699,7 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
   function readColors(){
     var s = getComputedStyle(document.documentElement);
     ['ink','ink-2','ink-3','line','line-2','card','card-2','card-3','accent','accent-deep',
-     'amber','red','green','bench','bench-2','bench-edge','paper'].forEach(function(n){
+     'amber','red','green','bench','bench-2','bench-edge','paper','chip-edge'].forEach(function(n){
       C[n] = s.getPropertyValue('--'+n).trim();
     });
   }
@@ -861,7 +894,8 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
     ctx.save();
     roundRect(cxpx-w/2, cypx-h/2, w, h, h*0.34);
     ctx.fillStyle=base; ctx.fill();
-    ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.45)'; ctx.stroke();
+    // edge from the page tokens: dark in light mode, light in dark mode so the dark loose chip still shows
+    ctx.lineWidth=2; ctx.strokeStyle=C['chip-edge']; ctx.stroke();
     ctx.clip();
     ctx.fillStyle=stripe;
     for(var i=-2;i<=2;i++){
@@ -1229,6 +1263,46 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
   document.getElementById('run').addEventListener('click',run);
   document.getElementById('reset').addEventListener('click',function(){ if(raf){cancelAnimationFrame(raf);raf=null;} reset(); });
   document.getElementById('clear').addEventListener('click',function(){ rows=[]; S.trial=0; renderRows(); });
+
+  /* ---------- light / dark toggle ---------- */
+  var themeBtn=document.getElementById('themeToggle');
+  var MOON='<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  var sysDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function themeNow(){
+    var t=document.documentElement.getAttribute('data-theme');
+    if(t==='light'||t==='dark') return t;
+    return sysDark && sysDark.matches ? 'dark' : 'light';
+  }
+  function paintToggle(){
+    var d = themeNow()==='dark';
+    themeBtn.querySelector('.icon').innerHTML = d ? SUN : MOON;
+    themeBtn.querySelector('.label').textContent = d ? 'Light mode' : 'Dark mode';
+    themeBtn.setAttribute('aria-label', d ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  // redraw the bench right away, whether the car is still, rolling or finished
+  function repaint(){ readColors(); paintToggle(); draw(); }
+  function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); repaint(); }
+  themeBtn.addEventListener('click',function(){
+    var next = themeNow()==='dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try{ localStorage.setItem('motionlab-theme', next); }catch(e){}
+    // shown in a frame (the textbook's Sims page): tell that page, so it switches too
+    if(inFrame) try{ window.parent.postMessage({ simTheme: next }, '*'); }catch(e){}
+  });
+  // the page around this sim switched its light / dark mode: follow it (not saved, so the sim alone keeps its own choice)
+  window.addEventListener('message',function(e){
+    if(!inFrame || e.source !== window.parent) return;
+    var t = e.data && e.data.simTheme;
+    if((t==='light'||t==='dark') && t!==themeNow()) applyTheme(t);
+  });
+  if(sysDark){
+    var onSys=function(){ if(!document.documentElement.getAttribute('data-theme')) repaint(); };
+    if(sysDark.addEventListener) sysDark.addEventListener('change', onSys);
+    else if(sysDark.addListener) sysDark.addListener(onSys);
+  }
+  paintToggle();
 
   reset();
 })();

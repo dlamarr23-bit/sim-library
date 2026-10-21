@@ -26,13 +26,97 @@
   --warn:#fbbf24;
   --purple:#a78bfa;
 }
+/* light / dark: this sim was built dark, so the values above and here are its dark look (unchanged).
+   A light set follows the computer's setting, unless a light / dark choice was made. */
+:root{
+  color-scheme: dark;
+  --accent-ink:var(--accent);
+  --glow-a:#16294a; --glow-a0:rgba(22,41,74,0); --glow-b:#123141; --glow-b0:rgba(18,49,65,0);
+  --h1-a:#7dd3fc; --h1-b:#22d3ee; --h1-c:#a7f3d0;
+  --card-shadow:0 12px 34px rgba(0,0,0,.28);
+  --btn:#1b2b47; --btn-hover:#24395e;
+  --inset:#0d1729; --inset2:#0b1526; --scene-bg:#08111f;
+  --tag-cold:#93c5fd; --tag-room:#6ee7b7; --tag-warm:#fcd34d; --tag-hot:#fca5a5;
+  --strip-edge:#1c2942;
+  --explain-ink:#d6ebff; --explain-b:#a5f3fc;
+  --howto-ink:#dbe8fb; --notes-ink:#cddcf2; --strong:#fff; --eq-ink:#a7f3d0;
+  --cv-strong:#cbd9ee; --dash:#5b6f8f;
+  /* canvas colors (read by the script) */
+  --c-wall-1:#0e1e33; --c-wall-2:#102942; --c-wall-3:#0a1626;
+  --c-bench-1:#15594f; --c-bench-2:#0d3b35;
+  --c-water-back:rgba(0,0,0,0);
+  --c-glass:rgba(215,238,255,.78); --c-glass-2:rgba(215,238,255,.72); --c-glass-rim:rgba(215,238,255,.5);
+  --c-marks:rgba(230,245,255,.42); --c-marks-text:rgba(230,245,255,.5);
+  --c-vial-edge:rgba(215,238,255,.72); --c-caption:rgba(230,245,255,.42);
+  --c-steam:255,255,255;
+  --c-chart-bg:#0b1526; --c-chart-grid:rgba(255,255,255,.07); --c-chart-axis:#4a6488; --c-chart-tick:#9cb1d0;
+  --c-chart-title:#22d3ee; --c-chart-curve:rgba(167,139,250,.85); --c-chart-curve-label:rgba(167,139,250,.95);
+  --c-chart-empty:rgba(156,177,208,.75); --c-dot-ring:#0b1526;
+  --c-dot-cold:#60a5fa; --c-dot-room:#34d399; --c-dot-warm:#fbbf24; --c-dot-hot:#f87171;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    color-scheme: light;
+    --bg:#eef3f8; --bg2:#e3ebf3; --card:#ffffff; --card2:#f7fafd;
+    --line:#d4dfeb; --line2:#b8c8da; --ink:#0f1c2e; --muted:#4d6180;
+    --accent-ink:#0e7490; --hot:#ea580c; --good:#047857; --warn:#b45309;
+    --glow-a:#d7e7f8; --glow-a0:rgba(215,231,248,0); --glow-b:#d2eef3; --glow-b0:rgba(210,238,243,0);
+    --h1-a:#0369a1; --h1-b:#0e7490; --h1-c:#047857;
+    --card-shadow:0 8px 24px rgba(15,35,60,.08);
+    --btn:#eef3f9; --btn-hover:#e0eaf5;
+    --inset:#eef3f8; --inset2:#f4f7fb; --scene-bg:#dbe6f1;
+    --tag-cold:#1d4ed8; --tag-room:#047857; --tag-warm:#a16207; --tag-hot:#b91c1c;
+    --strip-edge:#9fb0c4;
+    --explain-ink:#1b3550; --explain-b:#0e7490;
+    --howto-ink:#1e2f45; --notes-ink:#22364f; --strong:#0b1626; --eq-ink:#047857;
+    --cv-strong:#1e2f45; --dash:#8a9bb3;
+    --c-wall-1:#e9f0f7; --c-wall-2:#dde7f1; --c-wall-3:#d0dce9;
+    --c-bench-1:#2f8f80; --c-bench-2:#1f6d61;
+    --c-water-back:rgba(16,41,66,.5);
+    --c-glass:rgba(60,95,135,.75); --c-glass-2:rgba(60,95,135,.7); --c-glass-rim:rgba(60,95,135,.45);
+    --c-marks:rgba(30,60,95,.5); --c-marks-text:rgba(30,60,95,.75);
+    --c-vial-edge:rgba(60,95,135,.6); --c-caption:rgba(30,55,85,.6);
+    --c-steam:120,140,165;
+    --c-chart-bg:#ffffff; --c-chart-grid:rgba(15,28,46,.08); --c-chart-axis:#8597b0; --c-chart-tick:#4d6180;
+    --c-chart-title:#0e7490; --c-chart-curve:rgba(109,77,214,.85); --c-chart-curve-label:rgba(109,77,214,.95);
+    --c-chart-empty:rgba(77,97,128,.8); --c-dot-ring:#ffffff;
+    --c-dot-cold:#3b82f6; --c-dot-room:#10b981; --c-dot-warm:#f59e0b; --c-dot-hot:#ef4444;
+  }
+}
+:root[data-theme="light"]{
+  color-scheme: light;
+  --bg:#eef3f8; --bg2:#e3ebf3; --card:#ffffff; --card2:#f7fafd;
+  --line:#d4dfeb; --line2:#b8c8da; --ink:#0f1c2e; --muted:#4d6180;
+  --accent-ink:#0e7490; --hot:#ea580c; --good:#047857; --warn:#b45309;
+  --glow-a:#d7e7f8; --glow-a0:rgba(215,231,248,0); --glow-b:#d2eef3; --glow-b0:rgba(210,238,243,0);
+  --h1-a:#0369a1; --h1-b:#0e7490; --h1-c:#047857;
+  --card-shadow:0 8px 24px rgba(15,35,60,.08);
+  --btn:#eef3f9; --btn-hover:#e0eaf5;
+  --inset:#eef3f8; --inset2:#f4f7fb; --scene-bg:#dbe6f1;
+  --tag-cold:#1d4ed8; --tag-room:#047857; --tag-warm:#a16207; --tag-hot:#b91c1c;
+  --strip-edge:#9fb0c4;
+  --explain-ink:#1b3550; --explain-b:#0e7490;
+  --howto-ink:#1e2f45; --notes-ink:#22364f; --strong:#0b1626; --eq-ink:#047857;
+  --cv-strong:#1e2f45; --dash:#8a9bb3;
+  --c-wall-1:#e9f0f7; --c-wall-2:#dde7f1; --c-wall-3:#d0dce9;
+  --c-bench-1:#2f8f80; --c-bench-2:#1f6d61;
+  --c-water-back:rgba(16,41,66,.5);
+  --c-glass:rgba(60,95,135,.75); --c-glass-2:rgba(60,95,135,.7); --c-glass-rim:rgba(60,95,135,.45);
+  --c-marks:rgba(30,60,95,.5); --c-marks-text:rgba(30,60,95,.75);
+  --c-vial-edge:rgba(60,95,135,.6); --c-caption:rgba(30,55,85,.6);
+  --c-steam:120,140,165;
+  --c-chart-bg:#ffffff; --c-chart-grid:rgba(15,28,46,.08); --c-chart-axis:#8597b0; --c-chart-tick:#4d6180;
+  --c-chart-title:#0e7490; --c-chart-curve:rgba(109,77,214,.85); --c-chart-curve-label:rgba(109,77,214,.95);
+  --c-chart-empty:rgba(77,97,128,.8); --c-dot-ring:#ffffff;
+  --c-dot-cold:#3b82f6; --c-dot-room:#10b981; --c-dot-warm:#f59e0b; --c-dot-hot:#ef4444;
+}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
   background:
-    radial-gradient(1200px 700px at 15% -10%, #16294a 0%, rgba(22,41,74,0) 60%),
-    radial-gradient(1000px 600px at 90% 0%, #123141 0%, rgba(18,49,65,0) 55%),
-    linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%);
+    radial-gradient(1200px 700px at 15% -10%, var(--glow-a) 0%, var(--glow-a0) 60%),
+    radial-gradient(1000px 600px at 90% 0%, var(--glow-b) 0%, var(--glow-b0) 55%),
+    linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%) var(--bg);
   background-attachment:fixed;
   color:var(--ink);
   font-family:'Poppins', system-ui, sans-serif;
@@ -51,7 +135,7 @@ header.page{
 }
 header.page h1{
   margin:0;font-size:clamp(24px,3vw,38px);font-weight:800;letter-spacing:-.5px;
-  background:linear-gradient(90deg,#7dd3fc,#22d3ee 45%,#a7f3d0);
+  background:linear-gradient(90deg,var(--h1-a),var(--h1-b) 45%,var(--h1-c));
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
 header.page .sub{color:var(--muted);font-weight:600;font-size:clamp(14px,1.15vw,17px);max-width:900px}
@@ -60,6 +144,12 @@ header.page .sub{color:var(--muted);font-weight:600;font-size:clamp(14px,1.15vw,
   color:#04121b;background:linear-gradient(90deg,var(--accent),#7dd3fc);
   padding:8px 16px;border-radius:999px;white-space:nowrap;
 }
+/* light / dark toggle: a pill beside the badge */
+.theme-toggle{display:inline-flex;align-items:center;gap:7px;padding:8px 14px 8px 11px;border-radius:999px;
+  font-size:13px;letter-spacing:.1em;white-space:nowrap}
+.theme-toggle .icon{display:flex}
+.theme-toggle svg{width:16px;height:16px}
+@media (max-width:520px){.theme-toggle{padding:8px}.theme-toggle .label{display:none}}
 
 .grid-main{display:grid;grid-template-columns:340px minmax(0,1fr) 320px;gap:18px;align-items:start}
 .grid-two{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;margin-top:18px;align-items:start}
@@ -67,11 +157,11 @@ header.page .sub{color:var(--muted);font-weight:600;font-size:clamp(14px,1.15vw,
 .card{
   background:linear-gradient(180deg,var(--card) 0%,var(--card2) 100%);
   border:1px solid var(--line);border-radius:16px;padding:18px 18px 20px;
-  box-shadow:0 12px 34px rgba(0,0,0,.28);
+  box-shadow:var(--card-shadow);
 }
 .card h2{
   margin:0 0 14px;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.13em;
-  color:var(--accent);display:flex;align-items:center;gap:9px;
+  color:var(--accent-ink);display:flex;align-items:center;gap:9px;
 }
 .card h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
 
@@ -102,10 +192,10 @@ input[type=range]::-moz-range-thumb{
 
 button{
   font-family:inherit;font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.09em;
-  color:var(--ink);background:#1b2b47;border:1px solid var(--line2);border-radius:11px;
+  color:var(--ink);background:var(--btn);border:1px solid var(--line2);border-radius:11px;
   padding:12px 16px;cursor:pointer;transition:.15s transform,.15s background,.15s border-color;
 }
-button:hover:not(:disabled){background:#24395e;border-color:var(--accent);transform:translateY(-1px)}
+button:hover:not(:disabled){background:var(--btn-hover);border-color:var(--accent);transform:translateY(-1px)}
 button:active:not(:disabled){transform:translateY(1px)}
 button:disabled{opacity:.38;cursor:not-allowed}
 button.primary{background:linear-gradient(90deg,#0891b2,#22d3ee);border-color:#67e8f9;color:#04141c}
@@ -116,15 +206,15 @@ button.ghost{background:transparent}
 button.wide{width:100%;margin-top:10px}
 .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
 
-.seg{display:flex;gap:6px;background:#0d1729;border:1px solid var(--line);border-radius:11px;padding:5px}
+.seg{display:flex;gap:6px;background:var(--inset);border:1px solid var(--line);border-radius:11px;padding:5px}
 .seg button{flex:1;padding:9px 6px;font-size:12px;border:none;background:transparent;border-radius:8px}
 .seg button.on{background:var(--accent);color:#04141c}
 
-.scenewrap{position:relative;width:100%;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#08111f}
+.scenewrap{position:relative;width:100%;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--scene-bg)}
 canvas#scene{display:block;width:100%;height:auto;aspect-ratio:1000/640}
 .statusbar{
   display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;margin-top:12px;padding:11px 15px;
-  background:#0d1729;border:1px solid var(--line);border-radius:12px;font-size:14px;font-weight:700;
+  background:var(--inset);border:1px solid var(--line);border-radius:12px;font-size:14px;font-weight:700;
 }
 .statusbar .pill{display:flex;align-items:center;gap:8px;color:var(--muted)}
 .statusbar .pill b{color:var(--ink);font-weight:800}
@@ -142,12 +232,12 @@ canvas#scene{display:block;width:100%;height:auto;aspect-ratio:1000/640}
 .lcd .lcdval small{font-size:17px}
 .irbody{background:linear-gradient(180deg,#fbbf24,#f59e0b);border-radius:14px;padding:11px;border:1px solid #b45309}
 
-.timerbox{text-align:center;padding:14px 10px;background:#0b1526;border:1px solid var(--line);border-radius:13px}
+.timerbox{text-align:center;padding:14px 10px;background:var(--inset2);border:1px solid var(--line);border-radius:13px}
 .timerbox .t{font-size:clamp(34px,3.6vw,46px);font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;
   color:var(--warn);line-height:1}
 .timerbox .cap{font-size:12px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 
-.meter{height:20px;border-radius:999px;background:#0b1526;border:1px solid var(--line);overflow:hidden;margin-top:8px}
+.meter{height:20px;border-radius:999px;background:var(--inset2);border:1px solid var(--line);overflow:hidden;margin-top:8px}
 .meter > i{display:block;height:100%;width:0%;border-radius:999px;
   background:linear-gradient(90deg,#34d399,#fbbf24 55%,#ef4444);transition:width .12s linear}
 
@@ -158,43 +248,43 @@ canvas#scene{display:block;width:100%;height:auto;aspect-ratio:1000/640}
 
 table{width:100%;border-collapse:collapse;font-size:15px}
 th{
-  background:#0d1729;color:var(--accent);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
+  background:var(--inset);color:var(--accent-ink);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
   padding:11px 9px;text-align:left;border-bottom:2px solid var(--line2);position:sticky;top:0;
 }
 td{padding:10px 9px;border-bottom:1px solid var(--line);font-weight:700;font-variant-numeric:tabular-nums}
 tbody tr:hover{background:rgba(34,211,238,.06)}
 .tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800;
   text-transform:uppercase;letter-spacing:.07em}
-.tag.cold{background:rgba(96,165,250,.18);color:#93c5fd}
-.tag.room{background:rgba(52,211,153,.18);color:#6ee7b7}
-.tag.warm{background:rgba(251,191,36,.18);color:#fcd34d}
-.tag.hot{background:rgba(239,68,68,.2);color:#fca5a5}
+.tag.cold{background:rgba(96,165,250,.18);color:var(--tag-cold)}
+.tag.room{background:rgba(52,211,153,.18);color:var(--tag-room)}
+.tag.warm{background:rgba(251,191,36,.18);color:var(--tag-warm)}
+.tag.hot{background:rgba(239,68,68,.2);color:var(--tag-hot)}
 .tablescroll{max-height:330px;overflow:auto;border-radius:11px;border:1px solid var(--line)}
 .empty{padding:26px 14px;text-align:center;color:var(--muted);font-weight:700;font-size:15px}
 
 .avgrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:13px}
-.avgcell{background:#0b1526;border:1px solid var(--line);border-radius:12px;padding:11px 12px;text-align:center}
+.avgcell{background:var(--inset2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;text-align:center}
 .avgcell .lbl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .avgcell .val{font-size:25px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:3px}
 
-canvas#chart{display:block;width:100%;height:auto;aspect-ratio:760/470;border-radius:11px;background:#0b1526;border:1px solid var(--line)}
+canvas#chart{display:block;width:100%;height:auto;aspect-ratio:760/470;border-radius:11px;background:var(--c-chart-bg);border:1px solid var(--line)}
 
 .phscale{display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--line2);margin:6px 0 4px}
 .phscale div{flex:1;text-align:center;font-size:13px;font-weight:800;padding:9px 0;color:#0b1020}
 .phlabels{display:flex;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .phlabels span{text-align:center}
 .phhead{display:grid;grid-template-columns:1.3fr .95fr .85fr 96px 1fr;gap:12px;padding:0 12px 8px;
-  font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
 .striprow{display:grid;grid-template-columns:1.3fr .95fr .85fr 96px 1fr;gap:12px;align-items:center;
-  padding:13px 12px;border:1px solid var(--line);border-radius:13px;background:#0b1526;margin-bottom:11px}
+  padding:13px 12px;border:1px solid var(--line);border-radius:13px;background:var(--inset2);margin-bottom:11px}
 .striprow .name{font-size:15px;font-weight:800}
 .striprow .name small{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-top:2px}
 input[type=number]{
-  width:100%;font-family:inherit;font-weight:800;font-size:17px;color:var(--ink);background:#0d1729;
+  width:100%;font-family:inherit;font-weight:800;font-size:17px;color:var(--ink);background:var(--inset);
   border:1px solid var(--line2);border-radius:10px;padding:9px 11px;text-align:center;
 }
 input[type=number]:focus{outline:none;border-color:var(--accent)}
-.strip{height:58px;border-radius:8px;border:2px solid #1c2942;background:#e8e4d5;position:relative;overflow:hidden;
+.strip{height:58px;border-radius:8px;border:2px solid var(--strip-edge);background:#e8e4d5;position:relative;overflow:hidden;
   box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
 .strip i{position:absolute;left:0;right:0;bottom:0;height:62%;background:#e8e4d5;transition:background .5s ease}
 .actual{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;text-align:center;line-height:1.1}
@@ -202,17 +292,17 @@ input[type=number]:focus{outline:none;border-color:var(--accent)}
 .hit{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-top:5px}
 .hit.yes{color:var(--good)} .hit.no{color:var(--warn)}
 .explain{margin-top:14px;padding:15px 17px;border-radius:13px;border:1px dashed var(--accent);
-  background:rgba(34,211,238,.07);font-size:15px;font-weight:600;line-height:1.65;color:#d6ebff}
-.explain b{font-weight:800;color:#a5f3fc}
+  background:rgba(34,211,238,.07);font-size:15px;font-weight:600;line-height:1.65;color:var(--explain-ink)}
+.explain b{font-weight:800;color:var(--explain-b)}
 .explain.hidden{display:none}
 
-ol.howto{margin:0;padding-left:24px;font-size:16px;font-weight:600;line-height:1.75;color:#dbe8fb}
+ol.howto{margin:0;padding-left:24px;font-size:16px;font-weight:600;line-height:1.75;color:var(--howto-ink)}
 ol.howto li{margin-bottom:10px}
-ol.howto strong{font-weight:800;color:#fff}
-.notes{font-size:15px;font-weight:600;line-height:1.7;color:#cddcf2}
-.notes strong{color:#fff;font-weight:800}
-.eq{display:inline-block;background:#0b1526;border:1px solid var(--line2);border-radius:10px;
-  padding:9px 14px;margin:8px 0;font-size:16px;font-weight:800;color:#a7f3d0}
+ol.howto strong{font-weight:800;color:var(--strong)}
+.notes{font-size:15px;font-weight:600;line-height:1.7;color:var(--notes-ink)}
+.notes strong{color:var(--strong);font-weight:800}
+.eq{display:inline-block;background:var(--inset2);border:1px solid var(--line2);border-radius:10px;
+  padding:9px 14px;margin:8px 0;font-size:16px;font-weight:800;color:var(--eq-ink)}
 .hintline{font-size:13px;font-weight:600;color:var(--muted);margin-top:9px;line-height:1.55}
 
 @media (max-width:1350px){
@@ -229,6 +319,16 @@ ol.howto strong{font-weight:800;color:#fff}
   header.page .badge{margin-left:0}
 }
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+  if (t !== 'light' && t !== 'dark') { try { t = localStorage.getItem('motionlab-theme'); } catch (e) {} }
+  if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -239,6 +339,10 @@ ol.howto strong{font-weight:800;color:#fff}
     <div class="sub">Measure how <strong>water temperature</strong> changes the <strong>rate of a chemical reaction</strong>. Heat the water, drop the Alka-Seltzer tablet, and time the fizz until the tablet is completely gone.</div>
   </div>
   <div class="badge">Reaction Rate Lab</div>
+  <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to light mode">
+    <span class="icon" aria-hidden="true"></span>
+    <span class="label">Light mode</span>
+  </button>
 </header>
 
 <div class="grid-main">
@@ -282,10 +386,10 @@ ol.howto strong{font-weight:800;color:#fff}
       <button data-sound="1">On</button>
     </div>
 
-    <div style="margin-top:20px;padding:13px 14px;background:#0b1526;border:1px solid var(--line);border-radius:12px">
+    <div style="margin-top:20px;padding:13px 14px;background:var(--inset2);border:1px solid var(--line);border-radius:12px">
       <div class="fieldlabel" style="margin-bottom:8px">Controlled variables</div>
       <div style="font-size:13px;font-weight:600;color:var(--muted);line-height:1.7">
-        Same 400 mL beaker &middot; 250 mL of water &middot; <strong style="color:#cbd9ee">1 whole tablet</strong>, same brand and size &middot; tablet dropped, not stirred
+        Same 400 mL beaker &middot; 250 mL of water &middot; <strong style="color:var(--cv-strong)">1 whole tablet</strong>, same brand and size &middot; tablet dropped, not stirred
       </div>
     </div>
   </section>
@@ -474,6 +578,17 @@ var S = {
 
 function $(id){ return document.getElementById(id); }
 
+/* ================= THEME COLORS (read from the CSS tokens) ================= */
+var P = {};
+function readPalette(){
+  var cs = getComputedStyle(document.documentElement);
+  ['c-wall-1','c-wall-2','c-wall-3','c-bench-1','c-bench-2','c-water-back','c-glass','c-glass-2','c-glass-rim',
+   'c-marks','c-marks-text','c-vial-edge','c-caption','c-steam','c-chart-bg','c-chart-grid','c-chart-axis',
+   'c-chart-tick','c-chart-title','c-chart-curve','c-chart-curve-label','c-chart-empty','c-dot-ring',
+   'c-dot-cold','c-dot-room','c-dot-warm','c-dot-hot'].forEach(function(k){ P[k] = cs.getPropertyValue('--'+k).trim(); });
+}
+readPalette();
+
 /* ================= CANVAS SCENE ================= */
 var cv = $('scene'), cx = cv.getContext('2d');
 var W = 1000, H = 640;
@@ -502,11 +617,11 @@ function drawScene(){
   cx.clearRect(0,0,W,H);
 
   var bg = cx.createLinearGradient(0,0,0,H);
-  bg.addColorStop(0,'#0e1e33'); bg.addColorStop(.55,'#102942'); bg.addColorStop(1,'#0a1626');
+  bg.addColorStop(0,P['c-wall-1']); bg.addColorStop(.55,P['c-wall-2']); bg.addColorStop(1,P['c-wall-3']);
   cx.fillStyle = bg; cx.fillRect(0,0,W,H);
 
   var bench = cx.createLinearGradient(0,548,0,H);
-  bench.addColorStop(0,'#15594f'); bench.addColorStop(1,'#0d3b35');
+  bench.addColorStop(0,P['c-bench-1']); bench.addColorStop(1,P['c-bench-2']);
   cx.fillStyle = bench; cx.fillRect(0,548,W,H-548);
   cx.fillStyle='rgba(255,255,255,.05)'; cx.fillRect(0,548,W,3);
 
@@ -579,7 +694,7 @@ function drawProps(){
   vg.addColorStop(0,'rgba(228,244,255,.30)'); vg.addColorStop(.45,'rgba(255,255,255,.16)');
   vg.addColorStop(1,'rgba(190,220,245,.30)');
   cx.fillStyle=vg; cx.fill();
-  cx.strokeStyle='rgba(215,238,255,.72)'; cx.lineWidth=3; cx.stroke();
+  cx.strokeStyle=P['c-vial-edge']; cx.lineWidth=3; cx.stroke();
   // strips inside
   var stripCols=['#f6c324','#d5d92b','#4caf50','#2fae7e'];
   for (var s=0;s<4;s++){
@@ -597,7 +712,7 @@ function drawProps(){
   cx.restore();
 
   // ---- scene caption ----
-  cx.fillStyle='rgba(230,245,255,.42)';
+  cx.fillStyle=P['c-caption'];
   cx.font='800 13px Poppins, sans-serif'; cx.textAlign='left';
   cx.fillText('250 mL WATER  ·  400 mL BEAKER  ·  1 WHOLE TABLET', 34, 40);
 }
@@ -663,6 +778,9 @@ function drawBeakerBack(coldAmt){
   cx.lineTo(BX+BW-3, WATER_TOP);
   cx.closePath();
   cx.clip();
+
+  // light mode: a darker backing behind the water so the bubbles still show (clear in dark mode)
+  cx.fillStyle = P['c-water-back']; cx.fillRect(BX,WATER_TOP,BW,BBOT-WATER_TOP);
 
   var wg = cx.createLinearGradient(0,WATER_TOP,0,BBOT);
   wg.addColorStop(0,'rgba('+r+','+g+','+b+',0.62)');
@@ -742,19 +860,19 @@ function drawGlass(){
   cx.lineTo(BX+BW-18, BBOT);
   cx.quadraticCurveTo(BX+BW, BBOT, BX+BW, BBOT-16);
   cx.lineTo(BX+BW, BTOP);
-  cx.strokeStyle='rgba(215,238,255,.78)'; cx.lineWidth=4.5; cx.lineJoin='round'; cx.stroke();
+  cx.strokeStyle=P['c-glass']; cx.lineWidth=4.5; cx.lineJoin='round'; cx.stroke();
 
   cx.beginPath();
   cx.moveTo(BX+BW, BTOP+3);
   cx.lineTo(BX+BW+22, BTOP-7);
   cx.lineTo(BX+BW+20, BTOP+3);
-  cx.strokeStyle='rgba(215,238,255,.72)'; cx.lineWidth=4; cx.stroke();
+  cx.strokeStyle=P['c-glass-2']; cx.lineWidth=4; cx.stroke();
 
   cx.beginPath(); cx.ellipse(BX+BW/2, BTOP, BW/2, 9, 0, 0, Math.PI*2);
-  cx.strokeStyle='rgba(215,238,255,.5)'; cx.lineWidth=3; cx.stroke();
+  cx.strokeStyle=P['c-glass-rim']; cx.lineWidth=3; cx.stroke();
 
-  cx.strokeStyle='rgba(230,245,255,.42)'; cx.lineWidth=2;
-  cx.font='700 11px Poppins, sans-serif'; cx.fillStyle='rgba(230,245,255,.5)'; cx.textAlign='left';
+  cx.strokeStyle=P['c-marks']; cx.lineWidth=2;
+  cx.font='700 11px Poppins, sans-serif'; cx.fillStyle=P['c-marks-text']; cx.textAlign='left';
   var marks=[['400',168],['300',240],['250',276],['200',312],['100',384]];
   for (var i=0;i<marks.length;i++){
     cx.beginPath(); cx.moveTo(BX+BW-34, marks[i][1]); cx.lineTo(BX+BW-6, marks[i][1]); cx.stroke();
@@ -770,7 +888,7 @@ function drawSteam(amt){
   for (var i=0;i<steam.length;i++){
     var s = steam[i];
     cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-    cx.fillStyle='rgba(255,255,255,'+(s.a*amt*0.5)+')'; cx.fill();
+    cx.fillStyle='rgba('+P['c-steam']+','+(s.a*amt*0.5)+')'; cx.fill();
   }
 }
 
@@ -1109,50 +1227,50 @@ function drawChart(){
   var py = function(t){ return CH-M.b - (t/yMax)*(CH-M.t-M.b); };
 
   ctx2.clearRect(0,0,CW,CH);
-  ctx2.fillStyle='#0b1526'; ctx2.fillRect(0,0,CW,CH);
+  ctx2.fillStyle=P['c-chart-bg']; ctx2.fillRect(0,0,CW,CH);
 
   if (S.showGrid){
-    ctx2.strokeStyle='rgba(255,255,255,.07)'; ctx2.lineWidth=1;
+    ctx2.strokeStyle=P['c-chart-grid']; ctx2.lineWidth=1;
     for (var T=0;T<=100;T+=10){ ctx2.beginPath(); ctx2.moveTo(px(T),M.t); ctx2.lineTo(px(T),CH-M.b); ctx2.stroke(); }
     for (var t=0;t<=yMax;t+=25){ ctx2.beginPath(); ctx2.moveTo(M.l,py(t)); ctx2.lineTo(CW-M.r,py(t)); ctx2.stroke(); }
   }
 
-  ctx2.strokeStyle='#4a6488'; ctx2.lineWidth=2.5;
+  ctx2.strokeStyle=P['c-chart-axis']; ctx2.lineWidth=2.5;
   ctx2.beginPath(); ctx2.moveTo(M.l,M.t); ctx2.lineTo(M.l,CH-M.b); ctx2.lineTo(CW-M.r,CH-M.b); ctx2.stroke();
 
-  ctx2.fillStyle='#9cb1d0'; ctx2.font='700 13px Poppins, sans-serif'; ctx2.textAlign='center';
+  ctx2.fillStyle=P['c-chart-tick']; ctx2.font='700 13px Poppins, sans-serif'; ctx2.textAlign='center';
   for (var T2=0;T2<=100;T2+=20) ctx2.fillText(T2+'°', px(T2), CH-M.b+22);
   ctx2.textAlign='right';
   for (var t2=0;t2<=yMax;t2+=50) ctx2.fillText(t2, M.l-10, py(t2)+5);
 
-  ctx2.fillStyle='#22d3ee'; ctx2.font='800 14px Poppins, sans-serif'; ctx2.textAlign='center';
+  ctx2.fillStyle=P['c-chart-title']; ctx2.font='800 14px Poppins, sans-serif'; ctx2.textAlign='center';
   ctx2.fillText('WATER TEMPERATURE (°C)', M.l+(CW-M.l-M.r)/2, CH-10);
   ctx2.save(); ctx2.translate(20, M.t+(CH-M.t-M.b)/2); ctx2.rotate(-Math.PI/2);
   ctx2.fillText('TIME TO DISSOLVE (s)', 0, 0); ctx2.restore();
 
   if (S.showCurve){
-    ctx2.strokeStyle='rgba(167,139,250,.85)'; ctx2.lineWidth=3; ctx2.setLineDash([7,6]);
+    ctx2.strokeStyle=P['c-chart-curve']; ctx2.lineWidth=3; ctx2.setLineDash([7,6]);
     ctx2.beginPath();
     for (var T3=0;T3<=100;T3+=1){
       var tt = Math.min(yMax, dissolveTime(T3));
       if (T3===0) ctx2.moveTo(px(T3),py(tt)); else ctx2.lineTo(px(T3),py(tt));
     }
     ctx2.stroke(); ctx2.setLineDash([]);
-    ctx2.fillStyle='rgba(167,139,250,.95)'; ctx2.font='800 12px Poppins, sans-serif'; ctx2.textAlign='left';
+    ctx2.fillStyle=P['c-chart-curve-label']; ctx2.font='800 12px Poppins, sans-serif'; ctx2.textAlign='left';
     ctx2.fillText('PREDICTED CURVE', px(52), py(dissolveTime(52))-14);
   }
 
-  var colors = {cold:'#60a5fa', room:'#34d399', warm:'#fbbf24', hot:'#f87171'};
+  var colors = {cold:P['c-dot-cold'], room:P['c-dot-room'], warm:P['c-dot-warm'], hot:P['c-dot-hot']};
   for (var k=0;k<S.trials.length;k++){
     var r2 = S.trials[k];
     var x = px(r2.T), y = py(Math.min(yMax,r2.t));
     ctx2.beginPath(); ctx2.arc(x,y,7.5,0,Math.PI*2);
     ctx2.fillStyle = colors[category(r2.T).k]; ctx2.fill();
-    ctx2.strokeStyle='#0b1526'; ctx2.lineWidth=2.5; ctx2.stroke();
+    ctx2.strokeStyle=P['c-dot-ring']; ctx2.lineWidth=2.5; ctx2.stroke();
   }
 
   if (!S.trials.length){
-    ctx2.fillStyle='rgba(156,177,208,.75)'; ctx2.font='700 15px Poppins, sans-serif'; ctx2.textAlign='center';
+    ctx2.fillStyle=P['c-chart-empty']; ctx2.font='700 15px Poppins, sans-serif'; ctx2.textAlign='center';
     ctx2.fillText('Record a trial to plot your first data point', CW/2, CH/2 - 10);
   }
 }
@@ -1235,7 +1353,7 @@ function renderPhRows(){
     row.innerHTML =
       '<div class="name">'+item.name+'<small>'+item.sub+'</small></div>'+
       '<div><input type="number" min="0" max="14" step="0.5" placeholder="0–14" value="'+est+'" data-est="'+item.key+'">'+hit+'</div>'+
-      '<div class="actual">'+(val==null?'<span style="color:#5b6f8f">—</span>':val.toFixed(1))+
+      '<div class="actual">'+(val==null?'<span style="color:var(--dash)">—</span>':val.toFixed(1))+
         '<small>'+(val==null?'not tested':phWord(val))+'</small></div>'+
       '<div class="strip"><i style="background:'+(val==null?'#e8e4d5':phColor(val))+'"></i></div>'+
       '<div><button data-dip="'+item.key+'">'+item.btn+'</button>'+
@@ -1286,7 +1404,7 @@ function updatePhExplain(){
   if (phState.water != null){
     html += '<b>Plain water.</b> The strip stayed <b>'+colorWord(phState.water)+'</b> at <b>pH '+phState.water.toFixed(1)+'</b> — <b>neutral</b>. Water has equal amounts of H⁺ and OH⁻ ions.<br><br>';
   } else {
-    html += '<em style="color:#a5f3fc">Tip: press <b>New Beaker</b> and dip a strip in the plain water first, so you have something to compare against.</em><br><br>';
+    html += '<em style="color:var(--explain-b)">Tip: press <b>New Beaker</b> and dip a strip in the plain water first, so you have something to compare against.</em><br><br>';
   }
 
   if (phState.mix != null){
@@ -1302,13 +1420,52 @@ function updatePhExplain(){
   }
 
   if (phState.mix == null){
-    html += '<br><br><em style="color:#a5f3fc">You still have not tested the mixture <b>while it is fizzing</b> — drop a tablet, then dip the second strip before the reaction finishes. The pH is different during the fizz than it is afterward.</em>';
+    html += '<br><br><em style="color:var(--explain-b)">You still have not tested the mixture <b>while it is fizzing</b> — drop a tablet, then dip the second strip before the reaction finishes. The pH is different during the fizz than it is afterward.</em>';
   } else if (phState.stood == null){
-    html += '<br><br><em style="color:#a5f3fc">Now test the third row — let the mixture stand for five minutes and dip again. The pH does something surprising.</em>';
+    html += '<br><br><em style="color:var(--explain-b)">Now test the third row — let the mixture stand for five minutes and dip again. The pH does something surprising.</em>';
   }
 
   box.innerHTML = html;
 }
+
+/* ================= LIGHT / DARK TOGGLE ================= */
+/* this sim's own look is dark, so with no choice made it is dark unless the computer asks for light */
+var themeBtn = $('themeToggle');
+var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+var inFrame = window.parent !== window;
+function isDarkNow(){
+  var a = document.documentElement.getAttribute('data-theme');
+  return a === 'dark' || (!a && !(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches));
+}
+function paintToggle(){
+  var d = isDarkNow();
+  themeBtn.querySelector('.icon').innerHTML = d ? SUN : MOON;
+  themeBtn.querySelector('.label').textContent = d ? 'Light mode' : 'Dark mode';
+  themeBtn.setAttribute('aria-label', d ? 'Switch to light mode' : 'Switch to dark mode');
+}
+// the lab bench redraws itself every frame; the graph only redraws when asked
+function repaint(){ readPalette(); paintToggle(); drawScene(); drawChart(); }
+function applyTheme(th){ document.documentElement.setAttribute('data-theme', th); repaint(); }
+themeBtn.addEventListener('click', function(){
+  var next = isDarkNow() ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem('motionlab-theme', next); } catch (e) {}
+  // shown in a frame (the textbook's Sims page): tell that page, so it switches too
+  if (inFrame) try { window.parent.postMessage({ simTheme: next }, '*'); } catch (e) {}
+});
+// the page around this sim switched its light / dark mode: follow it (not saved)
+window.addEventListener('message', function(e){
+  if (!inFrame || e.source !== window.parent) return;
+  var th = e.data && e.data.simTheme;
+  if ((th === 'light' || th === 'dark') && th !== (isDarkNow() ? 'dark' : 'light')) applyTheme(th);
+});
+if (window.matchMedia){
+  var mqLight = window.matchMedia('(prefers-color-scheme: light)');
+  var onSys = function(){ if (!document.documentElement.getAttribute('data-theme')) repaint(); };
+  if (mqLight.addEventListener) mqLight.addEventListener('change', onSys); else if (mqLight.addListener) mqLight.addListener(onSys);
+}
+paintToggle();
 
 /* ================= INIT ================= */
 renderPhRows();

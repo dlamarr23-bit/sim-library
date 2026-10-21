@@ -14,8 +14,8 @@
        <iframe src="friction-tray-lab.html"
                style="width:100%;height:1450px;border:0" loading="lazy"
                title="Static and kinetic friction simulation"></iframe>
-  2) Or paste the style block, the cvlab div, and the script block into a page.
-     Every CSS rule is scoped under .cvlab.
+  2) Or paste the style block, the theme script, the cvlab div, and the script block into a page.
+     Layout rules are scoped under .cvlab; the light/dark color tokens live on :root.
 
   THE MODEL
      Lightweight tray (mass ignored) on a lab counter, 200 g hooked masses laid
@@ -32,7 +32,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-.cvlab{
+/* ---------- tokens: bare :root = light, system dark unless light is chosen, explicit dark ---------- */
+:root{
   --bench:#DDE0D6; --paper:#FBFBF7; --rule:#C9CFC2;
   --ink:#1B1D1C; --ink-2:#5A5F58;
   --blue:#1552B8; --blue-d:#0E3B87;
@@ -40,6 +41,53 @@
   --oak:#DDB37C; --oak-d:#B4854D;
   --epoxy:#22251F; --tray:#3A3E3B;
   --steel:#B9BEB6; --tape:#E8B93C;
+  --head-bg:#1B1D1C; --head-ink:#F4F5F0;
+  --ro-bg:#000; --ro-line:#35392F; --ro-k:#8C9284; --ro-v:#DDE3D2;
+  --th-bg:#EFF1E9; --row-line:#E8EAE1; --row-new:#FCF3D9; --notes-ink:#33362F;
+  /* canvas colors (read by the script) */
+  --c-wall1:#F1F2EC; --c-wall2:#E3E6DD; --c-floor:#CFD3C7; --c-floor-line:#B4B9AC; --c-edge:#4E534A;
+  --c-shadow:rgba(27,29,28,.18); --c-outline:rgba(0,0,0,0); --c-hook:#151715; --c-ink:#1B1D1C;
+  --c-red:#C0392B; --c-blue:#1552B8;
+  --c-call-bg:#FBFBF7; --c-peak-bg:#FDE9E7; --c-peak-line:#E8646E; --c-peak-ink:#A6323C;
+  --c-plot:#FDFDF9; --c-grid:#E4E8DC; --c-grid-2:#CCD2C4; --c-axis:#1B1D1C; --c-tick:#5A5F58;
+  --c-empty:#8A9082; --c-fit:rgba(90,95,88,.75); --c-label-bg:rgba(251,251,247,.94);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+    --ink:#EEF0EA; --ink-2:#B6BAB0;
+    --blue:#3F7FE6; --blue-d:#2A63C2; --tape:#F0C64A;
+    --head-bg:#0A0B0A; --head-ink:#F4F5F0;
+    --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
+    --th-bg:#252925; --row-line:#2A2F29; --row-new:#3A3320; --notes-ink:#C9CCC3;
+    --c-wall1:#1F231F; --c-wall2:#191C19; --c-floor:#2A2E29; --c-floor-line:#3A4039; --c-edge:#6A7066;
+    --c-shadow:rgba(0,0,0,.45); --c-outline:rgba(235,240,230,.55); --c-hook:#9AA095; --c-ink:#EEF0EA;
+    --c-red:#FF7A62; --c-blue:#7FB0FF;
+    --c-call-bg:#1C1F1C; --c-peak-bg:#3A2220; --c-peak-line:#E8646E; --c-peak-ink:#FFB0A6;
+    --c-plot:#171A17; --c-grid:#262B25; --c-grid-2:#363D35; --c-axis:#C9CEC2; --c-tick:#A9AFA4;
+    --c-empty:#8D9288; --c-fit:rgba(182,186,176,.75); --c-label-bg:rgba(28,31,28,.94);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+  --ink:#EEF0EA; --ink-2:#B6BAB0;
+  --blue:#3F7FE6; --blue-d:#2A63C2; --tape:#F0C64A;
+  --head-bg:#0A0B0A; --head-ink:#F4F5F0;
+  --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
+  --th-bg:#252925; --row-line:#2A2F29; --row-new:#3A3320; --notes-ink:#C9CCC3;
+  --c-wall1:#1F231F; --c-wall2:#191C19; --c-floor:#2A2E29; --c-floor-line:#3A4039; --c-edge:#6A7066;
+  --c-shadow:rgba(0,0,0,.45); --c-outline:rgba(235,240,230,.55); --c-hook:#9AA095; --c-ink:#EEF0EA;
+  --c-red:#FF7A62; --c-blue:#7FB0FF;
+  --c-call-bg:#1C1F1C; --c-peak-bg:#3A2220; --c-peak-line:#E8646E; --c-peak-ink:#FFB0A6;
+  --c-plot:#171A17; --c-grid:#262B25; --c-grid-2:#363D35; --c-axis:#C9CEC2; --c-tick:#A9AFA4;
+  --c-empty:#8D9288; --c-fit:rgba(182,186,176,.75); --c-label-bg:rgba(28,31,28,.94);
+  color-scheme:dark;
+}
+body{margin:0;background:var(--bench)}
+
+.cvlab{
   --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -51,19 +99,26 @@
 .cvlab p{margin:0}
 .cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+.cvlab-head{background:var(--head-bg);color:var(--head-ink);border-radius:5px 5px 0 0;padding:12px 16px;
   display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.cvlab-title{flex:1 1 auto}
 .cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--tape);margin-bottom:2px}
 .cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
 .cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
-.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:92px}
+.cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:3px;padding:5px 10px;min-width:92px}
 .cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
-  text-transform:uppercase;color:#8C9284}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+  text-transform:uppercase;color:var(--ro-k)}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:var(--ro-v);
   font-variant-numeric:tabular-nums;white-space:nowrap}
 .cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
 .cvlab-ro-peak .cvlab-ro-v{color:#F08B7E}
+.cvlab-themebtn{
+  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
+  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
+}
+.cvlab-themebtn:hover{border-color:var(--tape)}
+.cvlab-themebtn svg{width:21px;height:21px}
 
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 5px 5px;padding:10px 10px 12px}
@@ -117,15 +172,15 @@
 
 .cvlab-tablewrap{max-height:300px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
 .cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:14px}
-.cvlab thead th{position:sticky;top:0;background:#EFF1E9;font-size:11px;letter-spacing:.06em;
+.cvlab thead th{position:sticky;top:0;background:var(--th-bg);font-size:11px;letter-spacing:.06em;
   text-transform:uppercase;font-weight:700;padding:6px 5px;text-align:right;
   border-bottom:1px solid var(--rule);color:var(--ink-2)}
 .cvlab thead th:first-child{text-align:left}
 .cvlab tbody td{padding:4px 5px;text-align:right;font-variant-numeric:tabular-nums;
-  border-bottom:1px solid #E8EAE1}
+  border-bottom:1px solid var(--row-line)}
 .cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
 .cvlab tbody tr:last-child td{border-bottom:0}
-.cvlab tbody tr.is-new td{background:#FCF3D9}
+.cvlab tbody tr.is-new td{background:var(--row-new)}
 .cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
 
 .cvlab-graphs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -140,19 +195,29 @@
 .cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
   padding:10px 14px}
 .cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:var(--notes-ink)}
 .cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
 .cvlab-notes li{margin:3px 0}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#DDE0D6">
+<body>
 
 <div class="cvlab" id="cvlab">
 
   <header class="cvlab-head">
-    <div>
+    <div class="cvlab-title">
       <span class="cvlab-eyebrow">Forces lab &middot; friction</span>
       <h1>Starting force vs sliding force</h1>
     </div>
@@ -162,6 +227,7 @@
       <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Scale</span><span class="cvlab-ro-v" id="cvlab-ro-scale">0.00 N</span></div>
       <div class="cvlab-ro cvlab-ro-peak"><span class="cvlab-ro-k">Peak held</span><span class="cvlab-ro-v" id="cvlab-ro-peak">&mdash;</span></div>
     </div>
+    <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="cvlab-bench">
@@ -296,6 +362,20 @@
   var elNormal = $("cvlab-normal"), elNoise = $("cvlab-noise"), elSlow = $("cvlab-slow");
   var roMass = $("cvlab-ro-mass"), roNormal = $("cvlab-ro-normal"),
       roScale = $("cvlab-ro-scale"), roPeak = $("cvlab-ro-peak");
+
+  /* ------------------------------------------------ theme colors (read from CSS tokens) */
+  var P = {};
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute("data-theme");
+    return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function readPalette(){
+    var cs = getComputedStyle(document.documentElement);
+    ["c-wall1","c-wall2","c-floor","c-floor-line","c-edge","c-shadow","c-outline","c-hook","c-ink",
+     "c-red","c-blue","c-call-bg","c-peak-bg","c-peak-line","c-peak-ink","c-plot","c-grid","c-grid-2",
+     "c-axis","c-tick","c-empty","c-fit","c-label-bg"].forEach(function(k){ P[k] = cs.getPropertyValue("--"+k).trim(); });
+  }
+  readPalette();
 
   /* ------------------------------------------------ sprite */
   var puller = new Image();
@@ -484,10 +564,10 @@
 
     /* room */
     var wall = ctx.createLinearGradient(0,0,0,G.floorY);
-    wall.addColorStop(0,"#F1F2EC"); wall.addColorStop(1,"#E3E6DD");
+    wall.addColorStop(0,P["c-wall1"]); wall.addColorStop(1,P["c-wall2"]);
     ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.floorY);
-    ctx.fillStyle = "#CFD3C7"; ctx.fillRect(0,G.floorY,w,h-G.floorY);
-    ctx.strokeStyle = "#B4B9AC"; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-floor"]; ctx.fillRect(0,G.floorY,w,h-G.floorY);
+    ctx.strokeStyle = P["c-floor-line"]; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0,G.floorY+0.5); ctx.lineTo(w,G.floorY+0.5); ctx.stroke();
 
     drawCounter(ctx);
@@ -525,7 +605,7 @@
     roundRect(ctx, 0, top, R, topH, 1.5); ctx.fill();
     ctx.fillStyle = "#22251F";
     roundRect(ctx, 0, top, R, topH*0.68, 1.5); ctx.fill();
-    ctx.fillStyle = "#4E534A"; ctx.fillRect(0, top, R, 1.2);
+    ctx.fillStyle = P["c-edge"]; ctx.fillRect(0, top, R, 1.2);
   }
 
   /* the cafeteria tray, side on, with the masses lying across it */
@@ -564,7 +644,7 @@
       drawn++;
     }
     if(hidden > 0){
-      ctx.fillStyle = "#1B1D1C";
+      ctx.fillStyle = P["c-ink"];
       ctx.font = "700 " + (G.compact?9:10.5) + "px " + monoStack();
       ctx.textAlign = "left"; ctx.textBaseline = "middle";
       ctx.fillText("+" + hidden, x + 3, y - H*1.05 - G.massD*0.5);
@@ -578,6 +658,7 @@
     g.addColorStop(0,"#3C403B"); g.addColorStop(.35,"#1B1D1A"); g.addColorStop(1,"#0C0E0C");
     ctx.fillStyle = g;
     roundRect(ctx, x, y, len, dia, dia*0.16); ctx.fill();
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
     /* the circular end face nearest the scale */
     ctx.fillStyle = "#2A2E2A";
     ctx.beginPath(); ctx.ellipse(x+len-dia*0.10, y+dia/2, dia*0.13, dia*0.47, 0, 0, Math.PI*2); ctx.fill();
@@ -590,7 +671,7 @@
       ctx.fillText(val + "g", x + len*0.45, y + dia/2);
     }
     if(withHook){
-      ctx.strokeStyle = "#151715"; ctx.lineWidth = Math.max(1.6, dia*0.10);
+      ctx.strokeStyle = P["c-hook"]; ctx.lineWidth = Math.max(1.6, dia*0.10);
       ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(x+len, y+dia/2);
@@ -680,7 +761,7 @@
     var drawW = drawH * (SPRITE.w/SPRITE.h);
     var left = fistX - drawW*SPRITE.fistXF;
     var top  = fistY - drawH*SPRITE.fistYF;
-    ctx.fillStyle = "rgba(27,29,28,.18)";
+    ctx.fillStyle = P["c-shadow"];
     ctx.beginPath();
     ctx.ellipse(left + drawW*0.55, G.floorY+1.5, drawH*0.10, drawH*0.016, 0, 0, Math.PI*2);
     ctx.fill();
@@ -702,11 +783,11 @@
     ctx.font = "700 " + fs + "px " + monoStack();
     var tw = ctx.measureText(txt).width;
     var bw = tw + 16, bx = clamp(midX - bw/2, 4, G.w - bw - 4);
-    ctx.fillStyle = "#FBFBF7";
+    ctx.fillStyle = P["c-call-bg"];
     roundRect(ctx, bx, y, bw, fs+10, 3); ctx.fill();
-    ctx.strokeStyle = "#C0392B"; ctx.lineWidth = 1.4;
+    ctx.strokeStyle = P["c-red"]; ctx.lineWidth = 1.4;
     roundRect(ctx, bx, y, bw, fs+10, 3); ctx.stroke();
-    ctx.fillStyle = "#C0392B"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = P["c-red"]; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(txt, bx + bw/2, y + (fs+10)/2);
 
     if(peak > 0){
@@ -715,11 +796,11 @@
       var pw = ctx.measureText(pt).width + 14;
       var px2 = clamp(midX - pw/2, 4, G.w - pw - 4);
       var py2 = y - fs - 9;
-      ctx.fillStyle = "#FDE9E7";
+      ctx.fillStyle = P["c-peak-bg"];
       roundRect(ctx, px2, py2, pw, fs+4, 3); ctx.fill();
-      ctx.strokeStyle = "#E8646E"; ctx.lineWidth = 1;
+      ctx.strokeStyle = P["c-peak-line"]; ctx.lineWidth = 1;
       roundRect(ctx, px2, py2, pw, fs+4, 3); ctx.stroke();
-      ctx.fillStyle = "#A6323C";
+      ctx.fillStyle = P["c-peak-ink"];
       ctx.fillText(pt, px2 + pw/2, py2 + (fs+4)/2);
     }
 
@@ -727,7 +808,7 @@
     if(stage === "sliding"){
       var ay = G.counterTop - G.trayH - G.massD - 12;
       var ax0 = hookX - G.trayW*0.72;
-      ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 2;
+      ctx.strokeStyle = P["c-blue"]; ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(ax0, ay); ctx.lineTo(ax0 + 30, ay);
       ctx.moveTo(ax0 + 23, ay-4); ctx.lineTo(ax0 + 30, ay); ctx.lineTo(ax0 + 23, ay+4);
@@ -745,37 +826,37 @@
     var py = function(f){ return mT + ph - (f/SCALE_MAX)*ph; };
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var f=0; f<=SCALE_MAX; f+=1){ var y=Math.round(py(f))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
     for(var t=0; t<=T_WINDOW; t+=0.5){ var x=Math.round(px(t))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
     ctx.stroke();
-    ctx.strokeStyle = "#CCD2C4";
+    ctx.strokeStyle = P["c-grid-2"];
     ctx.beginPath();
     for(var f2=0; f2<=SCALE_MAX; f2+=5){ var y2=Math.round(py(f2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
     for(var t2=0; t2<=T_WINDOW; t2+=1){ var x2=Math.round(px(t2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
     ctx.stroke();
 
-    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var f3=0; f3<=SCALE_MAX; f3+=5) ctx.fillText(String(f3), mL-6, py(f3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var t3=0; t3<=T_WINDOW; t3+=1) ctx.fillText(String(t3), px(t3), mT+ph+5);
     ctx.save();
     ctx.translate(11, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 9.5px " + monoStack();
+    ctx.fillStyle = P["c-axis"]; ctx.font = "700 9.5px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("SCALE (N)", 0, 0);
     ctx.restore();
-    ctx.fillStyle = "#1B1D1C";
+    ctx.fillStyle = P["c-axis"];
     ctx.fillText("TIME (s)", mL+pw/2, mT+ph+13);
 
     if(trace.length < 2){
-      ctx.fillStyle = "#8A9082";
+      ctx.fillStyle = P["c-empty"];
       ctx.font = '700 12px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Pull, and this chart draws the reading as it happens.", mL+pw/2, mT+ph/2);
@@ -785,12 +866,12 @@
     /* the kinetic plateau, marked */
     if(peak > 0){
       ctx.save();
-      ctx.setLineDash([5,4]); ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1.2;
+      ctx.setLineDash([5,4]); ctx.strokeStyle = P["c-blue"]; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(mL, py(fKinetic)); ctx.lineTo(mL+pw, py(fKinetic)); ctx.stroke();
       ctx.restore();
     }
 
-    ctx.strokeStyle = "#C0392B"; ctx.lineWidth = 2.4; ctx.lineJoin = "round";
+    ctx.strokeStyle = P["c-red"]; ctx.lineWidth = 2.4; ctx.lineJoin = "round";
     ctx.beginPath();
     for(var i=0;i<trace.length;i++){
       var qx = px(Math.min(T_WINDOW, trace[i].t)), qy = py(trace[i].f);
@@ -803,11 +884,11 @@
       for(var j=0;j<trace.length;j++) if(!pk || trace[j].f > pk.f) pk = trace[j];
       if(pk){
         var cx = px(pk.t), cy = py(pk.f);
-        ctx.fillStyle = "#E8646E";
+        ctx.fillStyle = P["c-peak-line"];
         ctx.beginPath(); ctx.arc(cx, cy, 4.4, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.5;
+        ctx.strokeStyle = P["c-plot"]; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(cx, cy, 4.4, 0, Math.PI*2); ctx.stroke();
-        ctx.fillStyle = "#A6323C";
+        ctx.fillStyle = P["c-peak-ink"];
         ctx.font = "700 10px " + monoStack();
         ctx.textAlign = cx > mL+pw*0.7 ? "right" : "left"; ctx.textBaseline = "bottom";
         ctx.fillText("it breaks free here", cx + (cx > mL+pw*0.7 ? -7 : 7), cy - 5);
@@ -817,8 +898,8 @@
 
   /* ------------------------------------------------ the two summary graphs */
   function drawGraphs(){
-    plot(g1, g1C, "s", "#C0392B");
-    plot(g2, g2C, "k", "#1552B8");
+    plot(g1, g1C, "s", P["c-red"]);
+    plot(g2, g2C, "k", P["c-blue"]);
   }
   function plot(ctx, canvas, key, color){
     var s = fit(canvas, ctx), w = s.w, h = s.h;
@@ -831,37 +912,37 @@
     var py = function(f){ return mT + ph - (f/SCALE_MAX)*ph; };
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var f=0; f<=SCALE_MAX; f+=1){ var y=Math.round(py(f))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
     for(var x=0; x<=xMax; x+=xStep/2){ var xx=Math.round(px(x))+0.5; ctx.moveTo(xx,mT); ctx.lineTo(xx,mT+ph); }
     ctx.stroke();
-    ctx.strokeStyle = "#CCD2C4";
+    ctx.strokeStyle = P["c-grid-2"];
     ctx.beginPath();
     for(var f2=0; f2<=SCALE_MAX; f2+=5){ var y2=Math.round(py(f2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
     for(var x2=0; x2<=xMax; x2+=xStep){ var x2p=Math.round(px(x2))+0.5; ctx.moveTo(x2p,mT); ctx.lineTo(x2p,mT+ph); }
     ctx.stroke();
 
-    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = "#5A5F58"; ctx.font = "700 9.5px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 9.5px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var f3=0; f3<=SCALE_MAX; f3+=5) ctx.fillText(String(f3), mL-6, py(f3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var x3=0; x3<=xMax; x3+=xStep) ctx.fillText(String(x3), px(x3), mT+ph+5);
     ctx.save();
     ctx.translate(10, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 9px " + monoStack();
+    ctx.fillStyle = P["c-axis"]; ctx.font = "700 9px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("FORCE (N)", 0, 0);
     ctx.restore();
-    ctx.fillStyle = "#1B1D1C";
+    ctx.fillStyle = P["c-axis"];
     ctx.fillText(byN ? "NORMAL FORCE (N)" : "TOTAL MASS (g)", mL+pw/2, mT+ph+14);
 
     if(trials.length === 0){
-      ctx.fillStyle = "#8A9082";
+      ctx.fillStyle = P["c-empty"];
       ctx.font = '700 11.5px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Points appear here.", mL+pw/2, mT+ph/2);
@@ -877,7 +958,7 @@
     for(var i=0;i<pts.length;i++){ sxy += pts[i].x*pts[i].y; sxx += pts[i].x*pts[i].x; }
     var slope = sxx > 0 ? sxy/sxx : 0;
     ctx.save();
-    ctx.setLineDash([6,4]); ctx.strokeStyle = "rgba(90,95,88,.75)"; ctx.lineWidth = 1.5;
+    ctx.setLineDash([6,4]); ctx.strokeStyle = P["c-fit"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(px(0), py(0));
     var xEnd = Math.min(xMax, SCALE_MAX/Math.max(slope,1e-9));
@@ -888,7 +969,7 @@
       var qx = px(pts[j].x), qy = py(Math.min(SCALE_MAX, pts[j].y));
       ctx.fillStyle = color;
       ctx.beginPath(); ctx.arc(qx, qy, 4.2, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.4;
+      ctx.strokeStyle = P["c-plot"]; ctx.lineWidth = 1.4;
       ctx.beginPath(); ctx.arc(qx, qy, 4.2, 0, Math.PI*2); ctx.stroke();
     }
 
@@ -897,7 +978,7 @@
       ctx.font = "700 10.5px " + monoStack();
       var lw = ctx.measureText(lab).width + 12;
       var by = mT+ph-25;
-      ctx.fillStyle = "rgba(251,251,247,.94)";
+      ctx.fillStyle = P["c-label-bg"];
       roundRect(ctx, mL+pw-lw-6, by, lw, 17, 3); ctx.fill();
       ctx.strokeStyle = color; ctx.lineWidth = 1;
       roundRect(ctx, mL+pw-lw-6, by, lw, 17, 3); ctx.stroke();
@@ -994,6 +1075,38 @@
   if(document.fonts && document.fonts.ready){
     document.fonts.ready.then(function(){ dirty = true; drawScene(); drawTrace(); drawGraphs(); });
   }
+
+  /* ------------------------------------------------ light / dark toggle */
+  var themeBtn = $("cvlab-theme");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.innerHTML = d ? SUN : MOON;
+    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+  }
+  function repaint(){ readPalette(); paintToggle(); dirty = true; drawScene(); drawTrace(); drawGraphs(); }
+  function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
+  themeBtn.addEventListener("click", function(){
+    var next = isDarkNow() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+  });
+  /* the page around this sim switched its light / dark mode: follow it (not saved) */
+  window.addEventListener("message", function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var th = e.data && e.data.simTheme;
+    if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
+    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
   buildTray();
   renderTable();

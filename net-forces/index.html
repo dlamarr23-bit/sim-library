@@ -16,6 +16,46 @@
   --paper:#ffffff; --plane:#f2f4ef; --border:rgba(20,30,40,.12);
   --accent:#2f6fed; --accent-2:#1c53c4;
   --good:#1f9d55; --warn:#d9534f; --orange:#f0921e;
+  --cloud:#fff; --ground-deep:#6b4526; --ground-edge:#5c3a20;
+  --chip:rgba(255,255,255,.94); --widget:rgba(255,255,255,.92); --chip-solid:#fff; --val-bg:rgba(255,255,255,.85);
+  --gauge-arc:#cfd6db; --gauge-tick:#8a97a1; --gauge-hub:#43505b; --sw-bg:#dfe6ee; --step:#9aa6b0;
+  --arrow-applied:var(--accent); --arrow-friction:var(--warn); --arrow-net:var(--ink); --arrow-halo:none;
+  --block-edge:none;
+}
+/* dark mode: follows the computer's setting, unless a light / dark choice was made */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --sky-top:#14243a; --sky-bot:#2b4058;
+    --mountain:#435648; --mountain-snow:#b9c4bd;
+    --ground-a:#6a4529; --ground-b:#50331d; --ground-base:#7a5131;
+    --panel-green:#30361f; --panel-green-2:#272c18; --panel-green-ink:#e2ebb4;
+    --ink:#eef0ea; --ink-2:#c9cdc4; --muted:#a9afa6;
+    --paper:#1c1f1c; --plane:#121412; --border:rgba(255,255,255,.13);
+    --accent-2:#3d7bf0; --warn:#ff6b66;
+    --cloud:#4a5d73; --ground-deep:#46301c; --ground-edge:#3a2514;
+    --chip:rgba(28,31,28,.94); --widget:rgba(28,31,28,.92); --chip-solid:#262a26; --val-bg:rgba(28,31,28,.85);
+    --gauge-arc:#4a5359; --gauge-tick:#a3adb4; --gauge-hub:#c9d0d5; --sw-bg:#2a302c; --step:#5c6670;
+    --arrow-applied:#5c93ff; --arrow-friction:#ff6b66; --arrow-net:#0b0f14;
+    --arrow-halo:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1px #fff);
+    --block-edge:#8a929c;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --sky-top:#14243a; --sky-bot:#2b4058;
+  --mountain:#435648; --mountain-snow:#b9c4bd;
+  --ground-a:#6a4529; --ground-b:#50331d; --ground-base:#7a5131;
+  --panel-green:#30361f; --panel-green-2:#272c18; --panel-green-ink:#e2ebb4;
+  --ink:#eef0ea; --ink-2:#c9cdc4; --muted:#a9afa6;
+  --paper:#1c1f1c; --plane:#121412; --border:rgba(255,255,255,.13);
+  --accent-2:#3d7bf0; --warn:#ff6b66;
+  --cloud:#4a5d73; --ground-deep:#46301c; --ground-edge:#3a2514;
+  --chip:rgba(28,31,28,.94); --widget:rgba(28,31,28,.92); --chip-solid:#262a26; --val-bg:rgba(28,31,28,.85);
+  --gauge-arc:#4a5359; --gauge-tick:#a3adb4; --gauge-hub:#c9d0d5; --sw-bg:#2a302c; --step:#5c6670;
+  --arrow-applied:#5c93ff; --arrow-friction:#ff6b66; --arrow-net:#0b0f14;
+  --arrow-halo:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1px #fff);
+  --block-edge:#8a929c;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--plane);color:var(--ink);font-weight:700;
@@ -25,6 +65,15 @@ body{margin:0;background:var(--plane);color:var(--ink);font-weight:700;
 header.top{margin-bottom:14px}
 header.top h1{font-size:clamp(24px,2.6vw,32px);margin:0;letter-spacing:-.01em;font-weight:800}
 header.top p{margin:4px 0 0;color:var(--ink-2);font-size:16px;max-width:76ch}
+/* light / dark toggle: a pill at the right end of the header */
+.theme-toggle{float:right;margin:4px 0 6px 14px;display:inline-flex;align-items:center;gap:7px;
+  background:var(--paper);border:1px solid var(--border);border-radius:999px;padding:8px 14px 8px 11px;
+  cursor:pointer;font:inherit;font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap}
+.theme-toggle:hover{border-color:var(--accent)}
+.theme-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.theme-toggle .icon{display:flex}
+.theme-toggle svg{width:17px;height:17px}
+@media (max-width:640px){.theme-toggle{padding:8px}.theme-toggle .label{display:none}}
 
 .card{background:var(--paper);border:1px solid var(--border);border-radius:16px;
   padding:14px;margin-bottom:16px}
@@ -48,16 +97,16 @@ header.top p{margin:4px 0 0;color:var(--ink-2);font-size:16px;max-width:76ch}
 
 .ground{position:absolute;left:0;right:0;bottom:0;height:20%;
   background-image:repeating-linear-gradient(90deg,var(--ground-a) 0 52px, var(--ground-b) 52px 58px),
-    linear-gradient(var(--ground-base),#6b4526);
+    linear-gradient(var(--ground-base),var(--ground-deep));
   background-size:58px 100%, 100% 100%;
-  border-top:4px solid #5c3a20}
+  border-top:4px solid var(--ground-edge)}
 
 .sumforces{position:absolute;top:12px;left:50%;transform:translateX(-50%);
-  background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:20px;
+  background:var(--chip);border:1px solid var(--border);border-radius:20px;
   padding:6px 16px;font-size:16px;font-weight:800;color:var(--ink);white-space:nowrap}
 
 /* gauge + stopwatch widgets */
-.widget{position:absolute;background:rgba(255,255,255,.92);border:1px solid var(--border);
+.widget{position:absolute;background:var(--widget);border:1px solid var(--border);
   border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.08);text-align:center}
 .gauge-widget{top:3%;left:3%;width:26%;max-width:230px;padding:8px 6px 10px}
 .gauge-widget svg{width:100%;display:block}
@@ -66,7 +115,7 @@ header.top p{margin:4px 0 0;color:var(--ink-2);font-size:16px;max-width:76ch}
   border-radius:8px;padding:3px 10px;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
 
 .stopwatch-widget{top:3%;right:26%;width:19%;max-width:170px;padding:8px 8px 10px}
-.sw-display{background:#dfe6ee;border:1px solid var(--border);border-radius:8px;
+.sw-display{background:var(--sw-bg);border:1px solid var(--border);border-radius:8px;
   padding:5px 4px;font-size:clamp(15px,1.4vw,19px);font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink)}
 .sw-buttons{display:flex;gap:6px;justify-content:center;margin-top:6px}
 .sw-buttons button{width:30px;height:26px;border-radius:7px;border:1px solid var(--border);
@@ -93,7 +142,7 @@ header.top p{margin:4px 0 0;color:var(--ink-2);font-size:16px;max-width:76ch}
 .tbtn{border-radius:50%;border:none;cursor:pointer;display:grid;place-items:center;color:#fff;
   box-shadow:0 3px 8px rgba(0,0,0,.18)}
 .tbtn.play{width:52px;height:52px;background:var(--accent);font-size:20px}
-.tbtn.step{width:36px;height:36px;background:#9aa6b0;font-size:14px}
+.tbtn.step{width:36px;height:36px;background:var(--step);font-size:14px}
 .tbtn.reset{width:44px;height:44px;background:var(--orange);font-size:18px}
 
 /* pusher + stack */
@@ -112,7 +161,7 @@ header.top p{margin:4px 0 0;color:var(--ink-2);font-size:16px;max-width:76ch}
 .stackitem:hover{transform:translateY(-4px)}
 .stackitem .icon{display:block}
 .stackitem .masslab{position:absolute;left:50%;bottom:-4px;transform:translate(-50%,100%);
-  background:#fff;border:1px solid var(--border);border-radius:9px;padding:1px 7px;
+  background:var(--chip-solid);border:1px solid var(--border);border-radius:9px;padding:1px 7px;
   font-size:12px;font-weight:800;white-space:nowrap}
 .stackitem .removeflag{position:absolute;top:-8px;right:-8px;background:var(--warn);color:#fff;
   border-radius:50%;width:18px;height:18px;font-size:12px;display:none;place-items:center;line-height:1}
@@ -128,10 +177,12 @@ header.top p{margin:4px 0 0;color:var(--ink-2);font-size:16px;max-width:76ch}
 .farrow .vec{width:170px;height:22px;flex:none;overflow:visible}
 .farrow .shaft{stroke-width:6;stroke-linecap:round;transition:all .06s linear}
 .farrow .head{transition:all .06s linear}
-.farrow.applied .shaft, .farrow.applied .head{stroke:var(--accent);fill:var(--accent)}
-.farrow.friction .shaft, .farrow.friction .head{stroke:var(--warn);fill:var(--warn)}
-.farrow.net .shaft, .farrow.net .head{stroke:var(--ink);fill:var(--ink)}
-.farrow .val{font-size:13px;font-weight:800;color:var(--ink);background:rgba(255,255,255,.85);
+.farrow.applied .shaft, .farrow.applied .head{stroke:var(--arrow-applied);fill:var(--arrow-applied)}
+.farrow.friction .shaft, .farrow.friction .head{stroke:var(--arrow-friction);fill:var(--arrow-friction)}
+.farrow.net .shaft, .farrow.net .head{stroke:var(--arrow-net);fill:var(--arrow-net)}
+/* in dark mode the black net arrow stays black, with a thin light outline so it shows on the night sky */
+.farrow.net .vec{filter:var(--arrow-halo)}
+.farrow .val{font-size:13px;font-weight:800;color:var(--ink);background:var(--val-bg);
   border-radius:6px;padding:0 5px;white-space:nowrap}
 
 .hint{position:absolute;bottom:2%;left:50%;transform:translateX(-50%);font-size:13px;
@@ -139,7 +190,7 @@ header.top p{margin:4px 0 0;color:var(--ink-2);font-size:16px;max-width:76ch}
 
 .edge-message{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
   background:rgba(15,20,25,.45);z-index:6;text-align:center}
-.edge-message .box{max-width:min(520px,86%);background:#fff;border-radius:16px;
+.edge-message .box{max-width:min(520px,86%);background:var(--paper);border-radius:16px;
   padding:22px 26px;box-shadow:0 12px 30px rgba(0,0,0,.3)}
 .edge-message .box h3{margin:0 0 8px;font-size:19px;font-weight:800;color:var(--warn)}
 .edge-message .box p{margin:0;font-size:15px;font-weight:700;color:var(--ink);line-height:1.45}
@@ -167,7 +218,7 @@ input[type=range]:disabled{opacity:.4;cursor:not-allowed}
   padding:14px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;min-height:110px}
 .trayitem{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:grab;touch-action:none;user-select:none}
 .trayitem .icon{width:56px;display:block}
-.trayitem .masslab{background:#fff;border:1px solid var(--border);border-radius:9px;
+.trayitem .masslab{background:var(--chip-solid);border:1px solid var(--border);border-radius:9px;
   padding:1px 8px;font-size:13px;font-weight:800}
 
 /* -------- how-to -------- */
@@ -177,11 +228,25 @@ input[type=range]:disabled{opacity:.4;cursor:not-allowed}
 
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
 <body>
 <div class="wrap">
 
   <header class="top">
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
+      <span class="icon" aria-hidden="true"></span>
+      <span class="label">Dark mode</span>
+    </button>
     <h1>Net Force Lab — Forces and Motion</h1>
     <p>Push on a stack of objects with an applied force, add friction, and watch the net force decide what happens to the speed. Load the platform, predict what will move, then check the gauge.</p>
   </header>
@@ -189,9 +254,9 @@ input[type=range]:disabled{opacity:.4;cursor:not-allowed}
   <section class="card">
     <h2>The lab</h2>
     <div class="scene" id="scene">
-      <div class="cloud c1"><svg viewBox="0 0 200 90"><ellipse cx="60" cy="55" rx="55" ry="30" fill="#fff"/><ellipse cx="110" cy="40" rx="45" ry="34" fill="#fff"/><ellipse cx="150" cy="58" rx="40" ry="26" fill="#fff"/></svg></div>
-      <div class="cloud c2"><svg viewBox="0 0 200 90"><ellipse cx="60" cy="55" rx="55" ry="30" fill="#fff"/><ellipse cx="110" cy="40" rx="45" ry="34" fill="#fff"/><ellipse cx="150" cy="58" rx="40" ry="26" fill="#fff"/></svg></div>
-      <div class="cloud c3"><svg viewBox="0 0 200 90"><ellipse cx="60" cy="55" rx="55" ry="30" fill="#fff"/><ellipse cx="110" cy="40" rx="45" ry="34" fill="#fff"/><ellipse cx="150" cy="58" rx="40" ry="26" fill="#fff"/></svg></div>
+      <div class="cloud c1"><svg viewBox="0 0 200 90"><ellipse cx="60" cy="55" rx="55" ry="30" fill="var(--cloud)"/><ellipse cx="110" cy="40" rx="45" ry="34" fill="var(--cloud)"/><ellipse cx="150" cy="58" rx="40" ry="26" fill="var(--cloud)"/></svg></div>
+      <div class="cloud c2"><svg viewBox="0 0 200 90"><ellipse cx="60" cy="55" rx="55" ry="30" fill="var(--cloud)"/><ellipse cx="110" cy="40" rx="45" ry="34" fill="var(--cloud)"/><ellipse cx="150" cy="58" rx="40" ry="26" fill="var(--cloud)"/></svg></div>
+      <div class="cloud c3"><svg viewBox="0 0 200 90"><ellipse cx="60" cy="55" rx="55" ry="30" fill="var(--cloud)"/><ellipse cx="110" cy="40" rx="45" ry="34" fill="var(--cloud)"/><ellipse cx="150" cy="58" rx="40" ry="26" fill="var(--cloud)"/></svg></div>
 
       <div class="mountains">
         <svg viewBox="0 0 1200 220" preserveAspectRatio="none">
@@ -209,10 +274,10 @@ input[type=range]:disabled{opacity:.4;cursor:not-allowed}
       <div class="widget gauge-widget" id="gaugeWidget">
         <div class="gauge-label">Speed</div>
         <svg viewBox="0 0 200 120" id="gaugeSvg">
-          <path d="M20,105 A80,80 0 0 1 180,105" fill="none" stroke="#cfd6db" stroke-width="8"/>
+          <path d="M20,105 A80,80 0 0 1 180,105" fill="none" stroke="var(--gauge-arc)" stroke-width="8"/>
           <g id="gaugeTicks"></g>
           <line id="needle" x1="100" y1="105" x2="100" y2="35" stroke="#d9534f" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="100" cy="105" r="7" fill="#43505b"/>
+          <circle cx="100" cy="105" r="7" fill="var(--gauge-hub)"/>
         </svg>
         <div class="gauge-read" id="speedRead">0.0 m/s</div>
       </div>
@@ -233,11 +298,11 @@ input[type=range]:disabled{opacity:.4;cursor:not-allowed}
           <label class="chk"><input type="checkbox" id="chkMasses" checked> Masses</label>
           <label class="chk"><input type="checkbox" id="chkSpeed" checked>
             <span>Speed</span>
-            <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#3c4a1a" stroke-width="2"/><line x1="12" y1="12" x2="17" y2="8" stroke="#d9534f" stroke-width="2"/></svg>
+            <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="var(--panel-green-ink)" stroke-width="2"/><line x1="12" y1="12" x2="17" y2="8" stroke="#d9534f" stroke-width="2"/></svg>
           </label>
           <label class="chk"><input type="checkbox" id="chkStopwatch" checked>
             <span>Stopwatch</span>
-            <svg class="ic" viewBox="0 0 24 24"><rect x="5" y="6" width="14" height="14" rx="3" fill="none" stroke="#3c4a1a" stroke-width="2"/><line x1="9" y1="3" x2="15" y2="3" stroke="#3c4a1a" stroke-width="2"/></svg>
+            <svg class="ic" viewBox="0 0 24 24"><rect x="5" y="6" width="14" height="14" rx="3" fill="none" stroke="var(--panel-green-ink)" stroke-width="2"/><line x1="9" y1="3" x2="15" y2="3" stroke="var(--panel-green-ink)" stroke-width="2"/></svg>
           </label>
           <div class="frtitle">Friction</div>
           <input type="range" id="frictionSlider" min="0" max="1" step="0.01" value="0.3">
@@ -351,10 +416,10 @@ const fmt = (v, n) => Number(v).toFixed(n);
 const ICONS = {
   fridge: `<svg viewBox="0 0 60 60"><rect x="10" y="4" width="40" height="52" rx="6" fill="#dff1f7" stroke="#7fb3c6" stroke-width="3"/><line x1="10" y1="22" x2="50" y2="22" stroke="#7fb3c6" stroke-width="3"/><rect x="16" y="10" width="4" height="8" rx="2" fill="#7fb3c6"/><rect x="16" y="27" width="4" height="8" rx="2" fill="#7fb3c6"/></svg>`,
   crate: `<svg viewBox="0 0 60 60"><rect x="4" y="10" width="52" height="42" rx="4" fill="#8a5a34" stroke="#5c3a20" stroke-width="3"/><path d="M4 10 L56 52 M56 10 L4 52" stroke="#5c3a20" stroke-width="3"/></svg>`,
-  girl: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
-  man: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
-  trash: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
-  gift: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
+  girl: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24" stroke="var(--block-edge)" stroke-width="2"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
+  man: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24" stroke="var(--block-edge)" stroke-width="2"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
+  trash: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24" stroke="var(--block-edge)" stroke-width="2"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
+  gift: `<svg viewBox="0 0 60 60"><rect x="6" y="10" width="48" height="44" rx="6" fill="#1c1f24" stroke="var(--block-edge)" stroke-width="2"/><rect x="6" y="10" width="48" height="12" rx="6" fill="#34383f"/><rect x="16" y="27" width="28" height="6" rx="3" fill="#ffffff" opacity=".15"/></svg>`,
 };
 const CATALOGUE = [
   { key:"fridge", label:"Fridge", mass:200, tray:"left" },
@@ -533,7 +598,7 @@ function buildGaugeTicks(){
     const line = document.createElementNS("http://www.w3.org/2000/svg","line");
     line.setAttribute("x1",x1); line.setAttribute("y1",y1);
     line.setAttribute("x2",x2); line.setAttribute("y2",y2);
-    line.setAttribute("stroke","#8a97a1"); line.setAttribute("stroke-width","2.5");
+    line.setAttribute("stroke","var(--gauge-tick)"); line.setAttribute("stroke-width","2.5");
     g.appendChild(line);
   }
 }
@@ -794,6 +859,43 @@ function fullReset(){
   updateSumLabel();
   render();
 }
+
+/* ---------------- light / dark toggle ---------------- */
+/* every color here comes from CSS tokens, so switching only needs the data-theme attribute and the button */
+const themeBtn = el("themeToggle");
+const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+const SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+const inFrame = window.parent !== window;
+function isDarkNow(){
+  const a = document.documentElement.getAttribute("data-theme");
+  return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+}
+function paintToggle(){
+  const d = isDarkNow();
+  themeBtn.querySelector(".icon").innerHTML = d ? SUN : MOON;
+  themeBtn.querySelector(".label").textContent = d ? "Light mode" : "Dark mode";
+  themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+}
+function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); paintToggle(); }
+themeBtn.addEventListener("click", () => {
+  const next = isDarkNow() ? "light" : "dark";
+  applyTheme(next);
+  try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+  /* shown in a frame (the textbook's Sims page): tell that page, so it switches too */
+  if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+});
+/* the page around this sim switched its light / dark mode: follow it (not saved) */
+window.addEventListener("message", (e) => {
+  if (!inFrame || e.source !== window.parent) return;
+  const th = e.data && e.data.simTheme;
+  if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
+});
+if (window.matchMedia){
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const onSys = () => { if (!document.documentElement.getAttribute("data-theme")) paintToggle(); };
+  if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+}
+paintToggle();
 
 /* ---------------- boot ---------------- */
 buildTrays();

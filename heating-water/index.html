@@ -40,29 +40,84 @@
   --plate:#6E7370; --plate-d:#4A4F4C; --ceramic:#EDEEE8;
   --oak:#DDB37C; --epoxy:#22251F; --steel:#B9BEB6;
   --tape:#E8B93C;
+  --head-bg:#1B1D1C; --head-ink:#F4F5F0; --on-ink:#F4F5F0;
+  --ro-bg:#000; --ro-line:#35392F; --ro-k:#8C9284; --ro-v:#DDE3D2; --ro-hi:#F08B7E;
+  --field:#EFF1E9; --input-bg:#fff; --row-line:#EDEFE7; --row-new:#FCF3D9; --notes-ink:#33362F;
+  /* canvas colors (read by the script) */
+  --c-wall1:#F1F2EC; --c-wall2:#E4E7DD; --c-outline:rgba(0,0,0,0); --c-clamp:#3A5A3E; --c-cord:#262925;
+  --c-water1:#CDE9EC; --c-water2:#A9D2D8; --c-water-top:#B7DFE4; --c-water-edge:#7FB4BC;
+  --c-grad:rgba(90,110,110,.65); --c-grad-text:rgba(80,100,100,.85);
+  --c-scale:rgba(70,80,80,.8); --c-scale-text:rgba(60,70,70,.9);
+  --c-plot:#FDFDF9; --c-grid:#E4E8DC; --c-grid-2:#CCD2C4; --c-axis:#1B1D1C; --c-tick:#5A5F58; --c-empty:#8A9082;
+  --c-fit:rgba(90,95,88,.8); --c-join:rgba(90,95,88,.45); --c-accent:#1552B8; --c-label-bg:rgba(251,251,247,.95);
   --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
   padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
 }
+body{margin:0;background:#DDE0D6}
+/* dark colors: the system's dark setting unless light is chosen, or dark chosen on purpose */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){color-scheme:dark}
+  :root:not([data-theme="light"]) body{background:#121412}
+  :root:not([data-theme="light"]) .cvlab{
+    --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+    --ink:#EEF0EA; --ink-2:#B6BAB0;
+    --blue:#3F7FE6; --blue-d:#2A63C2; --tape:#F0C64A;
+    --head-bg:#0A0B0A; --head-ink:#F4F5F0; --on-ink:#1C1F1C;
+    --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2; --ro-hi:#F08B7E;
+    --field:#252925; --input-bg:#252925; --row-line:#2A2F29; --row-new:#3A3320; --notes-ink:#C9CCC3;
+    --c-wall1:#20241F; --c-wall2:#1A1D19; --c-outline:rgba(235,240,230,.55); --c-clamp:#6E9A72; --c-cord:#6A706A;
+    --c-water1:#3A8590; --c-water2:#276570; --c-water-top:#46929D; --c-water-edge:#86C2CA;
+    --c-grad:rgba(175,200,200,.7); --c-grad-text:rgba(205,222,222,.92);
+    --c-scale:rgba(190,200,195,.8); --c-scale-text:rgba(210,216,212,.95);
+    --c-plot:#171A17; --c-grid:#262B25; --c-grid-2:#363D35; --c-axis:#C9CEC2; --c-tick:#A9AFA4; --c-empty:#8D9288;
+    --c-fit:rgba(190,196,184,.8); --c-join:rgba(190,196,184,.45); --c-accent:#7FB0FF; --c-label-bg:rgba(28,31,28,.95);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{color-scheme:dark}
+:root[data-theme="dark"] body{background:#121412}
+:root[data-theme="dark"] .cvlab{
+  --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+  --ink:#EEF0EA; --ink-2:#B6BAB0;
+  --blue:#3F7FE6; --blue-d:#2A63C2; --tape:#F0C64A;
+  --head-bg:#0A0B0A; --head-ink:#F4F5F0; --on-ink:#1C1F1C;
+  --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2; --ro-hi:#F08B7E;
+  --field:#252925; --input-bg:#252925; --row-line:#2A2F29; --row-new:#3A3320; --notes-ink:#C9CCC3;
+  --c-wall1:#20241F; --c-wall2:#1A1D19; --c-outline:rgba(235,240,230,.55); --c-clamp:#6E9A72; --c-cord:#6A706A;
+  --c-water1:#3A8590; --c-water2:#276570; --c-water-top:#46929D; --c-water-edge:#86C2CA;
+  --c-grad:rgba(175,200,200,.7); --c-grad-text:rgba(205,222,222,.92);
+  --c-scale:rgba(190,200,195,.8); --c-scale-text:rgba(210,216,212,.95);
+  --c-plot:#171A17; --c-grid:#262B25; --c-grid-2:#363D35; --c-axis:#C9CEC2; --c-tick:#A9AFA4; --c-empty:#8D9288;
+  --c-fit:rgba(190,196,184,.8); --c-join:rgba(190,196,184,.45); --c-accent:#7FB0FF; --c-label-bg:rgba(28,31,28,.95);
+  color-scheme:dark;
+}
 .cvlab *{box-sizing:border-box}
 .cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
 .cvlab p{margin:0}
 .cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+.cvlab-head{background:var(--head-bg);color:var(--head-ink);border-radius:5px 5px 0 0;padding:12px 16px;
   display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.cvlab-title{flex:1 1 auto}
 .cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--tape);margin-bottom:2px}
 .cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
 .cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
-.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:94px}
+.cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:3px;padding:5px 10px;min-width:94px}
 .cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
-  text-transform:uppercase;color:#8C9284}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+  text-transform:uppercase;color:var(--ro-k)}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:var(--ro-v);
   font-variant-numeric:tabular-nums;white-space:nowrap}
-.cvlab-ro-hi .cvlab-ro-v{color:#F08B7E}
+.cvlab-ro-hi .cvlab-ro-v{color:var(--ro-hi)}
+.cvlab-themebtn{
+  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
+  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
+}
+.cvlab-themebtn:hover{border-color:var(--tape)}
+.cvlab-themebtn svg{width:21px;height:21px}
 
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 5px 5px;padding:10px 10px 12px}
@@ -108,13 +163,13 @@
   padding:8px 1px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;
   font-family:var(--font-m);font-size:13px;font-weight:700;color:var(--ink);
   transition:background .12s ease,color .12s ease}
-.cvlab-vol:hover:not(:disabled){background:#EFF1E9}
-.cvlab-vol.is-on{background:var(--ink);color:#F4F5F0;border-color:var(--ink)}
+.cvlab-vol:hover:not(:disabled){background:var(--field)}
+.cvlab-vol.is-on{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
 .cvlab-vol:disabled{opacity:.4;cursor:not-allowed}
 .cvlab-vol span{display:block;width:11px;height:4px;border-radius:1px}
 .cvlab-vol.has-data span{height:6px}
 
-.cvlab-locked{display:flex;align-items:center;gap:8px;background:#EFF1E9;border:1px dashed var(--rule);
+.cvlab-locked{display:flex;align-items:center;gap:8px;background:var(--field);border:1px dashed var(--rule);
   border-radius:3px;padding:7px 9px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
 .cvlab-locked b{color:var(--ink);font-size:15px}
 
@@ -122,7 +177,7 @@
 .cvlab-field span{font-family:var(--font-m);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--ink-2)}
 .cvlab select{font-family:var(--font-b);font-size:15.5px;padding:6px 8px;border:1px solid var(--ink);
-  border-radius:3px;background:#fff;color:var(--ink);width:100%}
+  border-radius:3px;background:var(--input-bg);color:var(--ink);width:100%}
 
 .cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
 .cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
@@ -130,14 +185,14 @@
 
 .cvlab-tablewrap{max-height:330px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
 .cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13px}
-.cvlab thead th{position:sticky;top:0;background:#EFF1E9;font-size:11px;letter-spacing:.03em;
+.cvlab thead th{position:sticky;top:0;background:var(--field);font-size:11px;letter-spacing:.03em;
   font-weight:700;padding:5px 3px;text-align:right;border-bottom:1px solid var(--rule);color:var(--ink-2)}
 .cvlab thead th:first-child{text-align:left}
 .cvlab tbody td{padding:3px;text-align:right;font-variant-numeric:tabular-nums;
-  border-bottom:1px solid #EDEFE7}
+  border-bottom:1px solid var(--row-line)}
 .cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
 .cvlab tbody tr:last-child td{border-bottom:0}
-.cvlab tbody tr.is-new td{background:#FCF3D9}
+.cvlab tbody tr.is-new td{background:var(--row-new)}
 .cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
 
 #cvlab-rate{height:clamp(260px,30vw,420px)}
@@ -147,19 +202,29 @@
 .cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
   padding:10px 14px}
 .cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:var(--notes-ink)}
 .cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
 .cvlab-notes li{margin:3px 0}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#DDE0D6">
+<body>
 
 <div class="cvlab" id="cvlab">
 
   <header class="cvlab-head">
-    <div>
+    <div class="cvlab-title">
       <span class="cvlab-eyebrow">Thermal lab &middot; specific heat</span>
       <h1>Heating water &mdash; volume vs temperature</h1>
     </div>
@@ -169,6 +234,7 @@
       <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Temperature</span><span class="cvlab-ro-v" id="cvlab-ro-temp">20.0 &deg;C</span></div>
       <div class="cvlab-ro"><span class="cvlab-ro-k">Stage</span><span class="cvlab-ro-v" id="cvlab-ro-stage">Ready</span></div>
     </div>
+    <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="cvlab-bench">
@@ -268,6 +334,7 @@
   var NPTS     = RUN_S/STEP_S + 1;
   var VOLUMES  = [50,100,150,200,250];
   var VCOLOR   = { 50:"#C0392B", 100:"#C97B23", 150:"#6E8C3A", 200:"#2A7F7A", 250:"#1552B8" };
+  var VCOLOR_DARK = { 50:"#FF6F5E", 100:"#F0A24A", 150:"#A5C46A", 200:"#4FC7BE", 250:"#6FA3FF" };
   var NOISE_SD = 0.3;        // C
   var T_MIN    = 20, T_MAX = 90;
 
@@ -295,6 +362,22 @@
   var elInvV = $("cvlab-invv"), elNoise = $("cvlab-noise"), elLoss = $("cvlab-loss");
   var roVol = $("cvlab-ro-vol"), roTime = $("cvlab-ro-time"),
       roTemp = $("cvlab-ro-temp"), roStage = $("cvlab-ro-stage");
+
+  /* ------------------------------------------------ theme colors (read from CSS tokens) */
+  var P = {};
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute("data-theme");
+    return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function readPalette(){
+    var cs = getComputedStyle($("cvlab"));
+    ["c-wall1","c-wall2","c-outline","c-clamp","c-cord","c-water1","c-water2","c-water-top","c-water-edge",
+     "c-grad","c-grad-text","c-scale","c-scale-text","c-plot","c-grid","c-grid-2","c-axis","c-tick","c-empty",
+     "c-fit","c-join","c-accent","c-label-bg"].forEach(function(k){ P[k] = cs.getPropertyValue("--"+k).trim(); });
+  }
+  readPalette();
+  /* a volume's color on the graphs, table and key, a little brighter for the dark theme */
+  function vcol(V){ return isDarkNow() ? VCOLOR_DARK[V] : VCOLOR[V]; }
 
   /* ------------------------------------------------ helpers */
   function fmt(n,p){ return n.toFixed(p===undefined?1:p); }
@@ -354,7 +437,7 @@
     for(var i=0;i<VOLUMES.length;i++){
       var V = VOLUMES[i];
       html += '<button class="cvlab-vol" data-v="' + V + '" aria-label="Use ' + V + ' millilitres">'
-            + '<span style="background:' + VCOLOR[V] + '"></span>' + V + '</button>';
+            + '<span style="background:' + vcol(V) + '"></span>' + V + '</button>';
     }
     elVols.innerHTML = html;
     elVols.addEventListener("click", function(e){
@@ -443,7 +526,7 @@
     }
     var hh = '<th scope="col">t</th>';
     for(var c=0;c<cols.length;c++){
-      hh += '<th scope="col" style="color:' + VCOLOR[cols[c]] + '">' + cols[c] + '</th>';
+      hh += '<th scope="col" style="color:' + vcol(cols[c]) + '">' + cols[c] + '</th>';
     }
     elHead.innerHTML = hh;
 
@@ -468,7 +551,7 @@
   function renderKey(){
     var list = haveRuns(), html = "";
     for(var i=0;i<list.length;i++){
-      html += '<span><i style="background:' + VCOLOR[list[i].v] + '"></i>'
+      html += '<span><i style="background:' + vcol(list[i].v) + '"></i>'
             + list[i].v + ' mL &middot; ' + fmt(list[i].rate,2) + ' &deg;C/min</span>';
     }
     elKey.innerHTML = html;
@@ -495,7 +578,7 @@
     ctx.clearRect(0,0,w,h);
 
     var wall = ctx.createLinearGradient(0,0,0,G.baseY);
-    wall.addColorStop(0,"#F1F2EC"); wall.addColorStop(1,"#E4E7DD");
+    wall.addColorStop(0,P["c-wall1"]); wall.addColorStop(1,P["c-wall2"]);
     ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.baseY);
     /* the bench */
     var top = ctx.createLinearGradient(0,G.baseY,0,h);
@@ -524,12 +607,13 @@
     var cy = Y(26);
     ctx.fillStyle = "#262924";
     roundRect(ctx, rodX-1.1*k, cy-1.5*k, 2.2*k, 3*k, 1.5); ctx.fill();
-    ctx.fillStyle = "#3A5A3E";
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = P["c-clamp"];
     roundRect(ctx, rodX+0.7*k, cy-0.35*k, 13.3*k, 0.7*k, 1); ctx.fill();
     ctx.fillStyle = "#9DA3A0";
     ctx.beginPath(); ctx.arc(rodX-1.7*k, cy, 0.75*k, 0, Math.PI*2); ctx.fill();
     /* the jaw that grips the tube */
-    ctx.strokeStyle = "#3A5A3E"; ctx.lineWidth = Math.max(1.4, 0.28*k);
+    ctx.strokeStyle = P["c-clamp"]; ctx.lineWidth = Math.max(1.4, 0.28*k);
     ctx.beginPath(); ctx.arc(X(20), cy, 0.95*k, Math.PI*0.65, Math.PI*1.9); ctx.stroke();
   }
 
@@ -537,8 +621,8 @@
     var k = G.k;
     /* feet */
     ctx.fillStyle = "#2A2D28";
-    roundRect(ctx, X(14), Y(0.7), 1.6*k, 0.75*k, 1); ctx.fill();
-    roundRect(ctx, X(24.4), Y(0.7), 1.6*k, 0.75*k, 1); ctx.fill();
+    roundRect(ctx, X(14), Y(0.7), 1.6*k, 0.75*k, 1); ctx.fill(); ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
+    roundRect(ctx, X(24.4), Y(0.7), 1.6*k, 0.75*k, 1); ctx.fill(); ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
     /* body */
     var bg = ctx.createLinearGradient(0, Y(7.4), 0, Y(0.7));
     bg.addColorStop(0,"#7E837F"); bg.addColorStop(.45,"#636864"); bg.addColorStop(1,"#484D49");
@@ -590,7 +674,7 @@
       ctx.fillText("HOT PLATE", X(16.3), Y(5.4));
     }
     /* cord */
-    ctx.strokeStyle = "#262925"; ctx.lineWidth = Math.max(1.6, 0.3*k);
+    ctx.strokeStyle = P["c-cord"]; ctx.lineWidth = Math.max(1.6, 0.3*k);
     ctx.beginPath();
     ctx.moveTo(X(27.5), Y(2.6));
     ctx.quadraticCurveTo(X(30.5), Y(2.2), X(32), Y(0.4));
@@ -608,13 +692,13 @@
     var d = waterDepth();
     var wy = Y(9.25 + d);
     var wg = ctx.createLinearGradient(0, wy, 0, floorY);
-    wg.addColorStop(0,"#CDE9EC"); wg.addColorStop(1,"#A9D2D8");
+    wg.addColorStop(0,P["c-water1"]); wg.addColorStop(1,P["c-water2"]);
     ctx.fillStyle = wg;
     ctx.fillRect(inX0, wy, inX1-inX0, floorY - wy);
     /* surface ellipse and meniscus */
-    ctx.fillStyle = "#B7DFE4";
+    ctx.fillStyle = P["c-water-top"];
     ctx.beginPath(); ctx.ellipse((inX0+inX1)/2, wy, (inX1-inX0)/2, 0.5*k, 0, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = "#7FB4BC"; ctx.lineWidth = 1;
+    ctx.strokeStyle = P["c-water-edge"]; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.ellipse((inX0+inX1)/2, wy, (inX1-inX0)/2, 0.5*k, 0, 0, Math.PI*2); ctx.stroke();
 
     /* bubbles once it is warm */
@@ -650,8 +734,8 @@
 
     /* graduations, every 50 mL */
     /* on the left wall, keeping clear of the thermometer scale on the right */
-    ctx.strokeStyle = "rgba(90,110,110,.65)"; ctx.lineWidth = 1;
-    ctx.fillStyle = "rgba(80,100,100,.85)";
+    ctx.strokeStyle = P["c-grad"]; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-grad-text"];
     ctx.font = "700 " + Math.max(5.5, 0.72*k).toFixed(1) + "px " + monoStack();
     ctx.textAlign = "left"; ctx.textBaseline = "middle";
     for(var mL=50; mL<=350; mL+=50){
@@ -704,8 +788,8 @@
     ctx.strokeStyle = "#8E2A1F"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(cx, bulbY, bulbR, 0, Math.PI*2); ctx.stroke();
     /* scale ticks up the right side */
-    ctx.strokeStyle = "rgba(70,80,80,.8)"; ctx.lineWidth = 1;
-    ctx.fillStyle = "rgba(60,70,70,.9)";
+    ctx.strokeStyle = P["c-scale"]; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-scale-text"];
     ctx.font = "700 " + Math.max(5.5, 0.7*k).toFixed(1) + "px " + monoStack();
     ctx.textAlign = "left"; ctx.textBaseline = "middle";
     for(var d=0; d<=100; d+=10){
@@ -728,6 +812,7 @@
     var by = Math.max(4, Y(43));
     ctx.fillStyle = "#1B1D1C";
     roundRect(ctx, bx, by, bw, bh, 3); ctx.fill();
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = "#F08B7E"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(txt, bx + bw/2, by + bh/2);
   }
@@ -742,33 +827,33 @@
     var PY = function(T){ return mT + ph - ((T-T_MIN)/(T_MAX-T_MIN))*ph; };
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var T=T_MIN; T<=T_MAX; T+=5){ var y=Math.round(PY(T))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
     for(var tt=0; tt<=RUN_S; tt+=30){ var x=Math.round(PX(tt))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
     ctx.stroke();
-    ctx.strokeStyle = "#CCD2C4";
+    ctx.strokeStyle = P["c-grid-2"];
     ctx.beginPath();
     for(var T2=T_MIN; T2<=T_MAX; T2+=10){ var y2=Math.round(PY(T2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
     for(var t2=0; t2<=RUN_S; t2+=60){ var x2=Math.round(PX(t2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
     ctx.stroke();
 
-    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var T3=T_MIN; T3<=T_MAX; T3+=10) ctx.fillText(String(T3), mL-6, PY(T3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var t3=0; t3<=RUN_S; t3+=60) ctx.fillText(String(t3), PX(t3), mT+ph+6);
     ctx.save();
     ctx.translate(12, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-axis"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("TEMPERATURE (\u00B0C)", 0, 0);
     ctx.restore();
-    ctx.fillStyle = "#1B1D1C";
+    ctx.fillStyle = P["c-axis"];
     ctx.fillText("TIME (s)", mL+pw/2, mT+ph+19);
 
     var any = false;
@@ -779,14 +864,14 @@
       else if(runs[V]){ pts = runs[V].temps; }
       if(!pts || upto < 1) continue;
       any = true;
-      ctx.strokeStyle = VCOLOR[V]; ctx.lineWidth = 2.2; ctx.lineJoin = "round";
+      ctx.strokeStyle = vcol(V); ctx.lineWidth = 2.2; ctx.lineJoin = "round";
       ctx.beginPath();
       for(var j=0;j<upto;j++){
         var qx = PX(j*STEP_S), qy = PY(clamp(pts[j], T_MIN, T_MAX));
         if(j===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
       }
       ctx.stroke();
-      ctx.fillStyle = VCOLOR[V];
+      ctx.fillStyle = vcol(V);
       for(var m=0;m<upto;m++){
         ctx.beginPath();
         ctx.arc(PX(m*STEP_S), PY(clamp(pts[m], T_MIN, T_MAX)), 2.1, 0, Math.PI*2);
@@ -801,7 +886,7 @@
     }
 
     if(!any){
-      ctx.fillStyle = "#8A9082";
+      ctx.fillStyle = P["c-empty"];
       ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Switch the plate on and the readings plot themselves.", mL+pw/2, mT+ph/2);
@@ -821,38 +906,38 @@
     var PY = function(r){ return mT + ph - (r/yMax)*ph; };
 
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#FDFDF9"; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = "#E4E8DC"; ctx.lineWidth = 1;
+    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
+    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var r=0; r<=yMax; r+=1){ var y=Math.round(PY(r))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
     for(var a=0; a<=xMax; a+=xStep/2){ var x=Math.round(PX(a))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
     ctx.stroke();
-    ctx.strokeStyle = "#CCD2C4";
+    ctx.strokeStyle = P["c-grid-2"];
     ctx.beginPath();
     for(var r2=0; r2<=yMax; r2+=5){ var y2=Math.round(PY(r2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
     for(var a2=0; a2<=xMax; a2+=xStep){ var x2=Math.round(PX(a2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
     ctx.stroke();
 
-    ctx.strokeStyle = "#1B1D1C"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = "#5A5F58"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var r3=0; r3<=yMax; r3+=5) ctx.fillText(String(r3), mL-6, PY(r3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var a3=0; a3<=xMax; a3+=xStep) ctx.fillText(String(a3), PX(a3), mT+ph+6);
     ctx.save();
     ctx.translate(11, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = "#1B1D1C"; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-axis"]; ctx.font = "700 10px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("RATE (\u00B0C/min)", 0, 0);
     ctx.restore();
-    ctx.fillStyle = "#1B1D1C";
+    ctx.fillStyle = P["c-axis"];
     ctx.fillText(inv ? "1 / VOLUME (per litre)" : "VOLUME (mL)", mL+pw/2, mT+ph+19);
 
     var list = haveRuns();
     if(list.length === 0){
-      ctx.fillStyle = "#8A9082";
+      ctx.fillStyle = P["c-empty"];
       ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Finish a run and its rate lands here.", mL+pw/2, mT+ph/2);
@@ -870,7 +955,7 @@
       var sxy=0, sxx=0;
       for(var j=0;j<pts.length;j++){ sxy += pts[j].x*pts[j].y; sxx += pts[j].x*pts[j].x; }
       var slope = sxx>0 ? sxy/sxx : 0;
-      ctx.strokeStyle = "rgba(90,95,88,.8)"; ctx.lineWidth = 1.6;
+      ctx.strokeStyle = P["c-fit"]; ctx.lineWidth = 1.6;
       ctx.save(); ctx.setLineDash([6,4]);
       var xEnd = Math.min(xMax, yMax/Math.max(slope,1e-9));
       ctx.beginPath(); ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(xEnd), PY(slope*xEnd)); ctx.stroke();
@@ -881,16 +966,16 @@
         ctx.font = "700 10.5px " + monoStack();
         var lw = ctx.measureText(lab).width + 12;
         var by = mT+ph-25;
-        ctx.fillStyle = "rgba(251,251,247,.95)";
+        ctx.fillStyle = P["c-label-bg"];
         roundRect(ctx, mL+pw-lw-6, by, lw, 18, 3); ctx.fill();
-        ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 1;
+        ctx.strokeStyle = P["c-accent"]; ctx.lineWidth = 1;
         roundRect(ctx, mL+pw-lw-6, by, lw, 18, 3); ctx.stroke();
-        ctx.fillStyle = "#1552B8"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = P["c-accent"]; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(lab, mL+pw-lw/2-6, by+9);
       }
     } else if(pts.length >= 2){
       /* join the points so the inverse shape is obvious */
-      ctx.strokeStyle = "rgba(90,95,88,.45)"; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = P["c-join"]; ctx.lineWidth = 1.5;
       ctx.beginPath();
       for(var m=0;m<pts.length;m++){
         var qx = PX(pts[m].x), qy = PY(Math.min(yMax, pts[m].y));
@@ -901,9 +986,9 @@
 
     for(var n=0;n<pts.length;n++){
       var cx = PX(pts[n].x), cy = PY(Math.min(yMax, pts[n].y));
-      ctx.fillStyle = VCOLOR[pts[n].v];
+      ctx.fillStyle = vcol(pts[n].v);
       ctx.beginPath(); ctx.arc(cx, cy, 4.6, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = "#FDFDF9"; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = P["c-plot"]; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(cx, cy, 4.6, 0, Math.PI*2); ctx.stroke();
     }
   }
@@ -996,6 +1081,49 @@
       dirty = true; drawScene(); drawTempGraph(); drawRateGraph();
     });
   }
+
+  /* ------------------------------------------------ light / dark toggle */
+  var themeBtn = $("cvlab-theme");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.innerHTML = d ? SUN : MOON;
+    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+  }
+  /* the little color bars on the volume buttons */
+  function paintSwatches(){
+    var bs = elVols.querySelectorAll(".cvlab-vol");
+    for(var i=0;i<bs.length;i++){
+      var sp = bs[i].querySelector("span");
+      if(sp) sp.style.background = vcol(parseInt(bs[i].getAttribute("data-v"),10));
+    }
+  }
+  function repaint(){
+    readPalette(); paintToggle(); paintSwatches(); renderTable(); renderKey();
+    dirty = true; drawScene(); drawTempGraph(); drawRateGraph();
+  }
+  function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
+  themeBtn.addEventListener("click", function(){
+    var next = isDarkNow() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+  });
+  /* the page around this sim switched its light / dark mode: follow it (not saved) */
+  window.addEventListener("message", function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var th = e.data && e.data.simTheme;
+    if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
+    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
   buildVols();
   renderTable();

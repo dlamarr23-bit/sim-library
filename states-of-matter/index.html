@@ -13,7 +13,7 @@
        <iframe src="states-of-matter-lab.html"
                style="width:100%;height:1440px;border:0" loading="lazy"
                title="States of matter simulation"></iframe>
-  Every CSS rule is scoped under .cvlab.
+  Every CSS rule is scoped under .cvlab, except the page color and dark mode switch on :root and body.
   ============================================================================
 -->
 
@@ -27,19 +27,61 @@
   --ink:#12161E; --ink-2:#5A6272;
   --hot:#EE5B24; --cold:#2E8CE0; --brand:#5B3DD1; --brand-d:#4227A8;
   --steel:#98A0AC;
+  --head-bg:linear-gradient(120deg,#141824,#2C2350); --head-ink:#fff;
+  --hover:#F6F5FD; --brand-bg:#F1EDFE; --brand-ink:#4227A8; --chip:#F3F4F8;
+  --tip-bg:#F1EDFE; --tip-line:#C9BAF6; --tip-ink:#3A2585; --notes-ink:#282F3A;
+  /* canvas colors (read by the script) */
+  --c-bg1:#F7F8FC; --c-bg2:#E4E7F0; --c-in1:#FBFCFE; --c-in2:#E9EEF5; --c-in-line:rgba(70,80,94,.5);
+  --c-shadow:rgba(18,22,30,.10); --c-tube:#F8FAFD; --c-tick:#BCC4D0; --c-tick-lab:#5A6272;
+  --c-melt:#2E8CE0; --c-boil:#EE5B24; --c-both:#3A4250;
+  --c-level:#5B3DD1; --c-level-tag:rgba(91,61,209,.94); --c-tag:#12161E; --c-tag-line:rgba(0,0,0,0);
   --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   background:var(--shell);font-family:var(--font-b);color:var(--ink);font-weight:700;
   padding:16px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.5;-webkit-font-smoothing:antialiased;
 }
+/* ---------- page + dark tokens: bare = light, system dark unless light is chosen, explicit dark ---------- */
+:root{--page:#EEF0F5;color-scheme:light}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--page:#101214;color-scheme:dark}
+  :root:not([data-theme="light"]) .cvlab{
+    --paper:#1A1C1F; --shell:#101214; --rule:#343841;
+    --ink:#F4F4F2; --ink-2:#B6BAC4;
+    --hot:#FF7A45; --cold:#5AA8F0; --brand:#6E52E6; --brand-d:#5A3FD0;
+    --head-bg:linear-gradient(120deg,#0B0E15,#241C46); --head-ink:#fff;
+    --hover:#24222E; --brand-bg:#2A2346; --brand-ink:#CDBFFF; --chip:#23262C;
+    --tip-bg:#231E3A; --tip-line:#4A3F7A; --tip-ink:#D6CBFF; --notes-ink:#CDD1DA;
+    --c-bg1:#1C1F25; --c-bg2:#14161B; --c-in1:#21252C; --c-in2:#1A1D23; --c-in-line:rgba(160,170,185,.45);
+    --c-shadow:rgba(0,0,0,.45); --c-tube:#262A32; --c-tick:#4A5160; --c-tick-lab:#A9B0BD;
+    --c-melt:#5AA8F0; --c-boil:#FF7A45; --c-both:#C9CED8;
+    --c-level:#9C86FF; --c-level-tag:rgba(110,82,230,.96); --c-tag:#07080B; --c-tag-line:rgba(255,255,255,.2);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{--page:#101214;color-scheme:dark}
+:root[data-theme="dark"] .cvlab{
+  --paper:#1A1C1F; --shell:#101214; --rule:#343841;
+  --ink:#F4F4F2; --ink-2:#B6BAC4;
+  --hot:#FF7A45; --cold:#5AA8F0; --brand:#6E52E6; --brand-d:#5A3FD0;
+  --head-bg:linear-gradient(120deg,#0B0E15,#241C46); --head-ink:#fff;
+  --hover:#24222E; --brand-bg:#2A2346; --brand-ink:#CDBFFF; --chip:#23262C;
+  --tip-bg:#231E3A; --tip-line:#4A3F7A; --tip-ink:#D6CBFF; --notes-ink:#CDD1DA;
+  --c-bg1:#1C1F25; --c-bg2:#14161B; --c-in1:#21252C; --c-in2:#1A1D23; --c-in-line:rgba(160,170,185,.45);
+  --c-shadow:rgba(0,0,0,.45); --c-tube:#262A32; --c-tick:#4A5160; --c-tick-lab:#A9B0BD;
+  --c-melt:#5AA8F0; --c-boil:#FF7A45; --c-both:#C9CED8;
+  --c-level:#9C86FF; --c-level-tag:rgba(110,82,230,.96); --c-tag:#07080B; --c-tag-line:rgba(255,255,255,.2);
+  color-scheme:dark;
+}
+body{margin:0;background:var(--page)}
 .cvlab *{box-sizing:border-box}
 .cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-b);font-weight:700;letter-spacing:-.01em}
 .cvlab p{margin:0}
 .cvlab :focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 
-.cvlab-head{background:linear-gradient(120deg,#141824,#2C2350);color:#fff;
+.cvlab-head{background:var(--head-bg);color:var(--head-ink);
   border-radius:14px 14px 0 0;padding:16px 20px;
   display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.cvlab-title{flex:1 1 260px}
 .cvlab-eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.16em;
   text-transform:uppercase;color:#B4A0FF;margin-bottom:3px}
 .cvlab-head h1{font-size:clamp(20px,3vw,30px);line-height:1.1}
@@ -53,6 +95,12 @@
 .cvlab-ro-t .cvlab-ro-v{color:#FFA07A}
 .cvlab-ro-s .cvlab-ro-v{color:#9DE8C0}
 .cvlab-ro-v small{font-size:11px;opacity:.75;font-weight:700}
+.cvlab-themebtn{
+  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
+  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
+}
+.cvlab-themebtn:hover{border-color:#B4A0FF}
+.cvlab-themebtn svg{width:21px;height:21px}
 
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 14px 14px;padding:12px}
@@ -66,7 +114,7 @@
 .cvlab-btn{font-family:var(--font-b);font-size:14px;font-weight:700;cursor:pointer;
   background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:9px;
   padding:9px 16px;line-height:1.1;transition:transform .08s ease,background .14s ease,color .14s ease}
-.cvlab-btn:hover:not(:disabled){background:var(--ink);color:#fff}
+.cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
 .cvlab-btn:active:not(:disabled){transform:translateY(1px)}
 .cvlab-btn-go{background:var(--brand);border-color:var(--brand-d);color:#fff;min-width:118px}
 .cvlab-btn-go:hover:not(:disabled){background:var(--brand-d);color:#fff}
@@ -87,8 +135,8 @@
   background:var(--paper);display:flex;align-items:center;gap:9px;text-align:left;
   font-family:var(--font-b);font-size:15.5px;font-weight:700;color:var(--ink);
   transition:border-color .14s ease,background .14s ease}
-.cvlab-sub:hover{background:#F6F5FD}
-.cvlab-sub.is-on{border-color:var(--brand);background:#F1EDFE}
+.cvlab-sub:hover{background:var(--hover)}
+.cvlab-sub.is-on{border-color:var(--brand);background:var(--brand-bg)}
 .cvlab-sub u{text-decoration:none;display:block;font-weight:700;font-size:12.5px;color:var(--ink-2)}
 .cvlab-sub svg{display:block;flex:none}
 
@@ -96,54 +144,64 @@
 .cvlab-st{cursor:pointer;border:2px solid var(--rule);border-radius:11px;padding:10px 4px;
   background:var(--paper);font-family:var(--font-b);font-size:16px;font-weight:700;color:var(--ink);
   transition:border-color .14s ease,background .14s ease}
-.cvlab-st:hover{background:#F6F5FD}
-.cvlab-st.is-on{border-color:var(--brand);background:#F1EDFE;color:var(--brand-d)}
+.cvlab-st:hover{background:var(--hover)}
+.cvlab-st.is-on{border-color:var(--brand);background:var(--brand-bg);color:var(--brand-ink)}
 .cvlab-st span{display:block;font-weight:700;font-size:12px;color:var(--ink-2);margin-top:2px}
 
 .cvlab-field{display:flex;flex-direction:column;gap:6px}
 .cvlab-lab{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .cvlab-lab span{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
   color:var(--ink-2)}
-.cvlab-lab b{font-family:var(--font-m);font-size:17px;font-weight:700;background:#F3F4F8;
+.cvlab-lab b{font-family:var(--font-m);font-size:17px;font-weight:700;background:var(--chip);
   border:1px solid var(--rule);border-radius:7px;padding:2px 9px}
 .cvlab input[type=range]{width:100%;margin:0}
 #cvlab-heat{accent-color:var(--hot)}
 .cvlab select{font-family:var(--font-b);font-size:15.5px;padding:8px 9px;border:1.5px solid var(--ink);
-  border-radius:9px;background:#fff;color:var(--ink);width:100%;font-weight:700}
+  border-radius:9px;background:var(--paper);color:var(--ink);width:100%;font-weight:700}
 .cvlab-quick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
 .cvlab-qb{cursor:pointer;background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;
   padding:8px 2px;font-family:var(--font-m);font-size:13.5px;font-weight:700;color:var(--ink)}
-.cvlab-qb:hover{background:#F6F5FD}
+.cvlab-qb:hover{background:var(--hover)}
 
 .cvlab-facts{display:flex;flex-direction:column;gap:8px}
 .cvlab-fact{display:flex;align-items:center;justify-content:space-between;gap:10px;
-  background:#F3F4F8;border:1px solid var(--rule);border-radius:9px;padding:8px 11px}
+  background:var(--chip);border:1px solid var(--rule);border-radius:9px;padding:8px 11px}
 .cvlab-fact span{font-size:13px;font-weight:700;color:var(--ink-2);text-transform:uppercase;
   letter-spacing:.05em}
 .cvlab-fact b{font-family:var(--font-m);font-size:18px;font-weight:700;white-space:nowrap}
 .cvlab-badge{border-radius:10px;padding:11px 12px;font-size:17px;font-weight:700;text-align:center}
-.cvlab-space{background:#F1EDFE;border:1px solid #C9BAF6;border-radius:10px;padding:10px 12px;
-  font-size:14.5px;color:#3A2585;font-weight:700}
+.cvlab-space{background:var(--tip-bg);border:1px solid var(--tip-line);border-radius:10px;padding:10px 12px;
+  font-size:14.5px;color:var(--tip-ink);font-weight:700}
 .cvlab-space b{font-family:var(--font-m);font-weight:700}
 
 .cvlab-howto{margin-top:14px;background:var(--paper);border:1px solid var(--rule);border-radius:14px;
   padding:16px 18px}
 .cvlab-howto h2{font-size:15px;margin-bottom:8px}
 .cvlab-howto ol{margin:0;padding-left:22px}
-.cvlab-howto li{font-size:13.5px;color:#282F3A;margin:6px 0}
+.cvlab-howto li{font-size:13.5px;color:var(--notes-ink);margin:6px 0}
 .cvlab-howto li b{font-weight:700;color:var(--ink)}
-.cvlab-tipbox{margin-top:12px;background:#F1EDFE;border:1px solid #C9BAF6;border-radius:10px;
-  padding:11px 13px;font-size:13px;color:#3A2585;font-weight:700}
+.cvlab-tipbox{margin-top:12px;background:var(--tip-bg);border:1px solid var(--tip-line);border-radius:10px;
+  padding:11px 13px;font-size:13px;color:var(--tip-ink);font-weight:700}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#EEF0F5">
+<body>
 
 <div class="cvlab" id="cvlab">
 
   <header class="cvlab-head">
-    <div>
+    <div class="cvlab-title">
       <span class="cvlab-eyebrow">States of matter &middot; solid, liquid, gas</span>
       <h1>Solids, Liquids &amp; Gases</h1>
     </div>
@@ -153,6 +211,7 @@
       <div class="cvlab-ro cvlab-ro-s"><span class="cvlab-ro-k">State</span><span class="cvlab-ro-v" id="cvlab-ro-state">Solid</span></div>
       <div class="cvlab-ro"><span class="cvlab-ro-k">Particle speed</span><span class="cvlab-ro-v" id="cvlab-ro-speed">slow</span></div>
     </div>
+    <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="cvlab-bench">
@@ -290,6 +349,20 @@
   var elSpaceBox = $("cvlab-spacebox"), elFactHint = $("cvlab-facthint");
   var roSub = $("cvlab-ro-sub"), roT = $("cvlab-ro-t"), roState = $("cvlab-ro-state"),
       roSpeed = $("cvlab-ro-speed");
+
+  /* ------------------------------------------------ theme colors (read from CSS tokens) */
+  var P = {};
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute("data-theme");
+    return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function readPalette(){
+    var cs = getComputedStyle($("cvlab"));
+    ["c-bg1","c-bg2","c-in1","c-in2","c-in-line","c-shadow","c-tube","c-tick","c-tick-lab",
+     "c-melt","c-boil","c-both","c-level","c-level-tag","c-tag","c-tag-line"]
+      .forEach(function(k){ P[k] = cs.getPropertyValue("--"+k).trim(); });
+  }
+  readPalette();
 
   /* ------------------------------------------------ helpers */
   function S(){ return SUBS[si]; }
@@ -505,7 +578,7 @@
     var ctx = sctx;
     ctx.clearRect(0,0,w,h);
     var bg = ctx.createLinearGradient(0,0,0,h);
-    bg.addColorStop(0,"#F7F8FC"); bg.addColorStop(1,"#E4E7F0");
+    bg.addColorStop(0,P["c-bg1"]); bg.addColorStop(1,P["c-bg2"]);
     ctx.fillStyle = bg; ctx.fillRect(0,0,w,h);
     drawHeater(ctx);
     drawContainer(ctx);
@@ -551,7 +624,7 @@
 
   function drawContainer(ctx){
     var k = V.k;
-    ctx.fillStyle = "rgba(18,22,30,.10)";
+    ctx.fillStyle = P["c-shadow"];
     roundRect(ctx, PX(BX0)+4, PY(BY1)+5, (BX1-BX0)*k, (BY1-BY0)*k, 0.6*k); ctx.fill();
     var g = ctx.createLinearGradient(PX(BX0),0,PX(BX1),0);
     g.addColorStop(0,"#5C6674"); g.addColorStop(.07,"#8E99A7");
@@ -559,10 +632,10 @@
     ctx.fillStyle = g;
     roundRect(ctx, PX(BX0), PY(BY1), (BX1-BX0)*k, (BY1-BY0)*k, 0.6*k); ctx.fill();
     var ig = ctx.createLinearGradient(0, PY(IY1), 0, PY(IY0));
-    ig.addColorStop(0,"#FBFCFE"); ig.addColorStop(1,"#E9EEF5");
+    ig.addColorStop(0,P["c-in1"]); ig.addColorStop(1,P["c-in2"]);
     ctx.fillStyle = ig;
     ctx.fillRect(PX(IX0), PY(IY1), (IX1-IX0)*k, (IY1-IY0)*k);
-    ctx.strokeStyle = "rgba(70,80,94,.5)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = P["c-in-line"]; ctx.lineWidth = 1;
     ctx.strokeRect(PX(IX0), PY(IY1), (IX1-IX0)*k, (IY1-IY0)*k);
   }
 
@@ -582,7 +655,7 @@
     var k = V.k;
     var y = PY(clamp(occTopY, IY0, IY1));
     ctx.save();
-    ctx.setLineDash([7,5]); ctx.strokeStyle = "#5B3DD1"; ctx.lineWidth = 2;
+    ctx.setLineDash([7,5]); ctx.strokeStyle = P["c-level"]; ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(PX(IX0), y); ctx.lineTo(PX(IX1), y); ctx.stroke();
     ctx.restore();
@@ -592,7 +665,7 @@
     var tw = ctx.measureText(txt).width;
     var bx = PX(IX1) - tw - 20, by = y - 26;
     if(by < PY(IY1) + 4) by = y + 6;
-    ctx.fillStyle = "rgba(91,61,209,.94)";
+    ctx.fillStyle = P["c-level-tag"];
     roundRect(ctx, bx, by, tw + 16, 21, 7); ctx.fill();
     ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
     ctx.fillText(txt, bx + 8, by + 11);
@@ -601,9 +674,9 @@
   function drawThermo(ctx){
     var k = V.k, x = PX(48.5), yb = PY(4), yt = PY(27);
     var wd = 2.3*k;
-    ctx.fillStyle = "rgba(18,22,30,.10)";
+    ctx.fillStyle = P["c-shadow"];
     roundRect(ctx, x-wd/2+3, yt+3, wd, yb-yt, wd/2); ctx.fill();
-    ctx.fillStyle = "#F8FAFD";
+    ctx.fillStyle = P["c-tube"];
     roundRect(ctx, x-wd/2, yt, wd, yb-yt, wd/2); ctx.fill();
     ctx.strokeStyle = "#98A0AC"; ctx.lineWidth = 1.3;
     roundRect(ctx, x-wd/2, yt, wd, yb-yt, wd/2); ctx.stroke();
@@ -613,30 +686,30 @@
     ctx.textAlign = "left"; ctx.textBaseline = "middle";
     for(var i=0;i<labels.length;i++){
       var y = ty(labels[i]);
-      ctx.strokeStyle = "#BCC4D0"; ctx.lineWidth = 1;
+      ctx.strokeStyle = P["c-tick"]; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x+wd/2, y); ctx.lineTo(x+wd/2+0.85*k, y); ctx.stroke();
-      ctx.fillStyle = "#5A6272";
+      ctx.fillStyle = P["c-tick-lab"];
       if(!V.compact) ctx.fillText(String(labels[i]), x+wd/2+1.2*k, y);
     }
     /* the melting and boiling points of this substance, marked on the scale */
     var s = S();
     var ym = ty(s.melt), yb2 = ty(s.boil);
     ctx.lineWidth = 2;
-    ctx.strokeStyle = "#2E8CE0";
+    ctx.strokeStyle = P["c-melt"];
     ctx.beginPath(); ctx.moveTo(x-wd/2-1.6*k, ym); ctx.lineTo(x-wd/2, ym); ctx.stroke();
-    ctx.strokeStyle = "#EE5B24";
+    ctx.strokeStyle = P["c-boil"];
     ctx.beginPath(); ctx.moveTo(x-wd/2-1.6*k, yb2); ctx.lineTo(x-wd/2, yb2); ctx.stroke();
     if(!V.compact){
       ctx.font = '700 ' + Math.max(7,0.72*k).toFixed(1) + 'px "Poppins", sans-serif';
       ctx.textAlign = "right"; ctx.textBaseline = "middle";
       if(Math.abs(ym - yb2) < 15){
         /* the two are so close together that one combined tag is the only readable option */
-        ctx.fillStyle = "#3A4250";
+        ctx.fillStyle = P["c-both"];
         ctx.fillText("melts " + Math.round(s.melt) + " K, boils " + Math.round(s.boil) + " K",
                      x-wd/2-2.1*k, (ym+yb2)/2);
       } else {
-        ctx.fillStyle = "#2E8CE0"; ctx.fillText("melts " + Math.round(s.melt) + " K", x-wd/2-2.1*k, ym);
-        ctx.fillStyle = "#EE5B24"; ctx.fillText("boils " + Math.round(s.boil) + " K", x-wd/2-2.1*k, yb2);
+        ctx.fillStyle = P["c-melt"]; ctx.fillText("melts " + Math.round(s.melt) + " K", x-wd/2-2.1*k, ym);
+        ctx.fillStyle = P["c-boil"]; ctx.fillText("boils " + Math.round(s.boil) + " K", x-wd/2-2.1*k, yb2);
       }
       ctx.textAlign = "left";
     }
@@ -656,8 +729,9 @@
     var w2 = ctx.measureText(t2).width;
     var bw = Math.max(w1,w2) + 22, bh = 3.4*k, bx = clamp(x - bw/2, 4, V.w - bw - 4);
     var by = yt - bh - 0.9*k;
-    ctx.fillStyle = "#12161E";
+    ctx.fillStyle = P["c-tag"];
     roundRect(ctx, bx, by, bw, bh, 8); ctx.fill();
+    ctx.strokeStyle = P["c-tag-line"]; ctx.lineWidth = 1; ctx.stroke();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillStyle = "#FFA07A";
     ctx.font = '700 ' + Math.max(12, 1.5*k).toFixed(1) + 'px "Poppins", "IBM Plex Mono", monospace';
@@ -774,10 +848,10 @@
           ? "two oxygen atoms bonded together."
           : "one oxygen with two smaller hydrogens attached.");
 
-    var bg, fg;
-    if(st === "Solid"){ bg = "#E7F0FD"; fg = "#1A5C9E"; }
-    else if(st === "Liquid"){ bg = "#E6F6F3"; fg = "#0B6152"; }
-    else { bg = "#FDEEE6"; fg = "#A9430F"; }
+    var bg, fg, dk = isDarkNow();
+    if(st === "Solid"){ bg = dk ? "#172A42" : "#E7F0FD"; fg = dk ? "#9CC8FF" : "#1A5C9E"; }
+    else if(st === "Liquid"){ bg = dk ? "#10322C" : "#E6F6F3"; fg = dk ? "#7FE0CB" : "#0B6152"; }
+    else { bg = dk ? "#3A2216" : "#FDEEE6"; fg = dk ? "#FFB08A" : "#A9430F"; }
     elBadge.textContent = st;
     elBadge.style.background = bg; elBadge.style.color = fg;
 
@@ -834,6 +908,38 @@
   elReset.addEventListener("click", function(){ setSub(si); });
 
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(drawScene);
+
+  /* ------------------------------------------------ light / dark toggle */
+  var themeBtn = $("cvlab-theme");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.innerHTML = d ? SUN : MOON;
+    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+  }
+  function repaint(){ readPalette(); paintToggle(); renderPanels(); drawScene(); }
+  function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
+  themeBtn.addEventListener("click", function(){
+    var next = isDarkNow() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+  });
+  /* the page around this sim switched its light / dark mode: follow it (not saved) */
+  window.addEventListener("message", function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var th = e.data && e.data.simTheme;
+    if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
+    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
   buildSubs(); seed(); refresh();
   requestAnimationFrame(frame);

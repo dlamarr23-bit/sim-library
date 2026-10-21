@@ -14,8 +14,8 @@
        <iframe src="track-energy-lab.html"
                style="width:100%;height:1520px;border:0" loading="lazy"
                title="Hot Wheels track energy simulation"></iframe>
-  2) Or paste the style block, the cvlab div, and the script block into a page.
-     Every CSS rule is scoped under .cvlab.
+  2) Or paste the style block, the theme script, the cvlab div, and the script block into a page.
+     Layout rules are scoped under .cvlab; the light/dark color tokens live on :root.
 
   THE MODEL
      The car runs along the track under gravity with rolling resistance.
@@ -33,14 +33,67 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-.cvlab{
+/* ---------- tokens: bare :root = light, system dark unless light is chosen, explicit dark ---------- */
+:root{
   --paper:#FFFFFF; --shell:#EDEFF3; --rule:#D9DDE4;
   --ink:#14181F; --ink-2:#5A6473;
-  --brand:#F4640C; --brand-d:#C64A05; --brand-l:#FF8A3D;
+  --brand:#F4640C; --brand-d:#C64A05; --brand-l:#FF8A3D; --brand-ink:#C64A05;
   --blue:#2563EB; --blue-d:#1D4ED8;
   --ok:#16A34A; --bad:#DC2626; --warn:#D97706;
   --track:#F4640C; --tape:#E8C25A; --tape-d:#B8973A;
   --counter:#22262C; --oak:#C79A62;
+  --head-bg:linear-gradient(120deg,#171C24,#252C36); --head-ink:#fff;
+  --hover:#F6F8FB; --car-on:#FFF4EC; --soft:#F4F6FA; --row-line:#EEF0F4; --row-new:#FFF6E8;
+  --best-bg:#ECFDF3; --best-line:#A7E8C0; --best-ink:#14532D; --notes-ink:#2B323C;
+  --car-glow:none;
+  /* canvas colors (read by the script) */
+  --c-room1:#F7F9FC; --c-room2:#E7ECF3; --c-outline:rgba(0,0,0,0);
+  --c-guide-0:rgba(90,100,115,.5); --c-guide-ramp:rgba(120,130,145,.55);
+  --c-guide-rel:rgba(37,99,235,.8); --c-guide-hill:rgba(217,119,6,.85);
+  --c-tag-bg:rgba(255,255,255,.93); --c-label-bg:#fff;
+  --c-a:#2563EB; --c-b:#0EA5A5; --c-c:#D97706; --c-d:#7C3AED; --c-ramp:#7A8595; --c-zero:#5A6473;
+  --c-car-line:rgba(0,0,0,.34); --c-tyre-line:rgba(255,255,255,.10);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#1A1C1F; --shell:#101214; --rule:#33373E;
+    --ink:#EEF0F3; --ink-2:#B4BAC4;
+    --brand-ink:#FF9A55; --blue:#5B8DEF; --blue-d:#3F73DB;
+    --ok:#4ADE80; --bad:#F87171; --warn:#F5A524;
+    --head-bg:linear-gradient(120deg,#0B0D11,#191D24); --head-ink:#fff;
+    --hover:#22262B; --car-on:#3A2414; --soft:#22252A; --row-line:#2A2E34; --row-new:#3A2C18;
+    --best-bg:#12291B; --best-line:#2D6B45; --best-ink:#9BE8B8; --notes-ink:#C9CED6;
+    --car-glow:drop-shadow(0 0 .7px rgba(235,240,245,.9));
+    --c-room1:#1D2127; --c-room2:#16191E; --c-outline:rgba(235,240,245,.5);
+    --c-guide-0:rgba(170,180,195,.55); --c-guide-ramp:rgba(160,170,185,.6);
+    --c-guide-rel:rgba(110,160,255,.9); --c-guide-hill:rgba(245,165,36,.9);
+    --c-tag-bg:rgba(26,28,31,.93); --c-label-bg:#1A1C1F;
+    --c-a:#7AA7FF; --c-b:#2DD4D4; --c-c:#F5A524; --c-d:#B49CFF; --c-ramp:#A3ADBB; --c-zero:#B4BAC4;
+    --c-car-line:rgba(235,240,245,.55); --c-tyre-line:rgba(255,255,255,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1A1C1F; --shell:#101214; --rule:#33373E;
+  --ink:#EEF0F3; --ink-2:#B4BAC4;
+  --brand-ink:#FF9A55; --blue:#5B8DEF; --blue-d:#3F73DB;
+  --ok:#4ADE80; --bad:#F87171; --warn:#F5A524;
+  --head-bg:linear-gradient(120deg,#0B0D11,#191D24); --head-ink:#fff;
+  --hover:#22262B; --car-on:#3A2414; --soft:#22252A; --row-line:#2A2E34; --row-new:#3A2C18;
+  --best-bg:#12291B; --best-line:#2D6B45; --best-ink:#9BE8B8; --notes-ink:#C9CED6;
+  --car-glow:drop-shadow(0 0 .7px rgba(235,240,245,.9));
+  --c-room1:#1D2127; --c-room2:#16191E; --c-outline:rgba(235,240,245,.5);
+  --c-guide-0:rgba(170,180,195,.55); --c-guide-ramp:rgba(160,170,185,.6);
+  --c-guide-rel:rgba(110,160,255,.9); --c-guide-hill:rgba(245,165,36,.9);
+  --c-tag-bg:rgba(26,28,31,.93); --c-label-bg:#1A1C1F;
+  --c-a:#7AA7FF; --c-b:#2DD4D4; --c-c:#F5A524; --c-d:#B49CFF; --c-ramp:#A3ADBB; --c-zero:#B4BAC4;
+  --c-car-line:rgba(235,240,245,.55); --c-tyre-line:rgba(255,255,255,.35);
+  color-scheme:dark;
+}
+body{margin:0;background:var(--shell)}
+
+.cvlab{
   --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   background:var(--shell);font-family:var(--font-b);color:var(--ink);font-weight:700;
@@ -51,9 +104,10 @@
 .cvlab p{margin:0}
 .cvlab :focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 
-.cvlab-head{background:linear-gradient(120deg,#171C24,#252C36);color:#fff;
+.cvlab-head{background:var(--head-bg);color:var(--head-ink);
   border-radius:14px 14px 0 0;padding:16px 20px;
   display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.cvlab-title{flex:1 1 auto}
 .cvlab-eyebrow{display:block;font-size:13px;font-weight:700;letter-spacing:.16em;
   text-transform:uppercase;color:var(--brand-l);margin-bottom:3px}
 .cvlab-head h1{font-size:clamp(20px,3vw,30px);line-height:1.1;font-weight:700}
@@ -67,6 +121,12 @@
 .cvlab-ro-hi .cvlab-ro-v{color:var(--brand-l)}
 .cvlab-ro-ok .cvlab-ro-v{color:#54D98C}
 .cvlab-ro-bad .cvlab-ro-v{color:#FF8A8A}
+.cvlab-themebtn{
+  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
+  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
+}
+.cvlab-themebtn:hover{border-color:var(--tape)}
+.cvlab-themebtn svg{width:21px;height:21px}
 
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 14px 14px;padding:12px}
@@ -84,7 +144,7 @@
 .cvlab-btn{font-family:var(--font-b);font-size:17px;font-weight:700;cursor:pointer;
   background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:9px;
   padding:9px 16px;line-height:1.1;transition:transform .08s ease,background .14s ease,color .14s ease}
-.cvlab-btn:hover:not(:disabled){background:var(--ink);color:#fff}
+.cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
 .cvlab-btn:active:not(:disabled){transform:translateY(1px)}
 .cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
 .cvlab-btn-go{background:var(--brand);border-color:var(--brand-d);color:#fff;min-width:160px}
@@ -108,9 +168,9 @@
   background:var(--paper);display:flex;align-items:center;gap:8px;text-align:left;
   font-family:var(--font-b);font-size:13.5px;font-weight:700;color:var(--ink);
   transition:border-color .14s ease,background .14s ease}
-.cvlab-car:hover{background:#F6F8FB}
-.cvlab-car.is-on{border-color:var(--brand);background:#FFF4EC}
-.cvlab-car svg{display:block;flex:none;overflow:visible}
+.cvlab-car:hover{background:var(--hover)}
+.cvlab-car.is-on{border-color:var(--brand);background:var(--car-on)}
+.cvlab-car svg{display:block;flex:none;overflow:visible;filter:var(--car-glow)}
 .cvlab-car u{text-decoration:none;display:block;font-weight:700;font-size:12px;color:var(--ink-2)}
 
 .cvlab-field{display:flex;flex-direction:column;gap:5px}
@@ -121,33 +181,33 @@
 .cvlab-stepper button{width:34px;height:34px;border-radius:9px;border:2px solid var(--ink);
   background:var(--paper);font-family:var(--font-b);font-size:17px;font-weight:700;cursor:pointer;
   line-height:1;color:var(--ink)}
-.cvlab-stepper button:hover:not(:disabled){background:var(--ink);color:#fff}
+.cvlab-stepper button:hover:not(:disabled){background:var(--ink);color:var(--paper)}
 .cvlab-stepper button:disabled{opacity:.3;cursor:not-allowed}
 .cvlab-stepper b{font-family:var(--font-m);font-size:17px;font-weight:700;min-width:104px;text-align:center}
 
-.cvlab-calc{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:#F4F6FA;
+.cvlab-calc{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:var(--soft);
   border:1px solid var(--rule);border-radius:9px;padding:9px 11px;line-height:1.85}
 .cvlab-calc b{color:var(--ink);font-weight:700}
-.cvlab-calc em{font-style:normal;color:var(--brand-d);font-weight:700}
+.cvlab-calc em{font-style:normal;color:var(--brand-ink);font-weight:700}
 
 .cvlab-tablewrap{max-height:250px;overflow:auto;border:1px solid var(--rule);border-radius:9px}
 .cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13.5px}
-.cvlab thead th{position:sticky;top:0;background:#F4F6FA;font-size:11px;letter-spacing:.05em;
+.cvlab thead th{position:sticky;top:0;background:var(--soft);font-size:11px;letter-spacing:.05em;
   font-weight:700;padding:6px 5px;text-align:right;border-bottom:1px solid var(--rule);
   color:var(--ink-2);white-space:nowrap;font-family:var(--font-b);text-transform:uppercase}
 .cvlab thead th:first-child,.cvlab thead th.l{text-align:left}
 .cvlab tbody td{padding:5px;text-align:right;font-variant-numeric:tabular-nums;
-  border-bottom:1px solid #EEF0F4;white-space:nowrap}
+  border-bottom:1px solid var(--row-line);white-space:nowrap}
 .cvlab tbody td:first-child,.cvlab tbody td.l{text-align:left;color:var(--ink-2)}
 .cvlab tbody tr:last-child td{border-bottom:0}
-.cvlab tbody tr.is-new td{background:#FFF6E8}
+.cvlab tbody tr.is-new td{background:var(--row-new)}
 .cvlab .yes{color:var(--ok);font-weight:700}
 .cvlab .no{color:var(--bad);font-weight:700}
 .cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
-.cvlab-best{background:#ECFDF3;border:1px solid #A7E8C0;border-radius:9px;padding:9px 11px;
-  font-size:15px;color:#14532D;font-weight:700}
+.cvlab-best{background:var(--best-bg);border:1px solid var(--best-line);border-radius:9px;padding:9px 11px;
+  font-size:15px;color:var(--best-ink);font-weight:700}
 .cvlab-best b{font-weight:800}
-.cvlab-best.none{background:#F4F6FA;border-color:var(--rule);color:var(--ink-2)}
+.cvlab-best.none{background:var(--soft);border-color:var(--rule);color:var(--ink-2)}
 
 .cvlab-pts th,.cvlab-pts td{font-size:13.5px}
 .cvlab-badge{display:inline-flex;width:19px;height:19px;border-radius:5px;align-items:center;
@@ -159,19 +219,29 @@
 .cvlab-notes{margin-top:14px;background:var(--paper);border:1px solid var(--rule);border-radius:14px;
   padding:12px 16px}
 .cvlab-notes h3{font-size:17px;margin:0 0 8px}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#2B323C}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:var(--notes-ink)}
 .cvlab-notes ul,.cvlab-notes ol{margin:5px 0 0;padding-left:20px}
 .cvlab-notes li{margin:4px 0}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#EDEFF3">
+<body>
 
 <div class="cvlab" id="cvlab">
 
   <header class="cvlab-head">
-    <div>
+    <div class="cvlab-title">
       <span class="cvlab-eyebrow">Energy lab &middot; gravitational potential energy</span>
       <h1>Track energy &mdash; how low can you release it?</h1>
     </div>
@@ -181,6 +251,7 @@
       <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Release</span><span class="cvlab-ro-v" id="cvlab-ro-rel">24 cm</span></div>
       <div class="cvlab-ro" id="cvlab-ro-reswrap"><span class="cvlab-ro-k">Result</span><span class="cvlab-ro-v" id="cvlab-ro-res">ready</span></div>
     </div>
+    <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="cvlab-bench">
@@ -375,6 +446,20 @@
   var elShow = $("cvlab-show"), elPeHint = $("cvlab-pehint");
   var roCar = $("cvlab-ro-car"), roHill = $("cvlab-ro-hill"),
       roRel = $("cvlab-ro-rel"), roRes = $("cvlab-ro-res"), roResWrap = $("cvlab-ro-reswrap");
+
+  /* ------------------------------------------------ theme colors (read from CSS tokens) */
+  var P = {};
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute("data-theme");
+    return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function readPalette(){
+    var cs = getComputedStyle(document.documentElement);
+    ["c-room1","c-room2","c-outline","c-guide-0","c-guide-ramp","c-guide-rel","c-guide-hill",
+     "c-tag-bg","c-label-bg","c-a","c-b","c-c","c-d","c-ramp","c-zero","c-car-line","c-tyre-line"
+    ].forEach(function(k){ P[k] = cs.getPropertyValue("--"+k).trim(); });
+  }
+  readPalette();
 
   /* ------------------------------------------------ helpers */
   function C(){ return CARS[car]; }
@@ -695,7 +780,7 @@
     ctx.clearRect(0,0,w,h);
     /* room */
     var g = ctx.createLinearGradient(0,0,0,PY(0));
-    g.addColorStop(0,"#F7F9FC"); g.addColorStop(1,"#E7ECF3");
+    g.addColorStop(0,P["c-room1"]); g.addColorStop(1,P["c-room2"]);
     ctx.fillStyle = g; ctx.fillRect(0,0,w,PY(0));
     /* the counter */
     var ct = ctx.createLinearGradient(0,PY(0),0,h);
@@ -725,8 +810,10 @@
     var cy = PY(RAMP_H);
     ctx.fillStyle = "#2B2F35";
     roundRect(ctx, x-1.5*k, cy-1.5*k, 3*k, 3*k, 0.4*k); ctx.fill();
+    ctx.strokeStyle = P["c-outline"]; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = "#3C424A";
     roundRect(ctx, x+0.9*k, cy-0.7*k, 5.6*k, 1.4*k, 0.3*k); ctx.fill();
+    ctx.stroke();
   }
 
   function drawTapeStack(ctx){
@@ -808,29 +895,29 @@
     var k = V.k;
     /* the 0 cm line the whole counter sits on */
     ctx.save();
-    ctx.setLineDash([5,4]); ctx.strokeStyle = "rgba(90,100,115,.5)"; ctx.lineWidth = 1.2;
+    ctx.setLineDash([5,4]); ctx.strokeStyle = P["c-guide-0"]; ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.moveTo(PX(VIEW_X0+1), PY(0)); ctx.lineTo(PX(END_X+3), PY(0)); ctx.stroke();
     /* the ramp height, which never changes */
-    ctx.strokeStyle = "rgba(120,130,145,.55)";
+    ctx.strokeStyle = P["c-guide-ramp"];
     ctx.beginPath(); ctx.moveTo(PX(-9), PY(RAMP_H)); ctx.lineTo(PX(DROP_X+2), PY(RAMP_H)); ctx.stroke();
     /* release height, wherever the car is being held on the ramp */
-    ctx.strokeStyle = "rgba(37,99,235,.8)";
+    ctx.strokeStyle = P["c-guide-rel"];
     ctx.beginPath(); ctx.moveTo(PX(-9), PY(relCm)); ctx.lineTo(PX(DROP_X+8), PY(relCm)); ctx.stroke();
     /* hill height */
-    ctx.strokeStyle = "rgba(217,119,6,.85)";
+    ctx.strokeStyle = P["c-guide-hill"];
     ctx.beginPath(); ctx.moveTo(PX(HILL_X1-6), PY(hillCm())); ctx.lineTo(PX(HILL_X2+6), PY(hillCm())); ctx.stroke();
     ctx.restore();
     if(V.compact) return;
-    tag(ctx, PX(DROP_X+11), PY(relCm), "release " + relCm + " cm", "#2563EB");
-    tag(ctx, PX(DROP_X+5), PY(RAMP_H), "ramp " + RAMP_H + " cm, fixed", "#7A8595");
-    tag(ctx, PX(HILL_X2+9), PY(hillCm()), "hill " + hillCm() + " cm", "#D97706");
-    tag(ctx, PX(END_X-16), PY(0) - 15, "0 cm, taped down", "#5A6473");
+    tag(ctx, PX(DROP_X+11), PY(relCm), "release " + relCm + " cm", P["c-a"]);
+    tag(ctx, PX(DROP_X+5), PY(RAMP_H), "ramp " + RAMP_H + " cm, fixed", P["c-ramp"]);
+    tag(ctx, PX(HILL_X2+9), PY(hillCm()), "hill " + hillCm() + " cm", P["c-c"]);
+    tag(ctx, PX(END_X-16), PY(0) - 15, "0 cm, taped down", P["c-zero"]);
   }
   function tag(ctx, x, y, txt, col){
     ctx.font = '700 12px "Poppins", system-ui, sans-serif';
     var tw = ctx.measureText(txt).width;
     var bx = clamp(x, 4, V.w - tw - 16);
-    ctx.fillStyle = "rgba(255,255,255,.93)";
+    ctx.fillStyle = P["c-tag-bg"];
     roundRect(ctx, bx-6, y-9.5, tw+12, 19, 6); ctx.fill();
     ctx.strokeStyle = col; ctx.lineWidth = 1.4;
     roundRect(ctx, bx-6, y-9.5, tw+12, 19, 6); ctx.stroke();
@@ -840,14 +927,14 @@
 
   function drawLabels(ctx){
     var pts = [
-      { k:"A", col:"#2563EB", x:xAtHeight(relCm), y:relCm, dx:-26, dy:-20 },
-      { k:"B", col:"#0EA5A5", x:DROP_X, y:0, dx:-4, dy:-30 },
-      { k:"C", col:"#D97706", x:CREST_X, y:hillCm(), dx:0, dy:-32 },
-      { k:"D", col:"#7C3AED", x:HILL_X2, y:0, dx:16, dy:-30 }
+      { k:"A", col:P["c-a"], x:xAtHeight(relCm), y:relCm, dx:-26, dy:-20 },
+      { k:"B", col:P["c-b"], x:DROP_X, y:0, dx:-4, dy:-30 },
+      { k:"C", col:P["c-c"], x:CREST_X, y:hillCm(), dx:0, dy:-32 },
+      { k:"D", col:P["c-d"], x:HILL_X2, y:0, dx:16, dy:-30 }
     ];
     for(var i=0;i<pts.length;i++){
       var p = pts[i], x = PX(p.x) + p.dx, y = PY(p.y) + p.dy;
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = P["c-label-bg"];
       roundRect(ctx, x-13, y-13, 26, 26, 8); ctx.fill();
       ctx.strokeStyle = p.col; ctx.lineWidth = 2.4;
       roundRect(ctx, x-13, y-13, 26, 26, 8); ctx.stroke();
@@ -902,7 +989,7 @@
     }
     ctx.closePath();
     ctx.fillStyle = bg; ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,.34)"; ctx.lineWidth = Math.max(1, 0.09*k); ctx.stroke();
+    ctx.strokeStyle = P["c-car-line"]; ctx.lineWidth = Math.max(1, 0.09*k); ctx.stroke();
 
     /* glass over the cabin */
     var beltY = -(c.nose + (c.roof - c.nose)*0.30)*k;
@@ -941,7 +1028,7 @@
       ctx.translate(wx, -R);                    /* centre one radius above the surface */
       ctx.fillStyle = "#14171B";
       ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,.10)"; ctx.lineWidth = 1;
+      ctx.strokeStyle = P["c-tyre-line"]; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(0, 0, R*0.98, 0, Math.PI*2); ctx.stroke();
       ctx.rotate(spin);
       ctx.fillStyle = "#9AA3AC";
@@ -1029,6 +1116,38 @@
   if(document.fonts && document.fonts.ready){
     document.fonts.ready.then(function(){ dirty = true; });
   }
+
+  /* ------------------------------------------------ light / dark toggle */
+  var themeBtn = $("cvlab-theme");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.innerHTML = d ? SUN : MOON;
+    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+  }
+  function repaint(){ readPalette(); paintToggle(); dirty = true; drawScene(); }
+  function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
+  themeBtn.addEventListener("click", function(){
+    var next = isDarkNow() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+  });
+  /* the page around this sim switched its light / dark mode: follow it (not saved) */
+  window.addEventListener("message", function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var th = e.data && e.data.simTheme;
+    if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
+    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
   buildCars();
   buildTrack();

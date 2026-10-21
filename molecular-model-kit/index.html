@@ -14,8 +14,8 @@
        <iframe src="molecule-builder-lab.html"
                style="width:100%;height:1500px;border:0" loading="lazy"
                title="Molecular model kit simulation"></iframe>
-  2) Or paste the style block, the cvlab div, and the script block into a page.
-     Every CSS rule is scoped under .cvlab.
+  2) Or paste the style block, the theme script, the cvlab div, and the script block into a page.
+     Every CSS rule is scoped under .cvlab, except the page color and dark mode switch on :root and body.
 
   THE RULES, same as the wooden kit on the bench
      Hydrogen yellow 1 hole, Chlorine green 1 hole, Oxygen red 2 holes,
@@ -40,30 +40,82 @@
   --wood:#D8B274; --spring:#A8AEB2;
   --tray:#1E2124; --felt:#EEF0EA;
   --tape:#E8B93C;
+  --head-bg:#1B1D1C; --head-ink:#F4F5F0; --on-ink:#F4F5F0;
+  --ro-bg:#000; --ro-line:#35392F; --ro-k:#8C9284; --ro-v:#DDE3D2;
+  --soft:#EFF1E9; --hover:#F3F5EE; --row-line:#EDEFE7; --row-on:#FCF3D9; --card:#fff;
+  --wait-line:#C7CDC0; --wait-ink:#9AA093; --ball-line:rgba(0,0,0,.4); --notes-ink:#33362F;
+  --clue-bg:#FCF3D9; --clue-line:#E3CF8E; --clue-ink:#4A3A17; --clue-b:#2F2510;
+  /* canvas colors (read by the script) */
+  --c-felt1:#F3F5EF; --c-felt2:#E7EAE2; --c-grid:rgba(160,168,152,.30); --c-empty:#9AA093;
+  --c-shadow:rgba(30,34,30,.16); --c-ball-line:rgba(0,0,0,.35); --c-select:#1552B8;
   --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
   padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
 }
+/* ---------- page + dark tokens: bare = light, system dark unless light is chosen, explicit dark ---------- */
+:root{--page:#DDE0D6;color-scheme:light}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--page:#121412;color-scheme:dark}
+  :root:not([data-theme="light"]) .cvlab{
+    --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+    --ink:#EEF0EA; --ink-2:#B6BAB0;
+    --blue:#3F7FE6; --blue-d:#2A63C2;
+    --ok:#5CC27A; --bad:#FF7A62; --warn:#F0A85A;
+    --tape:#F0C64A;
+    --head-bg:#0A0B0A; --head-ink:#F4F5F0; --on-ink:#121412;
+    --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
+    --soft:#252925; --hover:#232723; --row-line:#2A2F29; --row-on:#3A3320; --card:#171A17;
+    --wait-line:#4A5048; --wait-ink:#8D9288; --ball-line:rgba(235,240,230,.55); --notes-ink:#C9CCC3;
+    --clue-bg:#3A3320; --clue-line:#6B5A2A; --clue-ink:#F0DFAE; --clue-b:#FFF1C8;
+    --c-felt1:#1F231F; --c-felt2:#191C19; --c-grid:rgba(150,160,140,.14); --c-empty:#8D9288;
+    --c-shadow:rgba(0,0,0,.45); --c-ball-line:rgba(235,240,230,.55); --c-select:#7FB0FF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{--page:#121412;color-scheme:dark}
+:root[data-theme="dark"] .cvlab{
+  --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
+  --ink:#EEF0EA; --ink-2:#B6BAB0;
+  --blue:#3F7FE6; --blue-d:#2A63C2;
+  --ok:#5CC27A; --bad:#FF7A62; --warn:#F0A85A;
+  --tape:#F0C64A;
+  --head-bg:#0A0B0A; --head-ink:#F4F5F0; --on-ink:#121412;
+  --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
+  --soft:#252925; --hover:#232723; --row-line:#2A2F29; --row-on:#3A3320; --card:#171A17;
+  --wait-line:#4A5048; --wait-ink:#8D9288; --ball-line:rgba(235,240,230,.55); --notes-ink:#C9CCC3;
+  --clue-bg:#3A3320; --clue-line:#6B5A2A; --clue-ink:#F0DFAE; --clue-b:#FFF1C8;
+  --c-felt1:#1F231F; --c-felt2:#191C19; --c-grid:rgba(150,160,140,.14); --c-empty:#8D9288;
+  --c-shadow:rgba(0,0,0,.45); --c-ball-line:rgba(235,240,230,.55); --c-select:#7FB0FF;
+  color-scheme:dark;
+}
+body{margin:0;background:var(--page)}
 .cvlab *{box-sizing:border-box}
 .cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
 .cvlab p{margin:0}
 .cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-.cvlab-head{background:var(--ink);color:#F4F5F0;border-radius:5px 5px 0 0;padding:12px 16px;
+.cvlab-head{background:var(--head-bg);color:var(--head-ink);border-radius:5px 5px 0 0;padding:12px 16px;
   display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.cvlab-title{flex:1 1 260px}
 .cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--tape);margin-bottom:2px}
 .cvlab-head h1{font-size:clamp(19px,2.9vw,29px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
 .cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
-.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:96px}
+.cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:3px;padding:5px 10px;min-width:96px}
 .cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
-  text-transform:uppercase;color:#8C9284}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:#DDE3D2;
+  text-transform:uppercase;color:var(--ro-k)}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:var(--ro-v);
   font-variant-numeric:tabular-nums;white-space:nowrap}
 .cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
 .cvlab-ro-ok .cvlab-ro-v{color:#7ED08F}
+.cvlab-themebtn{
+  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
+  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
+}
+.cvlab-themebtn:hover{border-color:var(--tape)}
+.cvlab-themebtn svg{width:21px;height:21px}
 
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 5px 5px;padding:10px 10px 12px}
@@ -74,8 +126,8 @@
 .cvlab-tool{cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:3px;
   padding:6px 10px;font-family:var(--font-m);font-size:13.5px;font-weight:700;color:var(--ink);
   display:flex;align-items:center;gap:6px;transition:background .12s ease,color .12s ease}
-.cvlab-tool:hover{background:#EFF1E9}
-.cvlab-tool.is-on{background:var(--ink);color:#F4F5F0}
+.cvlab-tool:hover{background:var(--soft)}
+.cvlab-tool.is-on{background:var(--ink);color:var(--on-ink)}
 .cvlab-tool svg{display:block}
 .cvlab-toolgap{flex:1}
 .cvlab-hint{font-family:var(--font-m);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
@@ -113,12 +165,12 @@
 .cvlab-targets{max-height:330px;overflow:auto;border:1px solid var(--rule);border-radius:3px;
   display:flex;flex-direction:column}
 .cvlab-tgroup{font-family:var(--font-m);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ink-2);background:#EFF1E9;padding:4px 8px;position:sticky;top:0}
+  color:var(--ink-2);background:var(--soft);padding:4px 8px;position:sticky;top:0}
 .cvlab-tgt{display:flex;align-items:center;gap:7px;padding:6px 8px;cursor:pointer;background:none;
-  border:0;border-bottom:1px solid #EDEFE7;text-align:left;font-family:var(--font-b);font-size:15px;
+  border:0;border-bottom:1px solid var(--row-line);text-align:left;font-family:var(--font-b);font-size:15px;
   color:var(--ink);width:100%}
-.cvlab-tgt:hover{background:#F3F5EE}
-.cvlab-tgt.is-on{background:#FCF3D9}
+.cvlab-tgt:hover{background:var(--hover)}
+.cvlab-tgt.is-on{background:var(--row-on)}
 .cvlab-tgt b{font-family:var(--font-m);font-size:14px;min-width:64px}
 .cvlab-tgt span{color:var(--ink-2);font-size:14px}
 .cvlab-tgt i{margin-left:auto;font-style:normal;color:var(--ok);font-weight:700;font-size:15px}
@@ -127,47 +179,57 @@
 .cvlab-part{cursor:pointer;border:1.5px solid var(--ink);border-radius:3px;padding:6px;background:var(--paper);
   display:flex;align-items:center;gap:7px;font-family:var(--font-m);font-size:13px;font-weight:700;
   color:var(--ink);transition:background .12s ease}
-.cvlab-part:hover:not(:disabled){background:#EFF1E9}
+.cvlab-part:hover:not(:disabled){background:var(--soft)}
 .cvlab-part:disabled{opacity:.4;cursor:not-allowed}
-.cvlab-ball{width:22px;height:22px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.4)}
+.cvlab-ball{width:22px;height:22px;border-radius:50%;flex:none;border:1px solid var(--ball-line)}
 .cvlab-part u{text-decoration:none;font-weight:700;font-size:11.5px;color:var(--ink-2);display:block}
 .cvlab-part em{margin-left:auto;font-style:normal;font-size:13px;color:var(--ink-2)}
-.cvlab-partsline{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:#EFF1E9;
+.cvlab-partsline{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:var(--soft);
   border-radius:3px;padding:7px 9px;line-height:1.7}
 .cvlab-partsline b{color:var(--ink)}
 
 .cvlab-checks{display:flex;flex-direction:column;gap:6px}
 .cvlab-check{display:flex;gap:8px;align-items:flex-start;font-size:15px;
-  border:1px solid var(--rule);border-left-width:4px;border-radius:3px;padding:7px 9px;background:#fff}
+  border:1px solid var(--rule);border-left-width:4px;border-radius:3px;padding:7px 9px;background:var(--card)}
 .cvlab-check.ok{border-left-color:var(--ok)}
 .cvlab-check.bad{border-left-color:var(--bad)}
-.cvlab-check.wait{border-left-color:#C7CDC0;opacity:.7}
+.cvlab-check.wait{border-left-color:var(--wait-line);opacity:.7}
 .cvlab-check i{font-style:normal;font-weight:700;flex:none;width:14px;text-align:center}
 .cvlab-check.ok i{color:var(--ok)}
 .cvlab-check.bad i{color:var(--bad)}
-.cvlab-check.wait i{color:#9AA093}
+.cvlab-check.wait i{color:var(--wait-ink)}
 .cvlab-check b{font-weight:700}
 .cvlab-check span{display:block;color:var(--ink-2);font-size:14px}
-.cvlab-clue{font-size:15px;background:#FCF3D9;border:1px solid #E3CF8E;border-radius:3px;padding:8px 10px;
-  color:#4A3A17}
-.cvlab-clue b{color:#2F2510}
+.cvlab-clue{font-size:15px;background:var(--clue-bg);border:1px solid var(--clue-line);border-radius:3px;padding:8px 10px;
+  color:var(--clue-ink)}
+.cvlab-clue b{color:var(--clue-b)}
 
 .cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
   padding:10px 14px}
 .cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:#33362F}
+.cvlab-notes p,.cvlab-notes li{font-size:15px;color:var(--notes-ink)}
 .cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
 .cvlab-notes li{margin:3px 0}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
+<script>
+/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the one saved on this computer */
+(function(){
+  var t = null;
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
 </head>
-<body style="margin:0;background:#DDE0D6">
+<body>
 
 <div class="cvlab" id="cvlab">
 
   <header class="cvlab-head">
-    <div>
+    <div class="cvlab-title">
       <span class="cvlab-eyebrow">Chemistry lab &middot; bonding</span>
       <h1>Molecular model kit</h1>
     </div>
@@ -177,6 +239,7 @@
       <div class="cvlab-ro"><span class="cvlab-ro-k">Open holes</span><span class="cvlab-ro-v" id="cvlab-ro-holes">0</span></div>
       <div class="cvlab-ro cvlab-ro-ok"><span class="cvlab-ro-k">Built</span><span class="cvlab-ro-v" id="cvlab-ro-done">0 / 20</span></div>
     </div>
+    <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="cvlab-bench">
@@ -331,6 +394,19 @@
   var elStatus = $("cvlab-status");
   var roTgt = $("cvlab-ro-tgt"), roF = $("cvlab-ro-f"),
       roHoles = $("cvlab-ro-holes"), roDone = $("cvlab-ro-done");
+
+  /* ------------------------------------------------ theme colors (read from CSS tokens) */
+  var P = {};
+  function isDarkNow(){
+    var a = document.documentElement.getAttribute("data-theme");
+    return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function readPalette(){
+    var cs = getComputedStyle($("cvlab"));
+    ["c-felt1","c-felt2","c-grid","c-empty","c-shadow","c-ball-line","c-select"]
+      .forEach(function(k){ P[k] = cs.getPropertyValue("--"+k).trim(); });
+  }
+  readPalette();
 
   function say(m, kind){
     elStatus.innerHTML = m;
@@ -851,16 +927,16 @@
     ctx.clearRect(0,0,w,h);
     /* the felt of the bench */
     var g = ctx.createLinearGradient(0,0,0,h);
-    g.addColorStop(0,"#F3F5EF"); g.addColorStop(1,"#E7EAE2");
+    g.addColorStop(0,P["c-felt1"]); g.addColorStop(1,P["c-felt2"]);
     ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
-    ctx.strokeStyle = "rgba(160,168,152,.30)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
     ctx.beginPath();
     for(var gx=28; gx<w; gx+=28){ ctx.moveTo(gx+0.5, 0); ctx.lineTo(gx+0.5, h); }
     for(var gy=28; gy<h; gy+=28){ ctx.moveTo(0, gy+0.5); ctx.lineTo(w, gy+0.5); }
     ctx.stroke();
 
     if(!atoms.length){
-      ctx.fillStyle = "#9AA093";
+      ctx.fillStyle = P["c-empty"];
       ctx.font = '700 13.5px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Tap a ball in the kit to take one out of the box.", w/2, h/2);
@@ -877,13 +953,13 @@
     /* balls */
     for(var i=0;i<atoms.length;i++){
       var a = atoms[i], d = EL[a.el], r = d.r;
-      ctx.fillStyle = "rgba(30,34,30,.16)";
+      ctx.fillStyle = P["c-shadow"];
       ctx.beginPath(); ctx.ellipse(a.x+1.5, a.y+r*0.82, r*0.85, r*0.24, 0, 0, Math.PI*2); ctx.fill();
       var rg = ctx.createRadialGradient(a.x - r*0.35, a.y - r*0.4, r*0.12, a.x, a.y, r*1.08);
       rg.addColorStop(0, d.light); rg.addColorStop(.58, d.fill); rg.addColorStop(1, d.dark);
       ctx.fillStyle = rg;
       ctx.beginPath(); ctx.arc(a.x, a.y, r, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1;
+      ctx.strokeStyle = P["c-ball-line"]; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(a.x, a.y, r, 0, Math.PI*2); ctx.stroke();
 
       /* the empty holes, put where no connector is */
@@ -928,7 +1004,7 @@
       ctx.fillText(a.el, a.x, a.y + 0.5);
 
       if(i === selected){
-        ctx.strokeStyle = "#1552B8"; ctx.lineWidth = 2.6;
+        ctx.strokeStyle = P["c-select"]; ctx.lineWidth = 2.6;
         ctx.setLineDash([4,3]);
         ctx.beginPath(); ctx.arc(a.x, a.y, r + 5, 0, Math.PI*2); ctx.stroke();
         ctx.setLineDash([]);
@@ -1073,6 +1149,38 @@
   if(window.ResizeObserver){
     new ResizeObserver(function(){ settle = 1; }).observe(workC.parentNode);
   }
+
+  /* ------------------------------------------------ light / dark toggle */
+  var themeBtn = $("cvlab-theme");
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
+  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var inFrame = window.parent !== window;
+  function paintToggle(){
+    var d = isDarkNow();
+    themeBtn.innerHTML = d ? SUN : MOON;
+    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+  }
+  function repaint(){ readPalette(); paintToggle(); draw(); }
+  function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
+  themeBtn.addEventListener("click", function(){
+    var next = isDarkNow() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+    /* shown in a frame (a lab's questions page): tell that page, so it switches too */
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+  });
+  /* the page around this sim switched its light / dark mode: follow it (not saved) */
+  window.addEventListener("message", function(e){
+    if (!inFrame || e.source !== window.parent) return;
+    var th = e.data && e.data.simTheme;
+    if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
+  });
+  if (window.matchMedia){
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
+    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
+  }
+  paintToggle();
 
   buildTools(); buildTargets(); buildParts();
   refresh();

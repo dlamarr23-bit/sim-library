@@ -599,6 +599,15 @@
     text-align:center;
   }
 </style>
+<script>
+  // apply a light/dark choice before the page paints: the page showing this sim in a frame can name one (?theme=light or dark, so both sides match), else the saved one
+  (function(){
+    var t = null;
+    try{ t = new URLSearchParams(location.search).get('theme'); }catch(e){}
+    if(t !== 'light' && t !== 'dark'){ try{ t = localStorage.getItem('rampLabTheme'); }catch(e){} }
+    if(t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
 </head>
 <body>
 <div class="page">
@@ -1055,9 +1064,11 @@
     ctx.lineWidth = 1.5;
     ctx.strokeRect(x-9, top, 18, yBottom-top);
 
-    // ticks
+    // ticks (the numbers sit on the scene, so in dark mode they take the soft ink color to stay readable)
+    var rootTheme = document.documentElement.getAttribute('data-theme');
+    var darkNow = rootTheme === 'dark' || (!rootTheme && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
     ctx.font = '700 9.5px "JetBrains Mono", monospace';
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillStyle = darkNow ? C.inkSoft : 'rgba(0,0,0,0.55)';
     for(var cm=0; cm<=maxCm; cm+=5){
       var y = yBottom - cm*GEO.scale;
       var major = (cm % 10 === 0);
@@ -1553,28 +1564,28 @@
     draw();
   }
 
-  (function initTheme(){
-    var stored = null;
-    try{ stored = localStorage.getItem(THEME_KEY); }catch(e){}
-    if(stored === 'light' || stored === 'dark'){
-      setTheme(stored, false);
-    } else {
-      updateToggleUI(effectiveTheme());
-    }
-  })();
+  // the script in the head already applied ?theme= or the saved choice
+  updateToggleUI(effectiveTheme());
 
+  var inFrame = window.parent !== window;
   if(themeToggle){
     themeToggle.addEventListener('click', function(){
       var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
       setTheme(next, true);
+      // shown in a frame (the textbook's Sims page): tell that page, so it switches too
+      if(inFrame) try{ window.parent.postMessage({ simTheme: next }, '*'); }catch(e){}
     });
   }
+  // the page around this sim switched its light/dark mode: follow it (not saved, so the sim on its own keeps its own choice)
+  window.addEventListener('message', function(e){
+    if(!inFrame || e.source !== window.parent) return;
+    var t = e.data && e.data.simTheme;
+    if((t === 'light' || t === 'dark') && t !== effectiveTheme()) setTheme(t, false);
+  });
 
   if(mq){
     var mqHandler = function(){
-      var stored = null;
-      try{ stored = localStorage.getItem(THEME_KEY); }catch(e){}
-      if(!stored){
+      if(!document.documentElement.getAttribute('data-theme')){
         updateToggleUI(effectiveTheme());
         draw();
       }
