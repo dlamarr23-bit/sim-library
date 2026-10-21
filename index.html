@@ -3,56 +3,66 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Physical Science 8 — Sim Library</title>
+<title>Sims · Physical Science 8</title>
 <meta name="description" content="Interactive simulations for the Physical Science 8 course">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Laid out like the pages of the textbook site (physical-science-8.pages.dev), which shows this page under its
+     own top bar: a light banner with a "Study tools" tag, the title and a picture, then each unit as a card
+     with the unit's color along the top (2026-10-20). */
   :root {
-    --bg: #f4f5f7;
+    --bg: #f6f7fb;
     --card-bg: #ffffff;
-    --header-bg: #14151a;
-    --header-fg: #ffffff;
-    --accent: #ffb020;
-    --accent-2: #2f6fed;
-    --text: #14151a;
-    --text-muted: #5b5f6b;
-    --border: #e3e5ea;
-    --sim-card-bg: #f7f8fa;
-    --sim-card-hover: #eef1ff;
+    --text: #1b1f2a;
+    --text-muted: #4a5063;
+    --border: #e6e8f0;
+    --accent: #3a5ce4;
+    --accent-dark: #28409e;
+    --accent-tint: #eef1fd;
+    --hero-end: #ffffff;
+    --sim-card-bg: #ffffff;
+    --shadow: 0 4px 14px -6px rgba(20,25,50,.15);
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #0e0f13;
       --card-bg: #17181f;
-      --header-bg: #000000;
-      --header-fg: #ffffff;
-      --accent: #ffb020;
-      --accent-2: #6c9bff;
       --text: #eef0f4;
       --text-muted: #9a9eae;
       --border: #2a2c35;
+      --accent: #7c97ff;
+      --accent-dark: #a9bbff;
+      --accent-tint: #1d2340;
+      --hero-end: #0e0f13;
       --sim-card-bg: #1e202a;
-      --sim-card-hover: #262a3a;
+      --shadow: none;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #0e0f13;
     --card-bg: #17181f;
-    --header-bg: #000000;
-    --header-fg: #ffffff;
-    --accent: #ffb020;
-    --accent-2: #6c9bff;
     --text: #eef0f4;
     --text-muted: #9a9eae;
     --border: #2a2c35;
+    --accent: #7c97ff;
+    --accent-dark: #a9bbff;
+    --accent-tint: #1d2340;
+    --hero-end: #0e0f13;
     --sim-card-bg: #1e202a;
-    --sim-card-hover: #262a3a;
+    --shadow: none;
     color-scheme: dark;
   }
+  /* each unit's color, the same as the textbook's */
+  details.unit[data-unit="u1"] { --unit: #e63946; --unit-tint: rgba(230,57,70,.09); }
+  details.unit[data-unit="u2"] { --unit: #6a4c93; --unit-tint: rgba(106,76,147,.10); }
+  details.unit[data-unit="u3"] { --unit: #1982c4; --unit-tint: rgba(25,130,196,.10); }
+  details.unit[data-unit="u4"] { --unit: #00a0c4; --unit-tint: rgba(0,160,196,.10); }
+  details.unit[data-unit="u5"] { --unit: #f77f00; --unit-tint: rgba(247,127,0,.10); }
+  details.unit[data-unit="u6"] { --unit: #2a9d6f; --unit-tint: rgba(42,157,111,.10); }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -60,83 +70,102 @@
     color: var(--text);
     font-family: 'Poppins', system-ui, sans-serif;
     font-weight: 400;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
   }
   a { color: inherit; text-decoration: none; }
-  header.site-header {
-    background: var(--header-bg);
-    color: var(--header-fg);
-    padding: clamp(24px, 4vw, 40px) clamp(20px, 5vw, 56px);
+  .hero {
+    background: linear-gradient(150deg, var(--accent-tint), var(--hero-end) 65%);
+    border-bottom: 1px solid var(--border);
   }
-  .header-row {
-    max-width: 1200px;
+  .hero-inner {
+    position: relative;
+    max-width: 1100px;
     margin: 0 auto;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
+    padding: 34px 20px 36px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 30px;
+    align-items: center;
   }
-  .kicker {
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    font-size: clamp(11px, 1.2vw, 13px);
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
     font-weight: 700;
-    color: var(--accent);
-    margin: 0 0 8px;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--accent-dark);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 14px;
   }
   h1.site-title {
-    font-size: clamp(28px, 4.2vw, 44px);
+    font-size: clamp(1.7rem, 4vw, 2.5rem);
     font-weight: 800;
-    margin: 0 0 10px;
-    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin: 0 0 .3em;
   }
   p.site-subtitle {
-    font-size: clamp(14px, 1.6vw, 17px);
-    font-weight: 500;
-    color: #c7c9d4;
+    font-size: 1.08rem;
+    color: var(--text-muted);
     margin: 0;
     max-width: 60ch;
-  }
-  .theme-toggle {
-    flex: 0 0 auto;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.25);
-    background: rgba(255,255,255,0.08);
-    color: var(--header-fg);
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .theme-toggle:hover { background: rgba(255,255,255,0.16); }
-  main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: clamp(20px, 4vw, 40px) clamp(20px, 5vw, 56px) 80px;
   }
   .stats-row {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-    margin: -18px 0 28px;
+    margin: 18px 0 0;
   }
   .stat-pill {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 999px;
-    padding: 6px 14px;
+    padding: 5px 14px;
     font-size: 13px;
     font-weight: 600;
     color: var(--text-muted);
   }
+  .hero-icon { justify-self: end; color: var(--accent); }
+  .hero-icon svg { width: 170px; height: 170px; display: block; }
+  .theme-toggle {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 17px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow);
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+  @media (max-width: 700px) {
+    .hero-inner { grid-template-columns: minmax(0, 1fr); padding-right: 70px; }
+    .hero-icon { display: none; }
+  }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 20px 70px;
+  }
   details.unit {
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    margin-bottom: 16px;
+    border-top: 6px solid var(--unit, var(--accent));
+    border-radius: 18px;
+    margin-bottom: 18px;
     overflow: hidden;
+    box-shadow: var(--shadow);
   }
   summary.unit-summary {
     list-style: none;
@@ -154,7 +183,7 @@
     font-size: 12px;
     font-weight: 600;
     color: var(--text-muted);
-    background: var(--sim-card-bg);
+    background: var(--unit-tint, var(--accent-tint));
     border-radius: 999px;
     padding: 4px 10px;
     white-space: nowrap;
@@ -175,68 +204,82 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--accent-2);
+    color: var(--unit, var(--accent-dark));
     margin: 0 0 10px;
   }
   .sim-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
     gap: 10px;
   }
   .sim-card {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     background: var(--sim-card-bg);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
+    border-radius: 12px;
+    padding: 11px 14px;
     font-weight: 600;
     font-size: 14px;
-    transition: background 0.12s ease, transform 0.12s ease;
+    line-height: 1.35;
+    transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease;
   }
-  .sim-card:hover {
-    background: var(--sim-card-hover);
+  .sim-card:hover, .sim-card:focus-visible {
+    border-color: var(--unit, var(--accent));
+    background: var(--unit-tint, var(--accent-tint));
     transform: translateY(-1px);
   }
   .sim-card-icon {
     flex: 0 0 auto;
-    color: var(--accent-2);
-    font-size: 11px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--unit, var(--accent));
+    background: var(--unit-tint, var(--accent-tint));
+    font-size: 10px;
+    padding-left: 2px;
   }
   .sim-card-name { flex: 1 1 auto; }
-  .sim-card-go {
-    flex: 0 0 auto;
-    color: var(--text-muted);
-    font-size: 16px;
-  }
   footer.site-footer {
-    max-width: 1200px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 0 clamp(20px, 5vw, 56px) 48px;
+    padding: 0 20px 48px;
     color: var(--text-muted);
     font-size: 13px;
   }
 </style>
+<script>
+  // light or dark before the page draws: the textbook's Sims page names one (?theme=light or dark), else the saved one
+  (function(){
+    var t = null;
+    try { t = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') { try { t = localStorage.getItem('sim-library-theme'); } catch (e) {} }
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
 </head>
 <body>
-<header class="site-header">
-  <div class="header-row">
+<header class="hero">
+  <div class="hero-inner">
     <div>
-      <p class="kicker">Physical Science 8 · Companion Site</p>
-      <h1 class="site-title">Sim Library</h1>
-      <p class="site-subtitle">Interactive simulations for the Physical Science 8 course — organized by the same units and topics as the course textbook. Pick a simulation below to open it.</p>
+      <span class="eyebrow">Study tools</span>
+      <h1 class="site-title">Sims</h1>
+      <p class="site-subtitle">Interactive simulations, sorted by the same units and chapters as the book. Pick one to open it.</p>
+      <div class="stats-row">
+        <span class="stat-pill">32 simulations</span>
+        <span class="stat-pill">4 units</span>
+      </div>
     </div>
+    <div class="hero-icon" aria-hidden="true"><svg viewBox="-4 -4 72 72" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" focusable="false" xmlns="http://www.w3.org/2000/svg"><rect x="-4" y="-4" width="72" height="72" rx="18" fill="currentColor" fill-opacity=".09" stroke="none"/><path d="M8 13A27 27 0 0 1 52 8" stroke-width="1.8" stroke-dasharray="3 4" stroke-opacity=".7"/><path d="M48.6 4.6L52.3 8.3L47.8 9.5" stroke-width="1.8" stroke-opacity=".7"/><rect x="9" y="15" width="46" height="31" rx="5" fill="#fff" stroke="none"/><rect x="9" y="15" width="46" height="31" rx="5" fill="currentColor" fill-opacity=".16"/><path d="M14 40H40L14 22Z" fill="currentColor" fill-opacity=".38" stroke-width="2"/><circle cx="25.5" cy="25.2" r="3.6" fill="#f2b705" stroke-width="1.8"/><path d="M17.5 20.5l2.2-1.6M20.2 18.3l2.2-1.6" stroke-width="1.6" stroke-opacity=".6"/><circle cx="46" cy="27" r="5.5" fill="#fff" stroke-width="2"/><path d="M44.6 24.6L48.4 27L44.6 29.4Z" fill="currentColor" stroke-width="1.4"/><path d="M27 46v6M37 46v6M21 53h22"/><path d="M57 40.8Q57 44 60.2 44Q57 44 57 47.2Q57 44 53.8 44Q57 44 57 40.8Z" stroke-width="1.4" fill="#f2b705"/><path d="M6 50.4Q6 54 9.6 54Q6 54 6 57.6Q6 54 2.4 54Q6 54 6 50.4Z" stroke-width="1.4" fill="#f2b705"/><circle cx="58" cy="6" r="1.4" fill="currentColor"/><circle cx="3" cy="38" r="1.3" fill="currentColor"/></svg></div>
     <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
   </div>
 </header>
 <main>
-  <div class="stats-row">
-    <span class="stat-pill">31 simulations</span>
-    <span class="stat-pill">4 units</span>
-  </div>
   
-      <details class="unit" open>
+      <details class="unit" data-unit="u1" open>
         <summary class="unit-summary">
           <span class="unit-name">Unit 1: Energy of Motion</span>
           <span class="unit-count">16 sims</span>
@@ -249,17 +292,14 @@
             <a class="sim-card" href="./position-time-graphs/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Position Time Graphs</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./animal-motion/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Animal Motion</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./constant-velocity-car/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Constant Velocity Car</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div>
           <div class="topic">
@@ -268,12 +308,10 @@
             <a class="sim-card" href="./net-forces/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Net Forces</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./egg-drop-inertia/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Egg Drop Inertia</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div>
           <div class="topic">
@@ -282,22 +320,18 @@
             <a class="sim-card" href="./how-friction-affects-speed/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">How Friction Affects Speed</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./does-friction-create-heat/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Does Friction Create Heat</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./determining-how-mass-affects-friction-lab/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Determining How Mass Affects Friction</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./kinetic-energy-and-stopping-distance/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Kinetic Energy and Stopping Distance</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div>
           <div class="topic">
@@ -306,12 +340,10 @@
             <a class="sim-card" href="./acceleration/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Acceleration</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./acceleration-on-a-ramp/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Acceleration on a Ramp</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div>
           <div class="topic">
@@ -320,31 +352,26 @@
             <a class="sim-card" href="./poker-chip-inertia/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Poker Chip Inertia</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./balloon-rocket/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Balloon Rocket</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./bouncing-ball/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Bouncing Ball</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./receiver-object-mass-and-motion/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Ramp Collision Lab</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./inertia-and-collisions/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Inertia and Collisions</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div></div>
       </details>
-      <details class="unit" >
+      <details class="unit" data-unit="u2">
         <summary class="unit-summary">
           <span class="unit-name">Unit 2: Gravity &amp; Energy Related to Position</span>
           <span class="unit-count">4 sims</span>
@@ -357,26 +384,22 @@
             <a class="sim-card" href="./hot-wheels-potential-energy/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Hot Wheels Potential Energy</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./roller-coaster-physics/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Roller Coaster Physics</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./coaster-creator/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Coaster Creator</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./sled-energy-and-collisions/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Sled Energy and Collisions</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div></div>
       </details>
-      <details class="unit" >
+      <details class="unit" data-unit="u5">
         <summary class="unit-summary">
           <span class="unit-name">Unit 5: Thermal Energy &amp; Heat Flow</span>
           <span class="unit-count">6 sims</span>
@@ -389,12 +412,10 @@
             <a class="sim-card" href="./heat-conduction-lab/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Heat Conduction Lab</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./heating-water/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Heating Water</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div>
           <div class="topic">
@@ -403,7 +424,6 @@
             <a class="sim-card" href="./states-of-matter/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">States of Matter</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div>
           <div class="topic">
@@ -412,24 +432,21 @@
             <a class="sim-card" href="./freezing-point-of-stearic-acid/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Freezing Point of Stearic Acid</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./phase-changes/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Phase Changes</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./pressure-and-phase-changes/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Pressure and Phase Changes</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div></div>
       </details>
-      <details class="unit" >
+      <details class="unit" data-unit="u6">
         <summary class="unit-summary">
           <span class="unit-name">Unit 6: Chemical Energy &amp; Reactions</span>
-          <span class="unit-count">5 sims</span>
+          <span class="unit-count">6 sims</span>
           <span class="unit-chevron" aria-hidden="true">›</span>
         </summary>
         <div class="unit-body">
@@ -439,7 +456,6 @@
             <a class="sim-card" href="./molecular-model-kit/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Molecular Model Kit</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div>
           <div class="topic">
@@ -448,12 +464,10 @@
             <a class="sim-card" href="./density-block-lab/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Density Block Lab</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./flame-test-demo/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Flame Test Demo</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div>
           <div class="topic">
@@ -462,41 +476,53 @@
             <a class="sim-card" href="./rates-of-chemical-reactions/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Rates of Chemical Reactions</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./ph-endo-exo/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">pH / Endo-Exo Reactions</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a>
             <a class="sim-card" href="./chemical-changes/">
               <span class="sim-card-icon" aria-hidden="true">▶</span>
               <span class="sim-card-name">Chemical Changes Lab</span>
-              <span class="sim-card-go" aria-hidden="true">→</span>
             </a></div>
           </div></div>
       </details>
 </main>
 <footer class="site-footer">
-  Physical Science 8 Sim Library — a companion to the course textbook.
+  Physical Science 8 Sim Library, a companion to the course textbook.
 </footer>
 <script>
 (function() {
   var root = document.documentElement;
   var btn = document.getElementById('themeToggle');
-  var stored = null;
-  try { stored = localStorage.getItem('sim-library-theme'); } catch (e) {}
-  if (stored === 'light' || stored === 'dark') {
-    root.setAttribute('data-theme', stored);
-    btn.textContent = stored === 'dark' ? '☀️' : '🌙';
+  var inFrame = window.parent !== window;
+  function current() {
+    var t = root.getAttribute('data-theme');
+    return t ? t : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   }
+  // a sim opened from here starts in the same mode (the sims read ?theme= too)
+  function show(t) {
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? '☀️' : '🌙';
+    document.querySelectorAll('a.sim-card').forEach(function(a) {
+      var u = new URL(a.getAttribute('href'), location.href);
+      u.searchParams.set('theme', t);
+      a.setAttribute('href', u.pathname + u.search);
+    });
+  }
+  if (root.getAttribute('data-theme')) show(root.getAttribute('data-theme'));
   btn.addEventListener('click', function() {
-    var current = root.getAttribute('data-theme');
-    var isDark = current ? current === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var next = isDark ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
-    btn.textContent = next === 'dark' ? '☀️' : '🌙';
+    var next = current() === 'dark' ? 'light' : 'dark';
+    show(next);
     try { localStorage.setItem('sim-library-theme', next); } catch (e) {}
+    // inside the textbook's Sims page: that site switches too
+    if (inFrame) try { window.parent.postMessage({ simTheme: next }, '*'); } catch (e) {}
+  });
+  // the textbook switched its light/dark mode: follow it (not saved, so the library on its own keeps its own choice)
+  window.addEventListener('message', function(e) {
+    if (!inFrame || e.source !== window.parent) return;
+    var t = e.data && e.data.simTheme;
+    if ((t === 'light' || t === 'dark') && t !== current()) show(t);
   });
 })();
 </script>
