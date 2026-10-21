@@ -1,0 +1,938 @@
+<title>Crumple Zone Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: split-screen first. Stacked app shell fills one screen (scene → overview → transport → tabbed panel that scrolls inside).
+   At ≥1000px wide it becomes two columns: scene left, controls right. Guides sit below the shell. */
+:root{
+  --bg:#EEF1F4; --surface:#FFFFFF; --surface-2:#E4E9EF; --ink:#141A22; --muted:#5A6573; --line:#CED6E0;
+  --accent:#F2B705; --accent-ink:#141A22; --car1:#2F5BD8; --car2:#D23A30; --dummy:#E5A91C; --series2:#E06A12;
+  --good:#1D9A55; --warn:#C98200; --bad:#CF3328;
+  --sky:#DCE3EB; --labwall:#E8ECF1; --grid:#C9D2DD; --asphalt:#5A6069; --asphalt-line:#E7EAEE; --concrete:#B8BDC4; --glass:#9FB6CF; --interior:#3A414B;
+  --font: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F1318; --surface:#171C23; --surface-2:#222A35; --ink:#EDF1F6; --muted:#9AA6B5; --line:#2D3643;
+  --accent:#F5C02A; --accent-ink:#141A22; --car1:#5B84F0; --car2:#EE5A50; --dummy:#F0B930; --series2:#F59342;
+  --good:#3CC57A; --warn:#E7A632; --bad:#F0605A;
+  --sky:#18202A; --labwall:#1B222B; --grid:#2A3440; --asphalt:#2B3037; --asphalt-line:#6B737D; --concrete:#5A616B; --glass:#3B5068; --interior:#0E1217;
+  color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0F1318; --surface:#171C23; --surface-2:#222A35; --ink:#EDF1F6; --muted:#9AA6B5; --line:#2D3643;
+  --accent:#F5C02A; --accent-ink:#141A22; --car1:#5B84F0; --car2:#EE5A50; --dummy:#F0B930; --series2:#F59342;
+  --good:#3CC57A; --warn:#E7A632; --bad:#F0605A;
+  --sky:#18202A; --labwall:#1B222B; --grid:#2A3440; --asphalt:#2B3037; --asphalt-line:#6B737D; --concrete:#5A616B; --glass:#3B5068; --interior:#0E1217;
+  color-scheme:dark; }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-weight:700;font-size:15px;line-height:1.45;
+  padding-left:max(10px, env(safe-area-inset-left,0px));padding-right:max(10px, env(safe-area-inset-right,0px))}
+@media (min-width:700px){ body{padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))} }
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.page{max-width:min(1900px,97vw);margin:0 auto}
+.app{height:100vh;height:100dvh;min-height:520px;display:grid;gap:8px;padding-block:8px;
+  grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);
+  grid-template-areas:"bar" "stage" "panel"}
+@media (min-width:1000px){
+  .app{grid-template-columns:minmax(0,1.4fr) minmax(360px,1fr);grid-template-rows:auto minmax(0,1fr);
+    grid-template-areas:"bar bar" "stage panel";gap:12px;padding-block:12px}
+}
+
+/* header */
+.bar{grid-area:bar;display:flex;align-items:center;gap:10px;min-width:0}
+.mark{width:30px;height:30px;border-radius:8px;flex:none;
+  background:repeating-linear-gradient(135deg,var(--accent) 0 6px,var(--accent-ink) 6px 12px)}
+.titles{min-width:0;flex:1}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800;line-height:1.1}
+h1{margin:0;font-size:clamp(19px,2.4vw,30px);font-weight:800;line-height:1.1;text-wrap:balance;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;flex:none}
+.iconbtn:hover{border-color:var(--muted)}
+.iconbtn svg{width:20px;height:20px;fill:none;stroke:var(--ink);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* stage */
+.stage{grid-area:stage;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0}
+.scene-wrap{position:relative;border-radius:var(--r);overflow:hidden;border:2px solid var(--line);background:var(--sky);
+  height:clamp(160px,33dvh,440px)}
+@media (min-width:1000px){ .scene-wrap{height:auto;flex:1;min-height:260px} }
+#scene{display:block;width:100%;height:100%}
+.tag{position:absolute;left:10px;bottom:10px;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  background:var(--accent);color:var(--accent-ink)}
+.tag.xray{left:auto;right:10px;top:10px;bottom:auto;background:var(--surface);color:var(--ink);border:2px solid var(--line)}
+.overview-wrap{border-radius:10px;overflow:hidden;border:2px solid var(--line);height:42px;flex:none}
+#overview{display:block;width:100%;height:100%}
+.transport{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:none}
+.tbtn{height:42px;min-width:46px;padding:0 12px;border-radius:10px;border:2px solid var(--line);background:var(--surface);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+.tbtn svg{width:18px;height:18px;fill:currentColor}
+.tbtn.play{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);min-width:96px}
+.tbtn:disabled{opacity:.45;cursor:not-allowed}
+.readouts{display:flex;gap:14px;margin-left:auto;font-variant-numeric:tabular-nums}
+.ro{display:flex;flex-direction:column;line-height:1.1}
+.ro small{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.ro b{font-size:clamp(17px,2vw,24px);font-weight:800}
+
+/* panel */
+.panel{grid-area:panel;min-height:0;display:flex;flex-direction:column;background:var(--surface);border:2px solid var(--line);border-radius:var(--r);overflow:hidden}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:2px solid var(--line);flex:none;background:var(--surface-2)}
+.tab{border:0;background:transparent;padding:10px 4px 8px;font-size:12.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;
+  border-bottom:4px solid transparent;margin-bottom:-2px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);background:var(--surface)}
+.tabbody{flex:1;min-height:0;overflow:auto;padding:12px 14px 16px}
+fieldset{border:0;margin:0;padding:0;min-width:0;display:grid;gap:10px}
+fieldset:disabled{opacity:.6}
+
+.row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.3fr) 76px;align-items:center;gap:10px}
+.row label,.row .lbl{font-size:14.5px;font-weight:700;line-height:1.2}
+.row .unit{color:var(--muted);font-weight:600;font-size:12.5px}
+.row.sub{padding-left:22px}
+@media (max-width:480px){ .row{grid-template-columns:minmax(0,1fr) 76px} .row label,.row .lbl{grid-column:1/-1} .row.sub{padding-left:10px} }
+.num{width:76px;height:38px;border-radius:8px;border:2px solid var(--line);background:var(--surface-2);text-align:center;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+select{height:40px;border-radius:8px;border:2px solid var(--line);background:var(--surface-2);padding:0 10px;font-weight:700;font-size:15px;min-width:0;width:100%}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--line)}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--ink);border:3px solid var(--surface);margin-top:-8px;box-shadow:0 0 0 2px var(--ink)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--ink);border:3px solid var(--surface)}
+.check{display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer;min-height:38px}
+.check input{width:22px;height:22px;accent-color:var(--car1);flex:none}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:10px;overflow:hidden;width:100%}
+.seg button{flex:1;border:0;background:var(--surface);padding:8px 6px;font-weight:800;font-size:13.5px;cursor:pointer;min-height:40px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:12.5px;padding:3px 10px;border-radius:999px;background:var(--surface-2);border:1.5px solid var(--line);font-variant-numeric:tabular-nums}
+.desc{font-weight:500;font-size:14.5px;color:var(--ink);margin:0;max-width:62ch}
+.desc strong{font-weight:800}
+.hr{height:2px;background:var(--line);border:0;margin:2px 0}
+
+/* table */
+.tblwrap{overflow:auto;border:2px solid var(--line);border-radius:10px;max-height:100%}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13.5px}
+th,td{padding:6px 8px;text-align:right;white-space:nowrap}
+th{position:sticky;top:0;background:var(--surface-2);font-weight:800;font-size:12px;line-height:1.2;text-align:right;vertical-align:bottom}
+th small{display:block;color:var(--muted);font-weight:700}
+tbody tr:nth-child(even){background:color-mix(in srgb,var(--surface-2) 45%,transparent)}
+tr.impact td{color:var(--bad)}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{height:40px;padding:0 14px;border-radius:10px;border:2px solid var(--line);background:var(--surface-2);font-weight:800;cursor:pointer;font-size:14px}
+.btn:hover{border-color:var(--muted)}
+.empty{color:var(--muted);font-weight:600;padding:18px 4px;text-align:center}
+.toast{font-size:13px;color:var(--good)}
+
+/* results */
+.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;font-variant-numeric:tabular-nums}
+.kv dt{font-weight:600;color:var(--muted);font-size:14px}
+.kv dd{margin:0;font-weight:800;text-align:right;font-size:14.5px}
+.verdict{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;background:var(--surface-2)}
+.meter{font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.verdict .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.events{margin:0;padding-left:20px;font-weight:600;font-size:14px}
+.trials{font-size:12.5px}
+.trials td,.trials th{padding:5px 6px}
+.graphbox{position:relative;height:clamp(200px,40dvh,420px)}
+#graph{width:100%;height:100%;display:block}
+.legend{display:flex;gap:14px;font-size:13px;align-items:center}
+.sw{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+
+/* guides */
+.guides{display:grid;gap:12px;padding-block:6px 28px}
+@media (min-width:1000px){ .guides{grid-template-columns:1fr 1fr;align-items:start} }
+details{background:var(--surface);border:2px solid var(--line);border-radius:var(--r)}
+summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;letter-spacing:.1em;text-transform:uppercase}
+summary::-webkit-details-marker{display:none}
+summary .chev{margin-left:auto;width:12px;height:12px;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:rotate(45deg);transition:transform .2s}
+details[open] summary .chev{transform:rotate(-135deg)}
+.dbody{padding:0 18px 16px;font-weight:500;font-size:15.5px;max-width:70ch}
+.dbody ol{padding-left:22px;margin:0;display:grid;gap:8px}
+.dbody p{margin:0 0 10px}
+.dbody strong{font-weight:800}
+.eq{display:inline-block;padding:2px 10px;border-radius:6px;background:var(--surface-2);font-weight:800;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){ summary .chev{transition:none} }
+</style>
+
+<div class="page">
+<main class="app">
+  <header class="bar">
+    <div class="mark" aria-hidden="true"></div>
+    <div class="titles">
+      <div class="eyebrow">Motion Lab</div>
+      <h1>Crumple Zone Lab</h1>
+    </div>
+    <button class="iconbtn" id="helpBtn" title="How to use this simulation" aria-label="How to use this simulation">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 1 1 3.9 2.6c-.8.4-1.2 1-1.2 1.8v.6"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/></svg>
+    </button>
+    <button class="iconbtn" id="themeBtn" aria-label="Switch to dark mode" title="Light / dark">
+      <svg id="themeIcon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+    </button>
+  </header>
+
+  <section class="stage" aria-label="Simulation">
+    <div class="scene-wrap">
+      <canvas id="scene" aria-label="Side view of the crash"></canvas>
+      <span class="tag" id="slowTag" hidden>Slow-mo replay</span>
+      <span class="tag xray" id="xrayTag" hidden>X-ray view</span>
+    </div>
+    <div class="overview-wrap"><canvas id="overview" aria-label="Overview of the test track"></canvas></div>
+    <div class="transport">
+      <button class="tbtn play" id="playBtn"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg><span>Play</span></button>
+      <button class="tbtn" id="pauseBtn" aria-label="Pause" disabled><svg viewBox="0 0 24 24"><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg></button>
+      <button class="tbtn" id="resetBtn" aria-label="Reset"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7l2 .7A4.9 4.9 0 1 0 12 7.1V10L7.5 6 12 2z"/></svg></button>
+      <div class="readouts">
+        <div class="ro"><small>Time</small><b id="roTime">0.000 s</b></div>
+        <div class="ro"><small>Car 1 speed</small><b id="roSpeed">16.0 m/s</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="t-design" aria-controls="p-design" aria-selected="true">Design</button>
+      <button class="tab" role="tab" id="t-test" aria-controls="p-test" aria-selected="false">Crash test</button>
+      <button class="tab" role="tab" id="t-table" aria-controls="p-table" aria-selected="false">Table</button>
+      <button class="tab" role="tab" id="t-results" aria-controls="p-results" aria-selected="false">Results</button>
+    </div>
+
+    <div class="tabbody" role="tabpanel" id="p-design" aria-labelledby="t-design">
+      <fieldset id="fsDesign">
+        <div class="row"><label for="style">Body style</label>
+          <select id="style" style="grid-column:2/-1">
+            <option value="subcompact">Subcompact (950 kg)</option>
+            <option value="sedan" selected>Sedan (1,450 kg)</option>
+            <option value="suv">SUV (2,000 kg)</option>
+          </select></div>
+        <div class="row"><label for="czLen">Crumple zone length <span class="unit">(cm)</span></label>
+          <input type="range" id="czLen" min="0" max="100" step="5" value="80"><input class="num" id="czLen_n" type="number" min="0" max="100" step="5" value="80"></div>
+        <div class="row"><label for="czRig">Crumple zone rigidity <span class="unit">(kN)</span></label>
+          <input type="range" id="czRig" min="100" max="3000" step="50" value="400"><input class="num" id="czRig_n" type="number" min="100" max="3000" step="50" value="400"></div>
+        <div class="row"><label for="cellRig">Safety cell rigidity <span class="unit">(kN)</span></label>
+          <input type="range" id="cellRig" min="500" max="5000" step="100" value="2000"><input class="num" id="cellRig_n" type="number" min="500" max="5000" step="100" value="2000"></div>
+        <hr class="hr">
+        <label class="check"><input type="checkbox" id="belt" checked> Seat belt present</label>
+        <div class="row sub" id="beltRow"><label for="beltK">Seat belt stiffness <span class="unit">(kN/m)</span></label>
+          <input type="range" id="beltK" min="5" max="200" step="5" value="80"><input class="num" id="beltK_n" type="number" min="5" max="200" step="5" value="80"></div>
+        <label class="check"><input type="checkbox" id="bag" checked> Airbag present</label>
+        <div class="row sub" id="bagRow"><label for="bagR">Airbag rigidity <span class="unit">(kN)</span></label>
+          <input type="range" id="bagR" min="1" max="20" step="1" value="6"><input class="num" id="bagR_n" type="number" min="1" max="20" step="1" value="6"></div>
+        <div class="chips" id="designChips"></div>
+      </fieldset>
+    </div>
+
+    <div class="tabbody" role="tabpanel" id="p-test" aria-labelledby="t-test" hidden>
+      <fieldset id="fsTest">
+        <div class="seg" role="group" aria-label="Crash type">
+          <button id="modeOne" aria-pressed="true">One car → wall</button>
+          <button id="modeTwo" aria-pressed="false">Two cars head-on</button>
+        </div>
+        <div class="row"><label for="v1">Car 1 speed <span class="unit">(m/s)</span></label>
+          <input type="range" id="v1" min="0" max="35" step="1" value="16"><input class="num" id="v1_n" type="number" min="0" max="35" step="1" value="16"></div>
+        <div id="car2Rows" hidden style="display:grid;gap:10px">
+          <div class="row"><label for="v2">Car 2 speed <span class="unit">(m/s)</span></label>
+            <input type="range" id="v2" min="0" max="35" step="1" value="16"><input class="num" id="v2_n" type="number" min="0" max="35" step="1" value="16"></div>
+          <div class="row"><label for="m2">Car 2 mass <span class="unit">(kg)</span></label>
+            <input type="range" id="m2" min="800" max="3000" step="50" value="1450"><input class="num" id="m2_n" type="number" min="800" max="3000" step="50" value="1450"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="cas"> Collision avoidance system (auto-brakes car 1)</label>
+        <p class="desc" id="testDesc"></p>
+      </fieldset>
+    </div>
+
+    <div class="tabbody" role="tabpanel" id="p-table" aria-labelledby="t-table" hidden>
+      <div style="display:grid;gap:10px">
+        <div class="tools">
+          <button class="btn" id="copyBtn">Copy data</button>
+          <span class="toast" id="copyMsg" aria-live="polite"></span>
+          <span class="desc" style="font-size:13px;color:var(--muted);margin-left:auto">Data for car 1 and its dummy. Red row = moment of impact.</span>
+        </div>
+        <textarea id="copyFallback" hidden readonly style="width:100%;height:80px"></textarea>
+        <div id="tableArea"></div>
+      </div>
+    </div>
+
+    <div class="tabbody" role="tabpanel" id="p-results" aria-labelledby="t-results" hidden>
+      <div style="display:grid;gap:12px">
+        <div class="seg" role="group" aria-label="Results view" style="max-width:340px">
+          <button id="vSummary" aria-pressed="true">Summary</button>
+          <button id="vGraph" aria-pressed="false">Graph</button>
+        </div>
+        <div id="summaryView"></div>
+        <div id="graphView" hidden style="display:grid;gap:8px">
+          <div class="tools">
+            <label for="yaxis" style="font-size:14px">y-axis</label>
+            <select id="yaxis" style="width:auto">
+              <option value="disp">Displacement (m)</option>
+              <option value="vel">Velocity (m/s)</option>
+              <option value="dec">Deceleration (m/s²)</option>
+              <option value="fd" selected>Force on dummy (kN)</option>
+              <option value="fc">Force on car (kN)</option>
+            </select>
+            <div class="legend" id="legend"></div>
+          </div>
+          <div class="graphbox"><canvas id="graph" aria-label="Results graph"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<section class="guides">
+  <details open id="howto">
+    <summary>How to use this simulation <span class="chev" aria-hidden="true"></span></summary>
+    <div class="dbody"><ol>
+      <li>Open the <strong>Design</strong> tab. Pick a body style. Then set the <strong>crumple zone</strong>, the <strong>safety cell</strong>, the <strong>seat belt</strong>, and the <strong>airbag</strong>. The scene shows an x-ray view so you can see the parts you change.</li>
+      <li>Open the <strong>Crash test</strong> tab. Choose one car hitting a wall, or two cars hitting head-on. Set each speed. In a two-car crash you can also change car 2's mass.</li>
+      <li>Press <strong>Play</strong>. The car drives up at normal speed. The crash itself plays back in <strong>slow motion</strong>, because the real crash lasts only about a tenth of a second.</li>
+      <li>Watch the <strong>Time</strong> and <strong>Car 1 speed</strong> readouts. The thin strip under the scene shows the whole test track from above.</li>
+      <li>Open the <strong>Results</strong> tab. The summary shows how much the car crushed, the biggest forces, and the dummy's <strong>chance of survival</strong>. Every run is added to the trial log so you can compare designs.</li>
+      <li>Switch to <strong>Graph</strong> to see how displacement, velocity, deceleration, or force changed during the crash. Use the <strong>Table</strong> tab for exact numbers. <strong>Copy data</strong> lets you paste them into a spreadsheet.</li>
+      <li>Press <strong>Reset</strong> to start over. Change one setting at a time. That way you know which change made the difference.</li>
+    </ol></div>
+  </details>
+  <details>
+    <summary>Why crumple zones save lives <span class="chev" aria-hidden="true"></span></summary>
+    <div class="dbody">
+      <p>A moving car has <strong>momentum</strong>. Momentum is mass times velocity. To stop the car, a force must act on it for some time. This push over time is called <strong>impulse</strong>.</p>
+      <p><span class="eq">F × Δt = m × Δv</span></p>
+      <p>The change in velocity (Δv) is set by the crash. So the only way to make the force smaller is to make the stop take <strong>longer</strong>.</p>
+      <p>A <strong>crumple zone</strong> is the front part of the car. It is built to fold up on purpose. While it crushes, the car keeps slowing down a little longer and over a longer distance. That lowers the force.</p>
+      <p>The <strong>safety cell</strong> is the strong cage around the people. It should <em>not</em> crush. If the crumple zone is too stiff, too short, or used up, the crash energy pushes into the safety cell instead.</p>
+      <p>The <strong>seat belt</strong> and <strong>airbag</strong> do the same job for the person. They stretch and squash so the body slows down over a longer distance. Without them, the dummy keeps moving until it hits the steering wheel. That stop is very short, so the force is huge.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Key words <span class="chev" aria-hidden="true"></span></summary>
+    <div class="dbody">
+      <p><strong>Deceleration</strong>: how fast something slows down, in m/s². Doctors often compare it to gravity: 9.8 m/s² is 1 g.</p>
+      <p><strong>Rigidity</strong>: how much force (in kilonewtons, kN) a part can hold before it starts to bend or crush. 1 kN = 1,000 N.</p>
+      <p><strong>Stiffness</strong>: how much force it takes to stretch something by one meter. A stiff belt grabs hard. A soft belt stretches more.</p>
+      <p><strong>Displacement</strong>: how far something moved from where it started.</p>
+      <p><strong>Crash test dummy</strong>: a human-shaped model full of sensors. The black-and-yellow circles are targets that cameras track.</p>
+    </div>
+  </details>
+  <details>
+    <summary>About the model <span class="chev" aria-hidden="true"></span></summary>
+    <div class="dbody">
+      <p>Each crumple zone crushes at a steady force equal to its rigidity. When it is fully crushed, the safety cell starts to crush at its own rigidity. In a two-car crash, the weaker structure crushes first.</p>
+      <p>The dummy has a mass of 75 kg. The belt acts like a spring. The airbag pushes back with a steady force. The steering wheel is 0.45 m in front of the dummy's chest and is very stiff. The head swings about 1.6 times farther than the chest, so without an airbag the head can hit the wheel even when the belt holds the chest.</p>
+      <p>Car 2 always has a 70 cm crumple zone (1,000 kN) and a 2,500 kN safety cell. The survival chance is a simple estimate based on the dummy's peak deceleration and safety cell damage. It is not real medical data.</p>
+    </div>
+  </details>
+</section>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ---------------- theme ---------------- */
+const root = document.documentElement;
+function systemDark(){ return window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches; }
+function currentTheme(){ return root.dataset.theme || (systemDark() ? 'dark' : 'light'); }
+function setIcon(){
+  const dark = currentTheme()==='dark';
+  $('themeIcon').innerHTML = dark
+    ? '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>'
+    : '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>';
+  $('themeBtn').setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+}
+try { const s = localStorage.getItem('motionlab-theme'); if (s==='light'||s==='dark') root.dataset.theme = s; } catch(e){}
+setIcon();
+$('themeBtn').addEventListener('click', () => {
+  const next = currentTheme()==='dark' ? 'light' : 'dark';
+  root.dataset.theme = next;
+  try { localStorage.setItem('motionlab-theme', next); } catch(e){}
+  setIcon(); readColors(); drawAll();
+});
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { setIcon(); readColors(); drawAll(); });
+$('helpBtn').addEventListener('click', () => { const d=$('howto'); d.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); });
+
+let C = {};
+function readColors(){
+  const cs = getComputedStyle(root);
+  ['bg','surface','surface-2','ink','muted','line','accent','accent-ink','car1','car2','dummy','series2','good','warn','bad','sky','labwall','grid','asphalt','asphalt-line','concrete','glass','interior']
+    .forEach(k => C[k] = cs.getPropertyValue('--'+k).trim());
+}
+readColors();
+
+/* ---------------- car geometry ---------------- */
+// local coords: x = meters back from front bumper, y = height above ground (m)
+const STYLES = {
+  subcompact:{ name:'Subcompact', mass:950, L:3.9, top:[[0,.32],[0,.6],[.1,.72],[.85,.92],[1.55,1.48],[3.2,1.48],[3.85,.98],[3.9,.6],[3.9,.32]],
+               glass:[[.98,.97],[1.55,1.4],[3.1,1.4],[3.62,.98]], fw:.72, rw:3.2, wr:.29, hip:2.05 },
+  sedan:{ name:'Sedan', mass:1450, L:4.7, top:[[0,.33],[0,.62],[.14,.74],[1.25,.93],[2.0,1.42],[3.25,1.42],[3.85,1.0],[4.62,.96],[4.7,.62],[4.7,.33]],
+          glass:[[1.36,.98],[2.02,1.35],[3.2,1.35],[3.72,1.0]], fw:.85, rw:3.85, wr:.32, hip:2.4 },
+  suv:{ name:'SUV', mass:2000, L:4.8, top:[[0,.42],[0,.78],[.12,.92],[1.2,1.1],[1.85,1.74],[4.55,1.74],[4.8,1.2],[4.8,.42]],
+        glass:[[1.32,1.15],[1.88,1.66],[4.4,1.66],[4.62,1.18]], fw:.88, rw:3.95, wr:.37, hip:2.3 }
+};
+const CAR2 = { L:.7, cz:1000, cell:2500 };
+const CELL = 2.0;      // safety-cell length used for % deformation (m)
+const MD = 75;         // dummy mass (kg)
+const S_BAG = .18, S_WHEEL = .45;
+
+function samplePoly(pts, step){
+  const out=[];
+  for(let i=0;i<pts.length-1;i++){
+    const [x0,y0]=pts[i],[x1,y1]=pts[i+1];
+    const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)/step));
+    for(let k=0;k<n;k++){ const f=k/n; out.push([x0+(x1-x0)*f, y0+(y1-y0)*f]); }
+  }
+  out.push(pts[pts.length-1]); return out;
+}
+for (const k in STYLES){ const s=STYLES[k]; s.topS = samplePoly(s.top,.05); }
+
+/* crush mapping: rear stays put, front region compresses */
+function makeDeform(Lcz, crush){
+  const c1 = Math.min(crush, Lcz), cc = Math.max(0, crush - Lcz);
+  return x => {
+    if (x >= Lcz + CELL) return x;
+    if (x >= Lcz) return Lcz + CELL - (Lcz + CELL - x) * (CELL - cc) / CELL;
+    if (Lcz <= 0) return Lcz + cc;
+    return (Lcz + cc) - (Lcz - x) * (Lcz - c1) / Lcz;
+  };
+}
+
+/* ---------------- state ---------------- */
+const cfg = { style:'sedan', czLen:80, czRig:400, cellRig:2000, belt:true, beltK:80, bag:true, bagR:6,
+              mode:'one', v1:16, v2:16, m2:1450, cas:false };
+let run = null;          // simulation result
+let T = 0;               // playback time
+let playing = false, played = false, lastTs = 0;
+let tab = 'design', resultsView = 'summary';
+const trials = [];
+
+/* ---------------- physics ---------------- */
+function mulberry(a){ return () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+function simulate(c){
+  const st = STYLES[c.style], m1 = st.mass, two = c.mode==='two';
+  const Lz = c.czLen/100, m2 = c.m2;
+  const y1 = cr => cr < Lz - 1e-9 ? c.czRig : (cr < Lz + CELL*0.6 ? c.cellRig : 60000);
+  const y2 = cr => cr < CAR2.L - 1e-9 ? CAR2.cz : (cr < CAR2.L + CELL*0.6 ? CAR2.cell : 60000);
+  const dt = 2e-5, REC = 25;
+  let t=0, p1, w1=-c.v1, c1=0, p2=0, w2= two ? c.v2 : 0, c2=0;
+  if (two){ p1 = Math.max(c.v1,.75); p2 = -Math.max(c.v2,.75); } else { p1 = Math.max(c.v1, 1.5); }
+  const p1_0=p1, p2_0=p2;
+  let sd=0, uD=c.v1;               // dummy forward rel displacement, absolute forward speed
+  let contactT=null, crashEndT=null, impactSpeed=0, impactClosing=0, impactX=two?null:0, bagFire=false;
+  let maxCarDec=0, maxDumDec=0, maxFd=0, maxS=0, peakST=0, hitWheel=false, hitBag=false, wheelSpeed=0, beltMax=0;
+  let accA1=0, accAD=0, accFd=0, accF=0, n=0;
+  const frames=[], parts=[]; const rnd = mulberry(7 + Math.round(c.v1*13 + c.czLen));
+  let step=0, stopT=null;
+  const tLimit = 9;
+  while (t < tLimit){
+    const front1 = p1 + c1, front2 = two ? p2 - c2 : 0;
+    let closing = (two ? w2 : 0) - w1;
+    const touching = front1 - front2 <= 1e-9;
+    let F = 0;
+    if (touching && closing > 1e-9){
+      if (contactT===null){ contactT=t; impactSpeed=-w1; impactClosing=closing; impactX=front1; bagFire = c.bag && closing > 4; }
+      const Y1 = y1(c1), Y2 = two ? y2(c2) : Infinity;
+      F = Math.min(Y1, Y2);
+      const dc = closing*dt;
+      if (Y1 < Y2*0.999) c1 += dc; else if (Y2 < Y1*0.999) c2 += dc; else { c1 += dc/2; c2 += dc/2; }
+      if (step % 150 === 0){
+        for (let k=0;k<1;k++) parts.push({ t, x: front1, y: .25 + rnd()*.7, vx:(rnd()-.5)*7 + (two? (w1*m1+w2*m2)/(m1+m2) : 0), vy: 1 + rnd()*3.5,
+          s: .02 + rnd()*.04, col: rnd()<.35 ? 'glass' : (two && rnd()<.5 ? 'car2' : (rnd()<.5?'car1':'concrete')) });
+      }
+    }
+    // dummy restraint force (kN, positive = pushes dummy backward)
+    const uCar = -w1, vs = uD - uCar;
+    let Fd = 0;
+    if (c.belt && sd > .02){ const fb = Math.max(0, c.beltK*(sd-.02)*(vs<0?.35:1) + 1.5*vs); Fd += fb; beltMax=Math.max(beltMax,fb); }
+    let infl = 0;
+    if (bagFire && t >= contactT + .015){ infl = Math.min(1, (t - contactT - .015)/.02);
+      if (sd > S_BAG && infl > .5){ Fd += c.bagR*infl; hitBag = true; } }
+    if (sd > S_WHEEL){ if(!hitWheel){ hitWheel=true; wheelSpeed=vs; } Fd += 4000*(sd-S_WHEEL) + 30*Math.max(0,vs); }
+    if (sd < 0){ Fd += 600*sd + 10*Math.min(0,vs); }
+    // car 1 forces (world x, + = right). Car 1 faces left (−x).
+    let f1 = F*1000 - Fd*1000;
+    if (c.cas && contactT===null && t >= .4 && w1 < 0) f1 += 8*m1;
+    if (crashEndT!==null && Math.abs(w1) > 1e-6) f1 += -Math.sign(w1)*6*m1;
+    let a1 = f1/m1;
+    let a2 = 0;
+    if (two){ let f2 = -F*1000; if (crashEndT!==null && Math.abs(w2)>1e-6) f2 += -Math.sign(w2)*6*m2; a2 = f2/m2; }
+    if (two && crashEndT!==null){ a1 = a2 = (a1*m1 + a2*m2)/(m1+m2); }
+    let nw1 = w1 + a1*dt, nw2 = w2 + a2*dt;
+    if (two && crashEndT!==null){ const wc=(m1*w1+m2*w2)/(m1+m2); nw1 = nw2 = wc + a1*dt; if (Math.sign(nw1)!==Math.sign(wc) && wc!==0) nw1 = nw2 = 0; }
+    if (crashEndT!==null || (c.cas && contactT===null && t>=.4)){ if (Math.sign(nw1)!==Math.sign(w1) && w1!==0) nw1 = 0; if (two && Math.sign(nw2)!==Math.sign(w2) && w2!==0) nw2=0; }
+    if (touching && closing > 1e-9 && ((two?nw2:0) - nw1) <= 0){
+      if (two){ const wc=(m1*nw1+m2*nw2)/(m1+m2); nw1=nw2=wc; } else nw1 = 0;
+      crashEndT = t;
+    }
+    a1 = (nw1-w1)/dt; w1=nw1; w2=nw2;
+    p1 += w1*dt; if (two) p2 += w2*dt;
+    const aF = -a1;                     // car forward accel
+    const aD = -Fd*1000/MD;             // dummy forward accel
+    uD += aD*dt; sd += (uD - (-w1))*dt;
+    if (sd > maxS){ maxS = sd; peakST = t; }
+    accA1+=aF; accAD+=aD; accFd+=Fd; accF+=F; n++;
+    if (step % REC === 0){
+      const fa=accA1/n, fd=accAD/n, ff=accFd/n, fF=accF/n;
+      if (contactT!==null){ maxCarDec=Math.max(maxCarDec,-fa); maxDumDec=Math.max(maxDumDec,-fd); maxFd=Math.max(maxFd,ff); }
+      frames.push({ t, p1, c1, p2, c2, sd, u:-w1, uD, aF:fa, aD:fd, Fd:ff, F:fF, infl, w2 });
+      accA1=accAD=accFd=accF=0; n=0;
+    }
+    step++; t += dt;
+    const settled = Math.abs(w1)<1e-3 && Math.abs(w2)<1e-3;
+    if (crashEndT!==null && t > Math.max(crashEndT, peakST) + .3 && Math.abs(uD + w1) < .05 && settled) break;
+    if (contactT===null && Math.abs(w1)<1e-6 && (!two || Math.abs(w2)<1e-6)){ if (stopT===null) stopT=t; if (t > stopT+.5) break; }
+  }
+  const tEnd = frames[frames.length-1].t;
+  const crashed = contactT!==null;
+  const slowStart = crashed ? contactT - .03 : Infinity;
+  const slowEnd = crashed ? Math.max(crashEndT ?? contactT, peakST) + .12 : -1;
+  // results
+  const czDef = Math.min(c1, Lz), cellDef = Math.max(0, c1 - Lz);
+  const finalU = crashed ? frames.find(f => f.t >= (crashEndT ?? contactT)) : null;
+  const dv = crashed ? impactSpeed - (finalU ? finalU.u : 0) : 0;
+  const Fmin = crashed ? MD*dv*dv/(2*(Lz + S_WHEEL))/1000 : 0;
+  const g = maxDumDec/9.81, cellPct = cellDef/CELL*100;
+  let surv = 1/(1+Math.exp((g-60)/7));
+  if (cellPct > 12) surv *= Math.max(0, 1 - (cellPct-12)/30);
+  const headStrike = contactT!==null && !hitBag && !hitWheel && maxS*1.6 > S_WHEEL;
+  if (headStrike) surv *= .55;
+  if (!crashed) surv = 1;
+  return { cfg:{...c}, st, two, frames, parts, dtRec: dt*REC, tEnd, crashed, contactT, crashEndT, peakST, slowStart, slowEnd,
+    impactSpeed, impactClosing, impactX, p1_0, p2_0, Lz, m1, m2,
+    czDef, cellDef, cellPct, czPct: Lz>0 ? czDef/Lz*100 : 0, maxS, maxCarDec, maxDumDec, maxFd, Fmin, dv,
+    hitWheel, hitBag, headStrike, wheelSpeed, bagFire, surv: Math.round(surv*100), car2Def: c2 };
+}
+
+function frameAt(t){
+  const fr = run.frames, i = Math.min(fr.length-1, Math.max(0, Math.round(t / run.dtRec)));
+  return fr[i];
+}
+
+/* ---------------- canvas helpers ---------------- */
+function fitCanvas(cv){
+  const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio||1);
+  const w = Math.max(1, Math.round(r.width*dpr)), h = Math.max(1, Math.round(r.height*dpr));
+  if (cv.width!==w || cv.height!==h){ cv.width=w; cv.height=h; }
+  return { w, h, dpr };
+}
+
+/* ---------------- scene ---------------- */
+const scene = $('scene'), sctx = scene.getContext('2d');
+function drawScene(){
+  if (!run) return;
+  const { w:W, h:H, dpr } = fitCanvas(scene);
+  const ctx = sctx, fr = frameAt(T), r = run, st = r.st;
+  const ppm = Math.min(H/400, W/1000)*170, groundY = Math.min(H*.83, H/2 + 200*ppm/170);
+  const anchorScreen = Math.min(W*.22, ppm + 10*dpr);
+  const front1 = fr.p1 + fr.c1;
+  let anchor;
+  if (r.crashed && T >= r.contactT) anchor = front1;
+  else anchor = r.impactX!=null ? Math.max(front1 - .5, r.impactX) : front1 - .5;
+  if (!r.crashed && !r.two) anchor = Math.max(front1 - .5, 0);
+  const X = wx => anchorScreen + (wx - anchor)*ppm;
+  const Y = h => groundY - h*ppm;
+
+  // lab wall with measurement grid
+  ctx.fillStyle = C.labwall; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = C.grid; ctx.lineWidth = Math.max(1,dpr);
+  const leftW = anchor - anchorScreen/ppm, rightW = leftW + W/ppm;
+  for (let gx = Math.floor(leftW/.5)*.5; gx <= rightW; gx += .5){ const sx=X(gx); ctx.beginPath(); ctx.moveTo(sx,0); ctx.lineTo(sx,groundY); ctx.stroke(); }
+  for (let gy=.5; gy*ppm < groundY; gy+=.5){ ctx.beginPath(); ctx.moveTo(0,Y(gy)); ctx.lineTo(W,Y(gy)); ctx.stroke(); }
+  ctx.fillStyle = C.muted; ctx.font = `700 ${11*dpr}px Poppins, system-ui, sans-serif`; ctx.textBaseline='top';
+  for (let gx = Math.ceil(leftW); gx <= rightW; gx += 1){ ctx.fillText(gx.toFixed(0)+' m', X(gx)+3*dpr, 4*dpr); }
+  // ground
+  ctx.fillStyle = C.asphalt; ctx.fillRect(0,groundY,W,H-groundY);
+  ctx.fillStyle = C['asphalt-line'];
+  for (let gx = Math.floor(leftW/2)*2; gx <= rightW; gx += 2){ ctx.fillRect(X(gx), groundY + (H-groundY)*.45, ppm*1, Math.max(2,(H-groundY)*.12)); }
+
+  // barrier
+  if (!r.two){
+    const bx0=X(-1.4), bx1=X(0), by=Y(1.25);
+    ctx.fillStyle=C.concrete; ctx.fillRect(bx0,by,bx1-bx0,groundY-by);
+    ctx.save(); ctx.beginPath(); ctx.rect(bx1-.12*ppm,by,.12*ppm,groundY-by); ctx.clip();
+    const sw=.12*ppm; for(let yy=by-sw*2; yy<groundY+sw; yy+=sw){ ctx.fillStyle=C.accent; ctx.beginPath(); ctx.moveTo(bx1-sw,yy); ctx.lineTo(bx1,yy-sw*.6); ctx.lineTo(bx1,yy-sw*.6+sw*.5); ctx.lineTo(bx1-sw,yy+sw*.5); ctx.fill(); }
+    ctx.restore();
+    ctx.fillStyle=C['accent-ink']; ctx.globalAlpha=.25; ctx.fillRect(bx1-.12*ppm,by,.12*ppm,groundY-by); ctx.globalAlpha=1;
+  }
+  const xray = tab==='design' && !playing && T===0;
+  if (r.two) drawCar(ctx, {st:STYLES.sedan, Lz:CAR2.L, crush:fr.c2, ref:fr.p2, dir:-1, color:C.car2, X, Y, ppm, dist:fr.p2 - r.p2_0, xray:false, dummy:false});
+  drawCar(ctx, {st, Lz:r.Lz, crush:fr.c1, ref:fr.p1, dir:1, color:C.car1, X, Y, ppm, dist:fr.p1 - r.p1_0, xray, dummy:true, fr, cfg:r.cfg});
+  // debris
+  for (const p of r.parts){
+    if (p.t > fr.t) continue;
+    const dt = fr.t - p.t, tl = (p.vy + Math.sqrt(p.vy*p.vy + 2*9.8*p.y))/9.8, tt = Math.min(dt, tl);
+    const px = p.x + p.vx*tt, py = Math.max(0, p.y + p.vy*tt - 4.9*tt*tt);
+    ctx.fillStyle = C[p.col]; ctx.save(); ctx.translate(X(px),Y(py)); ctx.rotate(p.vx*tt*3);
+    ctx.fillRect(-p.s*ppm/2,-p.s*ppm/3,p.s*ppm,p.s*ppm*.66); ctx.restore();
+  }
+  $('xrayTag').hidden = !xray;
+  $('slowTag').hidden = !(r.crashed && T >= r.slowStart && T <= r.slowEnd + .05 && (playing || T>0));
+}
+
+function drawCar(ctx, o){
+  const { st, Lz, crush, ref, dir, color, X, Y, ppm, xray } = o;
+  const def = makeDeform(Lz, crush);
+  const crushedFrac = Lz>0 ? Math.min(1, crush/Lz) : 1;
+  const wx = lx => ref + dir*def(lx);
+  const wig = lx => (lx < Lz && crush>0) ? Math.sin(lx*38)*.05*crushedFrac*Math.min(1, (Lz-lx)/Lz*2+.2) : 0;
+  const pts = st.topS.map(([lx,ly]) => [X(wx(lx)), Y(ly + (ly>.5 ? wig(lx) : 0))]);
+  // body
+  ctx.save();
+  ctx.beginPath(); pts.forEach(([x,y],i)=> i?ctx.lineTo(x,y):ctx.moveTo(x,y));
+  const yb = .22; ctx.lineTo(X(wx(st.L)), Y(yb));
+  for (let lx=st.L; lx>=0; lx-=.1) ctx.lineTo(X(wx(lx)), Y(yb + (lx<Lz?wig(lx)*.5:0)));
+  ctx.lineTo(X(wx(0)), Y(yb)); ctx.closePath();
+  ctx.globalAlpha = xray ? .16 : 1; ctx.fillStyle = color; ctx.fill();
+  ctx.globalAlpha = 1; ctx.lineWidth = Math.max(1.5, ppm*.012); ctx.strokeStyle = xray ? color : 'rgba(0,0,0,.28)'; ctx.stroke();
+  ctx.restore();
+
+  // glass + interior
+  const gpts = st.glass.map(([lx,ly]) => [X(wx(lx)), Y(ly)]);
+  const glassPath = () => { ctx.beginPath(); gpts.forEach(([x,y],i)=> i?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.closePath(); };
+  if (!xray){ glassPath(); ctx.fillStyle = C.interior; ctx.fill(); }
+  // structure (x-ray)
+  if (xray){
+    const thick = (.035 + o.cfg.czRig/3000*.05)*ppm;
+    for (const hy of [.42,.62]){
+      if (Lz>0){
+        const x0=X(wx(.04)), x1=X(wx(Lz));
+        ctx.save(); ctx.beginPath(); ctx.rect(Math.min(x0,x1), Y(hy)-thick/2, Math.abs(x1-x0), thick); ctx.clip();
+        ctx.fillStyle=C.accent; ctx.fillRect(Math.min(x0,x1), Y(hy)-thick/2, Math.abs(x1-x0), thick);
+        ctx.fillStyle=C['accent-ink']; for(let sx=Math.min(x0,x1)-thick; sx<Math.max(x0,x1); sx+=thick*1.6){ ctx.beginPath(); ctx.moveTo(sx,Y(hy)+thick/2); ctx.lineTo(sx+thick*.8,Y(hy)-thick/2); ctx.lineTo(sx+thick*1.3,Y(hy)-thick/2); ctx.lineTo(sx+thick*.5,Y(hy)+thick/2); ctx.fill(); }
+        ctx.restore();
+      }
+    }
+    const cw = (.02 + o.cfg.cellRig/5000*.05)*ppm;
+    const cage = [[st.glass[0][0]-.05, .25],[st.glass[0][0]-.05, st.glass[0][1]],[st.glass[1][0], st.glass[1][1]+.02],[st.glass[2][0], st.glass[2][1]+.02],[st.glass[3][0], st.glass[3][1]],[st.glass[3][0], .25]];
+    ctx.beginPath(); cage.forEach(([lx,ly],i)=>{ const x=X(wx(lx)),y=Y(ly); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.closePath();
+    ctx.lineWidth=cw; ctx.strokeStyle=C.ink; ctx.globalAlpha=.75; ctx.stroke(); ctx.globalAlpha=1;
+    const bp = (st.glass[1][0]+st.glass[2][0])/2 + .35; // B-pillar
+    ctx.beginPath(); ctx.moveTo(X(wx(bp)),Y(.25)); ctx.lineTo(X(wx(bp)),Y(st.glass[2][1])); ctx.lineWidth=cw*.8; ctx.strokeStyle=C.ink; ctx.globalAlpha=.75; ctx.stroke(); ctx.globalAlpha=1;
+    ctx.font = `800 ${Math.max(10, ppm*.075)}px Poppins, system-ui, sans-serif`; ctx.fillStyle=C.ink; ctx.textBaseline='bottom';
+    if (Lz>0) ctx.fillText('Crumple zone', X(wx(.05)), Y(.72));
+    ctx.fillText('Safety cell', X(wx(st.glass[1][0]+.1)), Y(st.glass[1][1]-.05));
+  }
+  // dummy + wheel + bag
+  if (o.dummy){
+    if (!xray){ ctx.save(); glassPath(); ctx.clip(); }
+    drawDummy(ctx, o, wx);
+    if (!xray){ ctx.restore(); glassPath(); ctx.fillStyle=C.glass; ctx.globalAlpha=.28; ctx.fill(); ctx.globalAlpha=1;
+      ctx.lineWidth=Math.max(1.5,ppm*.012); ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.stroke(); }
+  }
+  // wheels
+  for (const lx of [st.fw, st.rw]){
+    const cx = X(wx(lx)), cy = Y(st.wr), rr = st.wr*ppm;
+    ctx.beginPath(); ctx.arc(cx,cy,rr,0,Math.PI*2); ctx.fillStyle='#1b1e22'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,rr*.58,0,Math.PI*2); ctx.fillStyle='#c9ced5'; ctx.fill();
+    const ang = -o.dist/st.wr;
+    ctx.strokeStyle='#6b727b'; ctx.lineWidth=Math.max(1.5,rr*.12);
+    for(let k=0;k<5;k++){ const a=ang+k*Math.PI*2/5; ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*rr*.15,cy+Math.sin(a)*rr*.15); ctx.lineTo(cx+Math.cos(a)*rr*.5,cy+Math.sin(a)*rr*.5); ctx.stroke(); }
+  }
+}
+
+function drawDummy(ctx, o, wx){
+  const { st, X, Y, ppm, fr, cfg } = o;
+  const hipX = st.hip, hipY = st===STYLES.suv ? .68 : .5;
+  const s = Math.max(-.05, fr.sd);
+  const lw = Math.max(2, ppm*.09);
+  const P = (lx,ly) => [X(wx(lx)), Y(ly)];
+  const wheelX = hipX - .62, wheelY = hipY + .5;
+  // seat
+  ctx.strokeStyle = C.muted; ctx.lineCap='round'; ctx.lineWidth = lw*1.1;
+  ctx.beginPath(); ctx.moveTo(...P(hipX-.38, hipY-.06)); ctx.lineTo(...P(hipX+.08, hipY-.06)); ctx.lineTo(...P(hipX+.2, hipY+.62)); ctx.stroke();
+  // torso rotation about hip
+  const torso = .52, base = -.22; // lean back (rad from vertical, + = forward)
+  const ang = base + Math.asin(Math.max(-.3, Math.min(.98, s/.42)));
+  const sh = [hipX - Math.sin(ang)*torso, hipY + Math.cos(ang)*torso];
+  const hd = [hipX - Math.sin(ang*1.15)*(torso+.2), hipY + Math.cos(ang*1.15)*(torso+.2)];
+  ctx.strokeStyle = C.dummy;
+  // legs
+  ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(...P(hipX, hipY)); ctx.lineTo(...P(hipX-.45, hipY+.08)); ctx.lineTo(...P(hipX-.62, .22)); ctx.stroke();
+  // torso
+  ctx.lineWidth = lw*1.35; ctx.beginPath(); ctx.moveTo(...P(hipX, hipY)); ctx.lineTo(...P(sh[0], sh[1])); ctx.stroke();
+  // steering wheel
+  ctx.strokeStyle = '#2a2f36'; ctx.lineWidth = lw*.55;
+  ctx.beginPath(); ctx.moveTo(...P(wheelX-.18, wheelY-.22)); ctx.lineTo(...P(wheelX, wheelY)); ctx.stroke();
+  ctx.save(); const [wcx,wcy]=P(wheelX,wheelY); ctx.translate(wcx,wcy); ctx.rotate(-.45);
+  ctx.beginPath(); ctx.ellipse(0,0,.05*ppm,.2*ppm,0,0,Math.PI*2); ctx.lineWidth=lw*.5; ctx.stroke(); ctx.restore();
+  // arms
+  ctx.strokeStyle = C.dummy; ctx.lineWidth = lw*.75;
+  const hand = [Math.min(wheelX+.03, sh[0]-.15), wheelY+.08];
+  const elbow = [(sh[0]+hand[0])/2+.03, Math.min(sh[1], hand[1]) - .12];
+  ctx.beginPath(); ctx.moveTo(...P(sh[0],sh[1])); ctx.lineTo(...P(elbow[0],elbow[1])); ctx.lineTo(...P(hand[0],hand[1])); ctx.stroke();
+  // airbag
+  if (cfg.bag && fr.infl > 0){
+    const rmax = .24*fr.infl, cx = wheelX + .14, cy = wheelY + .1;
+    const chestGap = Math.max(.04, (sh[0]-.05) - cx);
+    ctx.save(); const [bx,by]=P(cx,cy); ctx.translate(bx,by);
+    ctx.beginPath(); ctx.ellipse(0,0,Math.min(rmax,chestGap)*ppm, rmax*ppm*1.05,0,0,Math.PI*2);
+    ctx.fillStyle = '#f2f4f6'; ctx.globalAlpha=.92; ctx.fill(); ctx.globalAlpha=1; ctx.lineWidth=Math.max(1,ppm*.01); ctx.strokeStyle='#9aa3ad'; ctx.stroke(); ctx.restore();
+  }
+  // head with calibration target
+  const [hx,hy] = P(hd[0], hd[1]), hr = .11*ppm;
+  ctx.beginPath(); ctx.arc(hx,hy,hr,0,Math.PI*2); ctx.fillStyle=C.dummy; ctx.fill();
+  ctx.beginPath(); ctx.arc(hx,hy,hr*.5,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.fillStyle='#111'; ctx.beginPath(); ctx.moveTo(hx,hy); ctx.arc(hx,hy,hr*.5,0,Math.PI/2); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(hx,hy); ctx.arc(hx,hy,hr*.5,Math.PI,Math.PI*1.5); ctx.closePath(); ctx.fill();
+  // belt
+  if (cfg.belt){
+    ctx.strokeStyle = '#3d4450'; ctx.lineWidth = Math.max(2, ppm*.035);
+    const anchorP = [hipX+.24, hipY+.72];
+    const chest = [sh[0]+.02, sh[1]-.12];
+    ctx.beginPath(); ctx.moveTo(...P(anchorP[0],anchorP[1])); ctx.lineTo(...P(chest[0],chest[1])); ctx.lineTo(...P(hipX-.05, hipY+.04)); ctx.stroke();
+  }
+}
+
+/* ---------------- overview strip ---------------- */
+const ov = $('overview'), octx = ov.getContext('2d');
+function drawOverview(){
+  if (!run) return;
+  const { w:W, h:H, dpr } = fitCanvas(ov), ctx=octx, r=run, fr=frameAt(T);
+  const xmin = r.two ? r.p2_0 - 6 : -3, xmax = r.p1_0 + r.st.L + 2;
+  const k = W/(xmax-xmin), X = x => (x - xmin)*k;
+  ctx.fillStyle = C.sky; ctx.fillRect(0,0,W,H*.42);
+  ctx.fillStyle = C.asphalt; ctx.fillRect(0,H*.42,W,H*.58);
+  ctx.fillStyle = C['asphalt-line']; for (let x=Math.ceil(xmin/4)*4; x<xmax; x+=4) ctx.fillRect(X(x), H*.7, 2*k, Math.max(2,H*.06));
+  ctx.fillStyle = C.muted; ctx.font = `700 ${10*dpr}px Poppins, system-ui, sans-serif`; ctx.textBaseline='top';
+  for (let x=Math.ceil(xmin/10)*10; x<xmax; x+=10) ctx.fillText(x+' m', X(x)+2, 2*dpr);
+  if (!r.two){ ctx.fillStyle=C.concrete; ctx.fillRect(X(-1.4), H*.12, X(0)-X(-1.4), H*.6); ctx.fillStyle=C.accent; ctx.fillRect(X(0)-Math.max(2,dpr*2), H*.12, Math.max(2,dpr*2), H*.6); }
+  const mini = (front, len, dir, col) => {
+    const x0 = X(front), x1 = X(front + dir*len); const a=Math.min(x0,x1), b=Math.max(x0,x1);
+    const h = H*.26, y = H*.72 - h;
+    ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(a,y,b-a,h,3*dpr) : ctx.rect(a,y,b-a,h); ctx.fill();
+    ctx.fillStyle='#1b1e22'; ctx.beginPath(); ctx.arc(a+(b-a)*.2,H*.72,h*.32,0,7); ctx.arc(a+(b-a)*.8,H*.72,h*.32,0,7); ctx.fill();
+  };
+  if (r.two) mini(fr.p2 - fr.c2, STYLES.sedan.L - fr.c2, -1, C.car2);
+  mini(fr.p1 + fr.c1, r.st.L - fr.c1, 1, C.car1);
+}
+
+/* ---------------- readouts ---------------- */
+function updateReadouts(){
+  if (!run) return;
+  const fr = frameAt(T);
+  $('roTime').textContent = fr.t.toFixed(3) + ' s';
+  $('roSpeed').textContent = Math.max(0,fr.u).toFixed(1) + ' m/s';
+}
+
+/* ---------------- table ---------------- */
+function rowsForData(){
+  const r=run, out=[];
+  if (!r.crashed) return out;
+  const t0 = Math.max(0, r.contactT - .01), t1 = r.slowEnd;
+  for (let t=t0; t<=t1+1e-9; t+=.005){ out.push(frameAt(t)); }
+  return out;
+}
+function buildTable(){
+  const area = $('tableArea');
+  if (!run || !played){ area.innerHTML = '<p class="empty">Press <strong>Play</strong> to run a crash. The data will show up here.</p>'; return; }
+  if (!run.crashed){ area.innerHTML = '<p class="empty">No crash happened, so there is no crash data. Nice braking!</p>'; return; }
+  const rows = rowsForData();
+  const fmt = (v,d)=> (Math.abs(v)<5e-4?0:v).toFixed(d);
+  let h = '<div class="tblwrap"><table><thead><tr><th>Time<small>(s)</small></th><th>Car v<small>(m/s)</small></th><th>Car a<small>(m/s²)</small></th><th>Dummy v<small>(m/s)</small></th><th>Dummy a<small>(m/s²)</small></th><th>Dummy F<small>(kN)</small></th></tr></thead><tbody>';
+  let marked=false;
+  for (const f of rows){
+    const imp = !marked && f.t >= run.contactT; if (imp) marked = true;
+    h += `<tr${imp?' class="impact"':''}><td>${f.t.toFixed(3)}</td><td>${fmt(f.u,1)}</td><td>${fmt(f.aF,0)}</td><td>${fmt(f.uD,1)}</td><td>${fmt(f.aD,0)}</td><td>${fmt(f.Fd,2)}</td></tr>`;
+  }
+  area.innerHTML = h + '</tbody></table></div>';
+}
+$('copyBtn').addEventListener('click', () => {
+  if (!run || !played || !run.crashed){ $('copyMsg').textContent='Run a crash first.'; return; }
+  const lines = ['Time (s)\tCar v (m/s)\tCar a (m/s²)\tDummy v (m/s)\tDummy a (m/s²)\tDummy F (kN)'];
+  for (const f of rowsForData()) lines.push([f.t.toFixed(3),f.u.toFixed(2),f.aF.toFixed(1),f.uD.toFixed(2),f.aD.toFixed(1),f.Fd.toFixed(3)].join('\t'));
+  const text = lines.join('\n');
+  const fb = () => { const ta=$('copyFallback'); ta.hidden=false; ta.value=text; ta.focus(); ta.select(); $('copyMsg').textContent='Press Ctrl+C to copy the selected data.'; };
+  try { navigator.clipboard.writeText(text).then(()=>{ $('copyMsg').textContent='Copied. Paste into a spreadsheet.'; $('copyFallback').hidden=true; }, fb); } catch(e){ fb(); }
+});
+
+/* ---------------- results ---------------- */
+function survColor(p){ return p>=80 ? 'var(--good)' : p>=40 ? 'var(--warn)' : 'var(--bad)'; }
+function outcomeText(p){ return p>=90 ? 'Minor injuries likely' : p>=60 ? 'Serious injuries possible' : p>=25 ? 'Serious injuries likely' : 'Life-threatening injuries'; }
+function buildSummary(){
+  const el = $('summaryView');
+  let h = '';
+  if (!run || !played){ h += '<p class="empty">Press <strong>Play</strong> to run a crash. Results will show up here.</p>'; }
+  else if (!run.crashed){ h += '<div class="verdict"><div class="meter" style="color:var(--good)">100%</div><div><div class="lbl">Likelihood of survival</div>No crash. The collision avoidance system stopped the car in time.</div></div>'; }
+  else {
+    const r = run, g = x => (x/9.81).toFixed(0);
+    const ev = [];
+    if (r.czPct >= 99.5) ev.push('The crumple zone was fully crushed.');
+    if (r.cellDef > .005) ev.push(`The safety cell was crushed by ${r.cellPct.toFixed(0)}%.`); else ev.push('The safety cell stayed in one piece.');
+    if (r.hitBag) ev.push('The dummy was caught by the airbag.');
+    else if (r.cfg.bag && !r.bagFire) ev.push('The crash was too gentle for the airbag to fire.');
+    if (r.headStrike) ev.push("The dummy's head swung forward and hit the steering wheel.");
+    if (r.hitWheel) ev.push(`The dummy hit the steering wheel at ${r.wheelSpeed.toFixed(1)} m/s.`);
+    else if (r.cfg.belt && !r.headStrike) ev.push('The seat belt kept the dummy off the steering wheel.');
+    if (r.two && r.car2Def > 0) ev.push(`Car 2 crushed ${(r.car2Def*100).toFixed(0)} cm.`);
+    h += `<div class="verdict"><div class="meter" style="color:${survColor(r.surv)}">${r.surv}%</div><div><div class="lbl">Likelihood of survival</div>${outcomeText(r.surv)}</div></div>
+    <dl class="kv" style="margin:10px 0 0">
+      <dt>Impact speed (car 1)</dt><dd>${r.impactSpeed.toFixed(1)} m/s</dd>
+      <dt>Crumple zone deformation</dt><dd>${r.czDef.toFixed(2)} m (${r.czPct.toFixed(0)}%)</dd>
+      <dt>Safety cell deformation</dt><dd>${r.cellDef.toFixed(2)} m (${r.cellPct.toFixed(0)}%)</dd>
+      <dt>Dummy forward movement</dt><dd>${Math.max(0,r.maxS).toFixed(2)} m</dd>
+      <dt>Max car deceleration</dt><dd>${r.maxCarDec.toFixed(0)} m/s² (${g(r.maxCarDec)} g)</dd>
+      <dt>Max dummy deceleration</dt><dd>${r.maxDumDec.toFixed(0)} m/s² (${g(r.maxDumDec)} g)</dd>
+      <dt>Max force on dummy</dt><dd>${r.maxFd.toFixed(1)} kN</dd>
+      <dt>Lowest possible max force</dt><dd>${r.Fmin.toFixed(1)} kN</dd>
+    </dl>
+    <ul class="events" style="margin-top:8px">${ev.map(e=>`<li>${e}</li>`).join('')}</ul>`;
+  }
+  if (trials.length){
+    h += `<div style="margin-top:14px"><div class="eyebrow" style="margin-bottom:6px">Trial log</div><div class="tblwrap"><table class="trials"><thead><tr>
+      <th>#</th><th>Car</th><th>Crash</th><th>Speed<small>m/s</small></th><th>CZ<small>cm / kN</small></th><th>Belt</th><th>Bag</th><th>Dummy<small>max g</small></th><th>Survival</th></tr></thead><tbody>`;
+    trials.slice().reverse().forEach(t => {
+      h += `<tr><td>${t.n}</td><td style="text-align:left">${t.car}</td><td style="text-align:left">${t.mode}</td><td>${t.v}</td><td>${t.cz}</td><td>${t.belt}</td><td>${t.bag}</td><td>${t.g}</td><td style="color:${survColor(t.s)}">${t.s}%</td></tr>`;
+    });
+    h += '</tbody></table></div></div>';
+  }
+  el.innerHTML = h;
+}
+function logTrial(){
+  const r=run, c=r.cfg;
+  trials.push({ n: trials.length+1, car: r.st.name, mode: c.mode==='two' ? `2 cars (${c.v2} m/s)` : 'Wall', v: c.v1 + (c.cas?' + CAS':''),
+    cz: `${c.czLen} / ${c.czRig}`, belt: c.belt ? c.beltK : '—', bag: c.bag ? c.bagR : '—', g: r.crashed ? (r.maxDumDec/9.81).toFixed(0) : '0', s: r.surv });
+  if (trials.length > 30) trials.shift();
+}
+
+/* graph */
+const gcv = $('graph'), gctx = gcv.getContext('2d');
+function drawGraph(){
+  if (tab!=='results' || resultsView!=='graph') return;
+  const { w:W, h:H, dpr } = fitCanvas(gcv), ctx = gctx;
+  ctx.clearRect(0,0,W,H);
+  const lg = $('legend');
+  if (!run || !played || !run.crashed){ ctx.fillStyle=C.muted; ctx.font=`600 ${14*dpr}px Poppins, system-ui, sans-serif`; ctx.textAlign='center'; ctx.fillText(run && played ? 'No crash to graph.' : 'Run a crash to see the graph.', W/2, H/2); ctx.textAlign='left'; lg.innerHTML=''; return; }
+  const r = run, sel = $('yaxis').value;
+  const t0 = r.contactT - .01, t1 = r.slowEnd;
+  const fr = r.frames.filter(f => f.t >= t0 && f.t <= t1);
+  const f0 = frameAt(r.contactT);
+  const series = [];
+  if (sel==='disp'){ series.push({name:'Car', col:C.car1, v:fr.map(f=> -(f.p1 - f0.p1))}); series.push({name:'Dummy', col:C.series2, v:fr.map(f=> -(f.p1 - f0.p1) + (f.sd - f0.sd))}); }
+  if (sel==='vel'){ series.push({name:'Car', col:C.car1, v:fr.map(f=>f.u)}); series.push({name:'Dummy', col:C.series2, v:fr.map(f=>f.uD)}); }
+  if (sel==='dec'){ series.push({name:'Car', col:C.car1, v:fr.map(f=>-f.aF)}); series.push({name:'Dummy', col:C.series2, v:fr.map(f=>-f.aD)}); }
+  if (sel==='fd'){ series.push({name:'Dummy', col:C.series2, v:fr.map(f=>f.Fd)}); }
+  if (sel==='fc'){ series.push({name:'Car', col:C.car1, v:fr.map(f=>f.F)}); }
+  lg.innerHTML = series.map(s=>`<span><span class="sw" style="background:${s.col}"></span>${s.name}</span>`).join('');
+  let ymin = Math.min(0, ...series.flatMap(s=>s.v)), ymax = Math.max(...series.flatMap(s=>s.v));
+  if (ymax - ymin < 1e-6) ymax = ymin + 1;
+  const nice = (span) => { const raw=span/5, p=Math.pow(10,Math.floor(Math.log10(raw))), m=raw/p; return (m<1.5?1:m<3?2:m<7?5:10)*p; };
+  const step = nice(ymax-ymin); ymin = Math.floor(ymin/step)*step; ymax = Math.ceil(ymax/step)*step;
+  const tstep = nice((t1-t0)*1.0);
+  const L = 58*dpr, R = 12*dpr, Tm = 14*dpr, B = 36*dpr;
+  const X = t => L + (t - t0)/(t1 - t0)*(W-L-R), Y = v => Tm + (ymax - v)/(ymax - ymin)*(H-Tm-B);
+  ctx.font = `600 ${11.5*dpr}px Poppins, system-ui, sans-serif`; ctx.lineWidth = Math.max(1,dpr);
+  ctx.fillStyle = C.muted; ctx.textBaseline='middle'; ctx.textAlign='right';
+  for (let v=ymin; v<=ymax+1e-9; v+=step){ ctx.strokeStyle=C.line; ctx.beginPath(); ctx.moveTo(L,Y(v)); ctx.lineTo(W-R,Y(v)); ctx.stroke(); ctx.fillText(+v.toPrecision(6)+'', L-6*dpr, Y(v)); }
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for (let t=Math.ceil(t0/tstep)*tstep; t<=t1+1e-9; t+=tstep){ ctx.strokeStyle=C.line; ctx.beginPath(); ctx.moveTo(X(t),Tm); ctx.lineTo(X(t),H-B); ctx.stroke(); ctx.fillText(t.toFixed(tstep<.01?3:2), X(t), H-B+5*dpr); }
+  ctx.fillStyle=C.ink; ctx.font=`700 ${12*dpr}px Poppins, system-ui, sans-serif`; ctx.fillText('Time (s)', (L+W-R)/2, H-B+19*dpr);
+  // impact marker
+  ctx.strokeStyle=C.bad; ctx.setLineDash([4*dpr,4*dpr]); ctx.beginPath(); ctx.moveTo(X(r.contactT),Tm); ctx.lineTo(X(r.contactT),H-B); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle=C.bad; ctx.textAlign='left'; ctx.fillText('impact', X(r.contactT)+4*dpr, Tm+2*dpr);
+  for (const s of series){
+    ctx.strokeStyle = s.col; ctx.lineWidth = 2.5*dpr; ctx.lineJoin='round'; ctx.beginPath();
+    s.v.forEach((v,i)=>{ const x=X(fr[i].t), y=Y(v); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
+  }
+  ctx.textAlign='left';
+}
+$('yaxis').addEventListener('change', drawGraph);
+
+/* ---------------- UI wiring ---------------- */
+const sliders = ['czLen','czRig','cellRig','beltK','bagR','v1','v2','m2'];
+sliders.forEach(id => {
+  const r = $(id), n = $(id+'_n');
+  r.addEventListener('input', () => { n.value = r.value; cfg[id] = +r.value; changed(); });
+  n.addEventListener('change', () => { let v = Math.min(+n.max, Math.max(+n.min, +n.value || 0)); n.value=v; r.value=v; cfg[id]=v; changed(); });
+});
+$('style').addEventListener('change', e => { cfg.style = e.target.value; changed(); });
+['belt','bag','cas'].forEach(id => $(id).addEventListener('change', e => { cfg[id] = e.target.checked; changed(); }));
+function setMode(m){ cfg.mode = m; $('modeOne').setAttribute('aria-pressed', m==='one'); $('modeTwo').setAttribute('aria-pressed', m==='two'); $('car2Rows').hidden = m!=='two'; changed(); }
+$('modeOne').addEventListener('click', ()=>setMode('one')); $('modeTwo').addEventListener('click', ()=>setMode('two'));
+function setView(v){ resultsView=v; $('vSummary').setAttribute('aria-pressed', v==='summary'); $('vGraph').setAttribute('aria-pressed', v==='graph'); $('summaryView').hidden = v!=='summary'; $('graphView').hidden = v!=='graph'; drawGraph(); }
+$('vSummary').addEventListener('click', ()=>setView('summary')); $('vGraph').addEventListener('click', ()=>setView('graph'));
+
+const TABS = ['design','test','table','results'];
+function setTab(t){
+  tab = t;
+  TABS.forEach(k => { $('t-'+k).setAttribute('aria-selected', k===t); $('p-'+k).hidden = k!==t; });
+  try { localStorage.setItem('crumple-tab', t); } catch(e){}
+  if (t==='table') buildTable();
+  if (t==='results'){ buildSummary(); drawGraph(); }
+  drawAll();
+}
+TABS.forEach(k => $('t-'+k).addEventListener('click', () => setTab(k)));
+document.querySelector('.tabs').addEventListener('keydown', e => {
+  const i = TABS.indexOf(tab);
+  if (e.key==='ArrowRight'||e.key==='ArrowLeft'){ const j=(i + (e.key==='ArrowRight'?1:3))%4; setTab(TABS[j]); $('t-'+TABS[j]).focus(); e.preventDefault(); }
+});
+
+function describe(){
+  const st = STYLES[cfg.style];
+  const mph = v => (v*2.237).toFixed(0);
+  let d = `<strong>Car 1</strong> is a ${st.name.toLowerCase()} with a mass of ${st.mass.toLocaleString()} kg. Its crumple zone is ${cfg.czLen} cm long and crushes at ${cfg.czRig.toLocaleString()} kN. `;
+  d += cfg.belt ? `It has a seat belt (${cfg.beltK} kN/m)` : 'It has no seat belt';
+  d += cfg.bag ? ` and an airbag (${cfg.bagR} kN).` : ' and no airbag.';
+  d += ` Its speed is ${cfg.v1} m/s (${mph(cfg.v1)} mph).`;
+  if (cfg.mode==='two') d += `<br><strong>Car 2</strong> has a mass of ${cfg.m2.toLocaleString()} kg and a speed of ${cfg.v2} m/s (${mph(cfg.v2)} mph).`;
+  else d += ' It will hit a solid concrete wall.';
+  d += '<br>Press <strong>Play</strong> to run the crash test.';
+  $('testDesc').innerHTML = d;
+  $('designChips').innerHTML = `<span class="chip">Mass ${st.mass.toLocaleString()} kg</span><span class="chip">Car length ${st.L} m</span><span class="chip">Steering wheel gap ${S_WHEEL} m</span>`;
+  $('beltRow').hidden = !cfg.belt; $('bagRow').hidden = !cfg.bag;
+}
+
+let pending = 0;
+function changed(){
+  describe();
+  pause();
+  cancelAnimationFrame(pending);
+  pending = requestAnimationFrame(() => { run = simulate(cfg); T = 0; played = false; refreshPanels(); drawAll(); });
+}
+function refreshPanels(){ if (tab==='table') buildTable(); if (tab==='results'){ buildSummary(); drawGraph(); } }
+
+/* ---------------- playback ---------------- */
+function setControlsDisabled(d){ $('fsDesign').disabled = d; $('fsTest').disabled = d; }
+function play(){
+  if (!run) return;
+  if (T >= run.tEnd - 1e-9) { T = 0; }
+  playing = true; lastTs = 0; setControlsDisabled(true);
+  $('playBtn').disabled = true; $('pauseBtn').disabled = false;
+  requestAnimationFrame(tick);
+}
+function pause(){
+  playing = false; setControlsDisabled(false);
+  $('playBtn').disabled = false; $('pauseBtn').disabled = true;
+  $('playBtn').querySelector('span').textContent = (run && T >= run.tEnd - 1e-9) ? 'Replay' : (T>0 ? 'Resume' : 'Play');
+}
+function reset(){ pause(); T = 0; $('playBtn').querySelector('span').textContent='Play'; drawAll(); }
+function finish(){
+  T = run.tEnd; const first = !played; played = true; if (first) logTrial(); pause(); refreshPanels(); drawAll();
+}
+function tick(ts){
+  if (!playing) return;
+  const real = lastTs ? Math.min(.05, (ts - lastTs)/1000) : 0; lastTs = ts;
+  const rate = (run.crashed && T >= run.slowStart && T <= run.slowEnd) ? 1/15 : 1;
+  T += real*rate;
+  if (T >= run.tEnd){ finish(); return; }
+  drawAll();
+  requestAnimationFrame(tick);
+}
+$('playBtn').addEventListener('click', play);
+$('pauseBtn').addEventListener('click', pause);
+$('resetBtn').addEventListener('click', reset);
+
+function drawAll(){ drawScene(); drawOverview(); updateReadouts(); }
+const ro = new ResizeObserver(() => { drawAll(); drawGraph(); });
+ro.observe(scene); ro.observe(ov); ro.observe(gcv);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawAll);
+
+// init
+window.__crumple = { simulate, cfg };
+describe();
+run = simulate(cfg);
+let saved = null; try { saved = localStorage.getItem('crumple-tab'); } catch(e){}
+setTab(TABS.includes(saved) ? saved : 'design');
+setView('summary');
+})();
+</script>
