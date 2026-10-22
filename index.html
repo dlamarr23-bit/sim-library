@@ -18,9 +18,16 @@
     --text: #1b1f2a;
     --text-muted: #4a5063;
     --border: #e6e8f0;
-    --accent: #3a5ce4;
-    --accent-dark: #28409e;
-    --accent-tint: #eef1fd;
+    /* the unit colors, the same as the textbook's (u0 is the default): the color, words in it, a pale wash */
+    --u1: #161E2C; --u1-ink: #161E2C; --u1-tint: #ebeef5;
+    --u2: #273449; --u2-ink: #273449; --u2-tint: #ebeff4;
+    --u3: #3D526C; --u3-ink: #3D526C; --u3-tint: #ebeff4;
+    --u4: #56718F; --u4-ink: #455a72; --u4-tint: #eceff4;
+    --u5: #7197B7; --u5-ink: #3c5c77; --u5-tint: #ebf0f5;
+    --u6: #A8C2D6; --u6-ink: #375b76; --u6-tint: #eaf0f5;
+    --accent: #080D16;
+    --accent-dark: #080D16;
+    --accent-tint: #eaeef6;
     --hero-end: #ffffff;
     --sim-card-bg: #ffffff;
     --shadow: 0 4px 14px -6px rgba(20,25,50,.15);
@@ -33,9 +40,15 @@
       --text: #eef0f4;
       --text-muted: #9a9eae;
       --border: #2a2c35;
-      --accent: #7c97ff;
-      --accent-dark: #a9bbff;
-      --accent-tint: #1d2340;
+      --u1: #5f7caf; --u1-ink: #99accc; --u1-tint: #252e3f;
+      --u2: #7089b3; --u2-ink: #9badca; --u2-tint: #293040;
+      --u3: #829bb9; --u3-ink: #99adc6; --u3-tint: #2c3441;
+      --u4: #93a9c2; --u4-ink: #9aafc6; --u4-tint: #303743;
+      --u5: #a3bbd0; --u5-ink: #a3bbd0; --u5-tint: #333a46;
+      --u6: #bacede; --u6-ink: #bacede; --u6-tint: #383e48;
+      --accent: #5272ad;
+      --accent-dark: #9aadd0;
+      --accent-tint: #232c3f;
       --hero-end: #0e0f13;
       --sim-card-bg: #1e202a;
       --shadow: none;
@@ -48,21 +61,27 @@
     --text: #eef0f4;
     --text-muted: #9a9eae;
     --border: #2a2c35;
-    --accent: #7c97ff;
-    --accent-dark: #a9bbff;
-    --accent-tint: #1d2340;
+    --u1: #5f7caf; --u1-ink: #99accc; --u1-tint: #252e3f;
+    --u2: #7089b3; --u2-ink: #9badca; --u2-tint: #293040;
+    --u3: #829bb9; --u3-ink: #99adc6; --u3-tint: #2c3441;
+    --u4: #93a9c2; --u4-ink: #9aafc6; --u4-tint: #303743;
+    --u5: #a3bbd0; --u5-ink: #a3bbd0; --u5-tint: #333a46;
+    --u6: #bacede; --u6-ink: #bacede; --u6-tint: #383e48;
+    --accent: #5272ad;
+    --accent-dark: #9aadd0;
+    --accent-tint: #232c3f;
     --hero-end: #0e0f13;
     --sim-card-bg: #1e202a;
     --shadow: none;
     color-scheme: dark;
   }
-  /* each unit's color, the same as the textbook's */
-  details.unit[data-unit="u1"] { --unit: #e63946; --unit-tint: rgba(230,57,70,.09); }
-  details.unit[data-unit="u2"] { --unit: #6a4c93; --unit-tint: rgba(106,76,147,.10); }
-  details.unit[data-unit="u3"] { --unit: #1982c4; --unit-tint: rgba(25,130,196,.10); }
-  details.unit[data-unit="u4"] { --unit: #00a0c4; --unit-tint: rgba(0,160,196,.10); }
-  details.unit[data-unit="u5"] { --unit: #f77f00; --unit-tint: rgba(247,127,0,.10); }
-  details.unit[data-unit="u6"] { --unit: #2a9d6f; --unit-tint: rgba(42,157,111,.10); }
+  /* each unit uses its own color (set above for light and dark) */
+  details.unit[data-unit="u1"] { --unit: var(--u1); --unit-ink: var(--u1-ink); --unit-tint: var(--u1-tint); }
+  details.unit[data-unit="u2"] { --unit: var(--u2); --unit-ink: var(--u2-ink); --unit-tint: var(--u2-tint); }
+  details.unit[data-unit="u3"] { --unit: var(--u3); --unit-ink: var(--u3-ink); --unit-tint: var(--u3-tint); }
+  details.unit[data-unit="u4"] { --unit: var(--u4); --unit-ink: var(--u4-ink); --unit-tint: var(--u4-tint); }
+  details.unit[data-unit="u5"] { --unit: var(--u5); --unit-ink: var(--u5-ink); --unit-tint: var(--u5-tint); }
+  details.unit[data-unit="u6"] { --unit: var(--u6); --unit-ink: var(--u6-ink); --unit-tint: var(--u6-tint); }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -204,7 +223,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--unit, var(--accent-dark));
+    color: var(--unit-ink, var(--accent-dark));
     margin: 0 0 10px;
   }
   .sim-grid {
@@ -237,7 +256,7 @@
     border-radius: 50%;
     display: grid;
     place-items: center;
-    color: var(--unit, var(--accent));
+    color: var(--unit-ink, var(--accent));
     background: var(--unit-tint, var(--accent-tint));
     font-size: 10px;
     padding-left: 2px;
