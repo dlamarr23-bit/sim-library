@@ -159,6 +159,15 @@ details[open] summary .chev{transform:rotate(-135deg)}
 .eq{display:inline-block;padding:2px 10px;border-radius:6px;background:var(--surface-2);font-weight:800;font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){ summary .chev{transition:none} }
 </style>
+<script>
+  // apply a light/dark choice before the page paints: the page showing this sim in a frame can name one (?theme=light or dark, so both sides match), else the saved one
+  (function(){
+    var t = null;
+    try{ t = new URLSearchParams(location.search).get('theme'); }catch(e){}
+    if(t !== 'light' && t !== 'dark'){ try{ t = localStorage.getItem('motionlab-theme'); }catch(e){} }
+    if(t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
 </head>
 <body>
 
@@ -347,17 +356,25 @@ function setIcon(){
     : '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>';
   $('themeBtn').setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
 }
-let qt = null; try { qt = new URLSearchParams(location.search).get('theme'); } catch(e){}
-if (qt==='light'||qt==='dark') root.dataset.theme = qt;
-else { try { const s = localStorage.getItem('motionlab-theme'); if (s==='light'||s==='dark') root.dataset.theme = s; } catch(e){} }
+// the script in the head already applied ?theme= or the saved choice
 setIcon();
+function repaint(){ setIcon(); readColors(); drawAll(); drawGraph(); }
+function applyTheme(t){ root.dataset.theme = t; repaint(); }
+const inFrame = window.parent !== window;
 $('themeBtn').addEventListener('click', () => {
   const next = currentTheme()==='dark' ? 'light' : 'dark';
-  root.dataset.theme = next;
+  applyTheme(next);
   try { localStorage.setItem('motionlab-theme', next); } catch(e){}
-  setIcon(); readColors(); drawAll();
+  // shown in a frame (the textbook's Sims page): tell that page, so it switches too
+  if (inFrame) try { window.parent.postMessage({ simTheme: next }, '*'); } catch(e){}
 });
-if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { setIcon(); readColors(); drawAll(); });
+// the page around this sim switched its light/dark mode: follow it (not saved, so the sim on its own keeps its own choice)
+window.addEventListener('message', e => {
+  if (!inFrame || e.source !== window.parent) return;
+  const t = e.data && e.data.simTheme;
+  if ((t==='light'||t==='dark') && t !== currentTheme()) applyTheme(t);
+});
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', repaint);
 $('helpBtn').addEventListener('click', () => { const d=$('howto'); d.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); });
 
 let C = {};
