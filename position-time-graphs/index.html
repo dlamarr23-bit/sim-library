@@ -161,7 +161,7 @@ body{margin:0;background:var(--page)}
 }
 .cvlab canvas{display:block;width:100%}
 #cvlab-scene{height:clamp(220px,30vw,440px);touch-action:none;cursor:grab;border-radius:3px}
-@media (max-width:620px){#cvlab-scene{height:clamp(180px,50vw,260px)}#cvlab-graph{height:clamp(220px,52vw,300px)}}
+
 #cvlab-scene.is-drag{cursor:grabbing}
 .cvlab-hint{font-family:var(--font-m);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-top:6px}
 .cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;border-top:1px dashed var(--rule)}
@@ -217,6 +217,42 @@ body{margin:0;background:var(--page)}
 .cvlab-notes p,.cvlab-notes li{font-size:13.5px;color:var(--notes-ink)}
 .cvlab-notes ol{margin:4px 0 0;padding-left:20px}
 .cvlab-notes li{margin:5px 0}
+.cvlab-notes summary{cursor:pointer;list-style:none}
+.cvlab-notes summary::-webkit-details-marker{display:none}
+.cvlab-notes summary h3{display:inline;margin:0}
+.cvlab-notes summary::before{content:"\25B8";display:inline-block;margin-right:8px;transition:transform .15s}
+.cvlab-notes[open] summary::before{transform:rotate(90deg)}
+.cvlab-notes[open] summary{margin-bottom:8px}
+.cvlab-jogs{display:flex;gap:6px;flex:1 1 220px;max-width:320px}
+.cvlab-jogs .cvlab-jog{padding:8px 8px}
+.cvlab-bar .cvlab-status{flex:1 1 100%;order:9}
+
+/* ---------- narrow: the left pane of a two-column activity, or a phone ---- */
+@media (max-width:820px){
+  .cvlab{padding:8px}
+  .cvlab-head{padding:9px 11px;gap:8px}
+  .cvlab-head h1{font-size:19px}
+  .cvlab-eyebrow{font-size:9px}
+  .cvlab-readouts{gap:5px;flex-wrap:nowrap;width:100%}
+  .cvlab-ro{min-width:0;padding:4px 7px;flex:1 1 70px}
+  .cvlab-ro-v{font-size:14px}
+  .cvlab-themebtn{width:36px;height:36px}
+  .cvlab-ro-k{font-size:8px;letter-spacing:.1em}
+  .cvlab-bench{padding:7px 7px 9px}
+  #cvlab-scene{height:clamp(190px,42vw,280px)}
+  .cvlab-hint{display:none}
+  .cvlab-bar{gap:7px;margin-top:6px;padding-top:8px}
+  .cvlab-btn{font-size:13.5px;padding:7px 11px}
+  .cvlab-btn-go{min-width:0;flex:1 1 auto}
+  .cvlab-jogs{flex:1 1 100%;max-width:none}
+  .cvlab-jogs .cvlab-jog{padding:10px 8px}
+  .cvlab-status{font-size:13px;min-width:0}
+  .cvlab-grid{margin-top:8px;gap:8px}
+  .cvlab-graphpanel{order:-1}
+  #cvlab-graph{height:clamp(220px,56vw,330px)}
+  .cvlab-panel{padding:10px}
+  .cvlab-notes{margin-top:8px}
+}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
@@ -256,6 +292,10 @@ body{margin:0;background:var(--page)}
     <div class="cvlab-bar">
       <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Start stopwatch</button>
       <button class="cvlab-btn" id="cvlab-reset">Reset</button>
+      <div class="cvlab-jogs">
+        <button class="cvlab-btn cvlab-jog" id="cvlab-left" aria-label="Hold to walk toward the sensor">&larr; Toward</button>
+        <button class="cvlab-btn cvlab-jog" id="cvlab-right" aria-label="Hold to walk away from the sensor">Away &rarr;</button>
+      </div>
       <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
         Place the student on the meter sticks, then start the stopwatch. Each run lasts 15 seconds.
       </p>
@@ -265,12 +305,8 @@ body{margin:0;background:var(--page)}
   <div class="cvlab-grid">
 
     <section class="cvlab-panel">
-      <h2>Move the student</h2>
-      <div class="cvlab-row">
-        <button class="cvlab-btn cvlab-jog" id="cvlab-left" aria-label="Hold to walk toward the sensor">&larr; Toward</button>
-        <button class="cvlab-btn cvlab-jog" id="cvlab-right" aria-label="Hold to walk away from the sensor">Away &rarr;</button>
-      </div>
-      <p class="cvlab-note">Hold a button to walk at 45 cm/s, or drag the student for full control.</p>
+      <h2>Options</h2>
+      <p class="cvlab-note">Hold <strong>&larr; Toward</strong> or <strong>Away &rarr;</strong> to walk at 45 cm/s, or drag the student for full control.</p>
 
       <label class="cvlab-field" for="cvlab-target">
         <span>Target graph to match</span>
@@ -298,7 +334,7 @@ body{margin:0;background:var(--page)}
       <p class="cvlab-note" id="cvlab-copynote">&nbsp;</p>
     </section>
 
-    <section class="cvlab-panel">
+    <section class="cvlab-panel cvlab-graphpanel">
       <h2>Position vs time &mdash; Chromebook</h2>
       <canvas id="cvlab-graph" role="img"
         aria-label="Graph of position in centimetres against time in seconds, drawn live as the student moves."></canvas>
@@ -312,8 +348,8 @@ body{margin:0;background:var(--page)}
 
   </div>
 
-  <section class="cvlab-notes">
-    <h3>How to use this simulation</h3>
+  <details class="cvlab-notes">
+    <summary><h3>How to use this simulation</h3></summary>
     <ol>
       <li>Drag the student along the meter sticks to set a starting position, or click the scene and use the &larr; and &rarr; arrow keys.</li>
       <li>Press <strong>Start stopwatch</strong> to begin recording. Each run lasts 15 seconds, shown by the Stopwatch readout at the top.</li>
@@ -324,7 +360,7 @@ body{margin:0;background:var(--page)}
       <li>Turn on <strong>Keep the last run</strong> to compare two runs on the same graph, or <strong>Model the sensor's 15 cm blind spot</strong> to see the gap a real sensor leaves when the student stands too close.</li>
       <li>Press <strong>Reset</strong> to clear the current run and try again. Use <strong>Copy data</strong> to copy your recorded time and position data for a spreadsheet.</li>
     </ol>
-  </section>
+  </details>
 </div>
 
 <script>
@@ -438,12 +474,12 @@ body{margin:0;background:var(--page)}
     var floorY   = h - stickH - 27;
     var counterW = clamp(w*0.19, 116, 186);
     var span     = Math.max(90, w - counterW - 18);
-    var charPx   = clamp(Math.min(h*0.58, span*0.42), 78, 176);
+    var charPx   = clamp(Math.min(h*0.70, span*0.42), 78, 176);
     G.w=w; G.h=h; G.stickH=stickH; G.floorY=floorY; G.counterW=counterW;
     G.span=span; G.k=span/RANGE_CM; G.charPx=charPx;
-    G.counterH = charPx*0.53;
+    G.counterH = charPx*0.36;          /* low station: the beam meets the student at the waist */
     G.counterTop = floorY - G.counterH;
-    G.beamY = G.counterTop - charPx*0.10;
+    G.beamY = G.counterTop - Math.max(10, charPx*0.07);
     G.compact = w < 620;
     return G;
   }
@@ -646,7 +682,7 @@ body{margin:0;background:var(--page)}
   /* the motion sensor, drawn above the student so it is never hidden */
   function drawSensorHead(ctx){
     var edgeX = G.counterW, top = G.counterTop;
-    var hgt = Math.max(26, G.counterH*0.44);
+    var hgt = Math.max(22, G.counterH*0.62);
     var bw  = hgt*0.56;
     var bx  = edgeX - bw*0.86, by = top - hgt;
 
@@ -764,14 +800,14 @@ body{margin:0;background:var(--page)}
     ctx.beginPath(); ctx.moveTo(px, G.beamY); ctx.lineTo(px, G.floorY + G.stickH + 4); ctx.stroke();
     ctx.restore();
 
-    /* the reading, parked over the beam and clear of the sprite */
+    /* the reading, parked just under the beam: over the legs, clear of the face */
     var txt = blind ? "no read \u2014 inside 15 cm" : fmt(x) + " cm";
     var fs = G.compact ? 10 : 12.5;
     ctx.font = "700 " + fs + "px " + monoStack();
     var tw = ctx.measureText(txt).width;
     var lx = clamp(px - tw - 12, 4, G.w - tw - 10);
     if(px < X(0) + tw + 24) lx = clamp(px + 12, 4, G.w - tw - 10);
-    var ly = G.beamY - fs*1.55;
+    var ly = G.beamY + 8;
     ctx.fillStyle = P["c-label"];
     roundRect(ctx, lx-6, ly-3, tw+12, fs+7, 3); ctx.fill();
     ctx.strokeStyle = col; ctx.lineWidth = 1;
