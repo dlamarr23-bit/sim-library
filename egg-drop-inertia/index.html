@@ -230,14 +230,18 @@
   }
   .lab-grid{
     display:grid;
-    grid-template-columns:minmax(0, 1.65fr) minmax(330px, 0.85fr);
+    grid-template-columns:minmax(0, 1.65fr) minmax(300px, 0.85fr);
+    grid-template-areas:"scene controls" "scene info";
+    grid-template-rows:auto 1fr;
     gap:22px;
     align-items:start;
+    margin-bottom:22px;
   }
-  @media (max-width:980px){
-    .lab-grid{grid-template-columns:1fr;}
-  }
-  .lab-grid > .card{margin-bottom:22px;}
+  .lab-grid > .card{margin-bottom:0;}
+  .scene-card{grid-area:scene;}
+  .controls-card{grid-area:controls;}
+  .info-card{grid-area:info;}
+  .info-card .predict-box{margin-top:0;}
   .scene-box{
     background:linear-gradient(var(--scene-1), var(--scene-2));
     border-radius:14px;
@@ -247,7 +251,8 @@
   canvas#sceneCanvas{
     width:100%;
     height:auto;
-    aspect-ratio:900 / 560;
+    aspect-ratio:900 / 490;
+    margin:0 auto;
     display:block;
     border-radius:10px;
     background:var(--soft);
@@ -584,12 +589,83 @@
     font-weight:600;
     margin-top:10px;
   }
-  @media (max-width:640px){
-    .card{padding:18px 16px;}
-    details.card > summary{padding:16px;}
-    details.card .details-body{padding:0 16px 18px;}
-    .readout-grid{grid-template-columns:1fr;}
+  /* ---------- SPLIT SCREEN / NARROW WINDOWS ----------
+     A Chromebook window snapped to half the screen is about 680-960 px wide and 600-900 px tall.
+     Keep the scene, the slider and the Strike button on screen together without scrolling. */
+  @media (max-width:1100px){
+    .lab-grid{gap:14px;}
+    .card{padding:18px 18px;}
+    .control-row .val{font-size:24px;}
+    .readout .big{font-size:20px;}
+    .readout .label{font-size:11.5px;}
+  }
+  @media (max-width:1023px){
+    body{padding:10px 0 40px;}
+    .wrap{padding:0 8px;}
+    header.hero{margin-bottom:10px;}
+    header.hero .kicker{display:none;}
+    header.hero h1{font-size:24px;margin:0 0 4px;padding:0 52px;}
+    header.hero p{font-size:14.5px;line-height:1.45;}
+    .theme-toggle{padding:8px;}
+    .theme-toggle .label{display:none;}
+    .lab-grid{
+      grid-template-columns:1fr;
+      grid-template-areas:"scene" "controls" "info";
+      grid-template-rows:auto;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .card{padding:12px 12px;margin-bottom:12px;border-radius:14px;}
+    .scene-card h2.section-title, .controls-card h2.section-title{display:none;}
+    h2.section-title{font-size:18px;margin-bottom:10px;}
+    .num{width:28px;height:28px;font-size:14px;}
+    .scene-box{padding:4px;border-radius:10px;}
+    /* never taller than the window leaves room for: the canvas shrinks so the controls stay visible */
+    canvas#sceneCanvas{width:min(100%, calc((100vh - 360px) * 900 / 490));min-width:min(100%, 420px);}
+    .legend{gap:12px;font-size:13px;margin-top:6px;}
+    .swatch{width:13px;height:13px;}
+    .control-row{font-size:15px;margin-bottom:0;}
+    .control-row .val{font-size:22px;}
+    input[type=range]{margin:4px 0 8px;height:10px;}
+    .slider-scale{display:none;}
+    .presets{gap:6px;margin-bottom:8px;}
+    .preset-btn{padding:8px 4px;font-size:12.5px;min-width:0;}
+    .action-row{margin-top:0;gap:8px;}
+    button.primary, button.secondary{padding:11px 8px;font-size:15px;}
+    .predict-box{padding:10px 12px;font-size:14.5px;}
+    .readout-grid{grid-template-columns:repeat(4, 1fr);gap:8px;margin-top:10px;}
+    .readout{padding:8px 10px;}
+    .readout .label{font-size:11px;letter-spacing:.3px;}
+    .readout .big{font-size:18px;}
+    .safezone-note{font-size:13.5px;margin-top:8px;}
+    .result-banner{font-size:15.5px;padding:10px 12px;margin-top:10px;}
+    details.card > summary{padding:14px 14px;font-size:15px;}
+    details.card .details-body{padding:0 14px 16px;}
+    ol.howto li{font-size:15.5px;}
+    .force-card p, .body-text, .compare-card .fine{font-size:15px;}
+    .math-box{font-size:14.5px;padding:14px;}
+    table.log-table{font-size:14.5px;}
+    table.log-table th, table.log-table td{padding:8px 8px;}
+  }
+  /* short split-screen windows: drop the intro text so the sim fits */
+  @media (max-width:1023px) and (max-height:820px){
+    header.hero p{display:none;}
+    canvas#sceneCanvas{width:min(100%, calc((100vh - 262px) * 900 / 490));}
+    .legend{display:none;}
+  }
+  /* full-width but short screens (e.g. a 1366 x 768 Chromebook): shrink the header, cap the scene height */
+  @media (min-width:1024px) and (max-height:900px){
+    body{padding-top:14px;}
+    header.hero{margin-bottom:14px;}
+    header.hero .kicker{display:none;}
+    header.hero h1{font-size:30px;margin-bottom:4px;}
+    header.hero p{font-size:15.5px;}
+    canvas#sceneCanvas{width:min(100%, calc((100vh - 250px) * 900 / 490));}
+  }
+  @media (max-width:600px){
+    .readout-grid{grid-template-columns:1fr 1fr;}
     .chart-row{grid-template-columns:56px 1fr 64px;}
+    table.log-table th:nth-child(3), table.log-table td:nth-child(3){display:none;}
   }
 </style>
 <script>
@@ -617,11 +693,11 @@
   </header>
 
   <div class="lab-grid">
-    <!-- LEFT: SCENE -->
-    <div class="card">
+    <!-- SCENE -->
+    <div class="card scene-card">
       <h2 class="section-title"><span class="num">1</span>Try It: Strike the Tray</h2>
       <div class="scene-box">
-        <canvas id="sceneCanvas" width="900" height="560" aria-label="Side view of an egg on a tube, on a tray, on a glass of water. A hand strikes the tray from the right."></canvas>
+        <canvas id="sceneCanvas" width="900" height="490" aria-label="Side view of an egg on a tube, on a tray, on a glass of water. A hand strikes the tray from the right."></canvas>
       </div>
       <div class="legend">
         <span><span class="swatch" style="background:var(--tray);"></span>Tray</span>
@@ -631,8 +707,8 @@
       </div>
     </div>
 
-    <!-- RIGHT: CONTROLS + READOUTS -->
-    <div class="card">
+    <!-- CONTROLS -->
+    <div class="card controls-card">
       <h2 class="section-title"><span class="num">2</span>Set Your Hit</h2>
       <div class="control-row">
         <span>Hit Force</span>
@@ -651,6 +727,10 @@
         <button class="primary" id="hitBtn">Strike the Tray!</button>
         <button class="secondary" id="resetBtn">Reset</button>
       </div>
+    </div>
+
+    <!-- PREDICTION + READOUTS -->
+    <div class="card info-card">
 
       <div class="predict-box" id="predictBox"></div>
 
@@ -876,7 +956,8 @@
   readPalette();
 
   // ---------- SCENE GEOMETRY (side view, 10 px = 1 cm) ----------
-  var W = 900, HT = 560;
+  var W = 900, HT = 490;           // visible height
+  var Y_OFF = 70;                  // the view starts 70 px down (cuts off empty sky)
   var S = 1000;                    // px per meter
   var GPX = G * S;                 // gravity in px/s^2
   var TABLE_Y = 500;
@@ -942,13 +1023,13 @@
   function easeIn(t){ return t*t*t; }
 
   function drawBackground(){
-    var g = ctx.createLinearGradient(0,0,0,TABLE_Y);
+    var g = ctx.createLinearGradient(0,Y_OFF,0,TABLE_Y);
     g.addColorStop(0,P['c-wall-1']);
     g.addColorStop(1,P['c-wall-2']);
     ctx.fillStyle = g;
-    ctx.fillRect(0,0,W,TABLE_Y);
+    ctx.fillRect(0,Y_OFF,W,TABLE_Y-Y_OFF);
     ctx.fillStyle = P['c-table'];
-    ctx.fillRect(0, TABLE_Y, W, HT-TABLE_Y);
+    ctx.fillRect(0, TABLE_Y, W, HT+Y_OFF-TABLE_Y);
     ctx.fillStyle = P['c-table-edge'];
     ctx.fillRect(0, TABLE_Y, W, 3);
   }
@@ -1309,25 +1390,47 @@
     });
   }
 
+  // canvas labels grow when the canvas is drawn small (e.g. split screen), so they stay readable
+  function labelScale(){
+    var cw = canvas.clientWidth || W;
+    return clamp((W / cw) * 0.8, 1, 1.6);
+  }
+  function labelFont(px){ return '800 ' + Math.round(px * labelScale()) + 'px Poppins, system-ui, sans-serif'; }
   function pill(text, x, y, color){
-    ctx.font = '800 15px Poppins, system-ui, sans-serif';
-    var w = ctx.measureText(text).width + 22;
+    var k = labelScale();
+    ctx.font = labelFont(15);
+    var w = ctx.measureText(text).width + 22*k, h = 30*k;
     ctx.fillStyle = P['c-label-bg'];
-    rr(x, y, w, 30, 15);
+    rr(x, y, w, h, h/2);
     ctx.fill();
     ctx.strokeStyle = color || P['c-label'];
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.5*k;
     ctx.stroke();
     ctx.fillStyle = color || P['c-label'];
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, x + 11, y + 15.5);
+    ctx.fillText(text, x + 11*k, y + h/2 + 0.5);
     return w;
   }
 
   function drawOverlays(){
     if(state.showSlow){
-      var w = pill('SLOW MOTION ×' + SLOW, 16, 16);
-      pill('t = ' + fmt(state.simT, 3) + ' s', 16 + w + 10, 16);
+      var w = pill('SLOW MOTION \u00d7' + SLOW, 16, Y_OFF + 16);
+      pill('t = ' + fmt(state.simT, 3) + ' s', 16 + w + 10, Y_OFF + 16);
+    }
+    // the result, shown on the scene too (so it is visible even when the banner is scrolled off)
+    if(state.resultLabel){
+      var k = labelScale();
+      ctx.font = labelFont(18);
+      var rw = ctx.measureText(state.resultLabel.text).width + 28*k, rh = 36*k;
+      var col0 = state.resultLabel.good ? P['c-good'] : P['c-bad'];
+      var rx0 = W - rw - 16, ry0 = Y_OFF + 14;
+      // on a narrow canvas, drop below the slow-motion pills so they never overlap
+      if(state.showSlow && rx0 < 360*k) ry0 += 30*k + 10;
+      ctx.fillStyle = P['c-label-bg'];
+      rr(rx0, ry0, rw, rh, rh/2); ctx.fill();
+      ctx.strokeStyle = col0; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.fillStyle = col0; ctx.textBaseline = 'middle';
+      ctx.fillText(state.resultLabel.text, rx0 + 14*k, ry0 + rh/2 + 0.5);
     }
     // after a cleared run, show how far the egg drifted at the rim
     if(state.rimX !== null && state.phase === 'done' && state.trial && state.trial.cleared){
@@ -1357,15 +1460,15 @@
       }
       ctx.restore();
       var label = 'drift ' + fmt(state.trial.xDrift*100,1) + ' cm';
-      ctx.font = '800 15px Poppins, system-ui, sans-serif';
-      var lw = ctx.measureText(label).width + 22;
-      pill(label, Math.max(8, Math.min(W - lw - 8, (GX + x2)/2 - lw/2)), y - 40, col);
+      ctx.font = labelFont(15);
+      var lw = ctx.measureText(label).width + 22*labelScale();
+      pill(label, Math.max(8, Math.min(W - lw - 8, (GX + x2)/2 - lw/2)), y - 10 - 30*labelScale(), col);
     }
   }
 
   function render(){
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    ctx.clearRect(0,0,W,HT);
+    ctx.setTransform(dpr,0,0,dpr,0,-Y_OFF*dpr);
+    ctx.clearRect(0,Y_OFF,W,HT);
     drawBackground();
     var e = state.egg;
     var eggInGlass = (e.mode === 'water' || e.mode === 'rest');
@@ -1629,6 +1732,11 @@
     setControlsDisabled(false);
     resultBanner.classList.add('show');
     var e = state.egg;
+    state.resultLabel = trial.success ? {text:'SPLASH! In the water', good:true}
+      : !trial.cleared ? {text:'Rode off with the tray', good:false}
+      : e.cracked ? {text:'CRACK! Hit the rim', good:false}
+      : {text:'SPLAT! Missed the glass', good:false};
+    render();
     if(trial.success){
       resultBanner.classList.add('success');
       resultBanner.textContent = 'SPLASH! The egg drifted only ' + fmt(trial.xDrift*100,1) + ' cm and dropped safely into the water.';
@@ -1647,6 +1755,11 @@
 
   hitBtn.addEventListener('click', function(){
     if(animating) return;
+    // keep the scene on screen when a strike starts
+    var rc = canvas.getBoundingClientRect();
+    if(rc.top < 0 || rc.bottom > window.innerHeight){
+      try { canvas.scrollIntoView({behavior:'smooth', block:'nearest'}); } catch (e) { canvas.scrollIntoView(); }
+    }
     runTrial(computeTrial(parseFloat(slider.value)));
   });
 
@@ -1733,7 +1846,8 @@
   }
   window.addEventListener('resize', function(){
     var nd = Math.min(window.devicePixelRatio || 1, 2.5);
-    if(nd !== dpr){ setupCanvas(); if(!animating) render(); }
+    if(nd !== dpr){ setupCanvas(); }
+    if(!animating) render();
   });
 
   // ---------- START ----------
