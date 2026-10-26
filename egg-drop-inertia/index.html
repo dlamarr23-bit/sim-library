@@ -15,18 +15,15 @@
     --muted:#5b6472;
     --accent:#2f6fed;
     --accent-dark:#1f4fc4;
-    --egg:#ff8a3d;
-    --egg-dark:#e06b1f;
+    --egg:#f3ead9;
     --success:#1f9d55;
     --success-bg:#e5f7ec;
     --danger:#e0483e;
     --danger-bg:#fdeaea;
     --line:#dde3ee;
-    --tray:#8b93a1;
-    --tube:#c99a3b;
-    --glass:#cfe0ee;
-    --water:#f4f0e6;
-    --table:#b98a5e;
+    --tray:#9aa2ae;
+    --tube:#c99a5b;
+    --glass:#9cc3e6;
     --accent-ink:#1f4fc4;
     --soft:#f7f9fd;
     --preset:#f1f4fa;
@@ -38,11 +35,32 @@
     --scene-2:#dfe8f6;
     --card-shadow:0 2px 14px rgba(20,30,60,0.08);
     /* canvas colors (read by the script) */
-    --c-wall-1:#eef3fb;
-    --c-wall-2:#e2e9f5;
-    --c-table:#c99a6d;
-    --c-glass:rgba(210,228,245,0.55);
-    --c-glass-edge:rgba(120,150,190,0.9);
+    --c-wall-1:#f4f6fa;
+    --c-wall-2:#e4e9f1;
+    --c-table:#e7e3dc;
+    --c-table-edge:#cfc8bd;
+    --c-glass:rgba(205,225,245,0.40);
+    --c-glass-edge:rgba(110,140,180,0.85);
+    --c-glass-shine:rgba(255,255,255,0.85);
+    --c-water:rgba(120,175,230,0.38);
+    --c-water-top:rgba(190,220,250,0.85);
+    --c-drop:rgba(110,160,215,0.85);
+    --c-egg:#fbf6ec;
+    --c-egg-shade:#e6dac4;
+    --c-egg-edge:#b9a688;
+    --c-yolk:#ffb52e;
+    --c-pan:#a9b0bb;
+    --c-pan-dark:#7d8591;
+    --c-pan-light:#d4d9e0;
+    --c-tube:#c99a5b;
+    --c-tube-dark:#a87a3e;
+    --c-skin:#eab48f;
+    --c-skin-edge:#bf835c;
+    --c-sleeve:#3a5a8c;
+    --c-label:#1b2430;
+    --c-label-bg:rgba(255,255,255,0.88);
+    --c-good:#1f9d55;
+    --c-bad:#e0483e;
   }
   /* dark mode: follows the computer's setting, unless a light / dark choice was made */
   @media (prefers-color-scheme: dark){
@@ -67,11 +85,23 @@
       --scene-1:#1f242b;
       --scene-2:#191d23;
       --card-shadow:0 2px 14px rgba(0,0,0,0.45);
-      --c-wall-1:#20252c;
-      --c-wall-2:#181c22;
-      --c-table:#b08458;
-      --c-glass:rgba(170,200,230,0.30);
-      --c-glass-edge:rgba(160,190,225,0.9);
+      --c-wall-1:#1d2228;
+      --c-wall-2:#161a1f;
+      --c-table:#3a3631;
+      --c-table-edge:#4a453e;
+      --c-glass:rgba(170,200,230,0.16);
+      --c-glass-edge:rgba(170,200,235,0.85);
+      --c-glass-shine:rgba(255,255,255,0.45);
+      --c-water:rgba(90,150,220,0.40);
+      --c-water-top:rgba(140,190,240,0.70);
+      --c-drop:rgba(140,190,240,0.9);
+      --c-pan:#8c949f;
+      --c-pan-dark:#5f6670;
+      --c-pan-light:#b4bbc5;
+      --c-label:#eef0ea;
+      --c-label-bg:rgba(20,22,26,0.85);
+      --c-good:#3cc97a;
+      --c-bad:#ff6b61;
     }
   }
   :root[data-theme="dark"]{
@@ -95,11 +125,23 @@
     --scene-1:#1f242b;
     --scene-2:#191d23;
     --card-shadow:0 2px 14px rgba(0,0,0,0.45);
-    --c-wall-1:#20252c;
-    --c-wall-2:#181c22;
-    --c-table:#b08458;
-    --c-glass:rgba(170,200,230,0.30);
-    --c-glass-edge:rgba(160,190,225,0.9);
+    --c-wall-1:#1d2228;
+    --c-wall-2:#161a1f;
+    --c-table:#3a3631;
+    --c-table-edge:#4a453e;
+    --c-glass:rgba(170,200,230,0.16);
+    --c-glass-edge:rgba(170,200,235,0.85);
+    --c-glass-shine:rgba(255,255,255,0.45);
+    --c-water:rgba(90,150,220,0.40);
+    --c-water-top:rgba(140,190,240,0.70);
+    --c-drop:rgba(140,190,240,0.9);
+    --c-pan:#8c949f;
+    --c-pan-dark:#5f6670;
+    --c-pan-light:#b4bbc5;
+    --c-label:#eef0ea;
+    --c-label-bg:rgba(20,22,26,0.85);
+    --c-good:#3cc97a;
+    --c-bad:#ff6b61;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -115,7 +157,7 @@
   .wrap{
     max-width:min(1900px, 97vw);
     margin:0 auto;
-    padding:0 20px;
+    padding:0 16px;
   }
   header.hero{
     text-align:center;
@@ -127,22 +169,22 @@
     position:absolute;top:0;right:0;
     display:inline-flex;align-items:center;gap:7px;
     background:var(--card);border:1px solid var(--line);border-radius:999px;
-    padding:7px 14px 7px 11px;cursor:pointer;
-    font-family:inherit;font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;
+    padding:8px 15px 8px 12px;cursor:pointer;
+    font-family:inherit;font-size:14px;font-weight:800;color:var(--ink);white-space:nowrap;
   }
   .theme-toggle:hover{border-color:var(--accent);}
   .theme-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .theme-toggle .icon{display:flex;}
-  .theme-toggle svg{width:17px;height:17px;}
+  .theme-toggle svg{width:18px;height:18px;}
   @media (max-width:640px){
-    .theme-toggle{padding:8px;}
+    .theme-toggle{padding:9px;}
     .theme-toggle .label{display:none;}
   }
   header.hero .kicker{
     display:inline-block;
     background:var(--accent);
     color:#fff;
-    font-size:13px;
+    font-size:14px;
     letter-spacing:1.5px;
     text-transform:uppercase;
     padding:6px 16px;
@@ -150,15 +192,15 @@
     margin-bottom:14px;
   }
   header.hero h1{
-    font-size:clamp(26px, 3.2vw, 42px);
+    font-size:clamp(28px, 3.2vw, 44px);
     font-weight:800;
     margin:0 0 10px;
   }
   header.hero p{
-    max-width:820px;
+    max-width:880px;
     margin:0 auto;
     font-weight:500;
-    font-size:clamp(15px, 1.4vw, 18px);
+    font-size:clamp(16px, 1.4vw, 19px);
     color:var(--muted);
   }
   .card{
@@ -176,23 +218,26 @@
     align-items:center;
     gap:10px;
   }
-  h2.section-title .num{
+  .num{
     background:var(--accent);
     color:#fff;
-    width:32px;height:32px;
+    width:34px;height:34px;
     border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    font-size:15px;
+    font-size:16px;
+    font-weight:800;
     flex:none;
   }
   .lab-grid{
     display:grid;
-    grid-template-columns:minmax(340px, 1.15fr) minmax(300px, 0.85fr);
+    grid-template-columns:minmax(0, 1.65fr) minmax(330px, 0.85fr);
     gap:22px;
+    align-items:start;
   }
-  @media (max-width:880px){
+  @media (max-width:980px){
     .lab-grid{grid-template-columns:1fr;}
   }
+  .lab-grid > .card{margin-bottom:22px;}
   .scene-box{
     background:linear-gradient(var(--scene-1), var(--scene-2));
     border-radius:14px;
@@ -202,6 +247,7 @@
   canvas#sceneCanvas{
     width:100%;
     height:auto;
+    aspect-ratio:900 / 560;
     display:block;
     border-radius:10px;
     background:var(--soft);
@@ -209,38 +255,38 @@
   .legend{
     display:flex;
     flex-wrap:wrap;
-    gap:14px;
+    gap:16px;
     justify-content:center;
     margin-top:12px;
-    font-size:13px;
-    font-weight:600;
+    font-size:15px;
+    font-weight:700;
     color:var(--muted);
   }
-  .legend span{display:flex;align-items:center;gap:6px;}
-  .swatch{width:14px;height:14px;border-radius:4px;display:inline-block;}
+  .legend span{display:flex;align-items:center;gap:7px;}
+  .swatch{width:16px;height:16px;border-radius:4px;display:inline-block;border:1px solid var(--line);}
 
-  .controls{margin-top:18px;}
   .control-row{
     display:flex;
     align-items:center;
     justify-content:space-between;
     margin-bottom:6px;
-    font-size:15px;
+    font-size:17px;
+    font-weight:800;
   }
   .control-row .val{
     color:var(--accent-ink);
-    font-size:18px;
+    font-size:28px;
     font-weight:800;
   }
   input[type=range]{
     width:100%;
     accent-color:var(--accent);
-    height:6px;
+    height:8px;
     margin:8px 0 4px;
   }
   .slider-scale{
     display:flex;justify-content:space-between;
-    font-size:12px;font-weight:600;color:var(--muted);
+    font-size:14px;font-weight:600;color:var(--muted);
     margin-bottom:14px;
   }
   .presets{
@@ -252,14 +298,17 @@
     background:var(--preset);
     border:1px solid var(--line);
     border-radius:10px;
-    padding:9px 6px;
+    padding:10px 6px;
     font-family:inherit;
-    font-weight:700;
-    font-size:13px;
+    font-weight:800;
+    font-size:14px;
+    letter-spacing:.5px;
+    text-transform:uppercase;
     color:var(--ink);
     cursor:pointer;
   }
   .preset-btn:hover{background:var(--preset-hover);}
+  .preset-btn:disabled{opacity:.5;cursor:not-allowed;}
   .action-row{
     display:flex;gap:12px;margin-top:6px;
   }
@@ -269,11 +318,11 @@
     color:#fff;
     border:none;
     border-radius:12px;
-    padding:14px 10px;
+    padding:15px 10px;
     font-family:inherit;
     font-weight:800;
-    font-size:16px;
-    letter-spacing:.4px;
+    font-size:17px;
+    letter-spacing:.6px;
     text-transform:uppercase;
     cursor:pointer;
   }
@@ -285,13 +334,16 @@
     color:var(--ink);
     border:2px solid var(--line);
     border-radius:12px;
-    padding:14px 10px;
+    padding:15px 10px;
     font-family:inherit;
     font-weight:800;
-    font-size:15px;
+    font-size:16px;
+    letter-spacing:.6px;
+    text-transform:uppercase;
     cursor:pointer;
   }
   button.secondary:hover{border-color:var(--accent);}
+  button.secondary:disabled{opacity:.5;cursor:not-allowed;}
 
   .predict-box{
     margin-top:18px;
@@ -299,46 +351,50 @@
     border:1px dashed var(--line);
     border-radius:12px;
     padding:14px 16px;
-    font-size:14px;
-    font-weight:600;
+    font-size:16px;
+    font-weight:500;
     color:var(--muted);
   }
-  .predict-box b{color:var(--ink);}
+  .predict-box b{color:var(--ink);font-weight:800;}
   .readout-grid{
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:10px;
-    margin-top:12px;
+    margin-top:14px;
   }
   .readout{
     background:var(--card);
     border:1px solid var(--line);
-    border-radius:10px;
-    padding:10px 12px;
+    border-radius:12px;
+    padding:11px 13px;
   }
   .readout .label{
-    font-size:11px;
+    font-size:12.5px;
     text-transform:uppercase;
-    letter-spacing:.5px;
+    letter-spacing:.6px;
     color:var(--muted);
-    font-weight:700;
+    font-weight:800;
+    line-height:1.3;
   }
-  .readout .num{
-    font-size:20px;
+  .readout .big{
+    font-size:clamp(22px, 1.9vw, 28px);
     font-weight:800;
     color:var(--ink);
+    line-height:1.3;
+    margin-top:2px;
   }
   .safezone-note{
     margin-top:12px;
-    font-size:13px;
+    font-size:15px;
     font-weight:600;
     color:var(--muted);
   }
+  .safezone-note strong{color:var(--ink);font-weight:800;}
   .result-banner{
     margin-top:16px;
     border-radius:12px;
     padding:14px 16px;
-    font-size:17px;
+    font-size:18px;
     font-weight:800;
     text-align:center;
     display:none;
@@ -349,7 +405,7 @@
 
   .forces-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
     gap:16px;
   }
   .force-card{
@@ -360,32 +416,33 @@
   }
   .force-card .tag{
     display:inline-block;
-    font-size:12px;
+    font-size:13px;
     font-weight:800;
     text-transform:uppercase;
-    letter-spacing:.5px;
+    letter-spacing:.6px;
     color:#fff;
-    padding:4px 10px;
+    padding:4px 11px;
     border-radius:999px;
     margin-bottom:10px;
   }
   .force-card p{
     margin:0;
     font-weight:500;
-    font-size:14.5px;
+    font-size:16px;
     color:var(--ink);
   }
+  .force-card p strong{font-weight:800;}
   .tag.inertia{background:#7c5cf5;}
-  .tag.friction{background:#e0483e;}
+  .tag.friction{background:#d8433a;}
   .tag.gravity{background:#2f6fed;}
-  .tag.normal{background:#0fa3a3;}
-  .tag.impulse{background:#e08f1f;}
+  .tag.normal{background:#0d8f8f;}
+  .tag.impulse{background:#c27410;}
 
   .compare-wrap{
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:22px;
-    margin-top:8px;
+    margin:8px 0 14px;
   }
   @media (max-width:700px){.compare-wrap{grid-template-columns:1fr;}}
   .compare-card{
@@ -396,13 +453,13 @@
   }
   .compare-card h3{
     margin:0 0 10px;
-    font-size:15px;
+    font-size:17px;
     font-weight:800;
   }
   .bar-track{
     background:var(--track);
     border-radius:8px;
-    height:22px;
+    height:26px;
     overflow:hidden;
     margin-bottom:6px;
   }
@@ -410,53 +467,58 @@
     height:100%;
     border-radius:8px 0 0 8px;
     display:flex;align-items:center;
-    color:var(--on-fill);font-size:12px;font-weight:800;
+    color:var(--on-fill);font-size:14px;font-weight:800;
     padding-left:8px;
-    transition:width .4s ease;
+    white-space:nowrap;
   }
   .bar-fill.water{background:var(--success);}
   .bar-fill.table{background:var(--danger);}
-  .compare-card .fine{font-size:12.5px;font-weight:500;color:var(--muted);margin-top:4px;}
+  .compare-card .fine{font-size:15px;font-weight:500;color:var(--muted);margin:6px 0 0;}
+  .body-text{font-weight:500;font-size:16px;margin:0 0 10px;}
+  .body-text strong{font-weight:800;}
 
   table.log-table{
     width:100%;
     border-collapse:collapse;
-    font-size:14px;
+    font-size:16px;
     margin-top:8px;
   }
   table.log-table th, table.log-table td{
     text-align:left;
-    padding:9px 10px;
+    padding:10px 12px;
     border-bottom:1px solid var(--line);
   }
   table.log-table th{
-    font-size:12px;
+    font-size:13px;
+    font-weight:800;
     text-transform:uppercase;
-    letter-spacing:.4px;
+    letter-spacing:.6px;
     color:var(--muted);
   }
   .pill{
     display:inline-block;
-    padding:3px 10px;
+    padding:3px 11px;
     border-radius:999px;
-    font-size:12px;
+    font-size:13px;
     font-weight:800;
   }
   .pill.success{background:var(--success-bg);color:var(--success);}
   .pill.fail{background:var(--danger-bg);color:var(--danger);}
 
-  .chart-rows{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
-  .chart-row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:10px;font-size:12.5px;font-weight:700;color:var(--muted);}
-  .chart-track{position:relative;height:20px;background:var(--track);border-radius:6px;overflow:visible;}
+  .chart-title{margin:22px 0 4px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+  .chart-rows{margin-top:8px;display:flex;flex-direction:column;gap:8px;}
+  .chart-row{display:grid;grid-template-columns:70px 1fr 80px;align-items:center;gap:10px;font-size:14px;font-weight:800;color:var(--muted);}
+  .chart-track{position:relative;height:22px;background:var(--track);border-radius:6px;overflow:visible;}
   .chart-fill{position:absolute;top:0;left:0;height:100%;border-radius:6px;}
   .chart-fill.success{background:var(--success);}
   .chart-fill.fail{background:var(--danger);}
+  .chart-fill.stuck{background:repeating-linear-gradient(45deg,var(--danger) 0 8px,transparent 8px 14px);opacity:.6;}
   .threshold-line{
     position:absolute;top:-4px;bottom:-4px;
     width:2px;background:var(--ink);
-    opacity:.5;
+    opacity:.55;
   }
-  .empty-log{color:var(--muted);font-weight:500;font-size:14px;}
+  .empty-log{color:var(--muted);font-weight:500;font-size:16px;}
 
   .math-box{
     background:#101827;
@@ -464,7 +526,8 @@
     border-radius:14px;
     padding:18px 20px;
     font-family:'Poppins', monospace, sans-serif;
-    font-size:14px;
+    font-size:16px;
+    font-weight:600;
     line-height:1.9;
     overflow-x:auto;
   }
@@ -472,13 +535,13 @@
   .math-box .comment{color:#9aa7c7;font-weight:500;}
 
   ol.howto{
-    padding-left:22px;
+    padding-left:24px;
     margin:0;
   }
   ol.howto li{
     margin-bottom:10px;
     font-weight:500;
-    font-size:15px;
+    font-size:17px;
   }
   ol.howto strong{font-weight:800;}
 
@@ -488,32 +551,28 @@
   details.card > summary{
     list-style:none;
     cursor:pointer;
-    padding:22px 26px;
+    padding:20px 26px;
     display:flex;
     align-items:center;
-    gap:10px;
-    font-size:clamp(19px, 1.8vw, 24px);
+    gap:12px;
+    font-size:clamp(16px, 1.4vw, 19px);
     font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    border-radius:18px;
     -webkit-tap-highlight-color:transparent;
   }
   details.card > summary::-webkit-details-marker{display:none;}
-  details.card > summary:hover{background:var(--soft);border-radius:18px;}
+  details.card > summary:hover{background:var(--soft);}
+  details.card > summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
   details.card > summary .chevron{
     margin-left:auto;
-    font-size:15px;
+    width:22px;height:22px;
     color:var(--muted);
     transition:transform .2s ease;
     flex:none;
   }
   details.card[open] > summary .chevron{transform:rotate(180deg);}
-  details.card > summary .hint{
-    font-size:12.5px;
-    font-weight:600;
-    color:var(--muted);
-    text-transform:none;
-    letter-spacing:0;
-    margin-left:6px;
-  }
   details.card .details-body{
     padding:0 26px 24px;
   }
@@ -521,9 +580,16 @@
   footer.credit{
     text-align:center;
     color:var(--muted);
-    font-size:12.5px;
+    font-size:14px;
     font-weight:600;
     margin-top:10px;
+  }
+  @media (max-width:640px){
+    .card{padding:18px 16px;}
+    details.card > summary{padding:16px;}
+    details.card .details-body{padding:0 16px 18px;}
+    .readout-grid{grid-template-columns:1fr;}
+    .chart-row{grid-template-columns:56px 1fr 64px;}
   }
 </style>
 <script>
@@ -547,156 +613,166 @@
     </button>
     <span class="kicker">Motion Lab</span>
     <h1>Egg Drop Inertia</h1>
-    <p>An egg balances on a tube, on a tray, on top of a glass of water. If you flick the tray away just right, the egg drops straight down into the glass instead of falling off the table. Use the simulator below to find out how hard you really have to hit it &mdash; and why the egg doesn't break when it lands.</p>
+    <p>An egg sits on a cardboard tube. The tube stands on a tray that rests on a glass of water. Strike the tray from the side, and the tray zips away. Does the egg drop into the water, or does it end up on the table? Find out how hard you need to hit &mdash; and why.</p>
   </header>
 
   <div class="lab-grid">
-    <!-- LEFT: SIMULATION -->
+    <!-- LEFT: SCENE -->
     <div class="card">
-      <h2 class="section-title"><span class="num">1</span>Try It: Hit the Tray</h2>
-
+      <h2 class="section-title"><span class="num">1</span>Try It: Strike the Tray</h2>
       <div class="scene-box">
-        <canvas id="sceneCanvas" width="800" height="500"></canvas>
+        <canvas id="sceneCanvas" width="900" height="560" aria-label="Side view of an egg on a tube, on a tray, on a glass of water. A hand strikes the tray from the right."></canvas>
       </div>
       <div class="legend">
         <span><span class="swatch" style="background:var(--tray);"></span>Tray</span>
         <span><span class="swatch" style="background:var(--tube);"></span>Tube</span>
         <span><span class="swatch" style="background:var(--egg);"></span>Egg</span>
-        <span><span class="swatch" style="background:var(--glass);"></span>Glass of Water</span>
-      </div>
-
-      <div class="controls">
-        <div class="control-row">
-          <span>Hit Force</span>
-          <span class="val"><span id="forceVal">3.0</span> N</span>
-        </div>
-        <input type="range" id="forceSlider" min="1" max="12" step="0.5" value="3">
-        <div class="slider-scale"><span>1 N (gentle tap)</span><span>12 N (hard snap)</span></div>
-
-        <div class="presets">
-          <button class="preset-btn" data-f="1.5">Gentle Tap</button>
-          <button class="preset-btn" data-f="4.5">Firm Flick</button>
-          <button class="preset-btn" data-f="10">Hard Snap</button>
-        </div>
-
-        <div class="action-row">
-          <button class="primary" id="hitBtn">Hit the Tray!</button>
-          <button class="secondary" id="resetBtn">Reset</button>
-        </div>
-
-        <div class="predict-box" id="predictBox">
-          Move the slider and watch the numbers below change <em>before</em> you hit anything &mdash; then press <b>Hit the Tray!</b> to see if your prediction was right.
-        </div>
-
-        <div class="readout-grid">
-          <div class="readout"><div class="label">Tray launch speed</div><div class="num" id="rTray">&mdash;</div></div>
-          <div class="readout"><div class="label">Time tray is still touching</div><div class="num" id="rTc">&mdash;</div></div>
-          <div class="readout"><div class="label">Egg's sideways speed</div><div class="num" id="rVegg">&mdash;</div></div>
-          <div class="readout"><div class="label">Egg's sideways drift</div><div class="num" id="rDrift">&mdash;</div></div>
-        </div>
-        <div class="safezone-note">Safe zone: the egg must drift less than <strong>3.5 cm</strong> sideways to land inside the glass. Anything more and it misses.</div>
-
-        <div class="result-banner" id="resultBanner"></div>
+        <span><span class="swatch" style="background:var(--glass);"></span>Glass of water</span>
       </div>
     </div>
 
-    <!-- RIGHT: FORCES EXPLANATION -->
-    <div>
-      <div class="card">
-        <h2 class="section-title"><span class="num">2</span>Forces at Work</h2>
-        <div class="forces-grid">
-          <div class="force-card">
-            <span class="tag inertia">Inertia</span>
-            <p>Newton's First Law says an object at rest stays at rest unless a force pushes it. The egg "wants" to stay right where it is &mdash; it has no reason to move sideways on its own.</p>
-          </div>
-          <div class="force-card">
-            <span class="tag friction">Friction</span>
-            <p>While the tray is still sliding underneath the tube, friction between them tries to drag the egg along. This is the <em>only</em> force that can pull the egg sideways.</p>
-          </div>
-          <div class="force-card">
-            <span class="tag normal">Normal Force</span>
-            <p>The tray pushes up on the tube to hold the egg up. The instant the tray is gone, that support disappears &mdash; and the egg has nothing left holding it up.</p>
-          </div>
-          <div class="force-card">
-            <span class="tag gravity">Gravity</span>
-            <p>Once the tray clears out, gravity is the only big force left. It pulls the egg straight down, into the glass if it hasn't picked up much sideways speed.</p>
-          </div>
-          <div class="force-card">
-            <span class="tag impulse">Speed vs. Time</span>
-            <p>A harder hit sends the tray out <em>faster</em>, so it clears the tube in <em>less time</em>. Less contact time means friction barely has a chance to drag the egg &mdash; that's the whole trick!</p>
-          </div>
-        </div>
+    <!-- RIGHT: CONTROLS + READOUTS -->
+    <div class="card">
+      <h2 class="section-title"><span class="num">2</span>Set Your Hit</h2>
+      <div class="control-row">
+        <span>Hit Force</span>
+        <span class="val"><span id="forceVal">3.0</span> N</span>
+      </div>
+      <input type="range" id="forceSlider" min="1" max="12" step="0.5" value="3" aria-label="Hit force in newtons">
+      <div class="slider-scale"><span>1 N (gentle tap)</span><span>12 N (hard snap)</span></div>
+
+      <div class="presets">
+        <button class="preset-btn" data-f="1.5">Gentle Tap</button>
+        <button class="preset-btn" data-f="4.5">Firm Flick</button>
+        <button class="preset-btn" data-f="10">Hard Snap</button>
       </div>
 
-      <div class="card">
-        <h2 class="section-title"><span class="num">3</span>Why Doesn't the Egg Break?</h2>
-        <p style="font-weight:500; margin-top:0;">Even a "safe" landing means the egg is falling at about the same speed either way &mdash; the difference is <strong>how long it takes to stop</strong>. Stopping over a longer time and distance means a much smaller force, and that's exactly what water does.</p>
-        <div class="compare-wrap">
-          <div class="compare-card">
-            <h3>Landing in Water 💧</h3>
-            <div class="bar-track"><div class="bar-fill water" style="width:14%">~2 N</div></div>
-            <p class="fine">Water lets the egg slow down gently over about 5 cm. A longer stopping distance means a small, gentle stopping force.</p>
-          </div>
-          <div class="compare-card">
-            <h3>Landing on the Table 💥</h3>
-            <div class="bar-track"><div class="bar-fill table" style="width:100%">~80 N</div></div>
-            <p class="fine">A hard table stops the egg almost instantly, in about 1 mm. A much shorter stopping distance means a huge, sudden force &mdash; more than the shell can handle.</p>
-          </div>
-        </div>
-        <p style="font-weight:500; font-size:14px; color:var(--muted); margin-bottom:0;">Bonus fact: once the egg is underwater, the water also pushes up on it a little (this push is called <strong>buoyant force</strong>), slowing it down even more before it can hit the bottom of the glass.</p>
+      <div class="action-row">
+        <button class="primary" id="hitBtn">Strike the Tray!</button>
+        <button class="secondary" id="resetBtn">Reset</button>
       </div>
+
+      <div class="predict-box" id="predictBox"></div>
+
+      <div class="readout-grid">
+        <div class="readout"><div class="label">Tray speed after the hit</div><div class="big" id="rTray">&mdash;</div></div>
+        <div class="readout"><div class="label">Time until rim hits tube</div><div class="big" id="rTc">&mdash;</div></div>
+        <div class="readout"><div class="label">Egg's sideways speed</div><div class="big" id="rVegg">&mdash;</div></div>
+        <div class="readout"><div class="label">Egg's sideways drift</div><div class="big" id="rDrift">&mdash;</div></div>
+      </div>
+      <div class="safezone-note">Safe zone: the egg can drift up to <strong>3.5 cm</strong> sideways and still fit through the mouth of the glass. Any more and it hits the rim or misses.</div>
+
+      <div class="result-banner" id="resultBanner" role="status"></div>
     </div>
   </div>
 
   <!-- TRIAL LOG -->
   <div class="card">
-    <h2 class="section-title"><span class="num">4</span>Trial Log</h2>
-    <div id="logEmpty" class="empty-log">No trials yet &mdash; hit the tray to log your first result!</div>
+    <h2 class="section-title"><span class="num">3</span>Trial Log</h2>
+    <div id="logEmpty" class="empty-log">No trials yet &mdash; strike the tray to log your first result!</div>
     <table class="log-table" id="logTable" style="display:none;">
       <thead>
-        <tr><th>Trial</th><th>Hit Force</th><th>Sideways Drift</th><th>Result</th></tr>
+        <tr><th>Trial</th><th>Hit Force</th><th>Tray Speed</th><th>Sideways Drift</th><th>Result</th></tr>
       </thead>
       <tbody id="logBody"></tbody>
     </table>
+    <div class="chart-title" id="chartTitle" style="display:none;">Drift for each trial &middot; the thin line marks the 3.5 cm safe zone</div>
     <div class="chart-rows" id="chartRows"></div>
   </div>
 
-  <!-- MATH -->
-  <details class="card">
-    <summary><span class="num">5</span>The Math Behind It<span class="hint">tap to expand</span><span class="chevron">&#9662;</span></summary>
+  <!-- HOW TO USE (open) -->
+  <details class="card" open>
+    <summary><span class="num">4</span>How to Use This Simulation<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
     <div class="details-body">
-      <div class="math-box">
-        <div><span class="comment">// Newton's First Law: no push, no motion</span></div>
-        <div>egg stays still <span class="eq">unless</span> a force acts on it</div>
-        <br>
-        <div><span class="comment">// harder hit = faster tray = less contact time</span></div>
-        <div>contact time <span class="eq">t = distance ÷ tray speed</span></div>
-        <br>
-        <div><span class="comment">// friction only acts while the tray is still touching</span></div>
-        <div>sideways speed gained <span class="eq">v = friction acceleration × t</span></div>
-        <br>
-        <div><span class="comment">// that sideways speed carries the egg off-target as it falls</span></div>
-        <div>sideways drift <span class="eq">x = v × fall time</span></div>
-        <br>
-        <div><span class="comment">// the impulse&ndash;momentum idea explains why water is gentle</span></div>
-        <div>stopping force <span class="eq">F = (mass × change in speed) ÷ stopping time</span></div>
+      <ol class="howto">
+        <li>Drag the <strong>Hit Force</strong> slider to pick how hard the hand strikes the tray. Force is measured in <strong>newtons (N)</strong>. You can also tap a preset like <strong>Gentle Tap</strong> or <strong>Hard Snap</strong>.</li>
+        <li>Read the four number boxes. They change as you move the slider. They show the tray's speed, the time before the tray's rim knocks the tube away, and how far the egg will drift sideways.</li>
+        <li>Compare the drift to the <strong>3.5 cm safe zone</strong>. Predict: will the egg land in the glass?</li>
+        <li>Press <strong>Strike the Tray!</strong> The hand swings in from the side and hits the tray's edge. The rest plays in <strong>slow motion</strong>. The clock in the corner shows the real time since the hit.</li>
+        <li>A green banner means the egg dropped into the water. A red banner means it hit the rim, missed the glass, or rode away with the tray.</li>
+        <li>Look at the <strong>Trial Log</strong>. Each strike adds a row and a bar, so you can spot the pattern between force and drift.</li>
+        <li>Press <strong>Reset</strong> to clear the log and set up the egg again.</li>
+      </ol>
+    </div>
+  </details>
+
+  <!-- FORCES (closed) -->
+  <details class="card">
+    <summary><span class="num">5</span>Forces at Work<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="details-body">
+      <div class="forces-grid">
+        <div class="force-card">
+          <span class="tag inertia">Inertia</span>
+          <p><strong>Inertia</strong> means an object keeps doing what it is doing unless a force changes it. That is Newton's First Law. The egg is at rest, so it tends to stay right where it is.</p>
+        </div>
+        <div class="force-card">
+          <span class="tag friction">Friction</span>
+          <p>As the tray slides out, it rubs on the bottom of the tube. This rubbing force is <strong>friction</strong>. It drags the tube, and the egg on top, a little to the side. It is the only sideways force on the egg.</p>
+        </div>
+        <div class="force-card">
+          <span class="tag normal">Normal Force</span>
+          <p>The tray's floor pushes up on the tube. That upward push is called the <strong>normal force</strong>. When the tray's back rim knocks the tube away, nothing is left to hold the egg up.</p>
+        </div>
+        <div class="force-card">
+          <span class="tag gravity">Gravity</span>
+          <p>Now <strong>gravity</strong> is the only big force on the egg. It pulls the egg straight down. Any sideways speed the egg got from friction makes it drift as it falls.</p>
+        </div>
+        <div class="force-card">
+          <span class="tag impulse">Speed vs. Time</span>
+          <p>A harder hit makes the tray move faster. The rim reaches the tube sooner, so friction has <strong>less time</strong> to drag the egg. If the tap is too gentle, friction speeds the tube up to match the tray. Then everything slides away together.</p>
+        </div>
       </div>
     </div>
   </details>
 
-  <!-- HOW TO USE -->
+  <!-- WHY THE EGG DOESN'T BREAK (closed) -->
   <details class="card">
-    <summary><span class="num">6</span>How to Use This Simulation<span class="hint">tap to expand</span><span class="chevron">&#9662;</span></summary>
+    <summary><span class="num">6</span>Why Doesn't the Egg Break?<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
     <div class="details-body">
-      <ol class="howto">
-        <li>Drag the <strong>Hit Force</strong> slider to choose how hard you'll flick the tray, measured in newtons (N). You can also tap a quick preset like <strong>Gentle Tap</strong> or <strong>Hard Snap</strong>.</li>
-        <li>Watch the four number boxes update instantly &mdash; they show the tray's speed, how long it stays touching the tube, the egg's sideways speed, and how far the egg will drift sideways.</li>
-        <li>Compare the drift number to the <strong>3.5 cm safe zone</strong> and predict: will the egg land in the glass, or miss it?</li>
-        <li>Press <strong>Hit the Tray!</strong> to watch the hand flick the tray and run the slow-motion replay of what happens next.</li>
-        <li>A green banner means the egg splashed safely into the water. A red banner means it missed and cracked on the table.</li>
-        <li>Check the <strong>Trial Log</strong> below the sim &mdash; every hit you try gets added as a row and a bar, so you can see the pattern between force and drift build up.</li>
-        <li>Press <strong>Reset</strong> to clear the log and start a fresh set of trials.</li>
-      </ol>
+      <p class="body-text">The egg falls about the same distance either way, so it hits at about the same speed. What matters is <strong>how long it takes to stop</strong>. A slower stop means a smaller force. Water gives the egg a slow, gentle stop.</p>
+      <div class="compare-wrap">
+        <div class="compare-card">
+          <h3>Landing in water</h3>
+          <div class="bar-track"><div class="bar-fill water" style="width:14%">~2 N</div></div>
+          <p class="fine">Water lets the egg slow down over several centimeters. A longer stopping distance means a small stopping force.</p>
+        </div>
+        <div class="compare-card">
+          <h3>Landing on the table</h3>
+          <div class="bar-track"><div class="bar-fill table" style="width:100%">~80 N</div></div>
+          <p class="fine">A hard table stops the egg in about 1 mm. A very short stop means a huge force &mdash; more than the shell can take.</p>
+        </div>
+      </div>
+      <p class="body-text" style="color:var(--muted);margin:0;">Bonus fact: water pushes up on the egg a little. This push is called <strong>buoyant force</strong>. A raw egg is a bit denser than water, so it still sinks &mdash; but slowly, and it settles gently on the bottom.</p>
+    </div>
+  </details>
+
+  <!-- MATH (closed) -->
+  <details class="card">
+    <summary><span class="num">7</span>The Math Behind It<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="details-body">
+      <div class="math-box">
+        <div><span class="comment">// the hit gives the tray its speed (hit lasts 0.012 s, tray is 45 g)</span></div>
+        <div>tray speed <span class="eq">v<sub>tray</sub> = F × hit time ÷ tray mass</span></div>
+        <br>
+        <div><span class="comment">// friction speeds up the tube (and egg) while the tray slides under it</span></div>
+        <div>tube's sideways acceleration <span class="eq">a = μ × g = 0.3 × 9.8 m/s²</span></div>
+        <br>
+        <div><span class="comment">// the tray's back rim must slide 10 cm (relative to the tube) to reach it</span></div>
+        <div><span class="eq">v<sub>tray</sub>·t − ½·a·t² = 10 cm</span> &nbsp;<span class="comment">→ solve for the time t</span></div>
+        <div><span class="comment">// if v<sub>tray</sub>² &lt; 2·a·(10 cm), friction catches the tube up to the tray first: it never clears</span></div>
+        <br>
+        <div><span class="comment">// sideways speed the egg has when the tube is knocked away</span></div>
+        <div>egg speed <span class="eq">v = a × t</span></div>
+        <br>
+        <div><span class="comment">// drift = slide while riding the tube + drift while falling 14 cm to the rim</span></div>
+        <div>fall time <span class="eq">t<sub>fall</sub> = √(2h ÷ g)</span></div>
+        <div>total drift <span class="eq">x = ½·a·t² + v × t<sub>fall</sub></span></div>
+        <br>
+        <div><span class="comment">// impulse: a longer stopping time means a smaller stopping force</span></div>
+        <div>stopping force <span class="eq">F = mass × change in speed ÷ stopping time</span></div>
+        <br>
+        <div><span class="comment">// to keep it simple, we ignore air and how the tube slows the tray down a little</span></div>
+      </div>
     </div>
   </details>
 
@@ -709,22 +785,30 @@
 
   // ---------- PHYSICS MODEL ----------
   var G = 9.8;          // gravity, m/s^2
-  var H = 0.14;         // drop height from tray to water/table, m
-  var D = 0.10;         // distance tray must slide to clear the tube, m
+  var H = 0.14;         // drop height from the bottom of the egg to the rim of the glass, m
+  var D = 0.10;         // how far the tray slides (relative to the tube) before its back rim hits the tube, m
   var MU = 0.3;         // friction coefficient between tube and tray
-  var DT_HIT = 0.012;   // duration of the "flick" impact, s
+  var DT_HIT = 0.012;   // duration of the strike, s
   var M_TRAY = 0.045;   // tray mass, kg
-  var MARGIN = 0.035;   // safe-zone radius (glass mouth minus tube), m
+  var M_LOAD = 0.065;   // tube + egg mass, kg (only used to decide when a stuck stack tips off)
+  var MARGIN = 0.035;   // safe zone: how far the egg's center can drift and still fit through the mouth, m
 
   function computeTrial(F){
-    var vTray = F * DT_HIT / M_TRAY;              // m/s
-    var aEgg = MU * G;                              // m/s^2
-    var tc = D / vTray;                              // s, contact/slip time
-    var vEgg = aEgg * tc;                             // m/s, sideways speed gained
-    var tFall = Math.sqrt(2 * H / G);                  // s
-    var xDrift = vEgg * tFall;                          // m
-    var success = xDrift <= MARGIN;
-    return {F:F, vTray:vTray, tc:tc, vEgg:vEgg, tFall:tFall, xDrift:xDrift, success:success};
+    var vTray = F * DT_HIT / M_TRAY;          // m/s, tray speed just after the strike
+    var a = MU * G;                           // m/s^2, friction acceleration of tube + egg
+    var tFall = Math.sqrt(2 * H / G);         // s, egg falls H to the rim
+    var disc = vTray * vTray - 2 * a * D;
+    if(disc < 0){
+      // friction speeds the tube up to the tray's speed before the rim gets there: the tube rides along
+      return {F:F, vTray:vTray, a:a, cleared:false, tc:null, vEgg:vTray, slide:null,
+              xDrift:null, tFall:tFall, tMatch:vTray / a, success:false};
+    }
+    var tc = (vTray - Math.sqrt(disc)) / a;   // s, time until the back rim hits the tube
+    var vEgg = a * tc;                        // m/s, egg's sideways speed when it loses support
+    var slide = 0.5 * a * tc * tc;            // m, sideways slide while still riding the tube
+    var xDrift = slide + vEgg * tFall;        // m, total sideways drift at the rim
+    return {F:F, vTray:vTray, a:a, cleared:true, tc:tc, vEgg:vEgg, slide:slide,
+            xDrift:xDrift, tFall:tFall, success:xDrift <= MARGIN};
   }
 
   // ---------- DOM ----------
@@ -732,6 +816,7 @@
   var forceVal = document.getElementById('forceVal');
   var hitBtn = document.getElementById('hitBtn');
   var resetBtn = document.getElementById('resetBtn');
+  var presetBtns = document.querySelectorAll('.preset-btn');
   var predictBox = document.getElementById('predictBox');
   var rTray = document.getElementById('rTray');
   var rTc = document.getElementById('rTc');
@@ -742,40 +827,32 @@
   var logTable = document.getElementById('logTable');
   var logBody = document.getElementById('logBody');
   var chartRows = document.getElementById('chartRows');
+  var chartTitle = document.getElementById('chartTitle');
   var canvas = document.getElementById('sceneCanvas');
   var ctx = canvas.getContext('2d');
 
-  var W = canvas.width, Ht = canvas.height;
-  var PX_PER_CM = 6;
-
-  // Scene reference points (idle layout)
-  var glassCX = 430, glassTopY = 300, glassW = 150, glassH = 150;
-  var trayCX0 = 430, trayY0 = 255, trayW = 210, trayH = 40;
-  var tubeW = 34, tubeH = 78;
-  var eggRX = 26, eggRY = 32;
-
-  var trialCount = 0;
-  var animating = false;
-
-  function fmt(n, d){ return n.toFixed(d===undefined?2:d); }
+  function fmt(n, d){ return n.toFixed(d === undefined ? 2 : d); }
 
   function updatePrediction(){
     var F = parseFloat(slider.value);
     forceVal.textContent = fmt(F,1);
     var t = computeTrial(F);
     rTray.textContent = fmt(t.vTray,2) + ' m/s';
-    rTc.textContent = fmt(t.tc,3) + ' s';
-    rVegg.textContent = fmt(t.vEgg,2) + ' m/s';
-    rDrift.textContent = fmt(t.xDrift*100,1) + ' cm';
-    predictBox.innerHTML = 'At <b>' + fmt(F,1) + ' N</b>, the tray shoots out at <b>' + fmt(t.vTray,2) + ' m/s</b> and clears the tube in just <b>' + fmt(t.tc,3) + ' s</b>. That gives the egg a sideways push of about <b>' + fmt(t.xDrift*100,1) + ' cm</b> as it falls. Will that stay inside the 3.5 cm safe zone?';
+    if(t.cleared){
+      rTc.textContent = fmt(t.tc,3) + ' s';
+      rVegg.textContent = fmt(t.vEgg,2) + ' m/s';
+      rDrift.textContent = fmt(t.xDrift*100,1) + ' cm';
+      predictBox.innerHTML = 'At <b>' + fmt(F,1) + ' N</b>, the tray zips out at <b>' + fmt(t.vTray,2) + ' m/s</b>. Its back rim knocks the tube away after <b>' + fmt(t.tc,3) + ' s</b>. By then friction has given the egg a sideways speed of <b>' + fmt(t.vEgg,2) + ' m/s</b>, so it will drift about <b>' + fmt(t.xDrift*100,1) + ' cm</b>. Will that stay inside the 3.5 cm safe zone?';
+    } else {
+      rTc.textContent = 'Never';
+      rVegg.textContent = fmt(t.vTray,2) + ' m/s';
+      rDrift.textContent = 'Rides off';
+      predictBox.innerHTML = 'At <b>' + fmt(F,1) + ' N</b>, the tray only moves at <b>' + fmt(t.vTray,2) + ' m/s</b>. Friction speeds the tube up to the same speed after just <b>' + fmt(t.tMatch,3) + ' s</b>, before the rim can reach it. What do you think happens to the egg?';
+    }
   }
 
-  slider.addEventListener('input', function(){
-    if(animating) return;
-    updatePrediction();
-  });
-
-  document.querySelectorAll('.preset-btn').forEach(function(btn){
+  slider.addEventListener('input', function(){ if(!animating) updatePrediction(); });
+  presetBtns.forEach(function(btn){
     btn.addEventListener('click', function(){
       if(animating) return;
       slider.value = btn.getAttribute('data-f');
@@ -785,19 +862,72 @@
 
   // ---------- THEME COLORS (read from the CSS tokens) ----------
   var P = {};
+  var TOKENS = ['c-wall-1','c-wall-2','c-table','c-table-edge','c-glass','c-glass-edge','c-glass-shine',
+    'c-water','c-water-top','c-drop','c-egg','c-egg-shade','c-egg-edge','c-yolk','c-pan','c-pan-dark',
+    'c-pan-light','c-tube','c-tube-dark','c-skin','c-skin-edge','c-sleeve','c-label','c-label-bg','c-good','c-bad'];
   function isDarkNow(){
     var a = document.documentElement.getAttribute('data-theme');
     return a === 'dark' || (!a && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
   }
   function readPalette(){
     var cs = getComputedStyle(document.documentElement);
-    ['c-wall-1','c-wall-2','c-table','c-glass','c-glass-edge'].forEach(function(k){ P[k] = cs.getPropertyValue('--'+k).trim(); });
+    TOKENS.forEach(function(k){ P[k] = cs.getPropertyValue('--'+k).trim(); });
   }
   readPalette();
-  var redrawScene = null;   // redraws whatever the scene shows now (set below), used after a theme change
 
-  // ---------- DRAWING ----------
-  function roundRect(x,y,w,h,r){
+  // ---------- SCENE GEOMETRY (side view, 10 px = 1 cm) ----------
+  var W = 900, HT = 560;
+  var S = 1000;                    // px per meter
+  var GPX = G * S;                 // gravity in px/s^2
+  var TABLE_Y = 500;
+  var GX = 560;                    // glass center x
+  var GLASS_TOP = 370;             // glass rim y (13 cm tall glass)
+  var G_IN_TOP = 58, G_OUT_TOP = 62, G_IN_BOT = 47, G_OUT_BOT = 51;
+  var GLASS_BOT_IN = TABLE_Y - 10; // inside floor of the glass
+  var WATER0 = GLASS_TOP + 9;      // water surface before the egg goes in
+  var WATER_RISE = 6;              // how much the egg raises the water when fully under
+  var PAN_FH = 119, PAN_RH = 142, PAN_DEPTH = 26;   // tray: floor half-width, rim half-width, depth
+  var PAN_FLOOR = -2;              // tray floor (local y, relative to the tray's bottom)
+  var TUBE_W = 38, TUBE_H = 142;
+  var EGG_RX = 22, EGG_RY = 28;
+  var EGG_Y0 = GLASS_TOP + PAN_FLOOR - TUBE_H + 4 - EGG_RY;   // egg center at rest (its bottom is 14 cm above the rim)
+  var SAFE_PX = MARGIN * S;        // 35 px
+  var RIM_HIT_PX = G_OUT_TOP + EGG_RX - 1;   // beyond this, the egg clears the glass entirely
+  var SLOW = 5;                    // slow-motion factor
+  var WINDUP = 900;                // ms, hand swing (shown in real time)
+  var CONTACT_X = GX + PAN_RH + 3; // where the palm meets the tray's rim
+  var HAND_Y = GLASS_TOP - PAN_DEPTH + 6;     // palm heel meets the rolled lip
+
+  // ---------- CANVAS SETUP (sharp on high-DPI screens) ----------
+  var dpr = 1;
+  function setupCanvas(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(HT * dpr);
+  }
+  setupCanvas();
+
+  // ---------- STATE ----------
+  var state = null;
+  var animating = false;
+  var trialCount = 0;
+
+  function freshState(){
+    return {
+      simT: 0,
+      pan:  {x:0, y:0, vx:0, vy:0, ang:0, falling:false, landed:false},
+      tube: {x:0, attached:false, rel:0, ang:0, tipT:null, tipDir:1},
+      egg:  {x:GX, y:EGG_Y0, vx:0, vy:0, ang:0, mode:'onTube', cracked:false, splat:null},
+      drops: [], puddles: [], ring:null, rimFlash:null,
+      waterY: WATER0,
+      handX: null, handY: HAND_Y, burst:null,
+      showSlow:false, phase:'idle', doneAt:null, trial:null, rimX:null
+    };
+  }
+  state = freshState();
+
+  // ---------- DRAWING HELPERS ----------
+  function rr(x,y,w,h,r){
     ctx.beginPath();
     ctx.moveTo(x+r,y);
     ctx.arcTo(x+w,y,x+w,y+h,r);
@@ -806,187 +936,359 @@
     ctx.arcTo(x,y,x+w,y,r);
     ctx.closePath();
   }
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function easeOut(t){ return 1 - (1-t)*(1-t); }
+  function easeIn(t){ return t*t*t; }
 
   function drawBackground(){
-    ctx.clearRect(0,0,W,Ht);
-    // wall
-    var g = ctx.createLinearGradient(0,0,0,Ht);
+    var g = ctx.createLinearGradient(0,0,0,TABLE_Y);
     g.addColorStop(0,P['c-wall-1']);
     g.addColorStop(1,P['c-wall-2']);
     ctx.fillStyle = g;
-    ctx.fillRect(0,0,W,Ht);
-    // table
+    ctx.fillRect(0,0,W,TABLE_Y);
     ctx.fillStyle = P['c-table'];
-    ctx.fillRect(0, 430, W, Ht-430);
-    ctx.fillStyle = 'rgba(0,0,0,0.06)';
-    ctx.fillRect(0, 430, W, 6);
+    ctx.fillRect(0, TABLE_Y, W, HT-TABLE_Y);
+    ctx.fillStyle = P['c-table-edge'];
+    ctx.fillRect(0, TABLE_Y, W, 3);
   }
 
-  function drawGlass(splashT){
-    // glass body (trapezoid)
-    var topW = glassW, botW = glassW*0.82;
-    var topY = glassTopY, botY = 430;
+  function glassHalfIn(y){ return lerp(G_IN_TOP, G_IN_BOT, clamp((y-GLASS_TOP)/(TABLE_Y-GLASS_TOP),0,1)); }
+
+  function glassPath(inset){
+    var tw = G_OUT_TOP - inset, bw = G_OUT_BOT - inset;
+    ctx.beginPath();
+    ctx.moveTo(GX-tw, GLASS_TOP);
+    ctx.lineTo(GX-bw, TABLE_Y);
+    ctx.lineTo(GX+bw, TABLE_Y);
+    ctx.lineTo(GX+tw, GLASS_TOP);
+    ctx.closePath();
+  }
+
+  function drawGlassBack(){
     ctx.fillStyle = P['c-glass'];
+    glassPath(0);
+    ctx.fill();
+    // back half of the rim
+    ctx.strokeStyle = P['c-glass-edge'];
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(GX, GLASS_TOP, G_OUT_TOP, 8, 0, Math.PI, Math.PI*2);
+    ctx.stroke();
+  }
+
+  function drawWater(){
+    var wy = state.waterY;
+    var topHalf = glassHalfIn(wy);
+    ctx.fillStyle = P['c-water'];
+    ctx.beginPath();
+    ctx.moveTo(GX-topHalf, wy);
+    ctx.lineTo(GX-G_IN_BOT, GLASS_BOT_IN);
+    ctx.lineTo(GX+G_IN_BOT, GLASS_BOT_IN);
+    ctx.lineTo(GX+topHalf, wy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = P['c-water-top'];
+    ctx.beginPath();
+    ctx.ellipse(GX, wy, topHalf, 6, 0, 0, Math.PI*2);
+    ctx.fill();
+    // ripple ring after the egg goes in
+    if(state.ring){
+      var p = clamp((state.simT - state.ring.t0) / 0.35, 0, 1);
+      if(p < 1){
+        ctx.save();
+        ctx.globalAlpha = 1 - p;
+        ctx.strokeStyle = P['c-drop'];
+        ctx.lineWidth = 2.5;
+        var r = Math.min(topHalf, 14 + p*60);
+        ctx.beginPath();
+        ctx.ellipse(state.ring.x, wy, r, r*0.12 + 2, 0, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
+
+  function drawGlassFront(){
     ctx.strokeStyle = P['c-glass-edge'];
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(glassCX-topW/2, topY);
-    ctx.lineTo(glassCX-botW/2, botY);
-    ctx.lineTo(glassCX+botW/2, botY);
-    ctx.lineTo(glassCX+topW/2, topY);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(GX-G_OUT_TOP, GLASS_TOP);
+    ctx.lineTo(GX-G_OUT_BOT, TABLE_Y);
+    ctx.lineTo(GX+G_OUT_BOT, TABLE_Y);
+    ctx.lineTo(GX+G_OUT_TOP, GLASS_TOP);
     ctx.stroke();
-    // liquid
-    var liqTop = topY + 34;
-    var liqTopW = topW*0.94;
-    var liqBotW = botW*0.9;
-    ctx.fillStyle = '#f4efe2';
+    // thick glass base
+    ctx.fillStyle = P['c-glass'];
+    ctx.fillRect(GX-G_OUT_BOT+2, GLASS_BOT_IN, (G_OUT_BOT-2)*2, TABLE_Y-GLASS_BOT_IN);
+    // front half of the rim
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.moveTo(glassCX-liqTopW/2, liqTop);
-    ctx.lineTo(glassCX-liqBotW/2, botY-6);
-    ctx.lineTo(glassCX+liqBotW/2, botY-6);
-    ctx.lineTo(glassCX+liqTopW/2, liqTop);
-    ctx.closePath();
-    ctx.fill();
-    // liquid surface ellipse
-    ctx.fillStyle = '#fbf8ef';
+    ctx.ellipse(GX, GLASS_TOP, G_OUT_TOP, 8, 0, 0, Math.PI);
+    ctx.stroke();
+    // shine
+    ctx.strokeStyle = P['c-glass-shine'];
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.ellipse(glassCX, liqTop, liqTopW/2, 8, 0, 0, Math.PI*2);
-    ctx.fill();
-
-    if(splashT !== undefined && splashT > 0){
-      ctx.save();
-      ctx.strokeStyle = 'rgba(140,170,210,' + (0.6*(1-splashT)) + ')';
-      ctx.lineWidth = 3;
-      var r = 10 + splashT*40;
-      ctx.beginPath();
-      ctx.ellipse(glassCX, liqTop, r, r*0.28, 0, 0, Math.PI*2);
-      ctx.stroke();
-      ctx.restore();
+    ctx.moveTo(GX-G_OUT_TOP+12, GLASS_TOP+18);
+    ctx.lineTo(GX-G_OUT_BOT+10, TABLE_Y-20);
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+    // rim flash where the egg struck it
+    if(state.rimFlash){
+      var p = clamp((state.simT - state.rimFlash.t0)/0.12, 0, 1);
+      if(p < 1){ drawBurst(state.rimFlash.x, GLASS_TOP, p, P['c-bad']); }
     }
-
-    // glass rim highlight
-    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.ellipse(glassCX, topY, topW/2, 9, 0, Math.PI, Math.PI*2);
-    ctx.stroke();
   }
 
-  function drawTray(offsetX){
-    var cx = trayCX0 + offsetX;
-    ctx.save();
-    ctx.fillStyle = '#8b93a1';
-    ctx.strokeStyle = '#6a7280';
-    ctx.lineWidth = 2;
+  // egg outline: a little narrower at the top than the bottom
+  function eggPath(rx, ry){
     ctx.beginPath();
-    ctx.ellipse(cx, trayY0+trayH/2, trayW/2, trayH/2, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#a3aab6';
-    ctx.beginPath();
-    ctx.ellipse(cx, trayY0+trayH/2-4, trayW/2-14, trayH/2-10, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
+    for(var i=0;i<=48;i++){
+      var th = i/48*Math.PI*2;
+      var px = rx*Math.sin(th)*(1 - 0.10*Math.cos(th));
+      var py = -ry*Math.cos(th);
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
   }
 
-  function drawTubeAndEgg(x, y, cracked){
-    // tube
-    ctx.fillStyle = '#c99a3b';
-    roundRect(x-tubeW/2, y-tubeH, tubeW, tubeH, 4);
-    ctx.fill();
-    ctx.strokeStyle = '#a97c22';
-    ctx.lineWidth = 2;
-    roundRect(x-tubeW/2, y-tubeH, tubeW, tubeH, 4);
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(0,0,0,0.12)';
-    ctx.beginPath();
-    ctx.ellipse(x, y-tubeH, tubeW/2, 6, 0, 0, Math.PI*2);
-    ctx.fill();
-
-    // egg
-    var eggY = y - tubeH - eggRY + 4;
+  function drawEggShape(x, y, ang, cracked){
     ctx.save();
-    ctx.translate(x, eggY);
-    ctx.fillStyle = '#ff8a3d';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, eggRX, eggRY, 0, 0, Math.PI*2);
+    ctx.translate(x, y);
+    ctx.rotate(ang);
+    var g = ctx.createRadialGradient(-EGG_RX*0.35, -EGG_RY*0.4, 3, 0, 0, EGG_RY*1.1);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.55, P['c-egg']);
+    g.addColorStop(1, P['c-egg-shade']);
+    ctx.fillStyle = g;
+    eggPath(EGG_RX, EGG_RY);
     ctx.fill();
-    ctx.strokeStyle = '#d9691e';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = P['c-egg-edge'];
+    ctx.lineWidth = 1.6;
     ctx.stroke();
     if(cracked){
-      ctx.strokeStyle = '#8a3c0a';
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#6f5a3c';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(-14,-10); ctx.lineTo(-2,2); ctx.lineTo(-10,12);
-      ctx.moveTo(4,-16); ctx.lineTo(12,-2); ctx.lineTo(6,14);
+      ctx.moveTo(-EGG_RX+3, 2); ctx.lineTo(-8,-4); ctx.lineTo(-2,6); ctx.lineTo(6,-3); ctx.lineTo(12,5);
       ctx.stroke();
     }
     ctx.restore();
   }
 
-  function drawCrackSplat(x, y){
+  function drawSplat(sp){
+    var x = sp.x, y = TABLE_Y + 2;
+    var p = clamp((state.simT - sp.t0)/0.08, 0, 1);
     ctx.save();
-    ctx.fillStyle = 'rgba(255,214,110,0.85)';
+    // egg white
+    ctx.fillStyle = isDarkNow() ? 'rgba(235,235,225,0.75)' : 'rgba(255,255,248,0.95)';
+    ctx.strokeStyle = 'rgba(160,150,120,0.6)';
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.ellipse(x, y, 36, 10, 0, 0, Math.PI*2);
+    var rx = 18 + 30*p, ry = 4 + 3*p;
+    for(var i=0;i<=24;i++){
+      var th = i/24*Math.PI*2;
+      var wob = 1 + 0.18*Math.sin(th*5 + 1.3);
+      var px = x + Math.cos(th)*rx*wob, py = y + Math.sin(th)*ry*wob;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // yolk
+    ctx.fillStyle = P['c-yolk'];
+    ctx.beginPath();
+    ctx.ellipse(x+4, y-1, 11, 5, 0, 0, Math.PI*2);
     ctx.fill();
+    // shell pieces
+    ctx.fillStyle = P['c-egg'];
+    ctx.strokeStyle = P['c-egg-edge'];
+    ctx.lineWidth = 1.5;
+    [[-30*p-6, -0.5],[26*p+8, 0.6]].forEach(function(s){
+      ctx.save();
+      ctx.translate(x + s[0], y - 6);
+      ctx.rotate(s[1]);
+      ctx.beginPath();
+      ctx.moveTo(-12,0);
+      ctx.quadraticCurveTo(-11,-14,0,-15);
+      ctx.quadraticCurveTo(11,-14,12,0);
+      ctx.lineTo(7,-3); ctx.lineTo(2,1); ctx.lineTo(-4,-3);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+    });
     ctx.restore();
   }
 
-  function drawHand(fx, fy){
-    // A simple flat-style fist + forearm that swings in from off-canvas
-    // and flicks the tray, so every hit visibly has a "hitter."
-    var armLen = 130, armW = 40, fistR = 27;
-    ctx.save();
-    // forearm
-    ctx.fillStyle = '#e2a273';
-    roundRect(fx - armLen, fy - armW/2, armLen, armW, 16);
+  // tube drawn with its bottom-center at (0,0) in the current transform, standing up
+  function drawTubeLocal(){
+    ctx.fillStyle = P['c-tube'];
+    rr(-TUBE_W/2, -TUBE_H, TUBE_W, TUBE_H, 3);
     ctx.fill();
-    // sleeve cuff at the far (off-canvas) end
-    ctx.fillStyle = '#3a5a8c';
-    roundRect(fx - armLen - 14, fy - armW/2 - 6, 40, armW + 12, 12);
-    ctx.fill();
-    ctx.fillStyle = '#2f4a73';
-    roundRect(fx - armLen - 2, fy - armW/2 - 2, 14, armW + 4, 6);
-    ctx.fill();
-    // fist
-    ctx.fillStyle = '#e2a273';
-    ctx.beginPath();
-    ctx.arc(fx, fy, fistR, 0, Math.PI*2);
-    ctx.fill();
-    ctx.strokeStyle = '#c07f4d';
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.arc(fx, fy, fistR, 0, Math.PI*2);
-    ctx.stroke();
-    // knuckle creases
-    ctx.strokeStyle = '#c07f4d';
+    ctx.strokeStyle = P['c-tube-dark'];
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(fx - 9, fy - 16); ctx.lineTo(fx - 9, fy + 16);
-    ctx.moveTo(fx + 2, fy - 19); ctx.lineTo(fx + 2, fy + 19);
-    ctx.moveTo(fx + 13, fy - 16); ctx.lineTo(fx + 13, fy + 16);
     ctx.stroke();
-    // thumb
-    ctx.fillStyle = '#e2a273';
+    // spiral seam
+    ctx.save();
+    ctx.globalAlpha = 0.35;
     ctx.beginPath();
-    ctx.ellipse(fx - 6, fy + fistR - 6, 10, 7, -0.5, 0, Math.PI*2);
+    ctx.moveTo(-TUBE_W/2, -TUBE_H*0.25);
+    ctx.lineTo(TUBE_W/2, -TUBE_H*0.55);
+    ctx.moveTo(-TUBE_W/2, -TUBE_H*0.7);
+    ctx.lineTo(TUBE_W/2, -TUBE_H*1.0);
+    ctx.stroke();
+    ctx.restore();
+    // open top
+    ctx.fillStyle = P['c-tube-dark'];
+    ctx.beginPath();
+    ctx.ellipse(0, -TUBE_H, TUBE_W/2-1, 4.5, 0, 0, Math.PI*2);
     ctx.fill();
+  }
+
+  // the tray, with the tube drawn between its back and front so the tube looks like it stands inside it
+  function drawPanAndTube(){
+    var pan = state.pan, tube = state.tube;
+    var cx = GX + pan.x, by = GLASS_TOP + pan.y;
+    ctx.save();
+    ctx.translate(cx, by);
+    ctx.rotate(pan.ang);
+    // outer body (back)
+    ctx.fillStyle = P['c-pan-dark'];
+    ctx.beginPath();
+    ctx.moveTo(-PAN_FH, 0); ctx.lineTo(PAN_FH, 0);
+    ctx.lineTo(PAN_RH, -PAN_DEPTH); ctx.lineTo(-PAN_RH, -PAN_DEPTH);
+    ctx.closePath();
+    ctx.fill();
+    // inside surface
+    ctx.fillStyle = P['c-pan-light'];
+    ctx.beginPath();
+    ctx.ellipse(0, -PAN_DEPTH, PAN_RH, 12, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = P['c-pan'];
+    ctx.beginPath();
+    ctx.ellipse(0, PAN_FLOOR-6, PAN_FH-8, 7, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // tube: either standing on the floor (tray sliding under it) or carried by the tray after the knock
+    ctx.save();
+    var tx = tube.attached ? tube.rel : (GX + tube.x) - cx;
+    ctx.translate(tx, PAN_FLOOR - 4);
+    if(tube.ang){
+      // pivot around the bottom corner on the side it falls toward
+      var px = tube.tipDir * TUBE_W/2;
+      ctx.translate(px, 0);
+      ctx.rotate(tube.ang);
+      ctx.translate(-px, 0);
+    }
+    drawTubeLocal();
+    ctx.restore();
+
+    // front wall of the tray (hides the tube's base, like a real pie tin)
+    var g = ctx.createLinearGradient(0, -PAN_DEPTH, 0, 0);
+    g.addColorStop(0, P['c-pan-light']);
+    g.addColorStop(1, P['c-pan']);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(-PAN_RH, -PAN_DEPTH);
+    ctx.ellipse(0, -PAN_DEPTH, PAN_RH, 12, 0, Math.PI, 0, true);
+    ctx.lineTo(PAN_FH, 0);
+    ctx.lineTo(-PAN_FH, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = P['c-pan-dark'];
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // rolled lip
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, -PAN_DEPTH, PAN_RH, 12, 0, 0, Math.PI);
+    ctx.stroke();
     ctx.restore();
   }
 
-  function drawImpactBurst(x, y, p){
-    // quick little "whack" star burst right when the fist lands
+  // an open hand seen from the side: it swings in from the right, fingers angled up over the tray,
+  // and the heel of the palm strikes the tray's rim. (x, y) is where the palm heel is.
+  function drawHand(x, y, swing){
+    var skin = P['c-skin'], edge = P['c-skin-edge'];
+    var TILT = 0.42;
+    var c = Math.cos(TILT), s = Math.sin(TILT);
+    var heelX = 2, heelY = 20;                       // palm heel in the hand's own frame
+    var ox = x - (heelX*c - heelY*s), oy = y - (heelX*s + heelY*c);
+    var wristX = ox + (60*c - 2*s), wristY = oy + (60*s + 2*c);
     ctx.save();
-    ctx.globalAlpha = Math.max(0, 1 - p) * 0.9;
-    ctx.strokeStyle = '#ffd35c';
-    ctx.lineWidth = 3;
-    var r1 = 14 + p*22, r2 = 26 + p*34;
-    for(var i=0;i<5;i++){
-      var ang = (i/5)*Math.PI*2 + p*0.6;
+    // speed lines while swinging in
+    if(swing > 0.05){
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, swing) * 0.6;
+      ctx.strokeStyle = P['c-label'];
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      [[-52,70],[-30,105],[34,80]].forEach(function(l){
+        ctx.beginPath();
+        ctx.moveTo(x + 70, y + l[0]); ctx.lineTo(x + 70 + l[1], y + l[0]);
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+    // forearm + sleeve (level, going off to the right)
+    ctx.fillStyle = skin;
+    rr(wristX - 18, wristY - 22, 340, 42, 20);
+    ctx.fill();
+    ctx.strokeStyle = edge; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.fillStyle = P['c-sleeve'];
+    rr(wristX + 150, wristY - 30, 240, 58, 16);
+    ctx.fill();
+    // hand, in its own tilted frame (fingers point to -x)
+    ctx.translate(ox, oy);
+    ctx.rotate(TILT);
+    // thumb on the top side, pointing up and forward
+    ctx.save();
+    ctx.translate(30, -16);
+    ctx.rotate(-0.95);
+    ctx.fillStyle = skin;
+    rr(-8, -46, 17, 52, 8.5);
+    ctx.fill(); ctx.strokeStyle = edge; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.restore();
+    // four fingers, slightly fanned
+    var fy = [-15, -4, 7, 17], fl = [54, 60, 56, 45], fa = [-0.06, -0.02, 0.02, 0.07];
+    for(var i=3;i>=0;i--){
+      ctx.save();
+      ctx.translate(8, fy[i]);
+      ctx.rotate(fa[i]);
+      ctx.fillStyle = skin;
+      rr(-fl[i], -6.5, fl[i] + 8, 13, 6.5);
+      ctx.fill();
+      ctx.strokeStyle = edge; ctx.lineWidth = 1.3; ctx.stroke();
+      ctx.restore();
+    }
+    // palm / back of the hand
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.moveTo(4, -22);
+    ctx.quadraticCurveTo(34, -28, 62, -18);
+    ctx.lineTo(64, 18);
+    ctx.quadraticCurveTo(34, 28, 2, 22);
+    ctx.quadraticCurveTo(-2, 0, 4, -22);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = edge; ctx.lineWidth = 1.6; ctx.stroke();
+    // knuckle line
+    ctx.beginPath();
+    ctx.moveTo(10, -16); ctx.quadraticCurveTo(14, 0, 10, 16);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBurst(x, y, p, color){
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 1 - p);
+    ctx.strokeStyle = color || '#f5b800';
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+    var r1 = 10 + p*18, r2 = 22 + p*30;
+    for(var i=0;i<7;i++){
+      var ang = (i/7)*Math.PI*2 + 0.3;
       ctx.beginPath();
       ctx.moveTo(x + Math.cos(ang)*r1, y + Math.sin(ang)*r1);
       ctx.lineTo(x + Math.cos(ang)*r2, y + Math.sin(ang)*r2);
@@ -995,126 +1297,326 @@
     ctx.restore();
   }
 
-  function drawIdle(){
-    drawBackground();
-    drawGlass();
-    drawTray(0);
-    drawTubeAndEgg(trayCX0, trayY0+2, false);
+  function drawDrops(){
+    ctx.fillStyle = P['c-drop'];
+    state.puddles.forEach(function(d){
+      ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.ellipse(d.x, TABLE_Y+2, d.r*1.8, d.r*0.5, 0, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    state.drops.forEach(function(d){
+      ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2); ctx.fill();
+    });
   }
 
-  drawIdle();
-  redrawScene = drawIdle;
-  updatePrediction();
+  function pill(text, x, y, color){
+    ctx.font = '800 15px Poppins, system-ui, sans-serif';
+    var w = ctx.measureText(text).width + 22;
+    ctx.fillStyle = P['c-label-bg'];
+    rr(x, y, w, 30, 15);
+    ctx.fill();
+    ctx.strokeStyle = color || P['c-label'];
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = color || P['c-label'];
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 11, y + 15.5);
+    return w;
+  }
 
-  // ---------- ANIMATION ----------
-  function easeOutQuad(t){ return 1 - (1-t)*(1-t); }
-  function easeInQuad(t){ return t*t; }
-
-  function runAnimation(trial){
-    animating = true;
-    hitBtn.disabled = true;
-    resultBanner.className = 'result-banner';
-    resultBanner.textContent = '';
-
-    var trayTravelPx = 420; // tray fully exits the frame
-    // The horizontal drift is scaled up on its own (separate from the
-    // vertical fall scale) so that the drawn "safe zone" - the gap between
-    // the glass rim and the tube - lines up exactly with the physics
-    // safe-zone margin used to decide success/fail.
-    var horizPxPerCm = (glassW/2 - tubeW/2) / (MARGIN * 100);
-    var driftPx = trial.xDrift * 100 * horizPxPerCm;
-    var fallPx = H * 100 * PX_PER_CM;
-    var maxDriftShown = Math.min(driftPx, 340);
-
-    // A hand swings in, flicks the tray, and snaps back - so every hit
-    // clearly has a "hitter" behind it, not an invisible force.
-    var TW = 380;            // windup: hand swings in toward the tray
-    var HAND_CONTACT = 180;  // hand rides along with the tray right after impact
-    var HAND_RETRACT = 260;  // then snaps back off-canvas
-    var handY = trayY0 + trayH/2;
-    var handStartX = -90;
-    var handContactX = trayCX0 - trayW/2 + 18;
-
-    var T1 = 900;  // slide phase, ms
-    var T2 = 1000; // fall phase, ms
-    var T3 = 900;  // result phase, ms
-    var total = TW + T1 + T2 + T3;
-    var start = null;
-    redrawScene = function(){ draw(total); };   // after the run, a theme change redraws its last frame
-
-    function draw(elapsedTotal){
-      drawBackground();
-      drawGlass();
-
-      if(elapsedTotal <= TW){
-        // windup: everything still sits in place, the hand swings in
-        drawTray(0);
-        drawTubeAndEgg(trayCX0, trayY0+2, false);
-        var pw = elapsedTotal / TW;
-        var handX = handStartX + easeInQuad(pw) * (handContactX - handStartX);
-        drawHand(handX, handY);
-        return;
+  function drawOverlays(){
+    if(state.showSlow){
+      var w = pill('SLOW MOTION ×' + SLOW, 16, 16);
+      pill('t = ' + fmt(state.simT, 3) + ' s', 16 + w + 10, 16);
+    }
+    // after a cleared run, show how far the egg drifted at the rim
+    if(state.rimX !== null && state.phase === 'done' && state.trial && state.trial.cleared){
+      var good = state.trial.success;
+      var col = good ? P['c-good'] : P['c-bad'];
+      var y = GLASS_TOP - 52;
+      ctx.save();
+      // safe zone band at the rim
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = P['c-good'];
+      ctx.fillRect(GX - SAFE_PX, GLASS_TOP - 12, SAFE_PX*2, 12);
+      ctx.globalAlpha = 1;
+      ctx.setLineDash([6,6]);
+      ctx.strokeStyle = P['c-label'];
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(GX, EGG_Y0 - 30); ctx.lineTo(GX, GLASS_TOP); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = col;
+      ctx.fillStyle = col;
+      ctx.lineWidth = 3;
+      var x2 = state.rimX;
+      ctx.beginPath(); ctx.moveTo(GX, y); ctx.lineTo(x2, y); ctx.stroke();
+      if(Math.abs(GX - x2) > 8){
+        var dir = x2 < GX ? -1 : 1;
+        ctx.beginPath();
+        ctx.moveTo(x2, y); ctx.lineTo(x2 - dir*9, y-6); ctx.lineTo(x2 - dir*9, y+6); ctx.closePath(); ctx.fill();
       }
+      ctx.restore();
+      var label = 'drift ' + fmt(state.trial.xDrift*100,1) + ' cm';
+      ctx.font = '800 15px Poppins, system-ui, sans-serif';
+      var lw = ctx.measureText(label).width + 22;
+      pill(label, Math.max(8, Math.min(W - lw - 8, (GX + x2)/2 - lw/2)), y - 40, col);
+    }
+  }
 
-      var elapsed = elapsedTotal - TW;
+  function render(){
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,HT);
+    drawBackground();
+    var e = state.egg;
+    var eggInGlass = (e.mode === 'water' || e.mode === 'rest');
+    drawGlassBack();
+    if(eggInGlass) drawEggShape(e.x, e.y, e.ang, false);
+    drawWater();
+    drawGlassFront();
+    drawPanAndTube();
+    if(e.splat) drawSplat(e.splat);
+    if(!eggInGlass && e.mode !== 'broken') drawEggShape(e.x, e.y, e.ang, e.cracked);
+    drawDrops();
+    if(state.handX !== null) drawHand(state.handX, state.handY, state.handSwing || 0);
+    if(state.burst){
+      var p = clamp((state.simT - state.burst.t0)/0.04, 0, 1);
+      if(p < 1) drawBurst(state.burst.x, state.burst.y, p);
+    }
+    drawOverlays();
+  }
 
-      if(elapsed <= T1){
-        var p1 = elapsed / T1;
-        var trayOffset = easeOutQuad(p1) * trayTravelPx;
-        drawTray(trayOffset);
-        drawTubeAndEgg(trayCX0, trayY0+2, false);
+  // ---------- PHYSICS STEP (after the strike; t in real seconds) ----------
+  function step(dt){
+    var st = state, tr = st.trial, pan = st.pan, tube = st.tube, egg = st.egg;
+    st.simT += dt;
+    var t = st.simT;
+    var vT = tr.vTray * S, aF = tr.a * S;
 
-        if(elapsed <= HAND_CONTACT){
-          // fist still touching the tray, riding along with it
-          var contactP = elapsed / T1;
-          var contactOffset = easeOutQuad(contactP) * trayTravelPx;
-          drawHand(handContactX + contactOffset, handY);
-          drawImpactBurst(handContactX + 6, handY, elapsed / HAND_CONTACT);
-        } else if(elapsed <= HAND_CONTACT + HAND_RETRACT){
-          // snap back off-canvas
-          var pr = (elapsed - HAND_CONTACT) / HAND_RETRACT;
-          var releaseP = HAND_CONTACT / T1;
-          var releaseOffset = easeOutQuad(releaseP) * trayTravelPx;
-          var releaseX = handContactX + releaseOffset;
-          var handXBack = releaseX + easeOutQuad(pr) * (handStartX - releaseX);
-          var handYBack = handY - easeOutQuad(pr) * 22;
-          drawHand(handXBack, handYBack);
+    // --- tray ---
+    if(!pan.falling){
+      pan.x = -vT * t;
+      // the tray tips off the glass once the center of mass of what it carries passes the rim
+      var com = pan.x;
+      if(tube.attached && !tr.cleared){
+        com = (M_TRAY*pan.x + M_LOAD*(pan.x + tube.rel)) / (M_TRAY + M_LOAD);
+      }
+      if(com < -G_OUT_TOP){
+        pan.falling = true; pan.vx = -vT; pan.vy = 0;
+        if(!tr.cleared){
+          // the whole stack tips: the egg gets flung forward off the top of the tube
+          tube.tipT = t; tube.tipDir = -1;
+          egg.mode = 'free'; egg.vx = -vT - 0.5*S; egg.vy = 0;
         }
-      } else if(elapsed <= T1+T2){
-        var p2 = (elapsed - T1) / T2;
-        var eggX = trayCX0 + easeOutQuad(p2) * maxDriftShown;
-        var eggY = (trayY0+2) + easeInQuad(p2) * fallPx;
-        drawTubeAndEgg(eggX, eggY, false);
-      } else {
-        var p3 = (elapsed - T1 - T2) / T3;
-        var finalX = trayCX0 + maxDriftShown;
-        var finalY = (trayY0+2) + fallPx;
-        if(trial.success){
-          drawGlass(Math.min(p3*1.4,1));
-          // egg settles just below the water surface, small bob
-          var bob = Math.sin(p3*Math.PI) * 4;
-          ctx.save();
-          ctx.globalAlpha = 0.92;
-          drawTubeAndEgg(glassCX, glassTopY + 74 + bob, false);
-          ctx.restore();
-        } else {
-          drawTubeAndEgg(finalX, finalY, p3 > 0.15);
-          if(p3 > 0.15){
-            drawCrackSplat(finalX, finalY - 4);
-          }
+      }
+    } else if(!pan.landed){
+      pan.vy += GPX * dt;
+      pan.x += pan.vx * dt;
+      pan.y += pan.vy * dt;
+      pan.ang = Math.max(-0.22, pan.ang - 1.2*dt);
+      if(GLASS_TOP + pan.y >= TABLE_Y){ pan.y = TABLE_Y - GLASS_TOP; pan.landed = true; pan.ang = 0; }
+    } else {
+      pan.x += pan.vx * dt;
+      pan.vx *= Math.max(0, 1 - 2.5*dt);
+    }
+
+    // --- tube ---
+    if(tr.cleared){
+      if(t < tr.tc){
+        tube.x = -0.5 * aF * t * t;
+      } else if(!tube.attached){
+        // the back rim of the tray hits the tube and carries it away; it tips over toward the rim
+        tube.attached = true;
+        tube.rel = (GX + tube.x) - (GX + pan.x);
+        tube.tipT = t; tube.tipDir = 1;
+      }
+    } else {
+      if(!tube.attached){
+        var tm = tr.tMatch;
+        if(t < tm){ tube.x = -0.5 * aF * t * t; }
+        else { tube.attached = true; tube.rel = tube.x - pan.x; }
+      }
+    }
+    if(tube.tipT !== null){
+      var tp = clamp((t - tube.tipT) / 0.12, 0, 1);
+      tube.ang = tube.tipDir * 1.25 * tp * tp;
+    }
+
+    // --- egg ---
+    if(egg.mode === 'onTube'){
+      var tubeGX = tube.attached ? (GX + pan.x + tube.rel) : (GX + tube.x);
+      egg.x = tubeGX;
+      if(tr.cleared && t >= tr.tc){
+        egg.mode = 'free';
+        egg.vx = -tr.vEgg * S;
+        egg.vy = 0;
+      }
+    } else if(egg.mode === 'free'){
+      var prevBottom = egg.y + EGG_RY;
+      egg.vy += GPX * dt;
+      egg.x += egg.vx * dt;
+      egg.y += egg.vy * dt;
+      var bottom = egg.y + EGG_RY;
+      // crossing the rim of the glass
+      if(tr.cleared && prevBottom < GLASS_TOP && bottom >= GLASS_TOP && st.rimX === null){
+        st.rimX = egg.x;
+        var off = Math.abs(egg.x - GX);
+        if(!tr.success && off < RIM_HIT_PX){
+          // strikes the rim: cracks and bounces outward
+          egg.cracked = true;
+          egg.vy = -0.2 * egg.vy;
+          egg.vx = (egg.x < GX ? -1 : 1) * (0.45*S + Math.abs(egg.vx)*0.4);
+          egg.y = GLASS_TOP - EGG_RY - 1;
+          st.rimFlash = {x: egg.x + (egg.x < GX ? 1 : -1)*EGG_RX*0.6, t0: t};
+        } else if(tr.success){
+          egg.mode = 'enter';
+        }
+      }
+      if(egg.mode === 'free'){
+        egg.ang += (egg.vx/S) * dt * 1.5;
+        if(egg.y + EGG_RY >= TABLE_Y){
+          egg.mode = 'broken';
+          egg.splat = {x: egg.x, t0: t};
+          st.doneAt = t;
         }
       }
     }
+    if(egg.mode === 'enter'){
+      // keep falling until it reaches the water surface
+      egg.vy += GPX * dt;
+      egg.x += egg.vx * dt;
+      egg.y += egg.vy * dt;
+      if(egg.y + EGG_RY >= st.waterY){
+        egg.mode = 'water';
+        splash(egg.x, egg.vy);
+        egg.vy *= 0.35;           // water pushes back hard at first...
+        egg.vx *= 0.3;
+      }
+    } else if(egg.mode === 'water'){
+      // ...then the egg sinks slowly (a raw egg is a little denser than water)
+      var gEff = 0.73 * S, k = 11.7 / S;
+      egg.vy += (gEff - k * egg.vy * Math.abs(egg.vy)) * dt;
+      egg.vx += (-k * egg.vx * Math.abs(egg.vx) - 4*egg.vx) * dt;
+      egg.y += egg.vy * dt;
+      egg.x += egg.vx * dt;
+      egg.ang += (Math.PI/2 - egg.ang) * Math.min(1, dt * 4);
+      var c = Math.cos(egg.ang), s = Math.sin(egg.ang);
+      var hh = Math.sqrt(EGG_RY*EGG_RY*c*c + EGG_RX*EGG_RX*s*s);
+      var hw = Math.sqrt(EGG_RX*EGG_RX*c*c + EGG_RY*EGG_RY*s*s);
+      var lim = glassHalfIn(egg.y + hh) - hw - 2;
+      egg.x = clamp(egg.x, GX - lim, GX + lim);
+      if(egg.y + hh >= GLASS_BOT_IN){
+        egg.y = GLASS_BOT_IN - hh;
+        egg.vy = 0;
+        if(Math.abs(egg.ang - Math.PI/2) < 0.05){ egg.mode = 'rest'; st.doneAt = t; }
+      }
+    }
+    if(egg.mode === 'water' || egg.mode === 'rest'){
+      var c2 = Math.cos(egg.ang), s2 = Math.sin(egg.ang);
+      var h2 = Math.sqrt(EGG_RY*EGG_RY*c2*c2 + EGG_RX*EGG_RX*s2*s2);
+      var sub = clamp((egg.y + h2 - st.waterY) / (2*h2), 0, 1);
+      st.waterY = WATER0 - WATER_RISE * sub;
+    }
+
+    // --- splash drops ---
+    for(var i = st.drops.length - 1; i >= 0; i--){
+      var d = st.drops[i];
+      d.vy += GPX * dt;
+      d.x += d.vx * dt; d.y += d.vy * dt;
+      var inMouth = Math.abs(d.x - GX) < glassHalfIn(st.waterY) - 2;
+      if(d.vy > 0 && inMouth && d.y >= st.waterY){ st.drops.splice(i,1); continue; }
+      if(d.y >= TABLE_Y){ st.puddles.push({x:d.x, r:d.r}); st.drops.splice(i,1); }
+    }
+  }
+
+  function splash(x, vy){
+    state.ring = {x:x, t0:state.simT};
+    var n = 28;
+    var speed = Math.min(1, vy / 1800);
+    for(var i=0;i<n;i++){
+      var side = i % 2 ? 1 : -1;
+      state.drops.push({
+        x: x + side * (8 + Math.random()*16),
+        y: state.waterY - 2,
+        vx: side * (80 + Math.random()*420) * speed,
+        vy: -(450 + Math.random()*1000) * speed,
+        r: 1.6 + Math.random()*3
+      });
+    }
+  }
+
+  // ---------- HAND MOTION ----------
+  function handDuringWindup(ms){
+    var p = ms / WINDUP;
+    var startX = W + 40, readyX = CONTACT_X + 150;
+    state.handSwing = 0;
+    if(p < 0.38){
+      state.handX = lerp(startX, readyX, easeOut(p/0.38));
+    } else if(p < 0.62){
+      state.handX = readyX + 26 * Math.sin((p-0.38)/0.24 * Math.PI);   // small wind-up
+    } else {
+      var q = (p-0.62)/0.38;
+      state.handX = lerp(readyX, CONTACT_X, easeIn(q));
+      state.handSwing = q;
+    }
+    state.handY = HAND_Y;
+  }
+  function handAfterHit(t, vT){
+    var follow = 0.02;
+    state.handSwing = 0;
+    if(t < follow){
+      state.handX = CONTACT_X - vT * t;
+    } else {
+      var releaseX = CONTACT_X - vT * follow;
+      var q = clamp((t - follow) / 0.35, 0, 1);
+      state.handX = releaseX + easeOut(q) * (W + 60 - releaseX);
+      state.handY = HAND_Y - 18 * easeOut(q);
+    }
+  }
+
+  // ---------- RUN ----------
+  function setControlsDisabled(dis){
+    hitBtn.disabled = dis;
+    resetBtn.disabled = dis;
+    slider.disabled = dis;
+    presetBtns.forEach(function(b){ b.disabled = dis; });
+  }
+
+  function runTrial(trial){
+    animating = true;
+    setControlsDisabled(true);
+    resultBanner.className = 'result-banner';
+    resultBanner.textContent = '';
+    state = freshState();
+    state.trial = trial;
+    state.phase = 'windup';
+    var start = null;
+    var DT = 1/2000;
 
     function frame(ts){
-      if(!start) start = ts;
-      var elapsed = ts - start;
-      // Clamp the drawn elapsed time so the very last frame always renders
-      // the fully-settled result instead of overshooting past every phase
-      // and drawing nothing but the background.
-      draw(Math.min(elapsed, total));
-      if(elapsed >= total){
-        finishAnimation(trial);
+      if(start === null) start = ts;
+      var ms = ts - start;
+      if(ms < WINDUP){
+        handDuringWindup(ms);
+      } else {
+        if(state.phase === 'windup'){
+          state.phase = 'run';
+          state.showSlow = true;
+          state.burst = {x: CONTACT_X - 2, y: HAND_Y, t0: 0};
+        }
+        var target = (ms - WINDUP) / 1000 / SLOW;
+        var guard = 0;
+        while(state.simT < target && guard++ < 4000){ step(DT); }
+        handAfterHit(state.simT, trial.vTray * S);
+        if(state.doneAt !== null && state.simT > state.doneAt + 0.18 && state.drops.length === 0){
+          state.phase = 'done';
+        }
+        if(state.simT > 3) state.phase = 'done';
+      }
+      render();
+      if(state.phase === 'done'){
+        state.handX = null;
+        render();
+        finishTrial(trial);
       } else {
         requestAnimationFrame(frame);
       }
@@ -1122,25 +1624,30 @@
     requestAnimationFrame(frame);
   }
 
-  function finishAnimation(trial){
+  function finishTrial(trial){
     animating = false;
-    hitBtn.disabled = false;
+    setControlsDisabled(false);
     resultBanner.classList.add('show');
+    var e = state.egg;
     if(trial.success){
       resultBanner.classList.add('success');
-      resultBanner.textContent = 'SPLASH! The egg dropped safely into the water. ✅';
+      resultBanner.textContent = 'SPLASH! The egg drifted only ' + fmt(trial.xDrift*100,1) + ' cm and dropped safely into the water.';
+    } else if(!trial.cleared){
+      resultBanner.classList.add('fail');
+      resultBanner.textContent = 'Too gentle! Friction carried the tube and egg along with the tray, and everything fell off the glass. Try a harder hit.';
+    } else if(e.cracked){
+      resultBanner.classList.add('fail');
+      resultBanner.textContent = 'CRACK! The egg drifted ' + fmt(trial.xDrift*100,1) + ' cm, clipped the rim, and broke on the table. Try a harder hit.';
     } else {
       resultBanner.classList.add('fail');
-      resultBanner.textContent = 'CRACK! The egg missed the glass and broke on the table. ❌ Try a harder hit!';
+      resultBanner.textContent = 'SPLAT! The egg drifted ' + fmt(trial.xDrift*100,1) + ' cm and missed the glass completely. Try a harder hit.';
     }
-    logTrial(trial);
+    logTrial(trial, e.cracked);
   }
 
   hitBtn.addEventListener('click', function(){
     if(animating) return;
-    var F = parseFloat(slider.value);
-    var trial = computeTrial(F);
-    runAnimation(trial);
+    runTrial(computeTrial(parseFloat(slider.value)));
   });
 
   resetBtn.addEventListener('click', function(){
@@ -1149,39 +1656,46 @@
     logBody.innerHTML = '';
     chartRows.innerHTML = '';
     logTable.style.display = 'none';
+    chartTitle.style.display = 'none';
     logEmpty.style.display = 'block';
-    resultBanner.classList.remove('show','success','fail');
+    resultBanner.className = 'result-banner';
     resultBanner.textContent = '';
-    drawIdle();
-    redrawScene = drawIdle;
+    state = freshState();
+    render();
     updatePrediction();
   });
 
   // ---------- TRIAL LOG ----------
-  function logTrial(trial){
+  function logTrial(trial, hitRim){
     trialCount++;
     logEmpty.style.display = 'none';
     logTable.style.display = 'table';
+    chartTitle.style.display = 'block';
+    var resultText, ok = trial.success;
+    if(ok) resultText = 'In the glass';
+    else if(!trial.cleared) resultText = 'Rode off';
+    else if(hitRim) resultText = 'Hit the rim';
+    else resultText = 'Missed';
 
     var tr = document.createElement('tr');
-    var driftCm = trial.xDrift*100;
     tr.innerHTML = '<td>' + trialCount + '</td>' +
-                    '<td>' + fmt(trial.F,1) + ' N</td>' +
-                    '<td>' + fmt(driftCm,1) + ' cm</td>' +
-                    '<td><span class="pill ' + (trial.success?'success':'fail') + '">' + (trial.success?'In the glass':'Broke') + '</span></td>';
+      '<td>' + fmt(trial.F,1) + ' N</td>' +
+      '<td>' + fmt(trial.vTray,2) + ' m/s</td>' +
+      '<td>' + (trial.cleared ? fmt(trial.xDrift*100,1) + ' cm' : '&mdash;') + '</td>' +
+      '<td><span class="pill ' + (ok ? 'success' : 'fail') + '">' + resultText + '</span></td>';
     logBody.appendChild(tr);
 
-    var maxScale = 20; // cm, chart scale
-    var pct = Math.min(driftCm / maxScale, 1) * 100;
-    var thresholdPct = (3.5 / maxScale) * 100;
-
+    var maxScale = 25; // cm
+    var pct = trial.cleared ? Math.min(trial.xDrift*100 / maxScale, 1) * 100 : 100;
+    var thresholdPct = (MARGIN*100 / maxScale) * 100;
     var row = document.createElement('div');
     row.className = 'chart-row';
     row.innerHTML = '<span>' + fmt(trial.F,1) + ' N</span>' +
       '<div class="chart-track">' +
-        '<div class="chart-fill ' + (trial.success?'success':'fail') + '" style="width:' + pct + '%;"></div>' +
+        '<div class="chart-fill ' + (ok ? 'success' : (trial.cleared ? 'fail' : 'stuck')) + '" style="width:' + pct + '%;"></div>' +
         '<div class="threshold-line" style="left:' + thresholdPct + '%;"></div>' +
-      '</div>';
+      '</div>' +
+      '<span>' + (trial.cleared ? fmt(trial.xDrift*100,1) + ' cm' : 'rode off') + '</span>';
     chartRows.appendChild(row);
   }
 
@@ -1197,7 +1711,7 @@
     themeBtn.setAttribute('aria-label', d ? 'Switch to light mode' : 'Switch to dark mode');
   }
   // mid-run, the next animation frame picks up the new colors by itself
-  function repaint(){ readPalette(); paintToggle(); if(!animating && redrawScene) redrawScene(); }
+  function repaint(){ readPalette(); paintToggle(); if(!animating) render(); }
   function applyTheme(th){ document.documentElement.setAttribute('data-theme', th); repaint(); }
   themeBtn.addEventListener('click', function(){
     var next = isDarkNow() ? 'light' : 'dark';
@@ -1217,8 +1731,19 @@
     var onSys = function(){ if (!document.documentElement.getAttribute('data-theme')) repaint(); };
     if (mq.addEventListener) mq.addEventListener('change', onSys); else if (mq.addListener) mq.addListener(onSys);
   }
-  paintToggle();
+  window.addEventListener('resize', function(){
+    var nd = Math.min(window.devicePixelRatio || 1, 2.5);
+    if(nd !== dpr){ setupCanvas(); if(!animating) render(); }
+  });
 
+  // ---------- START ----------
+  paintToggle();
+  updatePrediction();
+  render();
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(function(){ if(!animating) render(); }); }
+
+  // test hook (used for screenshots): window.__eggSim.run(F)
+  window.__eggSim = { run:function(F){ slider.value = F; updatePrediction(); runTrial(computeTrial(F)); }, state:function(){ return state; } };
 })();
 </script>
 <script>
