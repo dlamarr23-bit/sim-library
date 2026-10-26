@@ -831,6 +831,8 @@
     graphite:false,
     rubbing:false,
     phase:0,
+    pose:0,             // 0 = palms shown, 1 = hands pressed together
+    poseHold:0,
     speed:0,
     remaining:TRIAL,
     trialDone:false,
@@ -959,35 +961,48 @@
     return 'rgb('+m.slice(0,3).map(function(v){ return Math.max(0,Math.min(255, parseInt(v,10)+amt)); }).join(',')+')';
   }
 
-  /* ---------- hand geometry: wrist at origin, fingers point +x ---------- */
-  var FINGERS = [
-    { y:-0.150, len:0.40, w:0.098 },
-    { y:-0.050, len:0.46, w:0.104 },
-    { y: 0.050, len:0.43, w:0.098 },
-    { y: 0.142, len:0.33, w:0.086 }
+  /* ---------- hand geometry: wrist at origin, fingers point UP (-y) ----------
+     Drawn as a left-of-screen hand, palm toward the viewer, thumb on the left.
+     Mirror with scale(-1,1) for the right hand, or to show the back of the hand. */
+  var FINGERS = [ // index, middle, ring, pinky  (bx,by = knuckle, a = splay radians)
+    { bx:-0.160, by:-0.500, len:0.395, w:0.104, a:-0.10 },
+    { bx:-0.053, by:-0.525, len:0.445, w:0.108, a:-0.02 },
+    { bx: 0.055, by:-0.505, len:0.415, w:0.104, a: 0.06 },
+    { bx: 0.158, by:-0.455, len:0.330, w:0.092, a: 0.17 }
   ];
-  var PALM_W = 0.56, PALM_H = 0.205, PALM_R = 0.105, FING_X = PALM_W - 0.10;
+  var THUMB = { bx:-0.175, by:-0.150, len:0.380, w:0.128, a:-0.58 };
+
+  function fingerTip(f, t){            // point a fraction t along the finger
+    return [f.bx + Math.sin(f.a)*f.len*t, f.by - Math.cos(f.a)*f.len*t];
+  }
 
   /* one pass of the hand silhouette; grow>0 draws the fat outline layer */
   function handLayer(c, L, paint, grow){
     c.fillStyle = paint; c.strokeStyle = paint;
     c.lineCap = 'round'; c.lineJoin = 'round';
+    // palm: wider at the knuckles, narrowing to the wrist
     c.beginPath();
-    c.roundRect(-grow, -PALM_H*L-grow, PALM_W*L+2*grow, PALM_H*2*L+2*grow, PALM_R*L+grow);
+    c.moveTo(-0.170*L, 0.02*L);
+    c.bezierCurveTo(-0.215*L,-0.14*L, -0.250*L,-0.30*L, -0.228*L,-0.455*L);
+    c.quadraticCurveTo(-0.205*L,-0.545*L, -0.090*L,-0.545*L);
+    c.lineTo( 0.120*L,-0.525*L);
+    c.quadraticCurveTo( 0.225*L,-0.505*L, 0.232*L,-0.400*L);
+    c.bezierCurveTo( 0.240*L,-0.26*L, 0.215*L,-0.10*L, 0.170*L, 0.02*L);
+    c.closePath();
+    if(grow>0){ c.lineWidth = 2*grow; c.stroke(); }
     c.fill();
-    for(var i=0;i<FINGERS.length;i++){
-      var f = FINGERS[i];
+    // fingers + thumb as capsules
+    var all = FINGERS.concat([THUMB]);
+    for(var i=0;i<all.length;i++){
+      var f = all[i];
+      var r = f.w*0.5;
+      var t0 = fingerTip(f, 0), t1 = fingerTip(f, (f.len - r)/f.len);
       c.lineWidth = f.w*L + 2*grow;
       c.beginPath();
-      c.moveTo(FING_X*L, f.y*L);
-      c.lineTo((FING_X+f.len)*L, f.y*L);
+      c.moveTo(t0[0]*L, t0[1]*L);
+      c.lineTo(t1[0]*L, t1[1]*L);
       c.stroke();
     }
-    c.lineWidth = 0.118*L + 2*grow;
-    c.beginPath();
-    c.moveTo(0.15*L, 0.10*L);
-    c.quadraticCurveTo(0.30*L, 0.20*L, 0.40*L, 0.248*L);
-    c.stroke();
   }
 
   function handFill(T, base, graphite, thermal){
@@ -1000,55 +1015,158 @@
     return skinColor(T, base);
   }
 
-  function drawHandFull(c, x, y, L, mirror, hand, graphite, thermal){
+  /* draws one arm+hand. pose = {x,y,rot,flip}; flip in [-1,1] is the x-scale
+     (negative -> we are looking at the back of the hand) */
+  function drawHandFull(c, pose, L, mirror, hand, graphite, thermal){
+    var sx = (mirror ? -1 : 1) * pose.flip;
+    var back = pose.flip < 0;
     c.save();
-    c.translate(x, y);
-    if(mirror) c.scale(1,-1);
+    c.translate(pose.x, pose.y);
+    c.rotate(pose.rot);
 
-    // sleeve first, so the palm overlaps its edge
+    // sleeve runs off the bottom of the screen
+    c.save();
+    c.scale(mirror ? -1 : 1, 1);
     c.beginPath();
-    c.roundRect(-0.225*L, -0.155*L, 0.34*L, 0.31*L, 0.05*L);
-    c.fillStyle   = thermal ? irColor(0.05) : '#2f4a86';
+    c.moveTo(-0.215*L, 0.00*L);
+    c.lineTo( 0.215*L, 0.00*L);
+    c.lineTo( 0.265*L, 1.20*L);
+    c.lineTo(-0.265*L, 1.20*L);
+    c.closePath();
+    c.fillStyle   = thermal ? irColor(0.05) : '#3f5fa3';
     c.fill();
-    c.lineWidth   = Math.max(2, L*0.015);
-    c.strokeStyle = thermal ? 'rgba(255,255,255,.32)' : 'rgba(12,22,48,.95)';
+    c.lineWidth   = Math.max(2, L*0.016);
+    c.strokeStyle = thermal ? 'rgba(255,255,255,.32)' : 'rgba(18,22,40,.95)';
     c.stroke();
-
-    // contact shadow (offset down in SCREEN space, even when mirrored)
-    c.save();
-    c.globalAlpha = 0.32;
-    c.translate(0, (mirror ? -1 : 1) * L*0.032);
-    handLayer(c, L, '#000', L*0.010);
+    // cuff band
+    c.beginPath();
+    c.moveTo(-0.222*L, 0.075*L); c.lineTo(0.222*L, 0.075*L);
+    c.lineWidth = Math.max(1.5, L*0.010);
+    c.strokeStyle = thermal ? 'rgba(255,255,255,.18)' : 'rgba(18,22,40,.55)';
+    c.stroke();
     c.restore();
+
+    c.scale(sx, 1);
+    var ow = thermal ? Math.max(1.6, L*0.008) : Math.max(2.5, L*0.014);
 
     // dark outline layer, then the fill layer on top -> no internal seams
-    handLayer(c, L, thermal ? 'rgba(255,255,255,.42)' : 'rgba(30,17,10,.93)',
-              thermal ? Math.max(1.6, L*0.008) : Math.max(2.5, L*0.016));
-
+    handLayer(c, L, thermal ? 'rgba(255,255,255,.42)' : 'rgba(30,17,10,.93)', ow);
     var base = handFill(hand.T, hand.base, graphite, thermal);
-    var lit  = thermal ? irColor(Math.min(1, irFrac(hand.T)+0.10)) : shade(base,  16);
-    var dim  = thermal ? irColor(Math.max(0, irFrac(hand.T)-0.12)) : shade(base, -22);
-    var g = c.createLinearGradient(0, -PALM_H*L*1.5, 0, PALM_H*L*1.7);
-    g.addColorStop(0, mirror ? dim : lit);
-    g.addColorStop(1, mirror ? lit : dim);
+    var lit  = thermal ? irColor(Math.min(1, irFrac(hand.T)+0.10)) : shade(base,  12);
+    var dim  = thermal ? irColor(Math.max(0, irFrac(hand.T)-0.12)) : shade(base, -16);
+    var g = c.createLinearGradient(0, -0.95*L, 0, 0);
+    g.addColorStop(0, lit);
+    g.addColorStop(1, dim);
     handLayer(c, L, g, 0);
 
-    // creases
-    c.strokeStyle = thermal ? 'rgba(255,255,255,.16)' : 'rgba(126,74,44,.30)';
-    c.lineWidth = Math.max(1.2, L*0.007);
+    // details
+    var ink = thermal ? 'rgba(255,255,255,.18)' : 'rgba(110,62,36,.42)';
+    c.strokeStyle = ink;
+    c.lineWidth = Math.max(1.2, L*0.0075);
     c.lineCap = 'round';
-    for(var i=0;i<FINGERS.length;i++){
-      var f = FINGERS[i];
+    var i, f, p, q;
+    if(!back){
+      // finger joint creases
+      for(i=0;i<FINGERS.length;i++){
+        f = FINGERS[i];
+        [0.30, 0.62].forEach(function(t){
+          var m = fingerTip(f, t), hw = f.w*0.28;
+          c.beginPath();
+          c.moveTo((m[0]-Math.cos(f.a)*hw)*L, (m[1]-Math.sin(f.a)*hw)*L);
+          c.lineTo((m[0]+Math.cos(f.a)*hw)*L, (m[1]+Math.sin(f.a)*hw)*L);
+          c.stroke();
+        });
+      }
+      // heart line
       c.beginPath();
-      c.moveTo((FING_X+f.len*0.42)*L, (f.y-f.w*0.24)*L);
-      c.lineTo((FING_X+f.len*0.42)*L, (f.y+f.w*0.24)*L);
+      c.moveTo( 0.215*L,-0.400*L);
+      c.quadraticCurveTo( 0.02*L,-0.36*L, -0.12*L,-0.47*L);
+      c.stroke();
+      // head line
+      c.beginPath();
+      c.moveTo(-0.200*L,-0.360*L);
+      c.quadraticCurveTo(-0.02*L,-0.30*L, 0.180*L,-0.250*L);
+      c.stroke();
+      // life line around the thumb pad
+      c.beginPath();
+      c.moveTo(-0.195*L,-0.345*L);
+      c.bezierCurveTo(-0.08*L,-0.28*L, -0.06*L,-0.12*L, -0.075*L,-0.01*L);
+      c.stroke();
+      // wrist crease
+      c.beginPath();
+      c.moveTo(-0.09*L,-0.035*L); c.quadraticCurveTo(0, -0.05*L, 0.09*L,-0.035*L);
+      c.stroke();
+    } else {
+      // knuckles
+      for(i=0;i<FINGERS.length;i++){
+        f = FINGERS[i];
+        p = fingerTip(f, 0.03);
+        c.beginPath();
+        c.arc(p[0]*L, p[1]*L, f.w*0.30*L, Math.PI*1.15, Math.PI*1.85);
+        c.stroke();
+        p = fingerTip(f, 0.50);
+        c.beginPath();
+        c.arc(p[0]*L, p[1]*L, f.w*0.22*L, Math.PI*1.2, Math.PI*1.8);
+        c.stroke();
+      }
+      // fingernails
+      var nail = thermal ? 'rgba(255,255,255,.16)' : 'rgba(255,236,222,.75)';
+      var all = FINGERS.concat([THUMB]);
+      for(i=0;i<all.length;i++){
+        f = all[i];
+        q = fingerTip(f, (f.len - f.w*0.58)/f.len);
+        c.save();
+        c.translate(q[0]*L, q[1]*L);
+        c.rotate(f.a);
+        c.beginPath();
+        c.ellipse(0, 0, f.w*0.30*L, f.w*0.40*L, 0, 0, 6.283);
+        c.fillStyle = nail; c.fill(); c.stroke();
+        c.restore();
+      }
+      // tendon hints
+      c.beginPath();
+      c.moveTo(-0.06*L,-0.42*L); c.quadraticCurveTo(-0.04*L,-0.22*L, -0.02*L,-0.08*L);
+      c.moveTo( 0.07*L,-0.40*L); c.quadraticCurveTo( 0.05*L,-0.22*L,  0.03*L,-0.08*L);
       c.stroke();
     }
-    c.beginPath();
-    c.moveTo(0.13*L, -0.065*L);
-    c.quadraticCurveTo(0.28*L, 0.015*L, 0.37*L, 0.115*L);
-    c.stroke();
     c.restore();
+  }
+
+  // local hand point -> screen point, for a given pose
+  function handPoint(pose, mirror, lx, ly, L){
+    var sx = (mirror ? -1 : 1) * pose.flip;
+    var x = lx*L*sx, y = ly*L;
+    var cs = Math.cos(pose.rot), sn = Math.sin(pose.rot);
+    return [pose.x + x*cs - y*sn, pose.y + x*sn + y*cs];
+  }
+
+  function ease(t){ t=Math.max(0,Math.min(1,t)); return t*t*(3-2*t); }
+  function lerp(a,b,t){ return a+(b-a)*t; }
+
+  function handLayout(W, H){
+    var L  = Math.min(H*0.62, W*0.35);
+    var cx = W*0.5;
+    var k  = ease(state.pose);                 // 0 = palms shown, 1 = pressed together
+    var kf = ease((state.pose-0.15)/0.6);      // the turn happens mid-move
+    var rubAmt = k * Math.sin(state.phase);
+    var ang = 0.60;                            // ~38° tilt when pressed together
+    var slide = L*0.085*rubAmt;                // front hand slides along its own axis
+    var left = {
+      x: lerp(cx - L*0.37, cx - L*0.37, k) + Math.sin(ang)*slide*k,
+      y: lerp(H - L*0.13,  H - L*0.02, k)  - Math.cos(ang)*slide*k,
+      rot: lerp(0, ang, k),
+      flip: Math.cos(kf*Math.PI)
+    };
+    var right = {
+      x: lerp(cx + L*0.37, cx + L*0.37, k) + Math.sin(ang)*slide*0.25,
+      y: lerp(H - L*0.13,  H - L*0.02, k)  + Math.cos(ang)*slide*0.25,
+      rot: lerp(0, -ang*0.72, k),
+      flip: 1
+    };
+    var contact = handPoint(left, false, 0, -0.40, L);
+    var contactR = handPoint(right, true, 0, -0.40, L);
+    return { L:L, cx:cx, k:k, left:left, right:right,
+             contactX:(contact[0]+contactR[0])/2, contactY:(contact[1]+contactR[1])/2 };
   }
 
   function draw(dt){
@@ -1072,58 +1190,48 @@
     }
 
     // ---------- layout ----------
-    var L   = Math.min(W*0.455, H*0.80);
-    var cx  = W*0.5, cy = H*0.50;
-    var hx  = cx - L*0.40;
-    var sep = L*0.155;
-    var disp = Math.sin(state.phase)*L*0.115;
-    var contactX = hx + L*0.50;
+    var lay = handLayout(W, H);
+    cv.__lay = lay;
+    var L = lay.L, cx = lay.cx;
+    var contactX = lay.contactX, contactY = lay.contactY;
     var hotFrac = Math.max(0, Math.min(1,
       (((hands[0].T-hands[0].base)+(hands[1].T-hands[1].base))/2 - 0.12)/4.4));
 
-    // ---------- heat glow at the contact line ----------
+    // ---------- heat glow at the contact area ----------
     if(hotFrac>0.02){
       ctx.save();
       ctx.globalCompositeOperation='lighter';
-      var rg = ctx.createRadialGradient(contactX,cy,0,contactX,cy,L*0.70);
+      var rg = ctx.createRadialGradient(contactX,contactY,0,contactX,contactY,L*0.70);
       rg.addColorStop(0,'rgba(255,'+(thermal?232:132)+','+(thermal?176:60)+','+(hotFrac*(thermal?0.42:0.80)).toFixed(3)+')');
       rg.addColorStop(1,'rgba(255,86,36,0)');
       ctx.fillStyle=rg;
-      ctx.fillRect(contactX-L*0.7, cy-L*0.7, L*1.4, L*1.4);
+      ctx.fillRect(contactX-L*0.7, contactY-L*0.7, L*1.4, L*1.4);
       ctx.restore();
     }
 
-    // ---------- bottom hand ----------
-    drawHandFull(ctx, hx, cy+sep, L, false, hands[1], state.graphite, thermal);
+    // ---------- hands: right behind, left in front ----------
+    drawHandFull(ctx, lay.right, L, true,  hands[1], state.graphite, thermal);
+    drawHandFull(ctx, lay.left,  L, false, hands[0], state.graphite, thermal);
 
-    // ---------- graphite film in the gap ----------
-    if(state.graphite){
+    // ---------- motion marks (little arcs, cartoon style) ----------
+    if(state.rubbing && lay.k>0.6){
       ctx.save();
-      ctx.globalAlpha = thermal ? 0.30 : 0.9;
-      ctx.fillStyle   = thermal ? 'rgba(26,8,52,.85)' : '#242429';
-      ctx.beginPath();
-      ctx.roundRect(hx + L*0.06 + disp*0.45, cy - L*0.028, L*0.86, L*0.056, L*0.028);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // ---------- top hand (mirrored, slides) ----------
-    drawHandFull(ctx, hx+disp, cy-sep, L, true, hands[0], state.graphite, thermal);
-
-    // ---------- motion streaks ----------
-    if(state.rubbing){
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255,255,255,.40)';
+      ctx.strokeStyle = thermal ? 'rgba(255,255,255,.45)' : 'rgba(235,240,255,.55)';
       ctx.lineWidth = Math.max(2, L*0.008); ctx.lineCap='round';
-      var dir = Math.cos(state.phase)>0 ? -1 : 1;   // streaks trail behind the motion
-      var len = L*(0.06+0.08*Math.abs(Math.cos(state.phase)));
-      for(var i=0;i<FINGERS.length;i++){
-        var f  = FINGERS[i];
-        var yy = cy - sep - f.y*L;                   // top hand is mirrored in y
-        var x0 = dir>0 ? hx+disp+(FING_X+f.len)*L + L*0.03
-                       : hx+disp-L*0.26;
-        ctx.globalAlpha = 0.34-0.05*i;
-        ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x0+dir*len, yy); ctx.stroke();
+      var wob = Math.sin(state.phase*2)*L*0.012;
+      var marks = [
+        [cx - L*0.06, contactY - L*0.62, -2.2, -1.2],
+        [cx + L*0.08, contactY - L*0.60, -1.9, -0.9],
+        [cx - L*0.50, contactY - L*0.02,  2.4,  3.6],
+        [cx + L*0.50, contactY - L*0.05, -0.5,  0.7],
+        [cx - L*0.28, contactY + L*0.26,  0.6,  1.6]
+      ];
+      for(var m=0;m<marks.length;m++){
+        var mk = marks[m];
+        ctx.globalAlpha = 0.5 + 0.5*Math.abs(Math.cos(state.phase + m));
+        ctx.beginPath();
+        ctx.arc(mk[0] + wob, mk[1], L*0.07, mk[2], mk[3]);
+        ctx.stroke();
       }
       ctx.restore();
     }
@@ -1143,9 +1251,10 @@
       ctx.fill();
     }
 
-    // ---------- laser dot while measuring ----------
+    // ---------- laser dot while measuring (centre of the left palm) ----------
     if(state.laser>0){
-      var lx = hx + disp + L*0.30, ly = cy - sep - L*0.05;
+      var lp = handPoint(lay.left, false, 0, -0.30, L);
+      var lx = lp[0], ly = lp[1];
       ctx.save();
       ctx.globalCompositeOperation='lighter';
       var lg=ctx.createRadialGradient(lx,ly,0,lx,ly,18);
@@ -1159,13 +1268,13 @@
       ctx.stroke();
     }
 
-    // ---------- temperature chips ----------
+    // ---------- temperature chips (above each hand) ----------
     var fs = Math.max(12, Math.min(25, W*0.0195));
     ctx.font = '800 '+fs+'px Poppins, system-ui, sans-serif';
     ctx.textAlign = 'left';
-    var lift = sep + L*0.305 + fs*1.05;
-    tempChip(ctx, cx, cy - lift,        hands[0], thermal, fs);
-    tempChip(ctx, cx, cy + lift + fs*0.4, hands[1], thermal, fs);
+    var chipY = Math.max(fs*3.2, H*0.15);
+    tempChip(ctx, cx - W*0.21, chipY, hands[0], thermal, fs);
+    tempChip(ctx, cx + W*0.21, chipY, hands[1], thermal, fs);
 
     // live scene tag: current frictional heating power
     var muNow = state.graphite ? MU_GRAPH : MU_SKIN;
@@ -1220,6 +1329,10 @@
     } else {
       state.speed = 0;
     }
+    // hands come together while rubbing, then open to show the palms again
+    if(state.rubbing) state.poseHold = 0.5; else state.poseHold = Math.max(0, state.poseHold - dt);
+    var poseTarget = (state.rubbing || state.poseHold>0) ? 1 : 0;
+    state.pose += (poseTarget - state.pose)*Math.min(1, dt*(poseTarget ? 9 : 5));
 
     var P = mu*Fn*state.speed;                 // W, total frictional power
     var k = state.rubbing ? K_COOL : K_IDLE;
@@ -1237,13 +1350,14 @@
     }
 
     // heat wisps
-    var span = cv.__w*0.30;
-    var wispY = cv.__h*0.50 - Math.min(cv.__w*0.455, cv.__h*0.80)*0.36;
+    var span = cv.__w*0.22;
+    var lay = cv.__lay || { cx:cv.__w*0.5, contactY:cv.__h*0.5, L:cv.__h*0.6 };
+    var wispY = lay.contactY - lay.L*0.45;
     if(state.rubbing && (hands[0].T-hands[0].base)>0.55 && Math.random()<dt*30){
-      spawnHeat(cv.__w*0.50, wispY, span, true);
+      spawnHeat(lay.cx, wispY, span, true);
     }
     if(state.graphite && state.rubbing && Math.random()<dt*14){
-      spawnHeat(cv.__w*0.52, cv.__h*0.50, span*0.8, false);
+      spawnHeat(lay.cx, lay.contactY, span*0.8, false);
     }
 
     // timer
@@ -1408,7 +1522,7 @@
 
   graphiteBtn.addEventListener('click', function(){
     state.graphite = true;
-    spawnDust(cv.__w*0.47, cv.__h*0.50);
+    spawnDust(cv.__w*0.50, cv.__lay ? cv.__lay.contactY : cv.__h*0.55);
     syncUI();
   });
   washBtn.addEventListener('click', function(){
