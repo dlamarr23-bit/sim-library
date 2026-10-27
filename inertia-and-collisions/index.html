@@ -457,6 +457,73 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
   .chev{transition:none !important;}
 }
 </style>
+<style>
+/* ======== side-view stage + split-screen (half-width Chromebook) layout ======== */
+.canvas-hold{
+  height:clamp(220px, min(56vw, 47vh), 560px);
+}
+@media (min-width:1120px){
+  .canvas-hold{height:clamp(300px, min(26vw, 58vh), 560px);}
+}
+.canvas-hold canvas{width:100%;height:100%;touch-action:manipulation;}
+
+/* tap / reset live right under the bench, so students never scroll between pressing and watching */
+.actbar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;
+  padding:12px 14px;border-bottom:1px solid var(--line);
+}
+.actbar .go{width:auto;flex:1 1 200px;margin:0;padding:14px 18px;}
+.actbar .ghost{width:auto;flex:0 1 auto;margin:0;padding:12px 16px;}
+.actbar .status{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 100%;}
+@media (min-width:620px){ .actbar .status{flex:0 0 auto;margin-left:auto;} }
+
+.legendbar{
+  display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;
+  padding:10px 16px;border-bottom:1px solid var(--line);
+  font-size:clamp(12.5px,.86vw,14px);font-weight:700;color:var(--ink-2);
+}
+.lg{display:inline-flex;align-items:center;gap:8px;}
+.sw{width:30px;height:10px;border-radius:4px;border:1.5px solid var(--chip-edge);flex:0 0 auto;
+  background-image:repeating-linear-gradient(90deg,transparent 0 5px,var(--sw2) 5px 7px);}
+.sw.loose{background-color:#1D2C3E;--sw2:#EDEFF2;}
+.sw.taped{background-color:#C13029;--sw2:#F4EFE6;}
+.sw.well{background:#0E4A8C;border-color:#2C7FD4;border-style:dashed;--sw2:transparent;}
+
+.readbar{grid-template-columns:repeat(2,minmax(0,1fr));}
+@media (min-width:520px){ .readbar{grid-template-columns:repeat(4,minmax(0,1fr));} }
+.read{padding:10px 14px 11px;}
+.read .sub{font-size:12px;font-weight:700;color:var(--ink-3);margin-top:2px;min-height:1.2em;}
+
+/* controls: a compact grid that uses the width it has */
+.ctrl-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px 22px;}
+@media (min-width:640px) and (max-width:1119px){
+  .ctrl-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+.ctrl-grid .grp+.grp{margin-top:0;}
+.opt{padding:12px 8px;min-height:46px;}
+
+/* single column (split screen, tablets): stage, then controls, then the result */
+@media (max-width:1119px){
+  .bench-grid,.bench-grid>.rail{display:contents;}
+  .bench-grid{display:flex;flex-direction:column;gap:clamp(12px,1.6vw,18px);}
+  #stageCard{order:1;} #ctrlCard{order:2;} #resultCard{order:3;}
+}
+
+/* tighter header on narrow windows so the bench shows on the first screen */
+@media (max-width:760px){
+  .wrap{padding:12px 12px 48px;gap:12px;}
+  .masthead{gap:10px 16px;padding-bottom:10px;}
+  .deck{font-size:14px;margin-top:6px;}
+  .qbox{padding:8px 14px;}
+  .mast-side{flex-direction:row;align-items:center;flex-wrap:wrap;}
+}
+
+/* trial log reads on a half screen */
+table{min-width:640px;}
+td.where{white-space:normal;min-width:190px;font-size:13.5px;}
+.badge.well{background:var(--accent-soft);color:var(--accent-deep);}
+.badge.bench{background:var(--red-soft);color:var(--red);}
+</style>
 
 <div class="wrap">
 
@@ -464,7 +531,7 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
     <div>
       <p class="eyebrow">Motion Lab &middot; Quick Lab 1</p>
       <h1>Describing Inertia</h1>
-      <p class="deck">A poker chip is taped to the front deck of a rolling car. A second, loose chip rests on top of it. Tap the car and watch what the loose chip does.</p>
+      <p class="deck">Two poker chips sit on the front deck of a rolling lab car. The bottom chip is taped down. The top chip is loose. Tap the car and watch what the loose chip does.</p>
     </div>
     <div class="mast-side">
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
@@ -482,14 +549,23 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
 
    <div class="rail">
     <!-- STAGE -->
-    <section class="card stage" aria-label="Simulation bench">
-      <div class="canvas-hold">
-        <canvas id="cv" width="1640" height="340" role="img"
-          aria-label="Side view of a lab bench. A blue rolling car sits on the bench with a taped poker chip and a loose poker chip stacked on its front deck."></canvas>
-        <div class="stage-tag">
+    <section class="card stage" id="stageCard" aria-label="Simulation bench">
+      <div class="canvas-hold" id="hold">
+        <canvas id="cv" role="img"
+          aria-label="Side view of a lab bench. A blue lab car with an open well in the middle sits on the bench. A taped poker chip and a loose poker chip are stacked on its front deck."></canvas>
+      </div>
+      <div class="actbar">
+        <button class="go" id="run">Tap the car</button>
+        <button class="ghost" id="reset">Reset</button>
+        <div class="status">
           <span class="pill" id="phasePill">Ready</span>
           <span class="pill" id="speedPill">Slow motion &times;&frac14;</span>
         </div>
+      </div>
+      <div class="legendbar" aria-hidden="true">
+        <span class="lg"><span class="sw loose"></span>Loose chip &ndash; free to slide</span>
+        <span class="lg"><span class="sw taped"></span>Taped chip &ndash; stuck down</span>
+        <span class="lg"><span class="sw well"></span>Open well &ndash; side drawn see&#8209;through</span>
       </div>
       <div class="readbar">
         <div class="read car">
@@ -501,8 +577,9 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
           <div class="v" id="rChip">0.00<span class="u">m/s</span></div>
         </div>
         <div class="read">
-          <div class="k">Chip slip on car</div>
+          <div class="k">Chip shift on car</div>
           <div class="v" id="rSlip">0.0<span class="u">cm</span></div>
+          <div class="sub" id="rWhere">on the stack</div>
         </div>
         <div class="read">
           <div class="k">Clock</div>
@@ -511,7 +588,7 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
       </div>
     </section>
 
-    <section class="card" aria-live="polite" aria-label="Result">
+    <section class="card" id="resultCard" aria-live="polite" aria-label="Result">
       <div class="card-hd"><h2>What happened</h2></div>
       <div class="result">
         <p class="verdict" id="verdict">Set your force, make a prediction, then tap the car.</p>
@@ -523,48 +600,45 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
 
     <!-- CONTROLS -->
     <div class="rail">
-
-      <section class="card pad" aria-label="Controls">
-        <div class="grp">
-          <div class="glabel">1 &middot; Choose the test</div>
-          <div class="seg">
-            <button class="opt" id="btnRear" aria-pressed="true">Rear&#8209;end tap</button>
-            <button class="opt" id="btnFront" aria-pressed="false">Front&#8209;end tap</button>
+      <section class="card pad" id="ctrlCard" aria-label="Controls">
+        <div class="ctrl-grid">
+          <div class="grp">
+            <div class="glabel">1 &middot; Choose the test</div>
+            <div class="seg">
+              <button class="opt" id="btnRear" aria-pressed="true">Rear&#8209;end tap</button>
+              <button class="opt" id="btnFront" aria-pressed="false">Front&#8209;end tap</button>
+            </div>
+            <p class="force-word" style="color:var(--ink-3);font-weight:600;font-size:13px;" id="testHint">Your hand taps the back of the car. The car jumps forward.</p>
           </div>
-          <p class="force-word" style="color:var(--ink-3);font-weight:600;font-size:13px;" id="testHint">Your hand taps the back bumper. The car jumps forward.</p>
-        </div>
 
-        <div class="grp">
-          <div class="glabel">2 &middot; How hard is the tap? <span class="hint">1&ndash;10</span></div>
-          <div class="force-row">
-            <span class="force-num mono" id="fNum">6</span>
-            <input type="range" id="force" min="1" max="10" step="1" value="6"
-                   aria-label="Tap strength from 1 to 10">
+          <div class="grp">
+            <div class="glabel">2 &middot; How hard is the tap? <span class="hint">1&ndash;10</span></div>
+            <div class="force-row">
+              <span class="force-num mono" id="fNum">6</span>
+              <input type="range" id="force" min="1" max="10" step="1" value="6"
+                     aria-label="Tap strength from 1 to 10">
+            </div>
+            <div class="force-word" id="fWord">Firm tap</div>
           </div>
-          <div class="force-word" id="fWord">Hard tap <span>&mdash; 3.7 m/s&sup2; of push</span></div>
-        </div>
 
-        <div class="grp">
-          <div class="glabel">3 &middot; Predict first <span class="hint">optional</span></div>
-          <div class="seg">
-            <button class="opt" id="pRide" aria-pressed="false">Chip rides along</button>
-            <button class="opt" id="pStay" aria-pressed="false">Chip gets left</button>
+          <div class="grp">
+            <div class="glabel">3 &middot; Predict first <span class="hint">optional</span></div>
+            <div class="seg">
+              <button class="opt" id="pRide" aria-pressed="false">Chip rides along</button>
+              <button class="opt" id="pStay" aria-pressed="false">Chip gets left</button>
+            </div>
+          </div>
+
+          <div class="grp">
+            <div class="glabel">4 &middot; Playback speed</div>
+            <div class="seg three">
+              <button class="opt" data-sp="1" aria-pressed="false">Real</button>
+              <button class="opt" data-sp="0.25" aria-pressed="true">Slow</button>
+              <button class="opt" data-sp="0.08" aria-pressed="false">Super&nbsp;slow</button>
+            </div>
           </div>
         </div>
-
-        <div class="grp">
-          <div class="glabel">4 &middot; Playback speed</div>
-          <div class="seg three">
-            <button class="opt" data-sp="1" aria-pressed="false">Real</button>
-            <button class="opt" data-sp="0.25" aria-pressed="true">Slow</button>
-            <button class="opt" data-sp="0.08" aria-pressed="false">Super&nbsp;slow</button>
-          </div>
-        </div>
-
-        <button class="go" id="run">Tap the car</button>
-        <button class="ghost" id="reset">Reload the chip &amp; reset</button>
       </section>
-
     </div>
   </div>
 
@@ -576,14 +650,14 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
       <div class="fold-body">
         <h3>Part A &middot; Rear-end tap</h3>
         <ol class="steps">
-          <li>The bottom chip is already stuck to the double&#8209;sided tape on the front deck of the car. Without disturbing it, a second chip is resting on top with the grooves lined up.</li>
-          <li><strong>Predict:</strong> when the loaded car is tapped from behind, what will the loose chip do? Pick your prediction in the panel before you run it.</li>
+          <li>The bottom chip is stuck to double&#8209;sided tape on the flat front deck of the car, right in front of the open well. A second chip rests on top of it with the grooves lined up.</li>
+          <li><strong>Predict:</strong> when the loaded car is tapped from behind, what will the loose chip do? Pick your prediction before you run it.</li>
           <li>Choose <strong>Rear&#8209;end tap</strong>, set your force, and tap the car. Record what actually happened in your data table.</li>
           <li>Run it again at a <strong>gentle</strong> force and again at a <strong>hard</strong> force. Look for the point where the result changes.</li>
         </ol>
         <h3>Part B &middot; Front-end tap</h3>
         <ol class="steps" style="counter-reset:s 4;">
-          <li>Reset to reload the chip on the car.</li>
+          <li>Press <strong>Reset</strong> to put the chip back on the car.</li>
           <li><strong>Predict:</strong> when the loaded car is tapped on the front end &mdash; the same thing that happens when a rolling car runs into your hand &mdash; what will the loose chip do?</li>
           <li>Choose <strong>Front&#8209;end tap</strong>, run it, and record the result.</li>
         </ol>
@@ -599,30 +673,30 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
     <details class="fold">
       <summary><span class="chev">&#9656;</span> The science behind it <span class="sumtag">Read after</span></summary>
       <div class="fold-body">
-        <p><strong>Inertia</strong> is an object&rsquo;s resistance to a change in its motion. An object at rest stays at rest, and an object that is moving keeps moving the same way, <em>until an unbalanced force acts on it</em>. That sentence is <strong>Newton&rsquo;s First Law of Motion</strong>.</p>
+        <p><strong>Inertia</strong> is an object&rsquo;s resistance to a change in its motion. An object at rest stays at rest. An object that is moving keeps moving the same way. This is true <em>until an unbalanced force acts on it</em>. That idea is <strong>Newton&rsquo;s First Law of Motion</strong>.</p>
 
-        <p>Here is the key move in this lab: <strong>you never touch the loose chip.</strong> Your hand pushes on the <em>car</em>. The car changes its motion right away because the force is applied directly to it. The chip only feels one sideways force &mdash; <strong>friction</strong> from the chip taped underneath it. Friction is a weak grip, so when the car changes speed too quickly, friction is not strong enough to drag the chip along with it. The chip keeps doing what it was already doing, and the car slides out from under it.</p>
+        <p>Here is the key idea in this lab: <strong>you never touch the loose chip.</strong> Your hand pushes on the <em>car</em>. The car changes its motion right away because the force acts on it directly. The chip feels only one sideways force. That force is <strong>friction</strong> from the taped chip under it. Friction is a weak grip. When the car changes speed too fast, friction cannot drag the chip along. The chip keeps doing what it was doing, and the car slides out from under it.</p>
 
         <h3>Why the force setting changes the answer</h3>
-        <p>A <strong>gentle</strong> tap changes the car&rsquo;s speed slowly. Friction between the two chips is strong enough to keep up, so the chip rides along and nothing seems to happen. A <strong>hard</strong> tap changes the car&rsquo;s speed very quickly. Friction cannot keep up, the chip slips, and it slides right off. Same setup, different force &mdash; and that is what makes this a fair test.</p>
+        <p>A <strong>gentle</strong> tap changes the car&rsquo;s speed slowly. Friction can keep up, so the chip rides along. A <strong>hard</strong> tap changes the car&rsquo;s speed very fast. Friction cannot keep up, so the chip slips and falls. Same setup, different force. That is what makes this a fair test.</p>
 
-        <p>In this model there are three things that can happen, and you can find all three with the slider:</p>
+        <p>In this model there are three things that can happen. You can find all three with the slider:</p>
         <ul class="plain">
           <li>Below about <span class="mono">2.4 m/s&sup2;</span> friction never loses its grip. The chip and the car move as <strong>one object</strong>.</li>
-          <li>Above that, the chip <strong>slips</strong>. If the car slows down again quickly enough, the chip catches up and friction grabs it before it reaches the edge &mdash; so it stays on, just out of place.</li>
-          <li>Slip past about <span class="mono">2.1 cm</span> and the chip runs out of chip to sit on. It <strong>tips off and lands on the bench</strong>, and the car keeps rolling without it.</li>
+          <li>Above that, the chip <strong>slips</strong>. If the car slows down soon enough, friction grabs the chip again before it reaches the edge. It stays on, just out of place.</li>
+          <li>If the chip slides about <span class="mono">2 cm</span>, its middle passes the edge of the taped chip and it <strong>tips off</strong>. On a rear&#8209;end tap it drops <strong>into the car&rsquo;s open well</strong>. On a front&#8209;end tap it falls off the front and <strong>lands on the bench</strong>.</li>
         </ul>
 
         <h3>Both tests, one answer</h3>
         <ul class="plain">
-          <li><strong>Rear-end tap:</strong> your hand is behind the car. The car jumps forward, the chip stays put, so the chip ends up <em>behind</em> the car &mdash; on your hand&rsquo;s side.</li>
-          <li><strong>Front-end tap:</strong> your hand is in front of the car. The car is pushed backward, the chip stays put, so the chip ends up <em>in front of</em> the car &mdash; again on your hand&rsquo;s side.</li>
-          <li>The chip never really &ldquo;flies&rdquo; anywhere. It mostly <strong>stays where it was</strong> while the car moves away from it. That is inertia you can see.</li>
+          <li><strong>Rear-end tap:</strong> your hand is behind the car. The car jumps forward, but the chip stays put. The deck slides out from under it, and the chip falls <em>back</em> into the well &mdash; toward your hand.</li>
+          <li><strong>Front-end tap:</strong> your hand is in front of the car. The car is pushed backward, but the chip stays put. It falls off the <em>front</em> of the car &mdash; again toward your hand.</li>
+          <li>The chip never really &ldquo;flies&rdquo; anywhere. Watch the dotted <strong>chip started here</strong> line. The chip barely moves away from it, while the car moves a lot. That is inertia you can see.</li>
         </ul>
 
         <div class="callout">
           <div class="ct">Connect it to your life</div>
-          <p>This is exactly why your backpack slides off the seat when a car brakes hard, and why you get pressed into the seat when it speeds up fast. The seat changes its motion. You, and your backpack, do not &mdash; until something pushes on you.</p>
+          <p>This is why your backpack slides off the seat when a car brakes hard. It is also why you get pressed into the seat when a car speeds up fast. The seat changes its motion. You and your backpack do not &mdash; until something pushes on you.</p>
         </div>
       </div>
     </details>
@@ -632,27 +706,27 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
       <div class="fold-body">
         <div class="vocab">
           <div class="vterm"><b>Inertia</b><span>An object&rsquo;s resistance to any change in its motion. More mass means more inertia.</span></div>
-          <div class="vterm"><b>Force</b><span>A push or a pull on an object. Measured in newtons (N).</span></div>
-          <div class="vterm"><b>Unbalanced force</b><span>When forces on an object do not cancel out. Only an unbalanced force can change an object&rsquo;s motion.</span></div>
-          <div class="vterm"><b>Acceleration</b><span>How quickly an object&rsquo;s speed or direction changes. A hard tap gives a big acceleration.</span></div>
+          <div class="vterm"><b>Force</b><span>A push or a pull on an object. It is measured in newtons (N).</span></div>
+          <div class="vterm"><b>Unbalanced force</b><span>Forces on an object that do not cancel out. Only an unbalanced force can change an object&rsquo;s motion.</span></div>
+          <div class="vterm"><b>Acceleration</b><span>How fast an object&rsquo;s speed or direction changes. A hard tap gives a big acceleration.</span></div>
           <div class="vterm"><b>Friction</b><span>A force that resists sliding between two touching surfaces. Here it is the only thing holding the loose chip to the taped chip.</span></div>
-          <div class="vterm"><b>Newton&rsquo;s First Law</b><span>An object at rest stays at rest, and an object in motion stays in motion at the same speed and direction, unless an unbalanced force acts on it.</span></div>
+          <div class="vterm"><b>Newton&rsquo;s First Law</b><span>An object at rest stays at rest. An object in motion stays in motion at the same speed and direction. Both are true unless an unbalanced force acts on it.</span></div>
           <div class="vterm"><b>Mass</b><span>The amount of matter in an object. It is what gives an object inertia.</span></div>
         </div>
       </div>
     </details>
 
-    <details class="fold">
+    <details class="fold" open>
       <summary><span class="chev">&#9656;</span> How to use this simulation <span class="sumtag">Controls</span></summary>
       <div class="fold-body">
         <ol class="steps">
-          <li>Pick <strong>Rear&#8209;end tap</strong> or <strong>Front&#8209;end tap</strong>. This chooses which side your hand taps.</li>
+          <li>Pick <strong>Rear&#8209;end tap</strong> or <strong>Front&#8209;end tap</strong>. This chooses which end of the car your hand taps.</li>
           <li>Drag the <strong>force slider</strong> from 1 to 10 to set how hard you tap. The words under the slider tell you how hard that is.</li>
-          <li>Choose a <strong>prediction</strong> if your teacher asks you to. The simulation will tell you afterward whether you were right.</li>
-          <li>Set the <strong>playback speed</strong>. The real event takes less than a tenth of a second, so start on <strong>Slow</strong> or <strong>Super slow</strong> so you can actually see the chip slip.</li>
-          <li>Press <strong>Tap the car</strong>. Watch the arrows: the blue arrow is the car&rsquo;s speed, the red arrow is the chip&rsquo;s speed.</li>
-          <li>Read the four numbers under the bench. <strong>Chip slip on car</strong> tells you how far the loose chip has slid across the taped chip &mdash; once it passes about 2.1 cm, it tips off.</li>
-          <li>Press <strong>Reload the chip &amp; reset</strong> to set the car back up, then change one thing and try again. Every run is saved in the trial log below.</li>
+          <li>Choose a <strong>prediction</strong> if your teacher asks you to. The sim tells you afterward if you were right.</li>
+          <li>Set the <strong>playback speed</strong>. The real tap lasts less than a fifth of a second, so start on <strong>Slow</strong> or <strong>Super slow</strong>.</li>
+          <li>Press <strong>Tap the car</strong>, right under the bench. The view zooms so the whole run fits. The blue arrow shows the car&rsquo;s speed. The red arrow shows the chip&rsquo;s speed.</li>
+          <li>Read the numbers under the bench. <strong>Chip shift on car</strong> tells you how far the loose chip moved from its spot on the car, and where it is now.</li>
+          <li>Press <strong>Reset</strong>, change one thing, and try again. Every run is saved in the trial log at the bottom.</li>
         </ol>
       </div>
     </details>
@@ -680,7 +754,7 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
     </div>
     <div style="padding:0 18px 18px;">
       <div class="model-note">
-        <strong style="color:var(--ink-2);">How this model works:</strong> the car is 13&nbsp;cm long with low&#8209;friction wheels. Chips are 39&nbsp;mm across. The grip between the two chips is modeled with a static friction coefficient of 0.24 and a sliding coefficient of 0.20; the wheels use a rolling coefficient of 0.07. The loose chip tips off once it slides about 2.1&nbsp;cm across the taped chip, then keeps its sideways speed while it falls &mdash; which is why it lands a little past where it tipped. Air resistance is ignored.
+        <strong style="color:var(--ink-2);">How this model works:</strong> the car is 13&nbsp;cm long with low&#8209;friction wheels and an open well 4.8&nbsp;cm wide and 2.9&nbsp;cm deep in the middle. Chips are 39&nbsp;mm across. The grip between the two chips uses a static friction coefficient of 0.24 and a sliding coefficient of 0.20. The wheels use a rolling coefficient of 0.07. The loose chip tips off once its middle slides past the edge of the taped chip (about 2&nbsp;cm), then falls under gravity and keeps its sideways speed until it hits the well floor, a wall of the well, or the bench. Air resistance is ignored.
       </div>
     </div>
   </section>
@@ -693,6 +767,7 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
 
   var cv = document.getElementById('cv');
   var ctx = cv.getContext('2d');
+  var hold = document.getElementById('hold');
 
   /* ---------- theme-aware colors ---------- */
   var C = {};
@@ -704,28 +779,28 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
     });
   }
   readColors();
-  if(window.matchMedia){
-    var mq = window.matchMedia('(prefers-color-scheme: dark)');
-    if(mq.addEventListener) mq.addEventListener('change', function(){ readColors(); draw(); });
-  }
   new MutationObserver(function(){ readColors(); draw(); })
     .observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
 
-  /* ---------- world / physics constants (SI) ---------- */
+  /* ---------- world / physics constants (SI, heights measured UP from the bench) ---------- */
   var G = 9.81;
-  var VIEW_W = 0.820;      // metres of bench shown
-  var PX = cv.width / VIEW_W;         // px per metre
-  var BENCH_Y = 0.107;                // world y of bench surface, measured DOWN from top
-  var MU_S = 0.24, MU_K = 0.20, MU_ROLL = 0.07, MU_TABLE = 0.34;
-  var SLIP_LIMIT = 0.0215;            // chip tips off after this much slide
-  var CAR_L = 0.130, CAR_BODY_H = 0.037, WHEEL_R = 0.0135;
-  var DECK_Y = 0.045;                 // height of car deck above bench
-  var CHIP_D = 0.039, CHIP_T = 0.0068;
-  var CHIP_OFFSET = 0.036;            // chip centre relative to car centre (front deck)
-  var CAR_START = 0.410;
-  var TAPE_T = 0.0022;
-  var H_ON_CAR = DECK_Y + TAPE_T + CHIP_T + CHIP_T/2;   // loose-chip centre height above bench
-  var H_LANDED = CHIP_T/2;
+  var MU_S = 0.24, MU_K = 0.20, MU_ROLL = 0.07, MU_TABLE = 0.34, MU_WELL = 0.30;
+  var BENCH_LEN = 1.20, CAR_START = 0.60;
+
+  // the car, side view, positions relative to the car's centre
+  var CAR_L = 0.130, HALF = CAR_L/2;
+  var BODY_BOT = 0.0095, DECK = 0.045;          // underside and top of the body
+  var WELL_L = -0.024, WELL_R = 0.024;          // open well in the middle
+  var FLOOR = 0.016;                            // well floor height
+  var WHEEL_R = 0.0135, WHEEL_X = 0.043;
+  var PLUNGER = 0.012;                          // spring plunger sticking out of the front end
+
+  // chips
+  var CHIP_D = 0.039, R = CHIP_D/2, CHIP_T = 0.0055, TAPE_T = 0.0018;
+  var TC = 0.0445;                              // taped chip centre on the front deck
+  var STACK_TOP = DECK + TAPE_T + CHIP_T;       // top face of the taped chip
+  var H_STACK = STACK_TOP + CHIP_T/2;           // loose chip centre when stacked
+  var SLIP_LIMIT = R;                           // middle of the chip passes the taped chip's edge
 
   function dv(f){ return 0.16 + 0.0556*(f-1); }
   function tau(f){ return 0.165 - 0.0125*(f-1); }
@@ -741,107 +816,272 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
   /* ---------- state ---------- */
   var S = {
     test:'rear', force:6, speed:0.25, predict:null,
-    phase:'ready',            // ready | tap | roll | done
-    t:0, tapDir:1,
+    phase:'ready',            // ready | aim | tap | roll | done
+    t:0, tapDir:1, aimT:0,
     car:{x:CAR_START, v:0},
-    chip:{x:CAR_START+CHIP_OFFSET, h:H_ON_CAR, v:0, vy:0, riding:true, onCar:true, landed:false},
-    peakCar:0, peakChip:0, maxSlip:0, trial:0, handT:-1
+    chip:null,
+    peakCar:0, peakChip:0, maxSlip:0, trial:0,
+    hand:{a:0, x:0, sw:1, r:0, hit:-1}, stopX:CAR_START
   };
   var rows = [];
 
+  function freshChip(){
+    return {mode:'stack', riding:true, x:CAR_START+TC, h:H_STACK, v:0, vy:0, th:0, om:0,
+            ex:0, etop:0, pv:null, surf:'', leftStack:false};
+  }
+
   function reset(){
-    S.phase='ready'; S.t=0; S.handT=-1;
+    S.phase='ready'; S.t=0; S.aimT=0;
     S.car.x=CAR_START; S.car.v=0;
-    S.chip.x=CAR_START+CHIP_OFFSET; S.chip.h=H_ON_CAR; S.chip.v=0; S.chip.vy=0;
-    S.chip.riding=true; S.chip.onCar=true; S.chip.landed=false;
+    S.chip=freshChip();
     S.peakCar=0; S.peakChip=0; S.maxSlip=0;
+    S.hand.a=0; S.hand.sw=1; S.hand.r=0; S.hand.hit=-1; runBox=null;
+    S.tapDir = (S.test==='rear') ? 1 : -1;
+    S.stopX = CAR_START;
     setPhasePill('Ready');
     document.getElementById('run').disabled=false;
     updateReadouts();
+    frameCamera(true);
     draw();
+  }
+
+  /* ---------- chip geometry helpers ---------- */
+  function corners(ch){
+    var c=Math.cos(ch.th), s=Math.sin(ch.th), out=[];
+    [[-R,-CHIP_T/2],[R,-CHIP_T/2],[R,CHIP_T/2],[-R,CHIP_T/2]].forEach(function(p){
+      out.push({x:ch.x + p[0]*c - p[1]*s, y:ch.h + p[0]*s + p[1]*c, lx:p[0], ly:p[1]});
+    });
+    return out;
+  }
+  // the solid surface height under a world x, and what it is
+  function surfaceAt(x){
+    var rel = x - S.car.x;
+    if(rel > WELL_L && rel < WELL_R) return {top:FLOOR, kind:'well'};
+    if(rel >= -HALF && rel <= HALF){
+      if(rel >= TC-R && rel <= TC+R) return {top:STACK_TOP, kind:'deck'};
+      return {top:DECK, kind:'deck'};
+    }
+    return {top:0, kind:'bench'};
+  }
+
+  // keep a falling / tipping chip out of the car body (well walls, front and back faces)
+  function walls(ch){
+    var cs = corners(ch), shift = 0, u = ch.x - S.car.x;
+    cs.forEach(function(c){
+      var rel = c.x - S.car.x;
+      if(c.y >= DECK - 1e-4 || c.y <= BODY_BOT) return;
+      var lo, hi;
+      if(rel > -HALF && rel < WELL_L){ lo=-HALF; hi=WELL_L; }
+      else if(rel > WELL_R && rel < HALF){ lo=WELL_R; hi=HALF; }
+      else return;
+      var s = (u < rel) ? (lo - rel) : (hi - rel);
+      if(Math.abs(s) > Math.abs(shift)) shift = s;
+    });
+    if(shift !== 0){
+      ch.x += shift;
+      if(ch.pv) ch.pv.x += shift;
+      if(shift > 0 && ch.v < S.car.v) ch.v = S.car.v;
+      if(shift < 0 && ch.v > S.car.v) ch.v = S.car.v;
+    }
+  }
+
+  // lowest corner touches something: start rocking flat onto it
+  function landing(ch){
+    var cs = corners(ch), low = cs[0];
+    cs.forEach(function(c){ if(c.y < low.y) low = c; });
+    var sf = surfaceAt(low.x);
+    if(low.y <= sf.top){
+      ch.h += sf.top - low.y;
+      ch.pv = {x:low.x, y:sf.top, lx:low.lx, ly:low.ly};
+      ch.surf = sf.kind;
+      if(sf.kind==='bench') ch.v *= 0.55;   // some speed lost on hitting the bench
+      ch.vy = 0; ch.om = 0;
+      ch.mode = 'settle';
+      return true;
+    }
+    return false;
+  }
+
+  function towards(v, target, a, dt){
+    var d = target - v, m = a*dt;
+    return Math.abs(d) <= m ? target : v + Math.sign(d)*m;
   }
 
   /* ---------- physics ---------- */
   function step(dt){
-    var f=S.force, a_tap=accel(f), dir=S.tapDir;
-    var carA;
-
+    var f=S.force, dir=S.tapDir, carA;
     if(S.phase==='tap'){
-      carA = dir*a_tap;
+      carA = dir*accel(f);
     } else {
       carA = (Math.abs(S.car.v) > 1e-5) ? -Math.sign(S.car.v)*MU_ROLL*G : 0;
-      if(Math.abs(S.car.v) < 0.004 && Math.abs(carA) > 0){ S.car.v=0; carA=0; }
+      if(Math.abs(S.car.v) < 0.004 && carA !== 0){ S.car.v=0; carA=0; }
     }
 
-    // ---- loose chip ----
-    if(S.chip.onCar){
-      if(S.chip.riding){
-        // does friction have enough grip to carry the chip?
-        if(Math.abs(carA) > MU_S*G){
-          S.chip.riding=false;
-        }else{
-          S.chip.v = S.car.v + carA*dt;   // moves as one with the car
-        }
+    var ch = S.chip;
+
+    // stacked chip: friction from the taped chip is its only sideways force
+    if(ch.mode==='stack'){
+      if(ch.riding){
+        if(Math.abs(carA) > MU_S*G) ch.riding=false;
+        else ch.v = S.car.v + carA*dt;
       }
-      if(!S.chip.riding){
-        var rel = S.car.v - S.chip.v;     // car moving relative to chip
-        var fa = (Math.abs(rel) > 1e-6 ? Math.sign(rel) : 0) * MU_K*G;
-        var nv = S.chip.v + fa*dt;
-        if(rel !== 0 && Math.sign(S.car.v-nv) !== Math.sign(rel)){
-          nv = S.car.v; S.chip.riding = true;   // speeds matched: grip returns
-        }
-        S.chip.v = nv;
+      if(!ch.riding){
+        var rel = S.car.v - ch.v;
+        var nv = ch.v + (Math.abs(rel) > 1e-6 ? Math.sign(rel) : 0)*MU_K*G*dt;
+        if(rel !== 0 && Math.sign(S.car.v + carA*dt - nv) !== Math.sign(rel)){ nv = S.car.v + carA*dt; ch.riding = true; }
+        ch.v = nv;
       }
     }
 
-    // ---- integrate ----
     S.car.v += carA*dt;
     S.car.x += S.car.v*dt;
 
-    if(S.chip.onCar){
-      S.chip.x += S.chip.v*dt;
-      var slip = S.chip.x - (S.car.x + CHIP_OFFSET);
+    if(ch.mode==='stack'){
+      ch.x += ch.v*dt;
+      var slip = ch.x - (S.car.x + TC);
       S.maxSlip = Math.max(S.maxSlip, Math.abs(slip));
-      if(Math.abs(slip) > SLIP_LIMIT && !S.chip.riding){
-        S.chip.onCar=false; S.chip.vy=0;      // tips off, keeps its sideways speed
+      if(Math.abs(slip) >= SLIP_LIMIT && !ch.riding){
+        // its middle is past the taped chip's edge: it starts to tip over that edge
+        ch.mode='edge'; ch.leftStack=true;
+        ch.ex = TC + Math.sign(slip)*R; ch.etop = STACK_TOP;
       }
-    }else if(!S.chip.landed){
-      S.chip.vy += G*dt;                       // vy is downward speed
-      S.chip.h  -= S.chip.vy*dt;               // h is height above the bench
-      S.chip.x  += S.chip.v*dt;                // sideways speed is kept during the fall
-      if(S.chip.h <= H_LANDED){
-        S.chip.h = H_LANDED; S.chip.landed=true; S.chip.vy=0;
-        S.chip.v *= 0.55;                      // energy lost on landing
+    }
+    else if(ch.mode==='edge'){
+      // pivoting on the edge of the taped chip; gravity tips it toward the open side
+      var q0 = (S.car.x + ch.ex) - ch.x;
+      ch.v += -Math.sign(q0) * G*(0.15 + 0.5*Math.abs(Math.sin(ch.th))) * dt;
+      ch.x += ch.v*dt;
+      var xe = S.car.x + ch.ex, q = xe - ch.x;
+      for(var k=0;k<3;k++){
+        ch.th = 0.75*Math.max(-1, Math.min(1, q/R));
+        q = (xe - ch.x - (CHIP_T/2)*Math.sin(ch.th)) / Math.cos(ch.th);
       }
-    }else{
-      var ta = (Math.abs(S.chip.v)>1e-5) ? -Math.sign(S.chip.v)*MU_TABLE*G : 0;
-      S.chip.v += ta*dt;
-      if(Math.abs(S.chip.v) < 0.004) S.chip.v=0;
-      S.chip.x += S.chip.v*dt;
+      ch.h = ch.etop - q*Math.sin(ch.th) + (CHIP_T/2)*Math.cos(ch.th);
+      if(Math.abs(q) >= R*0.97){
+        ch.mode='air'; ch.vy=0.12; ch.om = Math.sign(ch.th)*3.5;
+      }
+      walls(ch);
+      landing(ch);
+    }
+    else if(ch.mode==='air'){
+      ch.vy += G*dt;
+      ch.h -= ch.vy*dt;
+      ch.x += ch.v*dt;
+      ch.th += ch.om*dt;
+      if(Math.abs(ch.th) > 1.15){ ch.th = Math.sign(ch.th)*1.15; ch.om = 0; }
+      walls(ch);
+      landing(ch);
+    }
+    else if(ch.mode==='settle'){
+      // rock flat about the corner that touched down
+      var sv = ch.surf==='bench' ? 0 : S.car.v;
+      ch.v = towards(ch.v, sv, (ch.surf==='bench'?MU_TABLE:MU_WELL)*G, dt);
+      ch.pv.x += ch.v*dt;
+      ch.th = towards(ch.th, 0, 9, dt);
+      var c=Math.cos(ch.th), s=Math.sin(ch.th);
+      ch.x = ch.pv.x - (ch.pv.lx*c - ch.pv.ly*s);
+      ch.h = ch.pv.y - (ch.pv.lx*s + ch.pv.ly*c);
+      walls(ch);
+      if(ch.th === 0){
+        ch.h = ch.pv.y + CHIP_T/2; ch.pv = null;
+        ch.mode = ch.surf==='bench' ? 'bench' : (ch.surf==='well' ? 'well' : 'deck');
+      }
+    }
+    else if(ch.mode==='well' || ch.mode==='deck'){
+      ch.v = towards(ch.v, S.car.v, MU_WELL*G, dt);
+      ch.x += ch.v*dt;
+      if(ch.mode==='well'){
+        var u = ch.x - S.car.x;
+        if(u < WELL_L + R){ ch.x = S.car.x + WELL_L + R; ch.v = S.car.v; }
+        if(u > WELL_R - R){ ch.x = S.car.x + WELL_R - R; ch.v = S.car.v; }
+      }
+    }
+    else if(ch.mode==='bench'){
+      ch.v = towards(ch.v, 0, MU_TABLE*G, dt);
+      ch.x += ch.v*dt;
     }
 
     S.peakCar = Math.max(S.peakCar, Math.abs(S.car.v));
-    S.peakChip = Math.max(S.peakChip, Math.abs(S.chip.v));
-
-    // clamp to bench
-    var lim = VIEW_W - CAR_L/2 - 0.004;
-    if(S.car.x < CAR_L/2+0.004){ S.car.x = CAR_L/2+0.004; S.car.v=0; }
-    if(S.car.x > lim){ S.car.x = lim; S.car.v=0; }
-    if(S.chip.x < 0.012){ S.chip.x=0.012; S.chip.v=0; }
-    if(S.chip.x > VIEW_W-0.012){ S.chip.x=VIEW_W-0.012; S.chip.v=0; }
+    S.peakChip = Math.max(S.peakChip, Math.abs(ch.v));
 
     S.t += dt;
     if(S.phase==='tap' && S.t >= tau(f)){ S.phase='roll'; setPhasePill('Rolling…'); }
 
-    var settled = Math.abs(S.car.v)<0.006 && Math.abs(S.chip.v)<0.006 &&
-                  (S.chip.onCar || S.chip.landed);
-    if(S.phase==='roll' && settled && S.t > tau(f)+0.05) finish();
+    var rest = (ch.mode==='bench') ? Math.abs(ch.v) < 0.006
+             : (ch.mode==='stack'||ch.mode==='well'||ch.mode==='deck') ? Math.abs(ch.v - S.car.v) < 0.006
+             : false;
+    if(S.phase==='roll' && Math.abs(S.car.v) < 0.006 && rest && S.t > tau(f)+0.05) finish();
   }
 
-  /* ---------- drawing ---------- */
-  function X(m){ return m*PX; }
-  function Y(m){ return m*PX; }
+  // where the car will stop, so the view can fit the whole run before it starts
+  function predictStop(){
+    var f=S.force, dir=S.tapDir, a=accel(f), x=S.car.x, v=S.car.v;
+    if(S.phase==='ready' || S.phase==='aim'){
+      var T=tau(f); x += 0.5*dir*a*T*T; v = dir*a*T;
+    } else if(S.phase==='tap'){
+      var tr=Math.max(0, tau(f)-S.t); x += v*tr + 0.5*dir*a*tr*tr; v += dir*a*tr;
+    }
+    return x + Math.sign(v)*v*v/(2*MU_ROLL*G);
+  }
 
+  /* ---------- camera: frames the car, the chip and the start line ---------- */
+  var W=0, H=0, DPR=1;
+  var cam = {cx:CAR_START, w:0.4}, camT = {cx:CAR_START, w:0.4}, runBox=null;
+  function benchY(){ return H - Math.max(52, Math.min(78, H*0.19)); }
+  function minViewW(){
+    // tall enough to show the car, the chips and the speed arrows above the bench
+    // chips reach ~6 cm up; leave ~84 px over them for the arrows and the start label
+    var s = Math.max(400, (benchY() - 84) / 0.062);
+    return Math.max(0.24, W / s);
+  }
+  function frameCamera(snap){
+    if(!W) return;
+    var ch=S.chip, hb=handRoom();
+    var xs=[CAR_START+TC, S.car.x-HALF-hb.back, S.car.x+HALF+PLUNGER+hb.front, ch.x-R, ch.x+R];
+    var running = S.phase==='aim'||S.phase==='tap'||S.phase==='roll'||S.phase==='done';
+    if(running && S.phase!=='done'){
+      var st = predictStop();
+      xs.push(st-HALF-0.02, st+HALF+0.02+PLUNGER);
+    }
+    var lo=Math.min.apply(null,xs), hi=Math.max.apply(null,xs);
+    // once a run starts the view only grows, so it holds still while you watch
+    if(running){
+      if(runBox){ lo=Math.min(lo,runBox.lo); hi=Math.max(hi,runBox.hi); }
+      runBox={lo:lo,hi:hi};
+    } else runBox=null;
+    var mw=minViewW(), maxW=Math.min(BENCH_LEN, mw*1.6);
+    var w=Math.max(mw, Math.min(maxW, (hi-lo)*1.12 + 0.05));
+    var cx=(lo+hi)/2;
+    if((hi-lo)*1.12 + 0.05 > w){
+      // too long to fit at a readable size: pan so the car and the chip stay in view
+      var nLo=Math.min(S.car.x-HALF-hb.back, ch.x-R-0.02), nHi=Math.max(S.car.x+HALF+PLUNGER+hb.front, ch.x+R+0.02);
+      w=Math.max(w, Math.min(BENCH_LEN, nHi-nLo));
+      cx=Math.max(nHi-w/2, Math.min(nLo+w/2, cx));
+    }
+    cx=Math.max(w/2, Math.min(BENCH_LEN-w/2, cx));
+    camT.cx=cx; camT.w=w;
+    if(snap){ cam.cx=cx; cam.w=w; }
+  }
+  // room for the hand on the side it taps from (it is drawn in screen pixels)
+  function handRoom(){
+    var busy = S.phase==='aim'||S.phase==='tap'||S.phase==='roll';
+    var px = (busy ? 150 : 70) * handScale() + 12;      // more room while it winds up and swings
+    var m = Math.max(0.035, px/sc());
+    return S.tapDir>0 ? {back:m, front:0.02} : {back:0.02, front:m};
+  }
+  function easeCamera(real, rate){
+    var k = 1 - Math.exp(-real*rate);
+    cam.cx += (camT.cx-cam.cx)*k;
+    cam.w  += (camT.w-cam.w)*k;
+    return Math.abs(camT.cx-cam.cx) > 1e-4 || Math.abs(camT.w-cam.w) > 1e-4;
+  }
+
+  function sc(){ return W / cam.w; }                    // px per metre
+  function X(m){ return (m - cam.cx)*sc() + W/2; }
+  function Y(h){ return benchY() - h*sc(); }
+  function L(m){ return m*sc(); }
+
+  /* ---------- drawing ---------- */
   function roundRect(x,y,w,h,r){
     ctx.beginPath();
     var rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);
@@ -852,309 +1092,426 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
     ctx.lineTo(x,y+rr); ctx.quadraticCurveTo(x,y,x+rr,y);
     ctx.closePath();
   }
+  // body outline: big rounded top corners like the real car, small bottom ones
+  function bodyPath(x0,y0,w,h,rt,rb){
+    ctx.beginPath();
+    ctx.moveTo(x0+rt,y0);
+    ctx.lineTo(x0+w-rt,y0); ctx.quadraticCurveTo(x0+w,y0,x0+w,y0+rt);
+    ctx.lineTo(x0+w,y0+h-rb); ctx.quadraticCurveTo(x0+w,y0+h,x0+w-rb,y0+h);
+    ctx.lineTo(x0+rb,y0+h); ctx.quadraticCurveTo(x0,y0+h,x0,y0+h-rb);
+    ctx.lineTo(x0,y0+rt); ctx.quadraticCurveTo(x0,y0,x0+rt,y0);
+    ctx.closePath();
+  }
 
   function drawBench(){
-    var by = Y(BENCH_Y);
-    ctx.fillStyle = C['card-2'];
-    ctx.fillRect(0,0,cv.width,by);
-
-    // counter slab
-    var g = ctx.createLinearGradient(0,by,0,cv.height);
+    var by = benchY();
+    var g = ctx.createLinearGradient(0,by,0,H);
     g.addColorStop(0, C['bench']); g.addColorStop(1, C['bench-2']);
-    ctx.fillStyle=g; ctx.fillRect(0,by,cv.width,cv.height-by);
-    ctx.fillStyle=C['bench-edge']; ctx.fillRect(0,by,cv.width,Y(0.0022));
+    ctx.fillStyle=g; ctx.fillRect(0,by,W,H-by);
+    ctx.fillStyle=C['bench-edge']; ctx.fillRect(0,by,W,3);
 
-    // printed centimetre ruler on the counter face
-    var top = by + Y(0.020);
-    ctx.strokeStyle = C['bench-edge']; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(0,top); ctx.lineTo(cv.width,top); ctx.stroke();
-    ctx.font='700 17px "JetBrains Mono", monospace';
-    ctx.textAlign='center'; ctx.textBaseline='top';
-    for(var cm=0; cm<=82; cm++){
+    // centimetre ruler printed on the bench face; it moves and zooms with the view
+    var top = by + 12, pxcm = L(0.01);
+    ctx.strokeStyle=C['bench-edge']; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(0,top); ctx.lineTo(W,top); ctx.stroke();
+    var labelEvery = pxcm*5 > 46 ? 5 : 10;
+    var c0 = Math.max(0, Math.floor((cam.cx - cam.w/2)*100)-1), c1 = Math.min(BENCH_LEN*100, Math.ceil((cam.cx + cam.w/2)*100)+1);
+    ctx.font='700 12px "JetBrains Mono", ui-monospace, monospace';
+    ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillStyle=C['bench-edge'];
+    for(var cm=c0; cm<=c1; cm++){
+      var big=(cm%10===0), mid=(cm%5===0);
+      if(!mid && pxcm < 5) continue;
       var px=X(cm/100);
-      var big = (cm%10===0), mid=(cm%5===0);
-      ctx.beginPath();
-      ctx.lineWidth = big?2.5:1.5;
-      ctx.strokeStyle = C['bench-edge'];
-      ctx.moveTo(px,top); ctx.lineTo(px, top + (big?16:mid?11:7));
-      ctx.stroke();
-      if(big && cm>0 && cm<82){
-        ctx.fillStyle=C['bench-edge'];
-        ctx.fillText(String(cm), px, top+19);
-      }
+      ctx.lineWidth = big?2:1.2;
+      ctx.beginPath(); ctx.moveTo(px,top); ctx.lineTo(px, top+(big?13:mid?9:5)); ctx.stroke();
+      if(cm%labelEvery===0) ctx.fillText(String(cm), px, top+15);
     }
-    ctx.textAlign='left';
-    ctx.fillStyle=C['bench-edge'];
-    ctx.font='800 15px Poppins, sans-serif';
-    ctx.fillText('CENTIMETRES', 8, top+19);
+    ctx.textAlign='left'; ctx.font='800 11px Poppins, sans-serif';
+    ctx.fillText('CM', 8, top+30 < H-14 ? top+30 : top+15);
   }
 
-  // side view of a poker chip
-  function chip(cxpx, cypx, w, h, base, stripe){
+  function chipShape(cx, cy, w, h, base, stripe, rot, ghost){
     ctx.save();
-    roundRect(cxpx-w/2, cypx-h/2, w, h, h*0.34);
+    ctx.translate(cx, cy);
+    if(rot) ctx.rotate(rot);
+    roundRect(-w/2, -h/2, w, h, h*0.34);
+    if(ghost){
+      ctx.setLineDash([5,4]); ctx.lineWidth=1.5; ctx.strokeStyle=C['ink-3']; ctx.stroke();
+      ctx.restore(); return;
+    }
     ctx.fillStyle=base; ctx.fill();
-    // edge from the page tokens: dark in light mode, light in dark mode so the dark loose chip still shows
-    ctx.lineWidth=2; ctx.strokeStyle=C['chip-edge']; ctx.stroke();
+    ctx.lineWidth=1.6; ctx.strokeStyle=C['chip-edge']; ctx.stroke();
     ctx.clip();
     ctx.fillStyle=stripe;
-    for(var i=-2;i<=2;i++){
-      var sx = cxpx + i*(w/5.2) - w*0.032;
-      ctx.fillRect(sx, cypx-h/2, w*0.064, h);
-    }
-    ctx.restore();
-    ctx.save();
-    roundRect(cxpx-w/2, cypx-h/2, w, h, h*0.34);
-    ctx.clip();
-    ctx.fillStyle='rgba(255,255,255,.28)';
-    ctx.fillRect(cxpx-w/2, cypx-h/2, w, h*0.3);
+    for(var i=-2;i<=2;i++) ctx.fillRect(i*(w/5.2) - w*0.032, -h/2, w*0.064, h);
+    ctx.fillStyle='rgba(255,255,255,.26)';
+    ctx.fillRect(-w/2, -h/2, w, h*0.3);
     ctx.restore();
   }
 
-  function drawCar(){
-    var by=Y(BENCH_Y);
-    var cx=X(S.car.x), L=X(CAR_L), H=Y(CAR_BODY_H), wr=Y(WHEEL_R);
-    var bodyBottom = by - wr*0.62;
-    var bodyTop = bodyBottom - H;
-
-    // wheels
-    [-0.040, 0.040].forEach(function(o){
-      var wx=cx+X(o), wy=by-wr;
-      ctx.beginPath(); ctx.arc(wx,wy,wr,0,6.2832);
-      ctx.fillStyle='#171A1F'; ctx.fill();
-      ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.stroke();
-      ctx.beginPath(); ctx.arc(wx,wy,wr*0.34,0,6.2832);
-      ctx.fillStyle='#6E7580'; ctx.fill();
-    });
+  function drawCarBody(){
+    var cx=S.car.x, x0=X(cx-HALF), w=L(CAR_L);
+    var yTop=Y(DECK), yBot=Y(BODY_BOT), h=yBot-yTop;
+    var by=benchY();
 
     // shadow
-    ctx.save();
-    ctx.fillStyle='rgba(0,0,0,.18)';
-    ctx.beginPath(); ctx.ellipse(cx, by+Y(0.0035), L*0.48, Y(0.004), 0,0,6.2832); ctx.fill();
+    ctx.save(); ctx.fillStyle='rgba(0,0,0,.18)';
+    ctx.beginPath(); ctx.ellipse(X(cx), by+2, w*0.5, Math.max(3,L(0.003)), 0, 0, 6.2832); ctx.fill();
     ctx.restore();
 
+    // wheels (behind the body skirt), hub mark turns as the car rolls
+    [-WHEEL_X, WHEEL_X].forEach(function(o){
+      var wx=X(cx+o), wy=Y(WHEEL_R), wr=L(WHEEL_R);
+      ctx.beginPath(); ctx.arc(wx,wy,wr,0,6.2832); ctx.fillStyle='#1E2228'; ctx.fill();
+      ctx.lineWidth=1.5; ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(wx,wy,wr*0.58,0,6.2832); ctx.fillStyle='#3A4049'; ctx.fill();
+      ctx.beginPath(); ctx.arc(wx,wy,wr*0.24,0,6.2832); ctx.fillStyle='#9AA2AD'; ctx.fill();
+      var ang = (cx - CAR_START)/WHEEL_R;
+      ctx.strokeStyle='#9AA2AD'; ctx.lineWidth=Math.max(1.5,wr*0.12); ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(wx+Math.cos(ang)*wr*0.3, wy+Math.sin(ang)*wr*0.3);
+      ctx.lineTo(wx+Math.cos(ang)*wr*0.55, wy+Math.sin(ang)*wr*0.55); ctx.stroke();
+    });
+
+    // spring plunger on the front end: hex nut + knurled knob
+    var py=Y(0.022), nutW=L(0.004), nutH=L(0.0075), knW=L(0.006), knH=L(0.012);
+    var px=X(cx+HALF);
+    ctx.fillStyle='#B9C0C8'; ctx.strokeStyle='#6E7680'; ctx.lineWidth=1;
+    ctx.fillRect(px, py-nutH/2, nutW, nutH); ctx.strokeRect(px, py-nutH/2, nutW, nutH);
+    ctx.fillStyle='#8E969F'; ctx.fillRect(px+nutW, py-L(0.0015), L(0.002), L(0.003));
+    var kx=px+nutW+L(0.002);
+    roundRect(kx, py-knH/2, knW, knH, L(0.0012));
+    var kg=ctx.createLinearGradient(0,py-knH/2,0,py+knH/2);
+    kg.addColorStop(0,'#E4E8EC'); kg.addColorStop(.5,'#AEB5BD'); kg.addColorStop(1,'#7C848D');
+    ctx.fillStyle=kg; ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='rgba(60,66,74,.55)'; ctx.lineWidth=1;
+    for(var i=1;i<6;i++){ var ky=py-knH/2+knH*i/6; ctx.beginPath(); ctx.moveTo(kx+1,ky); ctx.lineTo(kx+knW-1,ky); ctx.stroke(); }
+
     // body
-    var gg=ctx.createLinearGradient(0,bodyTop,0,bodyBottom);
-    gg.addColorStop(0,'#5AA7EC'); gg.addColorStop(0.45,'#2C7FD4'); gg.addColorStop(1,'#1A5DA8');
-    roundRect(cx-L/2, bodyTop, L, H, Y(0.008));
+    var gg=ctx.createLinearGradient(0,yTop,0,yBot);
+    gg.addColorStop(0,'#3F95E6'); gg.addColorStop(0.5,'#2479D2'); gg.addColorStop(1,'#1960B0');
+    bodyPath(x0, yTop, w, h, L(0.011), L(0.003));
     ctx.fillStyle=gg; ctx.fill();
-    ctx.lineWidth=2.5; ctx.strokeStyle='#134A8F'; ctx.stroke();
+    ctx.lineWidth=2; ctx.strokeStyle='#134A8F'; ctx.stroke();
 
-    // open bed at the rear
-    var bedW=L*0.40, bedX=cx-L/2+L*0.12;
-    roundRect(bedX, bodyTop+Y(0.004), bedW, H*0.52, Y(0.004));
-    ctx.fillStyle='#0F4884'; ctx.fill();
-    ctx.strokeStyle='#0B3767'; ctx.lineWidth=2; ctx.stroke();
+    // top faces of the two decks
+    ctx.save();
+    bodyPath(x0, yTop, w, h, L(0.011), L(0.003)); ctx.clip();
+    ctx.fillStyle='rgba(255,255,255,.22)';
+    ctx.fillRect(x0, yTop, w, Math.max(2,L(0.0018)));
+    ctx.restore();
 
-    // small side tabs from the reference car
-    ctx.fillStyle='#1A5DA8';
-    ctx.fillRect(cx-L*0.30, bodyBottom-Y(0.006), X(0.008), Y(0.011));
-    ctx.fillRect(cx+L*0.26, bodyBottom-Y(0.006), X(0.008), Y(0.011));
+    // small tabs over each wheel, like the real car
+    ctx.fillStyle='#2A80D8'; ctx.strokeStyle='#134A8F'; ctx.lineWidth=1.2;
+    [-0.036, 0.030].forEach(function(o){
+      var tx=X(cx+o), tw=L(0.006), th=L(0.0075);
+      ctx.fillRect(tx, yBot-th, tw, th); ctx.strokeRect(tx, yBot-th, tw, th);
+    });
 
-    // "FRONT" marker
-    ctx.font='800 15px Poppins, sans-serif';
-    ctx.fillStyle='rgba(255,255,255,.85)';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('FRONT', cx+L*0.30, bodyTop+H*0.72);
-
-    return {top:bodyTop, cx:cx, L:L};
+    // the open well: inside walls and floor
+    var wx0=X(cx+WELL_L), wx1=X(cx+WELL_R), wf=Y(FLOOR);
+    var ig=ctx.createLinearGradient(0,yTop,0,wf);
+    ig.addColorStop(0,'#0C3F79'); ig.addColorStop(1,'#0A3363');
+    ctx.fillStyle=ig; ctx.fillRect(wx0, yTop-1, wx1-wx0, wf-yTop+1);
+    ctx.fillStyle='#165AA6'; ctx.fillRect(wx0, wf, wx1-wx0, Math.max(2,L(0.002)));   // floor
+    ctx.fillStyle='rgba(0,0,0,.22)';
+    ctx.fillRect(wx0, yTop-1, Math.max(2,L(0.0025)), wf-yTop+1);                     // inside wall shade
+    ctx.fillRect(wx1-Math.max(2,L(0.0025)), yTop-1, Math.max(2,L(0.0025)), wf-yTop+1);
+    // gap in the top edge shows the well is open
+    ctx.fillStyle=C['card-2'];
+    ctx.fillRect(wx0+1, yTop-3, wx1-wx0-2, 3);
   }
 
-  function drawChips(carGeo){
-    var by=Y(BENCH_Y);
-    var deckTop = by - Y(DECK_Y);
-    var cw=X(CHIP_D), ch=Y(CHIP_T);
-    var tapeX = X(S.car.x + CHIP_OFFSET);
+  // near side wall over the well, drawn see-through so the chip inside stays visible
+  function drawNearWall(){
+    var cx=S.car.x, wx0=X(cx+WELL_L), wx1=X(cx+WELL_R), yTop=Y(DECK), wf=Y(FLOOR);
+    ctx.save();
+    ctx.fillStyle='rgba(44,128,218,.30)';
+    ctx.fillRect(wx0, yTop, wx1-wx0, wf-yTop);
+    ctx.setLineDash([6,4]); ctx.lineWidth=1.6; ctx.strokeStyle='rgba(170,210,250,.85)';
+    ctx.strokeRect(wx0+0.8, yTop+0.8, wx1-wx0-1.6, wf-yTop-1.6);
+    ctx.restore();
+    if(S.chip.mode==='stack' && (wx1-wx0) > 64){
+      ctx.font='800 11px Poppins, sans-serif'; ctx.fillStyle='rgba(205,228,252,.9)';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('open well', (wx0+wx1)/2, (yTop+wf)/2);
+    }
+  }
 
-    // double-sided tape
-    roundRect(tapeX-cw*0.56, deckTop-Y(0.0022), cw*1.12, Y(0.0025), 1.5);
+  function drawStackBase(){
+    var tx=X(S.car.x+TC), cw=L(CHIP_D);
+    roundRect(tx-cw*0.54, Y(DECK+TAPE_T), cw*1.08, L(TAPE_T), 1.5);
     ctx.fillStyle='#E8C86B'; ctx.fill();
-    ctx.strokeStyle='rgba(120,95,20,.55)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.strokeStyle='rgba(120,95,20,.55)'; ctx.lineWidth=1; ctx.stroke();
+    chipShape(tx, Y(DECK+TAPE_T+CHIP_T/2), cw, L(CHIP_T), '#C13029', '#F4EFE6', 0);
+  }
 
-    // secured chip (taped down)
-    var y1 = deckTop - Y(0.0022) - ch/2;
-    chip(tapeX, y1, cw, ch, '#C13029', '#F4EFE6');
-
-    // loose chip
-    var lx = X(S.chip.x);
-    var ly = S.chip.onCar ? (y1 - ch) : (by - Y(S.chip.h));
-    chip(lx, ly, cw, ch, '#1D2C3E', '#EDEFF2');
-
-    return {looseX:lx, looseY:ly, securedY:y1, deckTop:deckTop};
+  function drawLooseChip(){
+    var ch=S.chip;
+    chipShape(X(ch.x), Y(ch.h), L(CHIP_D), L(CHIP_T), '#1D2C3E', '#EDEFF2', -ch.th);
   }
 
   function arrow(x1,y,len,color,label){
-    if(Math.abs(len)<4) return;
-    var x2=x1+len;
-    ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=5; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x2-Math.sign(len)*10,y); ctx.stroke();
+    if(Math.abs(len)<6) return;
+    var x2=x1+len, sg=Math.sign(len);
+    ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x2-sg*8,y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2,y); ctx.lineTo(x2-sg*13, y-7); ctx.lineTo(x2-sg*13, y+7); ctx.closePath(); ctx.fill();
+    ctx.font='800 13px Poppins, sans-serif';
+    ctx.textAlign = sg>0 ? 'right' : 'left'; ctx.textBaseline='middle';
+    ctx.fillText(label, x1 - sg*7, y);
+  }
+
+  // the hand, seen from the side: flat open hand, four fingers closed together, palm toward the car.
+  // Drawn in its own units (about 1 unit = 1 px when the car is shown large) and scaled with the view.
+  function handScale(){ return Math.max(0.55, Math.min(1.3, sc()/2600)); }
+  function drawHandShape(k, g){
+    var lw = 1.6/k, edge = '#9E6A47';
+    // four fingers held together, turned a little toward you so each one shows; back to front
+    [[-44,-31,-97,-6],[-35,-21,-109,-4],[-25,-11,-115,-1],[-14,0,-106,1]].forEach(function(f,n){
+      var x0=f[0], x1=f[1], tip=f[2], lean=f[3], r=(x1-x0)/2;
+      ctx.beginPath();
+      ctx.moveTo(x0, -30);
+      ctx.lineTo(x0+lean, tip+r);
+      ctx.arc(x0+lean+r, tip+r, r, Math.PI, 0);
+      ctx.lineTo(x1, -30);
+      ctx.closePath();
+      ctx.fillStyle = n===3 ? '#F0C19C' : (n===2 ? '#EAB792' : (n===1 ? '#E2AD88' : '#D9A27E'));
+      ctx.fill(); ctx.lineWidth = lw; ctx.strokeStyle = edge; ctx.stroke();
+      // knuckle crease on each finger
+      ctx.beginPath(); ctx.moveTo(x0+lean*0.5+2, (tip+(-30))/2); ctx.lineTo(x1+lean*0.5-2, (tip+(-30))/2-1);
+      ctx.strokeStyle='rgba(158,106,71,.45)'; ctx.lineWidth=1.1/k; ctx.stroke();
+    });
+    // palm, wrist and forearm
     ctx.beginPath();
-    ctx.moveTo(x2,y); ctx.lineTo(x2-Math.sign(len)*16, y-9); ctx.lineTo(x2-Math.sign(len)*16, y+9);
-    ctx.closePath(); ctx.fill();
-    if(label){
-      ctx.font='800 17px Poppins, sans-serif';
-      ctx.textAlign = len>0?'left':'right'; ctx.textBaseline='bottom';
-      ctx.fillText(label, x1 - (len>0?0:0), y-13);
+    ctx.moveTo(-700, -2);
+    ctx.lineTo(-62, 4);
+    ctx.bezierCurveTo(-52, 2, -46, -12, -45, -32);        // back of the hand up to the knuckles
+    ctx.bezierCurveTo(-34, -44, -12, -46, 1, -40);        // knuckle line
+    ctx.bezierCurveTo(2, -24, 1, -6, 1, 8);               // flat palm: this face hits the car
+    ctx.bezierCurveTo(1, 20, -4, 30, -16, 36);            // heel of the palm
+    ctx.bezierCurveTo(-30, 42, -46, 44, -62, 44);         // under the wrist
+    ctx.lineTo(-700, 52);
+    ctx.closePath();
+    ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = lw; ctx.strokeStyle = edge; ctx.stroke();
+    // thumb, held along the front of the palm
+    ctx.beginPath();
+    ctx.moveTo(-34, 24);
+    ctx.bezierCurveTo(-24, 10, -14, -8, -9, -26);
+    ctx.bezierCurveTo(-7, -35, 3, -35, 3, -25);
+    ctx.bezierCurveTo(3, -10, -6, 12, -18, 30);
+    ctx.closePath();
+    ctx.fillStyle = '#EDBD98'; ctx.fill(); ctx.lineWidth = lw; ctx.strokeStyle = edge; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(-2.5, -26, 3.2, 5, 0.3, 0, 6.2832);
+    ctx.fillStyle = 'rgba(255,240,230,.8)'; ctx.fill();
+  }
+  function drawHand(){
+    var H_ = S.hand;
+    if(H_.a <= 0.01) return;
+    var m = S.tapDir>0 ? 1 : -1;                  // +1: hand behind the car, palm facing right
+    var k = handScale();
+    var hx = X(H_.x), hy = Y(S.tapDir>0 ? 0.026 : 0.022);
+    var off = H_.sw*70 + H_.r*28;                 // wind-up distance, then recoil, in hand units
+    var ang = -(H_.sw*0.5 + H_.r*0.2);            // fingertips lean back before the swing and after the hit
+
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, H_.a));
+    ctx.translate(hx, hy); ctx.scale(m*k, k); ctx.translate(-off, 0);
+    ctx.translate(-50, 28); ctx.rotate(ang); ctx.translate(50, -28);   // swing about the wrist
+    var g = ctx.createLinearGradient(-60, 0, 2, 0);
+    g.addColorStop(0, '#D49C77'); g.addColorStop(1, '#F1C39F');
+    drawHandShape(k, g);
+    ctx.restore();
+
+    // impact burst where the palm meets the car
+    if(H_.hit >= 0 && H_.hit < 0.32){
+      var p = H_.hit/0.32;
+      ctx.save();
+      ctx.globalAlpha = 1 - p;
+      ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      [-62,-34,0,34,62].forEach(function(d){
+        var a = d*Math.PI/180, r0 = (9 + 10*p)*k, r1 = (20 + 14*p)*k;
+        ctx.beginPath();
+        ctx.moveTo(hx + m*Math.cos(a)*r0, hy + Math.sin(a)*r0);
+        ctx.lineTo(hx + m*Math.cos(a)*r1, hy + Math.sin(a)*r1);
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+
+    // force label and arrow above the fingertips, pointing at the car
+    if(H_.sw < 0.35 && H_.r < 0.6){
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, H_.a)) * (1 - H_.r/0.6);
+      var ay = hy - 128*k, ax0 = hx - m*(off*k + 46*k), ax1 = hx - m*(off*k + 4*k);
+      ctx.strokeStyle = C['red']; ctx.fillStyle = C['red']; ctx.lineWidth = 3.5; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(ax0, ay); ctx.lineTo(ax1 - m*8, ay); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ax1, ay); ctx.lineTo(ax1 - m*12, ay-7); ctx.lineTo(ax1 - m*12, ay+7); ctx.closePath(); ctx.fill();
+      ctx.font = '800 13px Poppins, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText('FORCE', (ax0+ax1)/2, ay - 7);
+      ctx.restore();
     }
   }
 
-  function drawHand(){
-    if(S.handT<0) return;
-    var by=Y(BENCH_Y), wr=Y(WHEEL_R);
-    var L=X(CAR_L), cx=X(S.car.x);
-    var side = S.tapDir>0 ? -1 : 1;              // hand is on the side that pushes
-    var hx = cx + side*(L/2 + X(0.012));
-    var hy = by - wr*0.62 - Y(CAR_BODY_H)*0.55;
-    var w=X(0.026), h=Y(0.030);
+  function startMark(){
+    var x=X(CAR_START+TC), by=benchY();
     ctx.save();
-    ctx.globalAlpha = Math.max(0, Math.min(1, S.handT));
-    roundRect(hx - (side<0?w:0), hy-h/2, w, h, Y(0.006));
-    ctx.fillStyle='#D9A882'; ctx.fill();
-    ctx.strokeStyle='#A97A54'; ctx.lineWidth=2; ctx.stroke();
-    // impact lines
-    ctx.strokeStyle=C['red']; ctx.lineWidth=3.5; ctx.lineCap='round';
-    for(var i=-1;i<=1;i++){
-      var yy=hy+i*Y(0.008);
-      ctx.beginPath();
-      ctx.moveTo(hx + side*X(0.004), yy);
-      ctx.lineTo(hx + side*X(0.014), yy + i*Y(0.005));
-      ctx.stroke();
-    }
-    ctx.font='800 17px Poppins, sans-serif';
-    ctx.fillStyle=C['red']; ctx.textAlign=side<0?'right':'left'; ctx.textBaseline='middle';
-    ctx.fillText('FORCE', hx + side*X(0.020), hy - Y(0.022));
+    ctx.strokeStyle=C['ink-3']; ctx.globalAlpha=.6; ctx.lineWidth=1.6; ctx.setLineDash([4,6]);
+    ctx.beginPath(); ctx.moveTo(x, 26); ctx.lineTo(x, by); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha=1;
+    ctx.font='800 12.5px Poppins, sans-serif';
+    ctx.fillStyle=C['ink-3']; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText('chip started here', Math.max(64, Math.min(W-64, x)), 22);
     ctx.restore();
   }
 
   function drawGap(){
-    if(S.phase!=='done' || S.chip.onCar) return;
-    var by=Y(BENCH_Y);
-    var a=X(S.chip.x), b=X(S.car.x);
-    var y=by+Y(0.006);
+    if(S.phase!=='done' || S.chip.mode!=='bench') return;
+    var by=benchY(), a=X(S.chip.x), b=X(S.car.x), y=by-6;
     ctx.save();
-    ctx.strokeStyle=C['ink-3']; ctx.lineWidth=2; ctx.setLineDash([6,5]);
-    ctx.beginPath(); ctx.moveTo(a,y-Y(0.016)); ctx.lineTo(a,y+Y(0.004)); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(b,y-Y(0.034)); ctx.lineTo(b,y+Y(0.004)); ctx.stroke();
+    ctx.strokeStyle=C['ink-2']; ctx.lineWidth=1.6; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(b, Y(BODY_BOT)); ctx.lineTo(b, by); ctx.stroke();
     ctx.setLineDash([]);
     ctx.beginPath(); ctx.moveTo(a,y); ctx.lineTo(b,y); ctx.stroke();
-    var d=Math.abs(S.chip.x-S.car.x)*100;
-    ctx.font='800 18px "JetBrains Mono", monospace';
-    ctx.fillStyle=C['ink-2']; ctx.textAlign='center'; ctx.textBaseline='bottom';
-    var midx=(a+b)/2;
-    var tw=ctx.measureText(d.toFixed(1)+' cm').width+14;
-    ctx.fillStyle=C['card']; ctx.fillRect(midx-tw/2, y-19, tw, 20);
-    ctx.fillStyle=C['ink-2']; ctx.fillText(d.toFixed(1)+' cm', midx, y-2);
-    ctx.restore();
-  }
-
-  function legend(){
-    var items=[['#1D2C3E','#EDEFF2','Loose chip — free to slide'],
-               ['#C13029','#F4EFE6','Taped chip — stuck down']];
-    var x=cv.width-18, y=21;
-    ctx.font='800 16px Poppins, sans-serif';
-    ctx.textAlign='right'; ctx.textBaseline='middle';
-    items.forEach(function(it,i){
-      var yy=y+i*27;
-      ctx.fillStyle=C['ink-3'];
-      ctx.fillText(it[2], x-50, yy);
-      chip(x-21, yy, 42, 13, it[0], it[1]);
-    });
-  }
-
-  // dotted reference line at the loose chip's starting spot — the whole point of the lab
-  function startMark(){
-    var x=X(CAR_START+CHIP_OFFSET), by=Y(BENCH_Y);
-    ctx.save();
-    ctx.strokeStyle=C['ink-3']; ctx.globalAlpha=.55; ctx.lineWidth=2; ctx.setLineDash([4,7]);
-    ctx.beginPath(); ctx.moveTo(x, 44); ctx.lineTo(x, by); ctx.stroke();
-    ctx.setLineDash([]); ctx.globalAlpha=1;
-    ctx.font='800 15px Poppins, sans-serif';
-    ctx.fillStyle=C['ink-3']; ctx.textAlign='center'; ctx.textBaseline='bottom';
-    ctx.fillText('chip started here', x, 38);
+    var d=Math.abs(S.chip.x-S.car.x)*100, txt=d.toFixed(1)+' cm';
+    ctx.font='800 13px "JetBrains Mono", monospace';
+    var tw=ctx.measureText(txt).width+12, mx=(a+b)/2;
+    ctx.fillStyle=C['card']; roundRect(mx-tw/2, y-22, tw, 18, 4); ctx.fill();
+    ctx.fillStyle=C['ink-2']; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(txt, mx, y-13);
     ctx.restore();
   }
 
   function draw(){
-    ctx.clearRect(0,0,cv.width,cv.height);
+    if(!W) return;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=C['card-2']; ctx.fillRect(0,0,W,benchY());
     drawBench();
     startMark();
-    if(!S.chip.onCar){
-      var by=Y(BENCH_Y), deckTop=by-Y(DECK_Y);
-      var cw=X(CHIP_D), ch=Y(CHIP_T);
-      chip(X(S.chip.x), by-Y(S.chip.h), cw, ch, '#1D2C3E', '#EDEFF2');
-      drawCar();
-      var tapeX=X(S.car.x+CHIP_OFFSET);
-      roundRect(tapeX-cw*0.56, deckTop-Y(0.0022), cw*1.12, Y(0.0025), 1.5);
-      ctx.fillStyle='#E8C86B'; ctx.fill();
-      ctx.strokeStyle='rgba(120,95,20,.55)'; ctx.lineWidth=1.5; ctx.stroke();
-      chip(tapeX, deckTop-Y(0.0022)-ch/2, cw, ch, '#C13029', '#F4EFE6');
-    }else{
-      drawChips(drawCar());
-    }
+
     drawHand();
+    drawCarBody();
+    drawStackBase();
+    var ch=S.chip;
+    if(ch.leftStack){
+      // dashed outline: where the loose chip sat on the car
+      chipShape(X(S.car.x+TC), Y(H_STACK), L(CHIP_D), L(CHIP_T), 0, 0, 0, true);
+    }
+    var inWellZone = ch.mode==='well' || ((ch.mode==='air'||ch.mode==='settle'||ch.mode==='edge') && ch.h < DECK+CHIP_T &&
+                     Math.abs(ch.x - S.car.x) < WELL_R+R);
+    if(inWellZone){ drawLooseChip(); drawNearWall(); }
+    else { drawNearWall(); drawLooseChip(); }
+
     drawGap();
 
     if(S.phase==='tap'||S.phase==='roll'){
-      var by2=Y(BENCH_Y), scale=190;
-      arrow(X(S.car.x), by2-Y(0.062), S.car.v*scale, C['accent'], 'car');
-      if(Math.abs(S.chip.v)>0.02)
-        arrow(X(S.chip.x), by2-Y(0.086), S.chip.v*scale, C['red'], 'chip');
+      var k=Math.min(0.17*W, 230);
+      var topY = Y(STACK_TOP + CHIP_T);
+      arrow(X(S.car.x), topY - 42, S.car.v*k, C['accent'], 'car');
+      if(Math.abs(ch.v)>0.02) arrow(X(ch.x), Math.min(Y(ch.h)-18, topY-16), ch.v*k, C['red'], 'chip');
     }
-    legend();
   }
+
+  /* ---------- sizing: crisp canvas at any width ---------- */
+  function resize(){
+    var r = hold.getBoundingClientRect();
+    var nw = Math.round(r.width), nh = Math.round(r.height);
+    if(nw<10 || nh<10) return;
+    DPR = Math.min(2.5, window.devicePixelRatio || 1);
+    W = nw; H = nh;
+    cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
+    frameCamera(!raf);
+    if(!raf){ cam.cx=camT.cx; cam.w=camT.w; }
+    draw();
+  }
+  if(window.ResizeObserver) new ResizeObserver(resize).observe(hold);
+  window.addEventListener('resize', resize);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
 
   /* ---------- run loop ---------- */
   var raf=null, last=0;
+  var AIM_TIME = 0.65;   // real seconds: the hand winds up and swings in while the view zooms to fit
   function loop(ts){
     if(!last) last=ts;
     var real=Math.min(0.05,(ts-last)/1000); last=ts;
-    var simDt = real*S.speed;
-    var n=Math.max(1, Math.ceil(simDt/0.0004));
-    for(var i=0;i<n && S.phase!=='done';i++) step(simDt/n);
-    if(S.handT>=0) S.handT -= real*(S.speed<0.2?1.2:3.0);
+
+    if(S.phase==='aim'){
+      S.aimT += real;
+      S.hand.a = Math.min(1, S.aimT/0.2);
+      var u = Math.min(1, S.aimT/AIM_TIME);
+      S.hand.sw = u < 0.35 ? 1 : 1 - Math.pow((u-0.35)/0.65, 3);   // hold the wind-up, then swing in faster and faster
+      S.hand.x = contactX();
+      if(S.aimT >= AIM_TIME){ S.phase='tap'; S.t=0; S.hand.sw=0; S.hand.hit=0; setPhasePill('Tapping…'); }
+    } else if(S.phase==='tap'||S.phase==='roll'){
+      var simDt = real*S.speed;
+      var n=Math.max(1, Math.ceil(simDt/0.0003));
+      for(var i=0;i<n && S.phase!=='done';i++) step(simDt/n);
+      if(S.hand.hit >= 0) S.hand.hit += real;
+      if(S.phase==='tap') S.hand.x = contactX();               // palm stays on the car while it pushes
+      else {
+        S.hand.r = Math.min(1, S.hand.r + real*(S.speed<0.2?1.4:3));   // pull back
+        if(S.hand.r > 0.45) S.hand.a -= real*(S.speed<0.2?1.2:2.4);
+      }
+    } else {
+      if(S.hand.hit >= 0) S.hand.hit += real;
+      S.hand.r = Math.min(1, S.hand.r + real*3);
+      S.hand.a -= real*2.2;
+    }
+
+    frameCamera(false);
+    var moving = easeCamera(real, S.phase==='aim' ? 7 : 3.5);
     updateReadouts(); draw();
-    if(S.phase!=='done') raf=requestAnimationFrame(loop);
+    if(S.phase!=='done' || moving || S.hand.a>0.01) raf=requestAnimationFrame(loop);
     else raf=null;
   }
+  function contactX(){
+    return S.tapDir>0 ? S.car.x - HALF : S.car.x + HALF + PLUNGER;
+  }
+  function kick(){ if(!raf){ last=0; raf=requestAnimationFrame(loop); } }
 
   function run(){
-    if(S.phase==='tap'||S.phase==='roll') return;
+    if(S.phase==='aim'||S.phase==='tap'||S.phase==='roll') return;
     reset();
-    S.tapDir = (S.test==='rear') ? 1 : -1;
-    S.phase='tap'; S.t=0; S.handT=1;
-    setPhasePill('Tapping…');
+    S.phase='aim'; S.aimT=0; S.hand.a=0; S.hand.sw=1; S.hand.r=0; S.hand.hit=-1; S.hand.x=contactX();
+    setPhasePill('Get ready…');
     document.getElementById('run').disabled=true;
-    last=0; raf=requestAnimationFrame(loop);
+    kick();
   }
 
   function finish(){
     S.phase='done';
+    S.car.v=0; S.chip.v = (S.chip.mode==='bench') ? 0 : S.car.v;
     setPhasePill('Finished');
     document.getElementById('run').disabled=false;
-    var rode = S.chip.onCar;
-    var slipped = rode && S.maxSlip > 0.0015;
-    var f=S.force;
+    var ch=S.chip, f=S.force, mode=ch.mode;
+    var stayed = mode==='stack';
+    var slipped = stayed && S.maxSlip > 0.0015;
     var vEl=document.getElementById('verdict'), wEl=document.getElementById('why');
-    var side = S.tapDir>0 ? 'behind' : 'in front of';
-    var gap = Math.abs(S.chip.x - S.car.x)*100;
+    var shift = Math.abs(ch.x - (S.car.x + TC))*100;
+    var gap = Math.abs(ch.x - S.car.x)*100;
+    var acc = accel(f).toFixed(1);
+    var speeds = 'Its top speed only reached <strong>'+S.peakChip.toFixed(2)+' m/s</strong> while the car hit <strong>'+S.peakCar.toFixed(2)+' m/s</strong>.';
 
-    if(rode && !slipped){
+    if(stayed && !slipped){
       vEl.textContent = 'The chip rode along. Nothing slipped.';
-      wEl.innerHTML = 'A force of <strong>'+f+'</strong> changed the car’s speed at only <strong>'
-        + accel(f).toFixed(1) + ' m/s²</strong>. Friction between the two chips could grip that hard, so the chip and the car moved as <strong>one object</strong>. Turn the force up until the chip can no longer keep up.';
-    }else if(rode){
-      vEl.textContent = 'The chip slipped ' + (S.maxSlip*100).toFixed(1) + ' cm — but it stayed on the car.';
-      wEl.innerHTML = 'At <strong>'+accel(f).toFixed(1)+' m/s²</strong> the car changed speed faster than friction could keep up, so the chip <strong>lost its grip and fell behind</strong> for a moment. Then the car slowed down, the chip caught up, and friction grabbed hold again before the chip reached the edge. Watch the <strong>chip slip</strong> readout during the run — it climbs, then stops. Add more force and the slip will pass <strong>2.1 cm</strong> and the chip will tip right off.';
+      wEl.innerHTML = 'A force of <strong>'+f+'</strong> changed the car’s speed at only <strong>'+acc+' m/s²</strong>. Friction between the two chips could grip that hard. So the chip and the car moved as <strong>one object</strong>. Turn the force up until the chip can’t keep up.';
+    }else if(stayed){
+      vEl.textContent = 'The chip slipped ' + (S.maxSlip*100).toFixed(1) + ' cm, but it stayed on the stack.';
+      wEl.innerHTML = 'At <strong>'+acc+' m/s²</strong> the car changed speed faster than friction could handle. The chip <strong>lost its grip and slid</strong> for a moment. Then the car slowed down, and friction grabbed the chip again before its middle reached the edge. Add more force and the chip will tip off.';
+    }else if(mode==='well' || mode==='deck'){
+      vEl.textContent = mode==='well'
+        ? 'The chip got left behind. It fell back into the car’s open well.'
+        : 'The chip got left behind. It landed on the car’s back deck.';
+      wEl.innerHTML = 'You pushed on the <strong>car</strong>, not the chip. The car sped up at <strong>'+acc+' m/s²</strong>. That is more than friction could supply, so the chip mostly <strong>stayed where it was</strong> while the deck slid forward out from under it. '+speeds+' On the car, the chip ended up <strong>'+shift.toFixed(1)+' cm</strong> back from where it started &mdash; toward your hand.';
     }else{
-      vEl.textContent = 'The chip got left behind — it ended up ' + side + ' the car.';
-      wEl.innerHTML = 'You pushed on the <strong>car</strong>, not the chip. The car’s speed changed at <strong>'
-        + accel(f).toFixed(1) + ' m/s²</strong>, which is more grip than friction could supply, so the chip kept doing what it was doing — its top speed only reached <strong>'
-        + S.peakChip.toFixed(2) + ' m/s</strong> while the car hit <strong>' + S.peakCar.toFixed(2)
-        + ' m/s</strong>. It finished <strong>' + gap.toFixed(1) + ' cm</strong> ' + side + ' the car, on the same side your hand tapped.';
+      var side = S.tapDir>0 ? 'behind' : 'in front of';
+      vEl.textContent = 'The chip got left behind. It fell off and landed ' + side + ' the car.';
+      wEl.innerHTML = 'You pushed on the <strong>car</strong>, not the chip. The car’s speed changed at <strong>'+acc+' m/s²</strong>. That is more than friction could supply, so the chip kept doing what it was doing while the car moved out from under it. '+speeds+' It finished <strong>'+gap.toFixed(1)+' cm</strong> '+side+' the middle of the car, on the same side your hand tapped.';
     }
 
     var pb=document.getElementById('pBack');
     if(S.predict){
+      var rode = stayed;
       var right = (S.predict==='ride') === rode;
       pb.hidden=false;
       pb.innerHTML = 'Your prediction: <strong>'+(S.predict==='ride'?'chip rides along':'chip gets left')
@@ -1162,42 +1519,48 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
         + (right?'<span class="tick">&#10003; Match</span>':'<span class="cross">&#10007; Not a match &mdash; why not?</span>');
     }else{ pb.hidden=true; }
 
-    logRow(rode, slipped, gap);
+    logRow(mode, slipped, shift, gap);
   }
 
   /* ---------- UI ---------- */
   function setPhasePill(t){
     var p=document.getElementById('phasePill');
     p.textContent=t;
-    p.className='pill'+((t==='Tapping…'||t==='Rolling…')?' warn':t==='Finished'?' good':'');
+    p.className='pill'+((t==='Tapping…'||t==='Rolling…'||t==='Get ready…')?' warn':t==='Finished'?' good':'');
   }
+  var WHERE = {stack:'on the stack', edge:'tipping off', air:'falling', settle:'landing',
+               well:'in the open well', deck:'on the back deck', bench:'on the bench'};
   function updateReadouts(){
+    var ch=S.chip;
     document.getElementById('rCar').innerHTML = Math.abs(S.car.v).toFixed(2)+'<span class="u">m/s</span>';
-    document.getElementById('rChip').innerHTML = Math.abs(S.chip.v).toFixed(2)+'<span class="u">m/s</span>';
+    document.getElementById('rChip').innerHTML = Math.abs(ch.v).toFixed(2)+'<span class="u">m/s</span>';
     var slipEl = document.getElementById('rSlip');
-    if(S.chip.onCar){
-      slipEl.innerHTML = (Math.abs(S.chip.x-(S.car.x+CHIP_OFFSET))*100).toFixed(1)+'<span class="u">cm</span>';
+    if(ch.mode==='bench' || (ch.mode==='settle' && ch.surf==='bench')){
+      slipEl.innerHTML = 'off<span class="u">car</span>';
     }else{
-      slipEl.innerHTML = 'tipped<span class="u">off</span>';
+      slipEl.innerHTML = (Math.abs(ch.x-(S.car.x+TC))*100).toFixed(1)+'<span class="u">cm</span>';
     }
+    var wh = WHERE[ch.mode];
+    if(ch.mode==='stack' && !ch.riding) wh='sliding on the stack';
+    document.getElementById('rWhere').textContent = wh;
     document.getElementById('rTime').innerHTML = S.t.toFixed(3)+'<span class="u">s</span>';
   }
-  function logRow(rode, slipped, gap){
+  function logRow(mode, slipped, shift, gap){
     S.trial++;
+    var state = mode==='stack' ? (slipped?'slip':'rode') : (mode==='bench' ? 'bench' : 'well');
+    var where;
+    if(mode==='stack') where = slipped ? ('on the stack, '+(S.maxSlip*100).toFixed(1)+' cm out of place') : 'on the stack, right where it started';
+    else if(mode==='well') where = 'in the open well, '+shift.toFixed(1)+' cm back from its start';
+    else if(mode==='deck') where = 'on the back deck, '+shift.toFixed(1)+' cm back from its start';
+    else where = 'on the bench, '+gap.toFixed(1)+' cm '+(S.tapDir>0?'behind':'in front of')+' the car';
     rows.unshift({
-      n:S.trial,
-      test:S.test,
-      f:S.force,
-      vcar:S.peakCar.toFixed(2),
-      acc:accel(S.force).toFixed(1),
-      vchip:S.peakChip.toFixed(2),
-      state: rode ? (slipped?'slip':'rode') : 'left',
-      where: rode
-        ? (slipped ? ('still on the car, '+(S.maxSlip*100).toFixed(1)+' cm out of place') : 'still on the car, right where it started')
-        : (gap.toFixed(1)+' cm ' + (S.tapDir>0?'behind':'in front of') + ' the car')
+      n:S.trial, test:S.test, f:S.force,
+      vcar:S.peakCar.toFixed(2), acc:accel(S.force).toFixed(1), vchip:S.peakChip.toFixed(2),
+      state:state, where:where
     });
     renderRows();
   }
+  var STATE_TXT = {rode:'Rode along', slip:'Slipped, stayed on', well:'Fell into well', bench:'Fell off car'};
   function renderRows(){
     var tb=document.getElementById('tbody');
     if(!rows.length){
@@ -1212,24 +1575,27 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
         +'<td class="num">'+r.vcar+' m/s</td>'
         +'<td class="num">'+r.acc+' m/s&sup2;</td>'
         +'<td class="num">'+r.vchip+' m/s</td>'
-        +'<td><span class="badge '+r.state+'">'+
-          (r.state==='rode'?'Rode along':r.state==='slip'?'Slipped, stayed on':'Left behind')+'</span></td>'
-        +'<td>'+r.where+'</td>'
+        +'<td><span class="badge '+r.state+'">'+STATE_TXT[r.state]+'</span></td>'
+        +'<td class="where">'+r.where+'</td>'
         +'</tr>';
     }).join('');
   }
 
   function press(el,on){ el.setAttribute('aria-pressed', on?'true':'false'); }
+  function busy(){ return S.phase==='aim'||S.phase==='tap'||S.phase==='roll'; }
+  function stopRun(){ if(raf){cancelAnimationFrame(raf);raf=null;} }
 
   var bR=document.getElementById('btnRear'), bF=document.getElementById('btnFront');
   var hint=document.getElementById('testHint');
   bR.addEventListener('click',function(){
     S.test='rear'; press(bR,true); press(bF,false);
-    hint.textContent='Your hand taps the back bumper. The car jumps forward.'; reset();
+    hint.textContent='Your hand taps the back of the car. The car jumps forward.';
+    stopRun(); reset();
   });
   bF.addEventListener('click',function(){
     S.test='front'; press(bF,true); press(bR,false);
-    hint.textContent='Your hand taps the front end — the same as a rolling car running into your hand.'; reset();
+    hint.textContent='Your hand taps the front end. It is like a rolling car running into your hand.';
+    stopRun(); reset();
   });
 
   var fs=document.getElementById('force');
@@ -1239,7 +1605,8 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
     document.getElementById('fWord').innerHTML = forceWord(S.force)
       + ' <span>&mdash; ' + accel(S.force).toFixed(1) + ' m/s&sup2; of push</span>';
   }
-  fs.addEventListener('input',syncForce); syncForce();
+  fs.addEventListener('input',function(){ syncForce(); if(!busy() && S.phase==='done'){ reset(); } });
+  syncForce();
 
   var pRide=document.getElementById('pRide'), pStay=document.getElementById('pStay');
   pRide.addEventListener('click',function(){
@@ -1261,7 +1628,7 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
   });
 
   document.getElementById('run').addEventListener('click',run);
-  document.getElementById('reset').addEventListener('click',function(){ if(raf){cancelAnimationFrame(raf);raf=null;} reset(); });
+  document.getElementById('reset').addEventListener('click',function(){ stopRun(); reset(); });
   document.getElementById('clear').addEventListener('click',function(){ rows=[]; S.trial=0; renderRows(); });
 
   /* ---------- light / dark toggle ---------- */
@@ -1281,17 +1648,14 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
     themeBtn.querySelector('.label').textContent = d ? 'Light mode' : 'Dark mode';
     themeBtn.setAttribute('aria-label', d ? 'Switch to light mode' : 'Switch to dark mode');
   }
-  // redraw the bench right away, whether the car is still, rolling or finished
   function repaint(){ readColors(); paintToggle(); draw(); }
   function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); repaint(); }
   themeBtn.addEventListener('click',function(){
     var next = themeNow()==='dark' ? 'light' : 'dark';
     applyTheme(next);
     try{ localStorage.setItem('motionlab-theme', next); }catch(e){}
-    // shown in a frame (the textbook's Sims page): tell that page, so it switches too
     if(inFrame) try{ window.parent.postMessage({ simTheme: next }, '*'); }catch(e){}
   });
-  // the page around this sim switched its light / dark mode: follow it (not saved, so the sim alone keeps its own choice)
   window.addEventListener('message',function(e){
     if(!inFrame || e.source !== window.parent) return;
     var t = e.data && e.data.simTheme;
@@ -1304,7 +1668,12 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
   }
   paintToggle();
 
+  S.chip = freshChip();
+  resize();
   reset();
+
+  // test hook for headless checks
+  window.__sim = {S:S, step:step, reset:reset, accel:accel, tau:tau, consts:{WELL_L:WELL_L,WELL_R:WELL_R,R:R,TC:TC}};
 })();
 </script>
 
