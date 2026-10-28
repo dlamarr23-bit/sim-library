@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Heating water — volume vs temperature rise</title>
+<title>Heating Water: Volume and Heat Transfer</title>
 
 <!--
   ============================================================================
@@ -24,6 +24,17 @@
      inversely proportional to the volume and rate x volume is a constant.
      Solved exactly rather than integrated, so the animation and the recorded
      numbers can never disagree.
+
+  MATCHES THE "WHAT FACTORS AFFECT HEAT TRANSFER?" LAB
+     A reading every 0.5 minutes (30 s) for 4 minutes, the same rows as the
+     lab's Table 1, and a built-in stopwatch (with an optional beep every
+     30 s) right above the data table, for the hands-on version of the lab.
+
+  SPLIT SCREEN
+     Laid out for a Chromebook in split screen (about 600 to 700 px wide) and
+     for the left side of a two-column self-check page: the beaker and the
+     graph stay side by side down to 520 px, and the volume buttons and the
+     start button sit right under them, so students rarely need to scroll.
   ============================================================================
 -->
 
@@ -54,7 +65,8 @@
   --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
-  padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
+  padding:clamp(6px,1.4vw,14px);max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
+  font-size:16px;
 }
 body{margin:0;background:#DDE0D6}
 /* dark colors: the system's dark setting unless light is chosen, or dark chosen on purpose */
@@ -102,14 +114,17 @@ body{margin:0;background:#DDE0D6}
 .cvlab-head{background:var(--head-bg);color:var(--head-ink);border-radius:5px 5px 0 0;padding:12px 16px;
   display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
 .cvlab-title{flex:1 1 auto}
-.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
+.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:13px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--tape);margin-bottom:2px}
-.cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
+.cvlab-head h1{font-size:clamp(20px,3.2vw,34px);text-transform:uppercase;letter-spacing:.03em;line-height:1.05}
+.cvlab-head{position:relative;padding-right:74px}
+.cvlab-head .cvlab-themebtn{position:absolute;top:10px;right:12px}
 .cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
 .cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:3px;padding:5px 10px;min-width:94px}
-.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
+@media (max-width:760px){.cvlab-ro{flex:1 1 auto}.cvlab-readouts{flex:1 1 100%;order:3}}
+.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.12em;
   text-transform:uppercase;color:var(--ro-k)}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:var(--ro-v);
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:21px;font-weight:800;color:var(--ro-v);
   font-variant-numeric:tabular-nums;white-space:nowrap}
 .cvlab-ro-hi .cvlab-ro-v{color:var(--ro-hi)}
 .cvlab-themebtn{
@@ -122,20 +137,26 @@ body{margin:0;background:#DDE0D6}
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 5px 5px;padding:10px 10px 12px}
 .cvlab canvas{display:block;width:100%}
-.cvlab-stage{display:grid;grid-template-columns:minmax(186px,.36fr) 1fr;gap:10px}
-#cvlab-scene,#cvlab-temp{height:clamp(300px,30vw,412px);border-radius:3px}
+.cvlab-stage{display:grid;grid-template-columns:minmax(170px,.38fr) 1fr;gap:10px}
+#cvlab-scene,#cvlab-temp{height:clamp(280px,30vw,412px);border-radius:3px}
+/* split-screen Chromebook (about 600 to 700 px): keep the beaker and graph side by side, a little shorter */
 @media (max-width:760px){
-  .cvlab-stage{grid-template-columns:1fr}
-  #cvlab-scene{height:clamp(260px,48vw,350px)}#cvlab-temp{height:clamp(200px,32vw,260px)}
+  #cvlab-scene,#cvlab-temp{height:clamp(250px,46vw,330px)}
 }
-.cvlab-hint{font-family:var(--font-m);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+@media (max-width:520px){
+  .cvlab-stage{grid-template-columns:1fr}
+  #cvlab-scene{height:clamp(240px,62vw,320px)}#cvlab-temp{height:clamp(210px,50vw,270px)}
+}
+.cvlab-hint{font-family:var(--font-m);font-size:13.5px;letter-spacing:.04em;text-transform:uppercase;
   color:var(--ink-2);margin-top:6px}
 .cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;
   border-top:1px dashed var(--rule)}
-.cvlab-status{flex:1 1 240px;min-width:200px;font-size:16px;color:var(--ink-2)}
+.cvlab-status{flex:1 1 100%;font-size:16px;color:var(--ink-2)}
+.cvlab-bar .cvlab-vols{flex:1 1 260px;max-width:460px}
+.cvlab-barlab{font-family:var(--font-m);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);flex:none}
 .cvlab-status strong{color:var(--ink);font-weight:700}
 
-.cvlab-btn{font-family:var(--font-d);font-size:17px;font-weight:700;letter-spacing:.05em;
+.cvlab-btn{font-family:var(--font-d);font-size:17px;font-weight:800;letter-spacing:.05em;
   text-transform:uppercase;cursor:pointer;background:var(--paper);color:var(--ink);
   border:1.5px solid var(--ink);border-radius:3px;padding:7px 14px;line-height:1.1;
   transition:transform .08s ease,background .12s ease,color .12s ease}
@@ -144,24 +165,24 @@ body{margin:0;background:#DDE0D6}
 .cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
 .cvlab-btn-go{background:var(--hot);border-color:#8E2A1F;color:#fff;min-width:150px}
 .cvlab-btn-go:hover:not(:disabled){background:#8E2A1F;color:#fff}
-.cvlab-btn-sm{font-size:15px;padding:5px 10px;border-width:1px}
+.cvlab-btn-sm{font-size:15px;padding:6px 11px;border-width:1.5px}
 
 .cvlab-grid{display:grid;gap:12px;margin-top:12px;
-  grid-template-columns:minmax(200px,.78fr) minmax(240px,1.05fr) minmax(280px,1.15fr)}
-@media (max-width:1000px){.cvlab-grid{grid-template-columns:1fr 1fr}
-  .cvlab-panel-graph{grid-column:1/-1}}
-@media (max-width:640px){.cvlab-grid{grid-template-columns:1fr}}
+  grid-template-columns:minmax(280px,1.1fr) minmax(280px,1.15fr) minmax(220px,.75fr)}
+@media (max-width:1100px){.cvlab-grid{grid-template-columns:1fr 1fr}
+  .cvlab-panel-opts{grid-column:1/-1}}
+@media (max-width:700px){.cvlab-grid{grid-template-columns:1fr}}
 .cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:5px;padding:12px;
   display:flex;flex-direction:column;gap:10px}
-.cvlab-panel h2{font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-family:var(--font-m);
+.cvlab-panel h2{font-size:16px;letter-spacing:.1em;text-transform:uppercase;font-family:var(--font-m);
   font-weight:700;color:var(--ink);padding-bottom:7px;border-bottom:2px solid var(--ink)}
-.cvlab-note{font-size:14.5px;color:var(--ink-2)}
+.cvlab-note{font-size:15px;color:var(--ink-2)}
 .cvlab-row{display:flex;flex-wrap:wrap;gap:6px}
 
 .cvlab-vols{display:flex;gap:5px}
 .cvlab-vol{flex:1;cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:3px;
   padding:8px 1px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;
-  font-family:var(--font-m);font-size:13px;font-weight:700;color:var(--ink);
+  font-family:var(--font-m);font-size:15px;font-weight:800;color:var(--ink);min-height:44px;
   transition:background .12s ease,color .12s ease}
 .cvlab-vol:hover:not(:disabled){background:var(--field)}
 .cvlab-vol.is-on{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
@@ -170,41 +191,65 @@ body{margin:0;background:#DDE0D6}
 .cvlab-vol.has-data span{height:6px}
 
 .cvlab-locked{display:flex;align-items:center;gap:8px;background:var(--field);border:1px dashed var(--rule);
-  border-radius:3px;padding:7px 9px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
+  border-radius:3px;padding:7px 9px;font-family:var(--font-m);font-size:14px;color:var(--ink-2);flex-wrap:wrap}
 .cvlab-locked b{color:var(--ink);font-size:15px}
 
 .cvlab-field{display:flex;flex-direction:column;gap:4px}
-.cvlab-field span{font-family:var(--font-m);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+.cvlab-field span{font-family:var(--font-m);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-2)}
 .cvlab select{font-family:var(--font-b);font-size:15.5px;padding:6px 8px;border:1px solid var(--ink);
   border-radius:3px;background:var(--input-bg);color:var(--ink);width:100%}
 
-.cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
+.cvlab-opts{display:flex;flex-direction:column;gap:8px;font-size:15.5px;color:var(--ink-2)}
 .cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
 .cvlab-opts input{margin:3px 0 0;accent-color:var(--blue);flex:none}
 
-.cvlab-tablewrap{max-height:330px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
-.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13px}
-.cvlab thead th{position:sticky;top:0;background:var(--field);font-size:11px;letter-spacing:.03em;
-  font-weight:700;padding:5px 3px;text-align:right;border-bottom:1px solid var(--rule);color:var(--ink-2)}
+.cvlab-tablewrap{max-height:400px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
+.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:15px}
+.cvlab thead th{position:sticky;top:0;background:var(--field);font-size:13px;letter-spacing:.02em;
+  font-weight:800;padding:6px 6px;text-align:right;border-bottom:1px solid var(--rule);color:var(--ink-2);line-height:1.2}
 .cvlab thead th:first-child{text-align:left}
-.cvlab tbody td{padding:3px;text-align:right;font-variant-numeric:tabular-nums;
+.cvlab tbody td{padding:4px 6px;text-align:right;font-variant-numeric:tabular-nums;
   border-bottom:1px solid var(--row-line)}
 .cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
 .cvlab tbody tr:last-child td{border-bottom:0}
 .cvlab tbody tr.is-new td{background:var(--row-new)}
-.cvlab-empty{padding:14px 10px;font-size:14.5px;color:var(--ink-2);font-family:var(--font-b)}
+.cvlab-empty{padding:14px 10px;font-size:15px;color:var(--ink-2);font-family:var(--font-b)}
 
 #cvlab-rate{height:clamp(260px,30vw,420px)}
-.cvlab-key{display:flex;flex-wrap:wrap;gap:10px;font-family:var(--font-m);font-size:13px;color:var(--ink-2)}
+.cvlab-key{display:flex;flex-wrap:wrap;gap:10px;font-family:var(--font-m);font-size:14.5px;color:var(--ink-2)}
 .cvlab-key i{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:4px}
 
-.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
-  padding:10px 14px}
-.cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:var(--notes-ink)}
-.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
-.cvlab-notes li{margin:3px 0}
+.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;padding:0}
+.cvlab-notes summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 16px;
+  font-family:var(--font-d);font-size:17px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
+.cvlab-notes summary::-webkit-details-marker{display:none}
+.cvlab-notes summary svg{width:20px;height:20px;flex:none;transition:transform .15s ease}
+.cvlab-notes[open] summary svg{transform:rotate(90deg)}
+.cvlab-notes summary:hover{background:var(--field);border-radius:5px}
+.cvlab-notes-body{padding:0 16px 14px}
+.cvlab-notes p,.cvlab-notes li{font-size:16px;color:var(--notes-ink)}
+.cvlab-notes p+p{margin-top:8px}
+.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:22px}
+.cvlab-notes li{margin:5px 0}
+.cvlab-notes .cvlab-eq{display:inline-block;margin:6px 0;padding:6px 12px;border:1.5px solid var(--ink);border-radius:4px;
+  font-family:var(--font-m);background:var(--field);color:var(--ink)}
+
+/* ---------- stopwatch, right above the data table ---------- */
+.cvlab-sw{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:5px;padding:10px 12px;color:var(--ro-v);
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.cvlab-sw-k{flex-basis:100%;font-family:var(--font-m);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ro-k)}
+.cvlab-sw-num{font-family:var(--font-m);font-size:clamp(34px,4.4vw,42px);font-weight:800;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--ro-v);min-width:5.4ch}
+.cvlab-sw.is-running .cvlab-sw-num{color:var(--tape)}
+.cvlab-sw.is-beep .cvlab-sw-num{color:var(--ro-hi)}
+.cvlab-sw-btns{display:flex;gap:6px;flex-wrap:wrap}
+.cvlab-sw .cvlab-btn{background:#1B1D1C;color:#F4F5F0;border-color:#6A706A}
+.cvlab-sw .cvlab-btn:hover:not(:disabled){background:#F4F5F0;color:#1B1D1C}
+.cvlab-sw .cvlab-btn-start{background:var(--blue);border-color:var(--blue)}
+.cvlab-sw-opt{flex-basis:100%;display:flex;gap:8px;align-items:center;font-size:14.5px;color:var(--ro-k);cursor:pointer}
+.cvlab-sw-opt input{accent-color:var(--tape);width:17px;height:17px;margin:0}
+.cvlab-sw-next{font-family:var(--font-m);font-size:14px;color:var(--ro-k)}
 .cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
@@ -225,8 +270,8 @@ body{margin:0;background:#DDE0D6}
 
   <header class="cvlab-head">
     <div class="cvlab-title">
-      <span class="cvlab-eyebrow">Thermal lab &middot; specific heat</span>
-      <h1>Heating water &mdash; volume vs temperature</h1>
+      <span class="cvlab-eyebrow">Thermal energy lab &middot; heat transfer</span>
+      <h1>Heating water: volume and heat transfer</h1>
     </div>
     <div class="cvlab-readouts">
       <div class="cvlab-ro"><span class="cvlab-ro-k">Volume</span><span class="cvlab-ro-v" id="cvlab-ro-vol">100 mL</span></div>
@@ -244,12 +289,14 @@ body{margin:0;background:#DDE0D6}
       <canvas id="cvlab-temp" role="img"
         aria-label="Graph of water temperature against time for each volume tested."></canvas>
     </div>
-    <p class="cvlab-hint">A reading every 10 seconds for 5 minutes &middot; hot plate setting held constant &middot; pure water, starting at room temperature</p>
+    <p class="cvlab-hint">A reading every 0.5 min for 4 min &middot; same hot plate setting every run &middot; water starts at room temperature</p>
     <div class="cvlab-bar">
+      <span class="cvlab-barlab" id="cvlab-vols-lab">Water (mL)</span>
+      <div class="cvlab-vols" id="cvlab-vols" role="group" aria-labelledby="cvlab-vols-lab"></div>
       <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Turn on the hot plate</button>
       <button class="cvlab-btn" id="cvlab-reset">Reset</button>
       <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
-        Pour a volume into the beaker and switch the plate on. Every other thing about the setup stays the same.
+        Pick how much water goes in the beaker, then turn on the hot plate. Everything else stays the same.
       </p>
     </div>
   </div>
@@ -257,31 +304,18 @@ body{margin:0;background:#DDE0D6}
   <div class="cvlab-grid">
 
     <section class="cvlab-panel">
-      <h2>Water in the beaker</h2>
-      <div class="cvlab-vols" id="cvlab-vols"></div>
-      <div class="cvlab-locked">
-        <span>HOT PLATE</span><b>45 W</b><span>&mdash; same dial setting every run</span>
+      <h2>Data table: temperature (&deg;C)</h2>
+      <div class="cvlab-sw" id="cvlab-sw" role="group" aria-label="Stopwatch">
+        <span class="cvlab-sw-k">Stopwatch</span>
+        <span class="cvlab-sw-num" id="cvlab-sw-num" role="timer" aria-live="off">0:00.0</span>
+        <div class="cvlab-sw-btns">
+          <button class="cvlab-btn cvlab-btn-sm cvlab-btn-start" id="cvlab-sw-go" type="button">Start</button>
+          <button class="cvlab-btn cvlab-btn-sm" id="cvlab-sw-reset" type="button">Reset</button>
+        </div>
+        <label class="cvlab-sw-opt"><input type="checkbox" id="cvlab-sw-beep" checked>
+          <span>Beep every 30 s (time to take a reading)</span></label>
+        <span class="cvlab-sw-next" id="cvlab-sw-next">Next reading at 0:30</span>
       </div>
-      <label class="cvlab-field" for="cvlab-speed">
-        <span>How fast to run the 5 minutes</span>
-        <select id="cvlab-speed">
-          <option value="1">Real time, 5 minutes</option>
-          <option value="10" selected>10&times; faster, 30 seconds</option>
-          <option value="60">60&times; faster, 5 seconds</option>
-        </select>
-      </label>
-      <div class="cvlab-opts">
-        <label><input type="checkbox" id="cvlab-invv">
-          <span>Plot the rate against 1 / volume, which straightens the curve</span></label>
-        <label><input type="checkbox" id="cvlab-noise">
-          <span>Add reading error, since a glass thermometer is read by eye</span></label>
-        <label><input type="checkbox" id="cvlab-loss">
-          <span>Let the beaker lose heat to the room, which bends the lines</span></label>
-      </div>
-    </section>
-
-    <section class="cvlab-panel">
-      <h2>Temperature (&deg;C) every 10 s</h2>
       <div class="cvlab-tablewrap">
         <table>
           <caption class="cvlab-sr">Water temperature in degrees Celsius at each time, one column per volume</caption>
@@ -297,27 +331,66 @@ body{margin:0;background:#DDE0D6}
     </section>
 
     <section class="cvlab-panel cvlab-panel-graph">
-      <h2>Heating rate vs volume</h2>
+      <h2>Rate of heat transfer vs volume</h2>
       <canvas id="cvlab-rate" role="img"
-        aria-label="Graph of heating rate in degrees per minute against the volume of water."></canvas>
+        aria-label="Graph of the rate of heat transfer in degrees per minute against the volume of water."></canvas>
       <div class="cvlab-key" id="cvlab-key"></div>
-      <p class="cvlab-note">Rate is the total rise divided by the 5 minutes, the way you would work it out from the table.</p>
+      <p class="cvlab-note">Rate = change in temperature &divide; change in time. Here it is the total rise over the 4 minutes, the way you work it out from your table.</p>
+    </section>
+
+    <section class="cvlab-panel cvlab-panel-opts">
+      <h2>Lab settings</h2>
+      <div class="cvlab-locked">
+        <span>HOT PLATE</span><b>45 W</b><span>(same dial setting every run)</span>
+      </div>
+      <label class="cvlab-field" for="cvlab-speed">
+        <span>How fast to run the 4 minutes</span>
+        <select id="cvlab-speed">
+          <option value="1">Real time (4 minutes)</option>
+          <option value="8" selected>8&times; faster (30 seconds)</option>
+          <option value="48">48&times; faster (5 seconds)</option>
+        </select>
+      </label>
+      <div class="cvlab-opts">
+        <label><input type="checkbox" id="cvlab-invv">
+          <span>Plot the rate against 1 / volume (this straightens the curve)</span></label>
+        <label><input type="checkbox" id="cvlab-noise">
+          <span>Add reading error, like reading a real thermometer by eye</span></label>
+        <label><input type="checkbox" id="cvlab-loss">
+          <span>Let the beaker lose heat to the room (this bends the lines)</span></label>
+      </div>
     </section>
 
   </div>
 
-  <section class="cvlab-notes">
-    <h3>How to use this simulation</h3>
+  <details class="cvlab-notes" open>
+    <summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>How to use this simulation</summary>
+    <div class="cvlab-notes-body">
     <ol>
-      <li>Pick a <strong>volume</strong> from the buttons in the Water in the beaker panel. The hot plate always holds the same 45 W setting.</li>
-      <li>Press <strong>Turn on the hot plate</strong> and watch the water heat up on the beaker, with the thermometer and the temperature graph updating together.</li>
-      <li>Use the <strong>How fast to run the 5 minutes</strong> dropdown to watch in real time or speed things up, since a full run is 5 simulated minutes.</li>
-      <li>Each run adds a column to the <strong>Temperature every 10 s</strong> table and a line to the temperature-vs-time graph, so you can compare volumes directly.</li>
-      <li>Once you've tried a few volumes, check the <strong>Heating rate vs volume</strong> graph. Turn on <strong>Plot the rate against 1/volume</strong> to straighten the curve into a line.</li>
-      <li>Turn on <strong>Add reading error</strong> to see realistic thermometer scatter, or <strong>Let the beaker lose heat to the room</strong> to see the lines bend instead of staying straight.</li>
-      <li>Press <strong>Reset</strong> to run the current volume again, <strong>Clear all runs</strong> to wipe the table and graphs, or <strong>Copy data</strong> to copy your results for a spreadsheet.</li>
+      <li>Pick how much <strong>water</strong> goes in the beaker with the mL buttons under the beaker. The hot plate stays on the same setting every time.</li>
+      <li>Press <strong>Turn on the hot plate</strong>. Watch the thermometer and the temperature graph rise together.</li>
+      <li>Use <strong>How fast to run the 4 minutes</strong> to watch in real time or speed it up.</li>
+      <li>The <strong>data table</strong> gets a new column for each volume. It shows the temperature every 0.5 minutes, just like Table 1 in your lab.</li>
+      <li>Run <strong>100 mL</strong>, <strong>150 mL</strong> and <strong>200 mL</strong>. Copy each column into the data table on your self-check.</li>
+      <li>Check the <strong>rate of heat transfer</strong> graph to compare the volumes. Each dot is one run.</li>
+      <li>Doing the lab with a real hot plate? Use the <strong>stopwatch</strong> above the data table. Leave <strong>Beep every 30 s</strong> on, and read the thermometer at each beep.</li>
+      <li>Press <strong>Reset</strong> to run the same volume again, or <strong>Clear all runs</strong> to start over.</li>
     </ol>
-  </section>
+    </div>
+  </details>
+
+  <details class="cvlab-notes">
+    <summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Key words and how to find the rate</summary>
+    <div class="cvlab-notes-body">
+    <p><strong>Thermal energy</strong> is the energy of moving particles. When people say "heat," scientists usually mean thermal energy.</p>
+    <p><strong>Temperature</strong> tells how fast the particles are moving on average. A thermometer measures it in degrees Celsius (&deg;C).</p>
+    <p><strong>Heat transfer</strong> is thermal energy moving from a hotter object to a cooler one. Here it moves from the hot plate (the <strong>source</strong>) into the beaker and the water (the <strong>receivers</strong>).</p>
+    <p>The <strong>rate of heat transfer</strong> tells how fast the temperature changes. Find it like the slope of a line:</p>
+    <p><span class="cvlab-eq">rate = (final temp &minus; starting temp) &divide; (final time &minus; starting time)</span></p>
+    <p>Example: water goes from 20 &deg;C to 40 &deg;C in 4 minutes. The change is 20 &deg;C. So the rate is 20 &divide; 4 = <strong>5 &deg;C/min</strong>.</p>
+    <p>In a fair test you change only <strong>one</strong> thing (the independent variable). Here that is the volume of water. Everything else stays the same.</p>
+    </div>
+  </details>
 </div>
 
 <script>
@@ -329,8 +402,8 @@ body{margin:0;background:#DDE0D6}
   var POWER    = 45;         // W actually reaching the water
   var T_ROOM   = 20;         // C
   var K_LOSS   = 0.18;       // W/K, optional
-  var RUN_S    = 300;        // 5 minutes
-  var STEP_S   = 10;         // a reading every 10 s
+  var RUN_S    = 240;        // 4 minutes, like the lab's Table 1
+  var STEP_S   = 30;         // a reading every 0.5 minutes (30 s)
   var NPTS     = RUN_S/STEP_S + 1;
   var VOLUMES  = [50,100,150,200,250];
   var VCOLOR   = { 50:"#C0392B", 100:"#C97B23", 150:"#6E8C3A", 200:"#2A7F7A", 250:"#1552B8" };
@@ -391,6 +464,7 @@ body{margin:0;background:#DDE0D6}
   }
   function say(m){ elStatus.innerHTML = m; }
   function monoStack(){ return '"Poppins", ui-monospace, Menlo, Consolas, monospace'; }
+  function mins(sec){ var m = sec/60; return (Math.round(m*10)/10).toString(); }   /* 30 -> "0.5" */
   function clock(sec){
     var mm = Math.floor(sec/60), ss = Math.floor(sec%60);
     return mm + ":" + (ss<10 ? "0" : "") + ss;
@@ -436,8 +510,8 @@ body{margin:0;background:#DDE0D6}
     var html = "";
     for(var i=0;i<VOLUMES.length;i++){
       var V = VOLUMES[i];
-      html += '<button class="cvlab-vol" data-v="' + V + '" aria-label="Use ' + V + ' millilitres">'
-            + '<span style="background:' + vcol(V) + '"></span>' + V + '</button>';
+      html += '<button class="cvlab-vol" data-v="' + V + '" aria-label="Use ' + V + ' milliliters">'
+            + '<span style="background:' + vcol(V) + '"></span>' + V + '</button>';   /* the label above says mL */
     }
     elVols.innerHTML = html;
     elVols.addEventListener("click", function(e){
@@ -469,7 +543,7 @@ body{margin:0;background:#DDE0D6}
     stage = "heating"; t = 0; shown = 1;
     lastFrame = null; dirty = true;
     elGo.textContent = "Heating\u2026";
-    say("Plate on under <strong>" + vol + " mL</strong>. First reading at 0 s, then every 10 s.");
+    say("Hot plate on under <strong>" + vol + " mL</strong>. First reading at 0 min, then every 0.5 min.");
     renderTable(); syncUI();
   }
 
@@ -478,9 +552,8 @@ body{margin:0;background:#DDE0D6}
     elGo.textContent = "Run again";
     var rate = (live[NPTS-1] - live[0])/(RUN_S/60);
     runs[vol] = { v: vol, temps: live.slice(), rate: rate };
-    say("Five minutes up. <strong>" + vol + " mL</strong> went from " + fmt(live[0])
-        + " to " + fmt(live[NPTS-1]) + " &deg;C, a rate of <strong>" + fmt(rate,2)
-        + " &deg;C/min</strong>.");
+    say("Four minutes are up. <strong>" + vol + " mL</strong> went from " + fmt(live[0])
+        + " to " + fmt(live[NPTS-1]) + " &deg;C. Copy this column into your data table.");
     renderTable(); renderKey(); drawRateGraph(); drawTempGraph(); syncUI();
   }
 
@@ -519,21 +592,21 @@ body{margin:0;background:#DDE0D6}
   function renderTable(){
     var cols = tableCols();
     if(cols.length === 0){
-      elHead.innerHTML = '<th scope="col">t (s)</th><th scope="col">&deg;C</th>';
+      elHead.innerHTML = '<th scope="col">Time (min)</th><th scope="col">&deg;C</th>';
       elBody.innerHTML = '<tr><td colspan="2"><span class="cvlab-empty">'
-        + 'No runs yet. Pick a volume and switch the plate on.</span></td></tr>';
+        + 'No runs yet. Pick a volume and turn on the hot plate.</span></td></tr>';
       return;
     }
-    var hh = '<th scope="col">t</th>';
+    var hh = '<th scope="col">Time (min)</th>';
     for(var c=0;c<cols.length;c++){
-      hh += '<th scope="col" style="color:' + vcol(cols[c]) + '">' + cols[c] + '</th>';
+      hh += '<th scope="col" style="color:' + vcol(cols[c]) + '">' + cols[c] + ' mL</th>';
     }
     elHead.innerHTML = hh;
 
     var html = "";
     for(var i=0;i<NPTS;i++){
       var isNew = (stage === "heating" && i === shown-1);
-      html += '<tr' + (isNew ? ' class="is-new"' : '') + '><td>' + (i*STEP_S) + '</td>';
+      html += '<tr' + (isNew ? ' class="is-new"' : '') + '><td>' + mins(i*STEP_S) + '</td>';
       for(var j=0;j<cols.length;j++){
         var V = cols[j], val = "";
         if(V === vol && stage !== "ready" && live){
@@ -552,7 +625,7 @@ body{margin:0;background:#DDE0D6}
     var list = haveRuns(), html = "";
     for(var i=0;i<list.length;i++){
       html += '<span><i style="background:' + vcol(list[i].v) + '"></i>'
-            + list[i].v + ' mL &middot; ' + fmt(list[i].rate,2) + ' &deg;C/min</span>';
+            + list[i].v + ' mL</span>';   /* the rate itself is left for students to work out from the table */
     }
     elKey.innerHTML = html;
   }
@@ -821,7 +894,7 @@ body{margin:0;background:#DDE0D6}
   function drawTempGraph(){
     var s = fit(tempC, pctx), w = s.w, h = s.h;
     var ctx = pctx;
-    var mL = 46, mR = 46, mT = 14, mB = 32;
+    var mL = 50, mR = 50, mT = 14, mB = 38;
     var pw = w-mL-mR, ph = h-mT-mB;
     var PX = function(tt){ return mL + (tt/RUN_S)*pw; };
     var PY = function(T){ return mT + ph - ((T-T_MIN)/(T_MAX-T_MIN))*ph; };
@@ -842,19 +915,19 @@ body{margin:0;background:#DDE0D6}
     ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 12px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var T3=T_MIN; T3<=T_MAX; T3+=10) ctx.fillText(String(T3), mL-6, PY(T3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
-    for(var t3=0; t3<=RUN_S; t3+=60) ctx.fillText(String(t3), PX(t3), mT+ph+6);
+    for(var t3=0; t3<=RUN_S; t3+=60) ctx.fillText(mins(t3), PX(t3), mT+ph+6);
     ctx.save();
-    ctx.translate(12, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = P["c-axis"]; ctx.font = "700 10px " + monoStack();
+    ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = P["c-axis"]; ctx.font = "700 12px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("TEMPERATURE (\u00B0C)", 0, 0);
     ctx.restore();
     ctx.fillStyle = P["c-axis"];
-    ctx.fillText("TIME (s)", mL+pw/2, mT+ph+19);
+    ctx.fillText("TIME (min)", mL+pw/2, mT+ph+22);
 
     var any = false;
     for(var i=0;i<VOLUMES.length;i++){
@@ -880,16 +953,16 @@ body{margin:0;background:#DDE0D6}
       /* label the line at its right hand end */
       var lastI = upto-1;
       var lx = PX(lastI*STEP_S) + 6, ly = PY(clamp(pts[lastI], T_MIN, T_MAX));
-      ctx.font = "700 10px " + monoStack();
+      ctx.font = "700 12px " + monoStack();
       ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      ctx.fillText(V + " mL", Math.min(lx, w-42), ly);
+      ctx.fillText(V + " mL", Math.min(lx, w-48), ly);
     }
 
     if(!any){
       ctx.fillStyle = P["c-empty"];
-      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.font = '700 14px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("Switch the plate on and the readings plot themselves.", mL+pw/2, mT+ph/2);
+      ctx.fillText("Turn on the hot plate to plot readings.", mL+pw/2, mT+ph/2);
     }
   }
 
@@ -900,7 +973,7 @@ body{margin:0;background:#DDE0D6}
     var inv = elInvV.checked;
     var xMax = inv ? 22 : 300, xStep = inv ? 5 : 50;
     var yMax = 15;
-    var mL = 46, mR = 14, mT = 12, mB = 34;
+    var mL = 50, mR = 14, mT = 12, mB = 38;
     var pw = w-mL-mR, ph = h-mT-mB;
     var PX = function(a){ return mL + (a/xMax)*pw; };
     var PY = function(r){ return mT + ph - (r/yMax)*ph; };
@@ -921,26 +994,26 @@ body{margin:0;background:#DDE0D6}
     ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
+    ctx.fillStyle = P["c-tick"]; ctx.font = "700 12px " + monoStack();
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var r3=0; r3<=yMax; r3+=5) ctx.fillText(String(r3), mL-6, PY(r3));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     for(var a3=0; a3<=xMax; a3+=xStep) ctx.fillText(String(a3), PX(a3), mT+ph+6);
     ctx.save();
-    ctx.translate(11, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = P["c-axis"]; ctx.font = "700 10px " + monoStack();
+    ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = P["c-axis"]; ctx.font = "700 12px " + monoStack();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("RATE (\u00B0C/min)", 0, 0);
     ctx.restore();
     ctx.fillStyle = P["c-axis"];
-    ctx.fillText(inv ? "1 / VOLUME (per litre)" : "VOLUME (mL)", mL+pw/2, mT+ph+19);
+    ctx.fillText(inv ? "1 / VOLUME (per liter)" : "VOLUME (mL)", mL+pw/2, mT+ph+22);
 
     var list = haveRuns();
     if(list.length === 0){
       ctx.fillStyle = P["c-empty"];
-      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
+      ctx.font = '700 14px "Poppins", system-ui, sans-serif';
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("Finish a run and its rate lands here.", mL+pw/2, mT+ph/2);
+      ctx.fillText("Finish a run to see its rate here.", mL+pw/2, mT+ph/2);
       return;
     }
 
@@ -1028,11 +1101,11 @@ body{margin:0;background:#DDE0D6}
   elCopy.addEventListener("click", function(){
     var cols = [];
     for(var i=0;i<VOLUMES.length;i++) if(runs[VOLUMES[i]]) cols.push(VOLUMES[i]);
-    var head = "time_s";
+    var head = "time_min";
     for(var c=0;c<cols.length;c++) head += "\t" + cols[c] + "mL_C";
     var rows = [head];
     for(var r=0;r<NPTS;r++){
-      var line = String(r*STEP_S);
+      var line = mins(r*STEP_S);
       for(var j=0;j<cols.length;j++) line += "\t" + fmt(runs[cols[j]].temps[r]);
       rows.push(line);
     }
@@ -1081,6 +1154,54 @@ body{margin:0;background:#DDE0D6}
       dirty = true; drawScene(); drawTempGraph(); drawRateGraph();
     });
   }
+
+  /* ------------------------------------------------ stopwatch (above the data table)
+     Counts up from 0. Start / Pause, Reset. "Beep every 30 s" plays a short beep at 0:30, 1:00, 1:30 ...
+     so students using a real hot plate know when to read the thermometer. Uses the clock, not frame counting,
+     so it stays right even if the tab is busy. */
+  var swNum = $("cvlab-sw-num"), swGo = $("cvlab-sw-go"), swReset = $("cvlab-sw-reset"),
+      swBeep = $("cvlab-sw-beep"), swNext = $("cvlab-sw-next"), swBox = $("cvlab-sw");
+  var swRun = false, swStart = 0, swAcc = 0, swTick = 0, swBeeped = 0, swAudio = null, swFlash = 0;
+  function swMs(){ return swAcc + (swRun ? Date.now() - swStart : 0); }
+  function swText(ms){
+    var tenths = Math.floor(ms/100), s = Math.floor(tenths/10), m = Math.floor(s/60);
+    return m + ":" + ((s%60)<10 ? "0" : "") + (s%60) + "." + (tenths%10);
+  }
+  function swShow(){
+    var ms = swMs();
+    swNum.textContent = swText(ms);
+    var nextS = (Math.floor(ms/30000) + 1)*30;
+    swNext.textContent = swBeep.checked ? "Next reading at " + clock(nextS) + " (" + mins(nextS) + " min)" : "";
+    swGo.textContent = swRun ? "Pause" : (ms > 0 ? "Resume" : "Start");
+    swReset.disabled = swRun || ms === 0;
+    swBox.className = "cvlab-sw" + (swRun ? " is-running" : "") + (Date.now() < swFlash ? " is-beep" : "");
+    var n = Math.floor(ms/30000);
+    if(swRun && n > swBeeped){ swBeeped = n; if(swBeep.checked){ swSound(); swFlash = Date.now() + 1200; } }
+  }
+  function swSound(){
+    try{
+      if(!swAudio) return;
+      [0, 0.22].forEach(function(dt){
+        var o = swAudio.createOscillator(), g = swAudio.createGain(), at = swAudio.currentTime + dt;
+        o.type = "sine"; o.frequency.value = 880; o.connect(g); g.connect(swAudio.destination);
+        g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.35, at + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, at + 0.18);
+        o.start(at); o.stop(at + 0.2);
+      });
+    }catch(e){}
+  }
+  swGo.addEventListener("click", function(){
+    try{   /* the click lets the page make the beep later */
+      if(!swAudio){ var AC = window.AudioContext || window.webkitAudioContext; if(AC) swAudio = new AC(); }
+      if(swAudio && swAudio.resume) swAudio.resume();
+    }catch(e){}
+    if(swRun){ swAcc = swMs(); swRun = false; clearInterval(swTick); }
+    else { swStart = Date.now(); swRun = true; swTick = setInterval(swShow, 100); }
+    swShow();
+  });
+  swReset.addEventListener("click", function(){ swRun = false; clearInterval(swTick); swAcc = 0; swBeeped = 0; swShow(); });
+  swBeep.addEventListener("change", swShow);
+  swShow();
 
   /* ------------------------------------------------ light / dark toggle */
   var themeBtn = $("cvlab-theme");
