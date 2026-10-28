@@ -10,8 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Laid out like the pages of the textbook site (physical-science-8.pages.dev), which shows this page under its
-     own top bar: a light banner with a "Study tools" tag, the title and a picture, then each unit as a card
-     with the unit's color along the top (2026-10-20). */
+     own top bar: a light banner with the title and a picture, then each unit as a card with the unit's color
+     along the top (2026-10-20). Every unit starts closed; click one to open it (2026-10-28). */
   :root {
     --bg: #f6f7fb;
     --card-bg: #ffffff;
@@ -107,20 +107,6 @@
     gap: 30px;
     align-items: center;
   }
-  .eyebrow {
-    display: inline-flex;
-    align-items: center;
-    font-weight: 700;
-    font-size: .78rem;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--accent-dark);
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    padding: 6px 14px;
-    border-radius: 999px;
-    margin-bottom: 14px;
-  }
   h1.site-title {
     font-size: clamp(1.7rem, 4vw, 2.5rem);
     font-weight: 800;
@@ -132,21 +118,6 @@
     color: var(--text-muted);
     margin: 0;
     max-width: 60ch;
-  }
-  .stats-row {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin: 18px 0 0;
-  }
-  .stat-pill {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 5px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
   }
   .hero-icon { justify-self: end; color: var(--accent); }
   .hero-icon svg { width: 170px; height: 170px; display: block; }
@@ -198,15 +169,6 @@
   }
   summary.unit-summary::-webkit-details-marker { display: none; }
   .unit-name { flex: 1 1 auto; }
-  .unit-count {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
-    background: var(--unit-tint, var(--accent-tint));
-    border-radius: 999px;
-    padding: 4px 10px;
-    white-space: nowrap;
-  }
   .unit-chevron {
     font-size: 20px;
     color: var(--text-muted);
@@ -284,13 +246,8 @@
 <header class="hero">
   <div class="hero-inner">
     <div>
-      <span class="eyebrow">Study tools</span>
       <h1 class="site-title">Sims</h1>
       <p class="site-subtitle">Interactive simulations, sorted by the same units and chapters as the book. Pick one to open it.</p>
-      <div class="stats-row">
-        <span class="stat-pill">34 simulations</span>
-        <span class="stat-pill">4 units</span>
-      </div>
     </div>
     <div class="hero-icon" aria-hidden="true"><svg viewBox="-4 -4 72 72" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" focusable="false" xmlns="http://www.w3.org/2000/svg"><rect x="-4" y="-4" width="72" height="72" rx="18" fill="currentColor" fill-opacity=".09" stroke="none"/><path d="M8 13A27 27 0 0 1 52 8" stroke-width="1.8" stroke-dasharray="3 4" stroke-opacity=".7"/><path d="M48.6 4.6L52.3 8.3L47.8 9.5" stroke-width="1.8" stroke-opacity=".7"/><rect x="9" y="15" width="46" height="31" rx="5" fill="#fff" stroke="none"/><rect x="9" y="15" width="46" height="31" rx="5" fill="currentColor" fill-opacity=".16"/><path d="M14 40H40L14 22Z" fill="currentColor" fill-opacity=".38" stroke-width="2"/><circle cx="25.5" cy="25.2" r="3.6" fill="#f2b705" stroke-width="1.8"/><path d="M17.5 20.5l2.2-1.6M20.2 18.3l2.2-1.6" stroke-width="1.6" stroke-opacity=".6"/><circle cx="46" cy="27" r="5.5" fill="#fff" stroke-width="2"/><path d="M44.6 24.6L48.4 27L44.6 29.4Z" fill="currentColor" stroke-width="1.4"/><path d="M27 46v6M37 46v6M21 53h22"/><path d="M57 40.8Q57 44 60.2 44Q57 44 57 47.2Q57 44 53.8 44Q57 44 57 40.8Z" stroke-width="1.4" fill="#f2b705"/><path d="M6 50.4Q6 54 9.6 54Q6 54 6 57.6Q6 54 2.4 54Q6 54 6 50.4Z" stroke-width="1.4" fill="#f2b705"/><circle cx="58" cy="6" r="1.4" fill="currentColor"/><circle cx="3" cy="38" r="1.3" fill="currentColor"/></svg></div>
     <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
@@ -298,10 +255,9 @@
 </header>
 <main>
   
-      <details class="unit" data-unit="u1" open>
+      <details class="unit" data-unit="u1">
         <summary class="unit-summary">
           <span class="unit-name">Unit 1: Energy of Motion</span>
-          <span class="unit-count">18 sims</span>
           <span class="unit-chevron" aria-hidden="true">›</span>
         </summary>
         <div class="unit-body">
@@ -401,7 +357,6 @@
       <details class="unit" data-unit="u2">
         <summary class="unit-summary">
           <span class="unit-name">Unit 2: Gravity &amp; Energy Related to Position</span>
-          <span class="unit-count">4 sims</span>
           <span class="unit-chevron" aria-hidden="true">›</span>
         </summary>
         <div class="unit-body">
@@ -429,7 +384,6 @@
       <details class="unit" data-unit="u5">
         <summary class="unit-summary">
           <span class="unit-name">Unit 5: Thermal Energy &amp; Heat Flow</span>
-          <span class="unit-count">6 sims</span>
           <span class="unit-chevron" aria-hidden="true">›</span>
         </summary>
         <div class="unit-body">
@@ -477,7 +431,6 @@
       <details class="unit" data-unit="u6">
         <summary class="unit-summary">
           <span class="unit-name">Unit 6: Chemical Energy &amp; Reactions</span>
-          <span class="unit-count">6 sims</span>
           <span class="unit-chevron" aria-hidden="true">›</span>
         </summary>
         <div class="unit-body">
