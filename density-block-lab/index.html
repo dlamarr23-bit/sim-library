@@ -3,1128 +3,895 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Density lab — mass, volume and density of eight materials</title>
-
-<!--
-  ============================================================================
-  DENSITY BLOCK LAB  (PhET-style, single file, no dependencies)
-
-  HOW TO EMBED
-  1) Easiest: upload this file and drop it in an iframe:
-       <iframe src="density-blocks-lab.html"
-               style="width:100%;height:1450px;border:0" loading="lazy"
-               title="Density block simulation"></iframe>
-  2) Or paste the style block, the cvlab div, and the script block into a page.
-     Every CSS rule is scoped under .cvlab.
-
-  THE MODEL
-     Every cube is 2.5 cm on an edge, so one cube is 15.625 cm^3 and n cubes
-     stacked measure 2.5 x 2.5 x 2.5n. Mass is exactly proportional to n, so
-       density = m / V
-     comes out the same for 1, 2, 3 or 4 blocks. Single block masses are the
-     measured values supplied by the teacher.
-  ============================================================================
--->
-
+<title>Density Block Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-<style>
-.cvlab{
-  --bench:#DDE0D6; --paper:#FBFBF7; --rule:#C9CFC2;
-  --ink:#1B1D1C; --ink-2:#5A5F58;
-  --blue:#1552B8; --blue-d:#0E3B87;
-  --case:#1B63C4; --case-d:#0F4694;
-  --steel:#C9CDD1; --lcd:#7FB6D8;
-  --wood:#E3C48D; --wood-d:#B08F4D;
-  --epoxy:#22251F; --tape:#E8B93C;
-  --head-bg:#1B1D1C; --head-ink:#F4F5F0; --on-blue:#fff; --on-ink:#F4F5F0;
-  --ro-bg:#000; --ro-line:#35392F; --ro-k:#8C9284; --ro-v:#DDE3D2;
-  --field:#EFF1E9; --input-bg:#fff; --card:#fff; --row-line:#EDEFE7; --row-new:#FCF3D9;
-  --blank:#B8BDB2; --sw-line:rgba(0,0,0,.35); --notes-ink:#33362F;
-  /* canvas colors (read by the script) */
-  --c-wall1:#F1F2EC; --c-wall2:#E4E7DD; --c-label:#1B1D1C; --c-unit:#3A2E17;
-  --c-arrow:#1552B8; --c-arrow-dash:rgba(21,82,184,.55); --c-label-bg:rgba(251,251,247,.93);
-  --c-plot:#FDFDF9; --c-grid:#E4E8DC; --c-grid-2:#CCD2C4; --c-guide:rgba(21,82,184,.22);
-  --c-axis:#1B1D1C; --c-tick:#5A5F58; --c-empty:#8A9082;
-  --font-d:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --font-b:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --font-m:"Poppins","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  background:var(--bench);font-family:var(--font-b);color:var(--ink);font-weight:700;
-  padding:14px;max-width:min(1900px,97vw);margin:0 auto;line-height:1.45;-webkit-font-smoothing:antialiased;
-}
-body{margin:0;background:#DDE0D6}
-/* dark colors: the system's dark setting unless light is chosen, or dark chosen on purpose */
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){color-scheme:dark}
-  :root:not([data-theme="light"]) body{background:#121412}
-  :root:not([data-theme="light"]) .cvlab{
-    --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
-    --ink:#EEF0EA; --ink-2:#B6BAB0;
-    --blue:#3F7FE6; --blue-d:#2A63C2; --tape:#F0C64A;
-    --head-bg:#0A0B0A; --head-ink:#F4F5F0; --on-blue:#fff; --on-ink:#1C1F1C;
-    --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
-    --field:#252925; --input-bg:#252925; --card:#232723; --row-line:#2A2F29; --row-new:#3A3320;
-    --blank:#7A8076; --sw-line:rgba(235,240,230,.45); --notes-ink:#C9CCC3;
-    --c-wall1:#20241F; --c-wall2:#1A1D19; --c-label:#EEF0EA; --c-unit:#E3C48D;
-    --c-arrow:#7FB0FF; --c-arrow-dash:rgba(127,176,255,.6); --c-label-bg:rgba(28,31,28,.92);
-    --c-plot:#171A17; --c-grid:#262B25; --c-grid-2:#363D35; --c-guide:rgba(127,176,255,.25);
-    --c-axis:#C9CEC2; --c-tick:#A9AFA4; --c-empty:#8D9288;
-    color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{color-scheme:dark}
-:root[data-theme="dark"] body{background:#121412}
-:root[data-theme="dark"] .cvlab{
-  --bench:#121412; --paper:#1C1F1C; --rule:#343A33;
-  --ink:#EEF0EA; --ink-2:#B6BAB0;
-  --blue:#3F7FE6; --blue-d:#2A63C2; --tape:#F0C64A;
-  --head-bg:#0A0B0A; --head-ink:#F4F5F0; --on-blue:#fff; --on-ink:#1C1F1C;
-  --ro-bg:#000; --ro-line:#2C302A; --ro-k:#8C9284; --ro-v:#DDE3D2;
-  --field:#252925; --input-bg:#252925; --card:#232723; --row-line:#2A2F29; --row-new:#3A3320;
-  --blank:#7A8076; --sw-line:rgba(235,240,230,.45); --notes-ink:#C9CCC3;
-  --c-wall1:#20241F; --c-wall2:#1A1D19; --c-label:#EEF0EA; --c-unit:#E3C48D;
-  --c-arrow:#7FB0FF; --c-arrow-dash:rgba(127,176,255,.6); --c-label-bg:rgba(28,31,28,.92);
-  --c-plot:#171A17; --c-grid:#262B25; --c-grid-2:#363D35; --c-guide:rgba(127,176,255,.25);
-  --c-axis:#C9CEC2; --c-tick:#A9AFA4; --c-empty:#8D9288;
-  color-scheme:dark;
-}
-.cvlab *{box-sizing:border-box}
-.cvlab h1,.cvlab h2,.cvlab h3{margin:0;font-family:var(--font-d);font-weight:700;letter-spacing:.01em}
-.cvlab p{margin:0}
-.cvlab :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-
-.cvlab-head{background:var(--head-bg);color:var(--head-ink);border-radius:5px 5px 0 0;padding:12px 16px;
-  display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
-.cvlab-title{flex:1 1 auto}
-.cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--tape);margin-bottom:2px}
-.cvlab-head h1{font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
-.cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px}
-.cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:3px;padding:5px 10px;min-width:92px}
-.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:11px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--ro-k)}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:19px;font-weight:700;color:var(--ro-v);
-  font-variant-numeric:tabular-nums;white-space:nowrap}
-.cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
-.cvlab-themebtn{
-  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
-  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
-}
-.cvlab-themebtn:hover{border-color:var(--tape)}
-.cvlab-themebtn svg{width:21px;height:21px}
-
-.cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
-  border-radius:0 0 5px 5px;padding:10px 10px 12px}
-.cvlab canvas{display:block;width:100%}
-.cvlab-stage{display:grid;grid-template-columns:minmax(196px,.42fr) 1fr;gap:10px}
-#cvlab-scene,#cvlab-mv{height:clamp(300px,30vw,352px);border-radius:3px}
-@media (max-width:760px){
-  .cvlab-stage{grid-template-columns:1fr}
-  #cvlab-scene{height:clamp(260px,48vw,320px)}#cvlab-mv{height:clamp(220px,38vw,270px)}
-}
-.cvlab-hint{font-family:var(--font-m);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--ink-2);margin-top:6px}
-.cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;padding-top:10px;
-  border-top:1px dashed var(--rule)}
-.cvlab-status{flex:1 1 220px;min-width:190px;font-size:16px;color:var(--ink-2)}
-.cvlab-status strong{color:var(--ink);font-weight:700}
-
-.cvlab-btn{font-family:var(--font-d);font-size:17px;font-weight:700;letter-spacing:.05em;
-  text-transform:uppercase;cursor:pointer;background:var(--paper);color:var(--ink);
-  border:1.5px solid var(--ink);border-radius:3px;padding:7px 14px;line-height:1.1;
-  transition:transform .08s ease,background .12s ease,color .12s ease}
-.cvlab-btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
-.cvlab-btn:active:not(:disabled){transform:translateY(1px)}
-.cvlab-btn:disabled{opacity:.35;cursor:not-allowed}
-.cvlab-btn-go{background:var(--blue);border-color:var(--blue-d);color:var(--on-blue);min-width:150px}
-.cvlab-btn-go:hover:not(:disabled){background:var(--blue-d);color:var(--on-blue)}
-.cvlab-btn-sm{font-size:15px;padding:5px 10px;border-width:1px}
-
-.cvlab-grid{display:grid;gap:12px;margin-top:12px;
-  grid-template-columns:minmax(200px,.8fr) minmax(280px,1.25fr) minmax(270px,1.1fr)}
-@media (max-width:1000px){.cvlab-grid{grid-template-columns:1fr 1fr}
-  .cvlab-panel-graph{grid-column:1/-1}}
-@media (max-width:640px){.cvlab-grid{grid-template-columns:1fr}}
-.cvlab-panel{background:var(--paper);border:1px solid var(--rule);border-radius:5px;padding:12px;
-  display:flex;flex-direction:column;gap:10px}
-.cvlab-panel h2{font-size:15px;letter-spacing:.16em;text-transform:uppercase;font-family:var(--font-m);
-  font-weight:700;color:var(--ink);padding-bottom:7px;border-bottom:2px solid var(--ink)}
-.cvlab-note{font-size:14.5px;color:var(--ink-2)}
-.cvlab-row{display:flex;flex-wrap:wrap;gap:6px}
-
-.cvlab-mats{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.cvlab-mat{cursor:pointer;border:1.5px solid var(--ink);border-radius:3px;padding:6px 6px;
-  display:flex;align-items:center;gap:6px;background:var(--paper);color:var(--ink);
-  font-family:var(--font-m);font-size:13px;font-weight:700;text-align:left;
-  transition:background .12s ease,color .12s ease}
-.cvlab-mat:hover{background:var(--field)}
-.cvlab-mat.is-on{color:#fff;border-color:var(--ink)}
-.cvlab-mat i{display:block;width:11px;height:11px;border-radius:2px;flex:none;
-  border:1px solid var(--sw-line)}
-.cvlab-mat b{margin-left:auto;font-weight:700;font-size:11.5px;opacity:.75}
-
-.cvlab-counts{display:flex;gap:5px}
-.cvlab-cbtn{flex:1;cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:3px;
-  padding:9px 2px;font-family:var(--font-m);font-size:15px;font-weight:700;color:var(--ink);
-  transition:background .12s ease,color .12s ease}
-.cvlab-cbtn:hover{background:var(--field)}
-.cvlab-cbtn.is-on{background:var(--ink);color:var(--on-ink)}
-
-.cvlab-live{font-family:var(--font-m);font-size:13.5px;color:var(--ink-2);background:var(--field);
-  border-radius:3px;padding:7px 9px;line-height:1.7}
-.cvlab-live b{color:var(--ink)}
-
-.cvlab-field{display:flex;flex-direction:column;gap:4px}
-.cvlab-field span{font-family:var(--font-m);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ink-2)}
-.cvlab select{font-family:var(--font-b);font-size:15.5px;padding:6px 8px;border:1px solid var(--ink);
-  border-radius:3px;background:var(--input-bg);color:var(--ink);width:100%}
-.cvlab-opts{display:flex;flex-direction:column;gap:7px;font-size:15px;color:var(--ink-2)}
-.cvlab-opts label{display:flex;gap:7px;align-items:flex-start;cursor:pointer}
-.cvlab-opts input{margin:3px 0 0;accent-color:var(--blue);flex:none}
-
-.cvlab-stationhead{font-family:var(--font-m);font-size:13px;font-weight:700;color:#fff;
-  text-align:center;padding:5px;border-radius:3px 3px 0 0;letter-spacing:.06em}
-.cvlab-tablewrap{overflow:auto;border:1px solid var(--rule);border-top:0;border-radius:0 0 3px 3px}
-.cvlab table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:13px}
-.cvlab thead th{background:var(--field);font-size:10.5px;letter-spacing:.02em;font-weight:700;
-  padding:5px 3px;text-align:right;border-bottom:1px solid var(--rule);color:var(--ink-2);
-  white-space:nowrap}
-.cvlab thead th:first-child{text-align:left}
-.cvlab tbody td{padding:4px 3px;text-align:right;font-variant-numeric:tabular-nums;
-  border-bottom:1px solid var(--row-line);white-space:nowrap}
-.cvlab tbody td:first-child{text-align:left;color:var(--ink-2)}
-.cvlab tbody tr:last-child td{border-bottom:0}
-.cvlab tbody tr.is-new td{background:var(--row-new)}
-.cvlab tbody td.blank{color:var(--blank)}
-.cvlab-mean{font-family:var(--font-m);font-size:14px;color:var(--ink-2)}
-.cvlab-mean b{color:var(--ink);font-size:16px}
-
-#cvlab-db{height:clamp(220px,26vw,280px)}
-.cvlab-key{display:flex;flex-wrap:wrap;gap:5px}
-.cvlab-chip{font-family:var(--font-m);font-size:12px;border:1px solid var(--rule);border-radius:3px;
-  padding:3px 5px;display:flex;align-items:center;gap:4px;background:var(--card)}
-.cvlab-chip i{display:block;width:8px;height:8px;border-radius:50%;flex:none}
-.cvlab-chip b{font-weight:700}
-
-.cvlab-notes{margin-top:12px;background:var(--paper);border:1px solid var(--rule);border-radius:5px;
-  padding:10px 14px}
-.cvlab-notes h3{font-size:17px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}
-.cvlab-notes p,.cvlab-notes li{font-size:15px;color:var(--notes-ink)}
-.cvlab-notes ul,.cvlab-notes ol{margin:4px 0 0;padding-left:20px}
-.cvlab-notes li{margin:3px 0}
-.cvlab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-@media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
 <script>
-/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-   (?theme=light or dark, so both sides match), else the one saved on this computer */
-(function(){
+/* Light / dark mode before anything draws: ?theme= (from the Self-Check page), else this device's choice, else the device's setting. */
+(function () {
   var t = null;
-  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
-  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
-  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  try { t = new URLSearchParams(location.search).get("theme"); } catch (e) { t = null; }
+  if (t !== "dark" && t !== "light") { try { t = localStorage.getItem("density-lab-theme"); } catch (e) { t = null; } }
+  if (t !== "dark" && t !== "light") { try { t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } catch (e) { t = "light"; } }
+  document.documentElement.setAttribute("data-theme", t);
+  try { if (window.self !== window.top) document.documentElement.classList.add("framed"); } catch (e) { document.documentElement.classList.add("framed"); }
 })();
 </script>
+<style>
+  :root {
+    --bg:#f3f3f3; --card:#ffffff; --ink:#111111; --muted:#4a4f57; --line:#bdbdbd; --strip:#c9daf8; --q:#d9d9d9;
+    --green:#d9ead3; --yellow:#fff2cc; --red:#f4cccc; --greenline:#38761d; --yellowline:#bf9000; --redline:#cc0000;
+    --btn:#1b4587; --btnink:#ffffff; --fb:#000000; --fbink:#ffffff; --grid:#e3e3e3; --axis:#555555; --paper:#ffffff;
+    --field:#ffffff; --fieldline:#8a8f98; --soft:#eef3fc; --pic-ink:#1f2430; --pic-soft:#e9edf3; --pic-mid:#c7ced8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#14171c; --card:#1d2128; --ink:#e8eaed; --muted:#b6bcc6; --line:#3a4049; --strip:#1f3a66; --q:#2a2f38;
+      --green:#1f4d2e; --yellow:#5a4a12; --red:#5c2626; --greenline:#8fd19e; --yellowline:#f5c84c; --redline:#ff8a80;
+      --btn:#3b6fd6; --btnink:#ffffff; --fb:#000000; --fbink:#f1f3f5; --grid:#30353d; --axis:#a7adb7; --paper:#14171c;
+      --field:#14171c; --fieldline:#6b727c; --soft:#1a2436; --pic-ink:#e8eaed; --pic-soft:#2a2f38; --pic-mid:#4a515c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#14171c; --card:#1d2128; --ink:#e8eaed; --muted:#b6bcc6; --line:#3a4049; --strip:#1f3a66; --q:#2a2f38;
+    --green:#1f4d2e; --yellow:#5a4a12; --red:#5c2626; --greenline:#8fd19e; --yellowline:#f5c84c; --redline:#ff8a80;
+    --btn:#3b6fd6; --btnink:#ffffff; --fb:#000000; --fbink:#f1f3f5; --grid:#30353d; --axis:#a7adb7; --paper:#14171c;
+    --field:#14171c; --fieldline:#6b727c; --soft:#1a2436; --pic-ink:#e8eaed; --pic-soft:#2a2f38; --pic-mid:#4a515c;
+  }
+  :root[data-theme="dark"] { color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; }
+  body { background:var(--bg); color:var(--ink); font-family:Poppins, system-ui, sans-serif; font-weight:700; font-size:16px; line-height:1.5; }
+  button, input { font-family:inherit; }
+
+  /* ---------- header ---------- */
+  .top { max-width:min(1900px, 97vw); margin:0 auto; padding:14px 16px 8px; display:flex; align-items:center; gap:12px; }
+  .titles { flex:1; min-width:0; }
+  h1 { margin:0; font-size:clamp(24px, 3vw, 34px); font-weight:800; line-height:1.15; letter-spacing:-.01em; }
+  .sub { margin:2px 0 0; color:var(--muted); font-size:clamp(13px, 1.4vw, 15px); font-weight:600; }
+  .themebtn { flex:none; width:44px; height:44px; border-radius:50%; border:2px solid var(--ink); background:var(--card); color:var(--ink);
+              display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+  .themebtn svg { width:22px; height:22px; }
+  html.framed .top { padding:8px 12px 4px; }
+  html.framed h1 { font-size:22px; }
+  html.framed .sub { display:none; }
+
+  /* ---------- tabs (narrow screens: Chromebook split screen, phones, inside the Self-Check page) ---------- */
+  .tabs { display:none; position:sticky; top:0; z-index:20; background:var(--bg); padding:6px 12px 8px; gap:8px; border-bottom:2px solid var(--line); }
+  .tabs button { flex:1; min-height:46px; border:2px solid var(--ink); border-radius:8px; background:var(--card); color:var(--ink);
+                 font-weight:800; font-size:15px; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; }
+  .tabs button[aria-selected="true"] { background:var(--btn); border-color:var(--btn); color:var(--btnink); }
+
+  /* ---------- two columns ---------- */
+  .cols { max-width:min(1900px, 97vw); margin:0 auto; padding:8px 16px 40px; display:grid; gap:18px;
+          grid-template-columns:minmax(330px, 0.85fr) minmax(0, 1.3fr); align-items:start; }
+  .pane { min-width:0; }
+  @media (min-width: 900px) {
+    body { height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+    .top { flex:none; width:100%; }
+    .cols { flex:1; min-height:0; width:100%; padding-bottom:0; }
+    .pane { height:100%; overflow-y:auto; padding:0 6px 40px 2px; overscroll-behavior:contain; }
+  }
+  @media (max-width: 899.98px) {
+    .tabs { display:flex; }
+    .cols { grid-template-columns:minmax(0, 1fr); padding:10px 12px 40px; }
+    body[data-view="info"] #pane-data, body[data-view="data"] #pane-info { display:none; }
+  }
+
+  /* ---------- cards and dropdowns ---------- */
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; margin:0 0 16px; overflow:hidden; }
+  details.card > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px; padding:12px 14px;
+                           background:var(--strip); border-bottom:2px solid var(--ink); font-weight:800; font-size:15px;
+                           text-transform:uppercase; letter-spacing:.06em; }
+  details.card:not([open]) > summary { border-bottom:0; }
+  details.card > summary::-webkit-details-marker { display:none; }
+  details.card > summary .chev { margin-left:auto; width:22px; height:22px; transition:transform .2s; flex:none; }
+  details.card[open] > summary .chev { transform:rotate(180deg); }
+  .strip { background:var(--strip); border-bottom:2px solid var(--ink); padding:12px 14px; font-weight:800; font-size:15px;
+           text-transform:uppercase; letter-spacing:.06em; }
+  .body { padding:14px 16px 16px; }
+  .body p { margin:0 0 12px; }
+  .body h3 { font-size:16px; font-weight:800; margin:18px 0 6px; text-transform:uppercase; letter-spacing:.05em; }
+  .body h3:first-child { margin-top:0; }
+  .body ul, .body ol { margin:0 0 12px; padding-left:24px; }
+  .body li { margin:0 0 8px; }
+  .muted { color:var(--muted); }
+  .key { background:var(--soft); border-left:5px solid var(--btn); border-radius:6px; padding:10px 12px; margin:0 0 12px; }
+  figure.pic { margin:4px 0 14px; text-align:center; }
+  figure.pic svg { display:block; width:100%; max-width:520px; height:auto; margin:0 auto; }
+  figure.pic figcaption { font-size:14px; font-weight:600; font-style:italic; color:var(--muted); margin-top:4px; }
+  .steps { counter-reset:step; list-style:none; padding-left:0 !important; }
+  .steps > li { counter-increment:step; position:relative; padding-left:44px; margin-bottom:14px; }
+  .steps > li::before { content:counter(step); position:absolute; left:0; top:0; width:32px; height:32px; border-radius:50%;
+                        background:var(--ink); color:var(--card); display:flex; align-items:center; justify-content:center; font-weight:800; }
+  .formulas { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin:0 0 14px; }
+  .formula { border:2px solid var(--ink); border-radius:8px; padding:10px; text-align:center; background:var(--paper); }
+  .formula b { display:block; font-size:22px; font-weight:800; }
+  .formula span { display:block; font-size:13px; color:var(--muted); font-weight:600; }
+  .example { border:2px dashed var(--fieldline); border-radius:8px; padding:10px 12px; margin:0 0 12px; }
+  .example div { margin:2px 0; }
+  .vocab dt { font-weight:800; }
+  .vocab dd { margin:0 0 10px 0; }
+  .note { font-size:14px; color:var(--muted); }
+
+  /* ---------- stations ---------- */
+  .chips { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; padding:12px; }
+  @container (min-width: 900px) { .chips { grid-template-columns:repeat(8, minmax(0, 1fr)); } }
+  .datawrap { container-type:inline-size; }
+  .chip { position:relative; min-height:56px; border:2px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink);
+          cursor:pointer; padding:6px 4px 6px 11px; text-align:left; line-height:1.15; overflow:hidden; }
+  .chip::before { content:""; position:absolute; left:0; top:0; bottom:0; width:7px; background:var(--c); }
+  .chip .cn { display:block; padding-right:20px; font-size:clamp(10px, 2.6cqi, 12px); white-space:nowrap; overflow:hidden; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .chip .cm { display:block; font-size:clamp(11px, 2.9cqi, 14px); letter-spacing:-.01em; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chip .cs { position:absolute; right:6px; top:6px; width:18px; height:18px; }
+  .chip[aria-pressed="true"] { border-color:var(--c); box-shadow:inset 0 0 0 2px var(--c); background:var(--soft); }
+  .stationhead { display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:2px solid var(--ink); border-bottom:2px solid var(--ink);
+                 font-weight:800; font-size:17px; }
+  .stationhead .swatch { width:16px; height:16px; border-radius:4px; border:2px solid currentColor; flex:none; }
+  .stationhead .rot { margin-left:auto; font-size:13px; font-weight:700; opacity:.9; }
+  .rows { padding:10px 12px 4px; }
+  .colhead { display:none; }
+  .brow { border:1px solid var(--line); border-radius:8px; padding:8px 10px 10px; margin-bottom:10px; background:var(--paper); }
+  .bname { font-weight:800; font-size:15px; margin-bottom:6px; }
+  .fields { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px 10px; }
+  .fld label { display:block; font-size:12px; font-weight:700; color:var(--muted); line-height:1.25; margin-bottom:3px; }
+  .fld label small { display:block; font-weight:600; font-size:11px; }
+  .fld input { width:100%; height:42px; border:2px solid var(--fieldline); border-radius:6px; background:var(--field); color:var(--ink);
+               font-size:16px; font-weight:700; text-align:center; padding:0 4px; outline:none; transition:background .2s, border-color .2s; }
+  .fld input:focus { border-color:var(--btn); box-shadow:0 0 0 3px rgba(60,120,216,.35); }
+  .fld.calc input { border-style:dashed; }
+  .fld input.ok { background:var(--green); border-color:var(--greenline); border-style:solid; }
+  .fld input.close { background:var(--yellow); border-color:var(--yellowline); border-style:solid; }
+  .fld input.bad { background:var(--red); border-color:var(--redline); border-style:solid; }
+  @container (max-width: 560px) { .chip .cn .w { display:none; } }
+  @container (max-width: 330px) { .fields { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+  @container (min-width: 620px) {
+    .colhead { display:grid; grid-template-columns:92px repeat(6, minmax(0, 1fr)); gap:8px; padding:0 2px 6px; font-size:12px; font-weight:800;
+               color:var(--muted); text-align:center; line-height:1.2; text-transform:uppercase; letter-spacing:.03em; align-items:end; }
+    .colhead small { display:block; text-transform:none; letter-spacing:0; font-weight:600; font-size:11px; }
+    .brow { display:grid; grid-template-columns:92px minmax(0, 1fr); align-items:center; gap:8px; padding:6px 8px; margin-bottom:6px; }
+    .bname { margin:0; }
+    .fields { grid-template-columns:repeat(6, minmax(0, 1fr)); }
+    .fld label { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  }
+  .fbbar { background:var(--fb); color:var(--fbink); padding:10px 14px; font-style:italic; font-weight:500; font-size:15px; line-height:1.45; min-height:46px; }
+  .fbbar b { font-style:normal; }
+  .stationtools { display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; padding:10px 12px 12px; }
+  .btn { min-height:42px; border:2px solid var(--btn); background:var(--btn); color:var(--btnink); border-radius:6px; padding:6px 14px;
+         font-weight:800; font-size:14px; cursor:pointer; text-transform:uppercase; letter-spacing:.05em; }
+  .btn.ghost { background:transparent; color:var(--ink); border-color:var(--fieldline); }
+
+  /* ---------- graph ---------- */
+  .graphbox { padding:8px 10px 4px; }
+  svg.graph { display:block; width:100%; height:auto; font-family:Poppins, system-ui, sans-serif; }
+  .g-grid { stroke:var(--grid); stroke-width:1; }
+  .g-axis { stroke:var(--axis); stroke-width:2; }
+  .g-tick { fill:var(--axis); font-size:14px; font-weight:600; }
+  .g-empty { fill:var(--muted); font-size:16px; font-weight:600; font-style:italic; }
+  .g-line { fill:none; stroke-width:3.5; stroke-linejoin:round; stroke-linecap:round; }
+  .g-pt { stroke:var(--paper); stroke-width:2; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 8px; padding:8px 12px 14px; justify-content:center; }
+  .leg { display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:4px 10px; border:1.5px solid var(--line); border-radius:999px;
+         background:var(--card); color:var(--ink); font-size:14px; font-weight:700; cursor:pointer; }
+  .leg svg { width:30px; height:16px; flex:none; }
+  .leg[aria-pressed="false"] { opacity:.45; text-decoration:line-through; }
+  .leg.nodata { opacity:.6; }
+  .leg.nodata .nd { font-weight:500; font-size:12px; color:var(--muted); }
+  .graphnote { padding:0 14px 12px; font-size:13px; color:var(--muted); text-align:center; font-weight:600; }
+
+  /* ---------- in-page pop-up (no browser confirm boxes) ---------- */
+  .modal { position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .modal[hidden] { display:none; }
+  .modal-card { background:var(--card); color:var(--ink); border:2px solid var(--ink); border-radius:10px; max-width:420px; width:100%; padding:20px; }
+  .modal-card p { margin:0 0 18px; font-size:16px; }
+  .modal-btns { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+</style>
 </head>
-<body>
+<body data-view="info">
 
-<div class="cvlab" id="cvlab">
-
-  <header class="cvlab-head">
-    <div class="cvlab-title">
-      <span class="cvlab-eyebrow">Matter lab &middot; density</span>
-      <h1>Density blocks &mdash; mass, volume, density</h1>
-    </div>
-    <div class="cvlab-readouts">
-      <div class="cvlab-ro"><span class="cvlab-ro-k">Material</span><span class="cvlab-ro-v" id="cvlab-ro-mat">Brass</span></div>
-      <div class="cvlab-ro"><span class="cvlab-ro-k">Blocks</span><span class="cvlab-ro-v" id="cvlab-ro-n">1</span></div>
-      <div class="cvlab-ro"><span class="cvlab-ro-k">Balance</span><span class="cvlab-ro-v" id="cvlab-ro-mass">138.00 g</span></div>
-      <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Density</span><span class="cvlab-ro-v" id="cvlab-ro-den">8.83</span></div>
-    </div>
-    <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
-  </header>
-
-  <div class="cvlab-bench">
-    <div class="cvlab-stage">
-      <canvas id="cvlab-scene" role="img"
-        aria-label="A stack of density blocks on a digital balance with a ruler standing beside them, and the block set case on the bench."></canvas>
-      <canvas id="cvlab-mv" role="img"
-        aria-label="Graph of mass against volume for each material, one straight line through the origin per material."></canvas>
-    </div>
-    <p class="cvlab-hint">Every cube is 2.5 cm on an edge &middot; stack them and the height grows, the width and length do not</p>
-    <div class="cvlab-bar">
-      <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Record this measurement</button>
-      <button class="cvlab-btn cvlab-btn-sm" id="cvlab-all4">Record all four</button>
-      <p class="cvlab-status" id="cvlab-status" role="status" aria-live="polite">
-        Pick a material, put blocks on the balance, then record what the instruments say.
-      </p>
-    </div>
+<header class="top">
+  <div class="titles">
+    <h1>Density Block Lab</h1>
+    <p class="sub">8 stations, 8 materials: measure with a scale and a ruler, then find volume and density.</p>
   </div>
+  <button type="button" class="themebtn" id="themeBtn"></button>
+</header>
 
-  <div class="cvlab-grid">
+<nav class="tabs" role="tablist" aria-label="Lab sections">
+  <button type="button" role="tab" id="tab-info" aria-controls="pane-info" data-view="info">Directions</button>
+  <button type="button" role="tab" id="tab-data" aria-controls="pane-data" data-view="data">Data &amp; Graph</button>
+</nav>
 
-    <section class="cvlab-panel">
-      <h2>Station</h2>
-      <div class="cvlab-mats" id="cvlab-mats"></div>
-      <div class="cvlab-field">
-        <span>Blocks on the balance</span>
-        <div class="cvlab-counts" id="cvlab-counts"></div>
+<main class="cols">
+  <!-- ======================= LEFT: directions + basics ======================= -->
+  <section class="pane" id="pane-info" role="tabpanel" aria-labelledby="tab-info">
+
+    <details class="card" open>
+      <summary>Lab directions <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="body">
+        <p>In this lab you will find the <strong>density</strong> of 8 different materials. You will see if the number of blocks changes a material's density.</p>
+
+        <h3>What you need</h3>
+        <figure class="pic" id="picMaterials"></figure>
+        <ul>
+          <li>4 blocks of one material (they are already at each station)</li>
+          <li>A digital scale (measures <strong>mass</strong> in grams, g)</li>
+          <li>A metric ruler (measures length in centimeters, cm)</li>
+          <li>A calculator</li>
+        </ul>
+
+        <h3>How the stations work</h3>
+        <p>There are <strong>8 stations</strong> in the room. Each station has its own set of blocks, and each set is made of a <strong>different material</strong>.</p>
+        <figure class="pic" id="picRotation"></figure>
+        <ul>
+          <li>Your group starts at one station.</li>
+          <li>When your teacher says <strong>rotate</strong>, move to the next station number. Station 8 moves to Station 1.</li>
+          <li>Every rotation brings a <strong>new material</strong>. Keep going until your group has visited <strong>all 8 stations</strong>.</li>
+          <li>On the Data side, tap the button for the station you are at. Each one has its own table.</li>
+        </ul>
+
+        <h3>Procedure (do this at every station)</h3>
+        <ol class="steps">
+          <li><strong>Find the mass.</strong> Put 1 block on the digital scale. Read the mass in grams (g). Type it in the <strong>Mass</strong> box.
+            <figure class="pic" id="picScale"></figure></li>
+          <li><strong>Measure the block.</strong> Use the metric ruler to measure the <strong>length</strong>, <strong>width</strong> and <strong>height</strong> in centimeters (cm). Line the edge of the block up with the 0 mark, not the end of the ruler.
+            <figure class="pic" id="picRuler"></figure></li>
+          <li><strong>Find the volume.</strong> Multiply: <strong>Volume = Length &times; Width &times; Height</strong>. Type it in the Volume box. Units: cm&sup3;.</li>
+          <li><strong>Find the density.</strong> Divide: <strong>Density = Mass &divide; Volume</strong>. Type it in the Density box. Units: g/cm&sup3;.</li>
+          <li><strong>Add more blocks.</strong> Stack 2 blocks together and treat the stack like one big block. Find its mass and measure it. Do the same with 3 blocks and 4 blocks.
+            <figure class="pic" id="picStacks"></figure></li>
+          <li><strong>Clean up and rotate.</strong> Put all 4 blocks back for the next group. Move to the next station when your teacher says so.</li>
+        </ol>
+        <div class="key">The Volume and Density boxes turn <strong>green</strong> when your math matches your measurements, <strong>yellow</strong> when you are close (check your rounding), and <strong>red</strong> when the math needs another try.</div>
+        <p class="muted">When all 8 stations are done, answer the Analysis questions.</p>
       </div>
-      <p class="cvlab-live" id="cvlab-live">&nbsp;</p>
-      <label class="cvlab-field" for="cvlab-err">
-        <span>How carefully it is measured</span>
-        <select id="cvlab-err">
-          <option value="0">Perfect readings, no error</option>
-          <option value="1" selected>Careful work, slight error</option>
-          <option value="2">Rushed ruler work</option>
-        </select>
-      </label>
-      <div class="cvlab-opts">
-        <label><input type="checkbox" id="cvlab-hide">
-          <span>Blank the volume and density columns so students work them out</span></label>
-      </div>
-    </section>
+    </details>
 
-    <section class="cvlab-panel">
-      <h2>Data table</h2>
-      <div>
-        <div class="cvlab-stationhead" id="cvlab-sthead">Station #1 Brass</div>
-        <div class="cvlab-tablewrap">
-          <table>
-            <caption class="cvlab-sr">Mass, dimensions, volume and density for one to four blocks</caption>
-            <thead><tr>
-              <th scope="col"># blocks</th><th scope="col">mass g</th>
-              <th scope="col">L cm</th><th scope="col">W cm</th><th scope="col">H cm</th>
-              <th scope="col">V cm&sup3;</th><th scope="col">g/cm&sup3;</th>
-            </tr></thead>
-            <tbody id="cvlab-tbody"></tbody>
-          </table>
+    <details class="card">
+      <summary>Density and volume basics <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="body">
+        <h3>Mass</h3>
+        <p><strong>Mass</strong> is the amount of matter (stuff) in an object. We measure mass in <strong>grams (g)</strong> with a scale.</p>
+
+        <h3>Volume</h3>
+        <p><strong>Volume</strong> is the amount of space an object takes up. For a block, count how many 1 cm cubes would fit inside it.</p>
+        <figure class="pic" id="picCubes"></figure>
+        <div class="formulas">
+          <div class="formula"><b>V = L &times; W &times; H</b><span>Volume = length &times; width &times; height</span></div>
         </div>
+        <p>The units multiply too: cm &times; cm &times; cm = <strong>cm&sup3;</strong> (say "cubic centimeters").</p>
+
+        <h3>Density</h3>
+        <p><strong>Density</strong> is how much mass is packed into each cubic centimeter of a material. Two blocks can be the same size but have different masses. The one with more mass packed in has the higher density.</p>
+        <figure class="pic" id="picParticles"></figure>
+        <div class="formulas">
+          <div class="formula"><b>D = M &divide; V</b><span>Density = mass &divide; volume</span></div>
+        </div>
+        <p>Density units are <strong>g/cm&sup3;</strong> (say "grams per cubic centimeter"). It tells you how many grams are in each 1 cm cube.</p>
+
+        <h3>The density triangle</h3>
+        <figure class="pic" id="picTriangle"></figure>
+        <p>Cover the letter you want to find. What is left shows the math. M is over V, so you divide. D and V sit side by side, so you multiply.</p>
+        <div class="formulas">
+          <div class="formula"><b>D = M &divide; V</b><span>find density</span></div>
+          <div class="formula"><b>M = D &times; V</b><span>find mass</span></div>
+          <div class="formula"><b>V = M &divide; D</b><span>find volume</span></div>
+        </div>
+
+        <h3>Worked example</h3>
+        <div class="example">
+          <div>A block is 3 cm long, 2 cm wide and 2 cm tall. Its mass is 30.0 g.</div>
+          <div><strong>Volume</strong> = 3 &times; 2 &times; 2 = <strong>12 cm&sup3;</strong></div>
+          <div><strong>Density</strong> = 30.0 &divide; 12 = <strong>2.5 g/cm&sup3;</strong></div>
+        </div>
+        <p class="note">Rounding: round volume to the tenths place (like 12.4) and density to the hundredths place (like 2.58).</p>
+
+        <h3>Will it float?</h3>
+        <p>The density of water is <strong>1 g/cm&sup3;</strong>. A solid with a density less than 1 g/cm&sup3; floats in water. A solid with a density greater than 1 g/cm&sup3; sinks.</p>
+
+        <h3>Words to know</h3>
+        <dl class="vocab">
+          <dt>Mass</dt><dd>The amount of matter in an object, in grams (g).</dd>
+          <dt>Volume</dt><dd>The amount of space an object takes up, in cubic centimeters (cm&sup3;).</dd>
+          <dt>Density</dt><dd>The amount of mass in each unit of volume, in grams per cubic centimeter (g/cm&sup3;).</dd>
+          <dt>Material</dt><dd>The kind of matter an object is made of, like brass, wood or PVC.</dd>
+        </dl>
       </div>
-      <p class="cvlab-mean" id="cvlab-mean">&nbsp;</p>
-      <div class="cvlab-row">
-        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clearmat">Clear this station</button>
-        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-clearall">Clear all</button>
-        <button class="cvlab-btn cvlab-btn-sm" id="cvlab-copy">Copy data</button>
-      </div>
-      <p class="cvlab-note" id="cvlab-copynote">&nbsp;</p>
-    </section>
-
-    <section class="cvlab-panel cvlab-panel-graph">
-      <h2>Density stays the same</h2>
-      <canvas id="cvlab-db" role="img"
-        aria-label="Graph of calculated density against the number of blocks, one flat line per material."></canvas>
-      <div class="cvlab-key" id="cvlab-key"></div>
-    </section>
-
-  </div>
-
-  <section class="cvlab-notes">
-    <h3>How to use this simulation</h3>
-    <ol>
-      <li>Pick a <strong>material</strong> in the Station panel, then choose how many <strong>blocks</strong> to stack on the balance.</li>
-      <li>Read the balance and ruler in the scene, and use the <strong>How carefully it is measured</strong> dropdown to add realistic measurement error if you like.</li>
-      <li>Press <strong>Record this measurement</strong> to add a row to the data table, or <strong>Record all four</strong> to fill in all four block counts at once.</li>
-      <li>Check the <strong>Mass against volume</strong> graph &mdash; each material forms a straight line through the origin, and the slope of that line is its density.</li>
-      <li>Check the <strong>Density stays the same</strong> graph to see that density does not change no matter how many blocks you stack.</li>
-      <li>Turn on <strong>Blank the volume and density columns</strong> to calculate those yourself from the measurements instead of having the sim fill them in.</li>
-      <li>Use <strong>Clear this station</strong>, <strong>Clear all</strong>, or <strong>Copy data</strong> to reset or export your results.</li>
-    </ol>
+    </details>
   </section>
+
+  <!-- ======================= RIGHT: data + graph ======================= -->
+  <section class="pane" id="pane-data" role="tabpanel" aria-labelledby="tab-data">
+    <div class="card datawrap">
+      <div class="strip">Data table</div>
+      <div class="chips" id="chips" role="group" aria-label="Pick your station"></div>
+      <div id="station"></div>
+    </div>
+
+    <div class="card">
+      <div class="strip">Graph</div>
+      <div class="graphbox"><svg class="graph" id="graph" viewBox="0 0 640 400" role="img" aria-label="Graph of mass against volume for each material"></svg></div>
+      <div class="legend" id="legend" role="group" aria-label="Show or hide a material's line"></div>
+      <div class="graphnote">Mass goes up the side and volume goes along the bottom. Tap a material in the key to hide or show its line.</div>
+    </div>
+
+    <details class="card" open>
+      <summary>How to use this lab <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="body">
+        <ol class="steps">
+          <li>Tap the <strong>station button</strong> for the station you are at. Each color is a different material.</li>
+          <li>Type the <strong>mass</strong> from the scale and the <strong>length, width and height</strong> from the ruler.</li>
+          <li>Work out the <strong>volume</strong> (L &times; W &times; H) and the <strong>density</strong> (M &divide; V) on your calculator. Type your answers.</li>
+          <li>Watch the colors: <strong>green</strong> means your math is right, <strong>yellow</strong> means check your rounding, <strong>red</strong> means try again. The black bar tells you what to fix.</li>
+          <li>Fill in the rows for 1, 2, 3 and 4 blocks. The <strong>graph</strong> adds your points as you type.</li>
+          <li>When you rotate, tap the next station's button. A check mark shows each station you finished.</li>
+          <li>Your work saves on this device. Use <strong>Clear this station</strong> only if you want to start that station over.</li>
+        </ol>
+      </div>
+    </details>
+  </section>
+</main>
+
+<div class="modal" id="confirmBox" hidden role="dialog" aria-modal="true" aria-labelledby="confirmText">
+  <div class="modal-card">
+    <p id="confirmText"></p>
+    <div class="modal-btns"><button type="button" class="btn ghost" id="confirmNo">Cancel</button><button type="button" class="btn" id="confirmYes">Clear</button></div>
+  </div>
 </div>
 
 <script>
-(function(){
-  "use strict";
+(function () {
+"use strict";
 
-  /* ------------------------------------------------ constants */
-  var EDGE     = 2.5;                 // cm, as specified
-  var V1       = EDGE*EDGE*EDGE;      // 15.625 cm^3
-  var COUNTS   = [1,2,3,4];
-  var ERRLEV   = [ {m:0,    d:0},     // perfect
-                   {m:0.03, d:0.02},  // careful
-                   {m:0.15, d:0.06} ];// rushed
-  var MATS = [
-    { key:"brass",    name:"Brass",     m1:138.0, head:"#3A5BC7", face:"#C0A950", edge:"#8A7830" },
-    { key:"aluminum", name:"Aluminum",  m1:45.0,  head:"#E03127", face:"#CBD0D4", edge:"#9AA0A5" },
-    { key:"wood",     name:"Wood",      m1:11.7,  head:"#F08A1E", face:"#CFA36A", edge:"#9E7844" },
-    { key:"iron",     name:"Iron",      m1:130.0, head:"#1E8A3C", face:"#70767A", edge:"#4A4F53" },
-    { key:"nylon",    name:"Nylon",     m1:14.2,  head:"#7B2D8E", face:"#EFEADB", edge:"#C3BCA6" },
-    { key:"copper",   name:"Copper",    m1:147.2, head:"#2AA3D4", face:"#BE7642", edge:"#8B5228" },
-    { key:"pvc",      name:"PVC",       m1:23.1,  head:"#D94070", face:"#43494D", edge:"#2A2F32" },
-    { key:"acrylic",  name:"Acrylic",   m1:19.4,  head:"#7BB026", face:"#DCE9EF", edge:"#A9BFC8" }
-  ];
+/* ============================== data ============================== */
+// Station colors match the station boxes in the lab handout.
+var STATIONS = [
+  { n: 1, name: "Brass",    color: "#3366cc" },
+  { n: 2, name: "Aluminum", color: "#ff2200" },
+  { n: 3, name: "Wood",     color: "#ff9901" },
+  { n: 4, name: "Iron",     color: "#109618" },
+  { n: 5, name: "Nylon",    color: "#990a99" },
+  { n: 6, name: "Copper",   color: "#009ac6" },
+  { n: 7, name: "PVC",      color: "#dd4477" },
+  { n: 8, name: "Acrylic",  color: "#66aa00" }
+];
+var FIELDS = [
+  { k: "m", label: "Mass", unit: "g" },
+  { k: "l", label: "Length", unit: "cm" },
+  { k: "w", label: "Width", unit: "cm" },
+  { k: "h", label: "Height", unit: "cm" },
+  { k: "v", label: "Volume", unit: "cm³", calc: "L × W × H" },
+  { k: "d", label: "Density", unit: "g/cm³", calc: "M ÷ V" }
+];
+var ROWS = ["1 block", "2 blocks", "3 blocks", "4 blocks"];
+var MARKERS = ["circle", "square", "triangle", "diamond", "down", "plus", "star", "hex"];
+var KEY = "density-block-lab-v1";
+var SVGNS = "http://www.w3.org/2000/svg";
 
-  /* ------------------------------------------------ state */
-  var mi = 0;            // index into MATS
-  var n = 1;             // blocks on the balance
-  var reading = null;    // {mass, L, W, H}
-  var data = {};         // data[key][n] = row
-  var newest = null;     // {key, n}
-  var dirty = true;
+function blankRow() { return { m: "", l: "", w: "", h: "", v: "", d: "" }; }
+var state = { cur: 0, view: "info", hidden: {}, data: STATIONS.map(function () { return ROWS.map(blankRow); }) };
+try {
+  var saved = JSON.parse(localStorage.getItem(KEY) || "null");
+  if (saved && Array.isArray(saved.data) && saved.data.length === 8) {
+    state.data = saved.data.map(function (st) { return ROWS.map(function (_, r) { var o = blankRow(), s = (st || [])[r] || {}; Object.keys(o).forEach(function (k) { o[k] = String(s[k] == null ? "" : s[k]).slice(0, 12); }); return o; }); });
+    if (saved.cur >= 0 && saved.cur < 8) state.cur = saved.cur;
+    if (saved.view === "data" || saved.view === "info") state.view = saved.view;
+    if (saved.hidden && typeof saved.hidden === "object") state.hidden = saved.hidden;
+  }
+} catch (e) {}
+var saveTimer = 0;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function () { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }, 250);
+}
 
-  var reduceMotion = window.matchMedia
-    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+/* ============================== small helpers ============================== */
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function svgEl(tag, attrs) { var e = document.createElementNS(SVGNS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+/** "12.4", "12.4 cm", "1,250" -> number; "" -> null; junk -> NaN */
+function num(s) {
+  s = String(s == null ? "" : s).trim();
+  if (!s) return null;
+  s = s.replace(/,/g, "").replace(/\s*(g\/cm3|g\/cm³|cm3|cm³|cm|g)\s*$/i, "");
+  return /^-?(\d+\.?\d*|\.\d+)$/.test(s) ? Number(s) : NaN;
+}
+function fmt(v) { return Math.abs(v) >= 100 || Number.isInteger(v) ? String(Math.round(v)) : String(Math.round(v * 100) / 100); }
+/** Text color that reads on a colored background. */
+function inkOn(hex) {
+  var c = hex.replace("#", ""), r = parseInt(c.substr(0, 2), 16) / 255, g = parseInt(c.substr(2, 2), 16) / 255, b = parseInt(c.substr(4, 2), 16) / 255;
+  function lin(x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }
+  var L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return (1.05) / (L + 0.05) >= (L + 0.05) / 0.05 ? "#ffffff" : "#111111";
+}
+function shade(hex, f) {   // f > 0 lighter, f < 0 darker
+  var c = hex.replace("#", ""), out = "#";
+  for (var i = 0; i < 3; i++) {
+    var v = parseInt(c.substr(i * 2, 2), 16);
+    v = f > 0 ? v + (255 - v) * f : v * (1 + f);
+    out += ("0" + Math.round(Math.max(0, Math.min(255, v))).toString(16)).slice(-2);
+  }
+  return out;
+}
 
-  /* ------------------------------------------------ dom */
-  function $(id){ return document.getElementById(id); }
-  var sceneC = $("cvlab-scene"), mvC = $("cvlab-mv"), dbC = $("cvlab-db");
-  var sctx = sceneC.getContext("2d"), mctx = mvC.getContext("2d"), dctx = dbC.getContext("2d");
-  var elGo = $("cvlab-go"), elAll4 = $("cvlab-all4"), elStatus = $("cvlab-status");
-  var elMats = $("cvlab-mats"), elCounts = $("cvlab-counts"), elLive = $("cvlab-live");
-  var elErr = $("cvlab-err"), elHide = $("cvlab-hide");
-  var elStHead = $("cvlab-sthead"), elBody = $("cvlab-tbody"), elMean = $("cvlab-mean");
-  var elClearMat = $("cvlab-clearmat"), elClearAll = $("cvlab-clearall");
-  var elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote"), elKey = $("cvlab-key");
-  var roMat = $("cvlab-ro-mat"), roN = $("cvlab-ro-n"),
-      roMass = $("cvlab-ro-mass"), roDen = $("cvlab-ro-den");
-
-  /* ------------------------------------------------ theme colors (read from CSS tokens) */
-  var P = {};
-  /* each material's graph color, a little brighter for the dark theme */
-  var HEAD_DARK = { brass:"#7E9BFF", aluminum:"#FF6B5E", wood:"#FFA54D", iron:"#4CC46C",
-                    nylon:"#C77BDB", copper:"#4FC3EE", pvc:"#FF6E99", acrylic:"#A3D94F" };
-  function isDarkNow(){
-    var a = document.documentElement.getAttribute("data-theme");
-    return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
-  }
-  function readPalette(){
-    var cs = getComputedStyle($("cvlab"));
-    ["c-wall1","c-wall2","c-label","c-unit","c-arrow","c-arrow-dash","c-label-bg","c-plot","c-grid","c-grid-2",
-     "c-guide","c-axis","c-tick","c-empty"].forEach(function(k){ P[k] = cs.getPropertyValue("--"+k).trim(); });
-  }
-  readPalette();
-  function headOf(M){ return isDarkNow() ? HEAD_DARK[M.key] : M.head; }
-
-  /* ------------------------------------------------ helpers */
-  function mat(){ return MATS[mi]; }
-  function fmt(v,p){ return v.toFixed(p===undefined?2:p); }
-  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-  function say(m){ elStatus.innerHTML = m; }
-  function monoStack(){ return '"Poppins", ui-monospace, Menlo, Consolas, monospace'; }
-  function gauss(){
-    var u=0,w=0;
-    while(u===0) u=Math.random();
-    while(w===0) w=Math.random();
-    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w);
-  }
-  function errLev(){ return ERRLEV[parseInt(elErr.value,10) || 0]; }
-  function trueDensity(m){ return m.m1/V1; }
-
-  /* one fresh set of instrument readings for n blocks of the current material */
-  function measure(material, nb){
-    var e = errLev();
-    var mass = material.m1*nb + (e.m ? gauss()*e.m : 0);
-    var L = EDGE + (e.d ? gauss()*e.d : 0);
-    var W = EDGE + (e.d ? gauss()*e.d : 0);
-    var H = EDGE*nb + (e.d ? gauss()*e.d : 0);
-    return {
-      n: nb,
-      mass: Math.round(mass*100)/100,          /* balance reads to 0.01 g */
-      L: Math.round(L*10)/10,                  /* ruler read to the nearest mm */
-      W: Math.round(W*10)/10,
-      H: Math.round(H*10)/10
-    };
-  }
-  function volOf(r){ return r.L*r.W*r.H; }
-  function denOf(r){ return r.mass/volOf(r); }
-  function rowsOf(key){
-    var out = [], d = data[key];
-    if(!d) return out;
-    for(var i=0;i<COUNTS.length;i++) if(d[COUNTS[i]]) out.push(d[COUNTS[i]]);
-    return out;
-  }
-  function meanDensity(key){
-    var rs = rowsOf(key);
-    if(!rs.length) return null;
-    var s = 0;
-    for(var i=0;i<rs.length;i++) s += denOf(rs[i]);
-    return s/rs.length;
-  }
-  function anyData(){
-    for(var i=0;i<MATS.length;i++) if(rowsOf(MATS[i].key).length) return true;
-    return false;
-  }
-
-  function fit(canvas, ctx){
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var r = canvas.getBoundingClientRect();
-    var w = Math.max(150, Math.round(r.width)), h = Math.max(130, Math.round(r.height));
-    if(canvas.width !== w*dpr || canvas.height !== h*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    return { w:w, h:h };
-  }
-  function roundRect(ctx,x,y,w,h,r){
-    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
-    ctx.beginPath();
-    ctx.moveTo(x+r,y);
-    ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
-    ctx.closePath();
-  }
-  /* a tidy axis step so labels land on round numbers */
-  function axisStep(maxv){
-    var raw = Math.max(maxv,1e-6)/5;
-    var e = Math.pow(10, Math.floor(Math.log10(raw)));
-    var m = raw/e;
-    var s = m<=1 ? 1 : (m<=2 ? 2 : (m<=5 ? 5 : 10));
-    return s*e;
-  }
-
-  /* ------------------------------------------------ controls */
-  function buildMats(){
-    var html = "";
-    for(var i=0;i<MATS.length;i++){
-      html += '<button class="cvlab-mat" data-i="' + i + '">'
-            + '<i style="background:' + MATS[i].face + '"></i>' + MATS[i].name
-            + '<b data-done="' + i + '"></b></button>';
+/* ============================== checking the math ============================== */
+/** "ok" within 2% (or 0.05), "close" within 8%, else "bad". */
+function compare(given, truth) {
+  var diff = Math.abs(given - truth);
+  if (diff <= truth * 0.02 || diff <= 0.05) return "ok";
+  if (diff <= truth * 0.08) return "close";
+  return "bad";
+}
+/** One row -> { cls: {field: "ok"|"close"|"bad"|""}, msgs: [text], v: "ok"|..., d: ... } */
+function checkRow(row) {
+  var out = { cls: {}, msgs: [], v: "", d: "" }, n = {};
+  FIELDS.forEach(function (f) { n[f.k] = num(row[f.k]); out.cls[f.k] = ""; });
+  ["m", "l", "w", "h"].forEach(function (k) {
+    if (n[k] !== null && !(n[k] > 0)) { out.cls[k] = "bad"; out.msgs.push("Use numbers only (like 12.4) and leave off the units."); }
+  });
+  var lwh = n.l > 0 && n.w > 0 && n.h > 0 ? n.l * n.w * n.h : null;
+  if (n.v !== null) {
+    if (!(n.v > 0)) { out.v = "bad"; out.msgs.push("Volume: use numbers only, like 12.4."); }
+    else if (lwh === null) { out.v = "wait"; out.msgs.push("Volume: type the length, width and height first."); }
+    else {
+      out.v = compare(n.v, lwh);
+      if (out.v === "close") out.msgs.push("Volume is close! Check your rounding. Round to the tenths place, like 12.4.");
+      else if (out.v === "bad") {
+        if (n.l + n.w + n.h > 0 && compare(n.v, n.l + n.w + n.h) === "ok") out.msgs.push("Volume: it looks like you added. Multiply length × width × height instead.");
+        else out.msgs.push("Volume = length × width × height. Multiply all three again.");
+      }
     }
-    elMats.innerHTML = html;
-    elMats.addEventListener("click", function(e){
-      var b = e.target.closest ? e.target.closest(".cvlab-mat") : null;
-      if(!b) return;
-      mi = parseInt(b.getAttribute("data-i"),10);
-      reading = measure(mat(), n);
-      say("Station <strong>" + (mi+1) + "</strong>, " + mat().name
-          + ". Blocks are out of the case and on the balance.");
-      refreshAll();
+  }
+  if (n.d !== null) {
+    var vol = n.v > 0 ? n.v : lwh;
+    if (!(n.d > 0)) { out.d = "bad"; out.msgs.push("Density: use numbers only, like 2.58."); }
+    else if (!(n.m > 0)) { out.d = "wait"; out.msgs.push("Density: type the mass first."); }
+    else if (!(vol > 0)) { out.d = "wait"; out.msgs.push("Density: find the volume first."); }
+    else {
+      out.d = compare(n.d, n.m / vol);
+      if (out.d !== "ok" && lwh !== null && compare(n.d, n.m / lwh) === "ok") out.d = "ok";   // right from the true volume, even if the Volume box still needs fixing
+      if (out.d === "close") out.msgs.push("Density is close! Check your rounding. Round to the hundredths place, like 2.58.");
+      else if (out.d === "bad") {
+        if (compare(n.d, vol / n.m) === "ok") out.msgs.push("Density: it looks like you divided volume by mass. Divide mass ÷ volume instead.");
+        else if (compare(n.d, n.m * vol) === "ok") out.msgs.push("Density: it looks like you multiplied. Density is mass ÷ volume.");
+        else out.msgs.push("Density = mass ÷ volume. Divide your mass by your volume again.");
+      }
+    }
+  }
+  if (out.v === "ok" || out.v === "close" || out.v === "bad") out.cls.v = out.v;
+  if (out.d === "ok" || out.d === "close" || out.d === "bad") out.cls.d = out.d;
+  return out;
+}
+function stationStatus(s) {
+  var rows = state.data[s], done = true, started = false;
+  rows.forEach(function (row) {
+    var c = checkRow(row);
+    if (c.v !== "ok" || c.d !== "ok") done = false;
+    FIELDS.forEach(function (f) { if (String(row[f.k]).trim()) started = true; });
+  });
+  return done ? "done" : started ? "started" : "";
+}
+
+/* ============================== station chips ============================== */
+var chipsBox = document.getElementById("chips");
+var CHECK = '<svg class="cs" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#38761d"/><path d="M6.5 12.5l3.5 3.5 7.5-8" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var DOT = '<svg class="cs" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6" fill="#bf9000"/></svg>';
+function drawChips() {
+  chipsBox.innerHTML = "";
+  STATIONS.forEach(function (st, s) {
+    var b = el("button", "chip"); b.type = "button";
+    b.style.setProperty("--c", st.color);
+    b.setAttribute("aria-pressed", s === state.cur ? "true" : "false");
+    var status = stationStatus(s);
+    b.setAttribute("aria-label", "Station " + st.n + ", " + st.name + (status === "done" ? ", finished" : status === "started" ? ", started" : ""));
+    var cn = el("span", "cn"); cn.appendChild(el("span", "w", "Station ")); cn.appendChild(document.createTextNode("#" + st.n)); b.appendChild(cn);
+    b.appendChild(el("span", "cm", st.name));
+    if (status === "done") b.insertAdjacentHTML("beforeend", CHECK);
+    else if (status === "started") b.insertAdjacentHTML("beforeend", DOT);
+    b.addEventListener("click", function () { state.cur = s; save(); drawChips(); drawStation(); });
+    chipsBox.appendChild(b);
+  });
+}
+function refreshChips() {
+  Array.prototype.forEach.call(chipsBox.children, function (b, s) {
+    var status = stationStatus(s), old = b.querySelector(".cs");
+    if (old) old.remove();
+    if (status === "done") b.insertAdjacentHTML("beforeend", CHECK);
+    else if (status === "started") b.insertAdjacentHTML("beforeend", DOT);
+    b.setAttribute("aria-label", "Station " + STATIONS[s].n + ", " + STATIONS[s].name + (status === "done" ? ", finished" : status === "started" ? ", started" : ""));
+  });
+}
+
+/* ============================== one station's table ============================== */
+var stationBox = document.getElementById("station"), fbBar = null, inputs = [];
+function drawStation() {
+  var s = state.cur, st = STATIONS[s];
+  stationBox.innerHTML = "";
+  var head = el("div", "stationhead");
+  head.style.background = st.color; head.style.color = inkOn(st.color);
+  head.appendChild(el("span", "swatch"));
+  head.appendChild(el("span", null, "Station #" + st.n + ": " + st.name));
+  stationBox.appendChild(head);
+
+  var rows = el("div", "rows");
+  var ch = el("div", "colhead"); ch.setAttribute("aria-hidden", "true");
+  ch.appendChild(el("div", null, ""));
+  FIELDS.forEach(function (f) {
+    var d = el("div", null, f.label);
+    d.appendChild(el("small", null, "(" + f.unit + ")" + (f.calc ? " = " + f.calc : "")));
+    ch.appendChild(d);
+  });
+  rows.appendChild(ch);
+  inputs = [];
+  ROWS.forEach(function (rname, r) {
+    var br = el("div", "brow");
+    br.appendChild(el("div", "bname", rname));
+    var fs = el("div", "fields");
+    inputs[r] = {};
+    FIELDS.forEach(function (f) {
+      var fld = el("div", "fld" + (f.calc ? " calc" : "")), id = "f" + r + f.k;
+      var lab = el("label", null, f.label + " (" + f.unit + ")"); lab.htmlFor = id;
+      if (f.calc) lab.appendChild(el("small", null, "= " + f.calc));
+      var inp = el("input"); inp.type = "text"; inp.id = id; inp.inputMode = "decimal"; inp.autocomplete = "off"; inp.maxLength = 12;
+      inp.setAttribute("aria-label", st.name + ", " + rname + ", " + f.label + " in " + f.unit);
+      inp.value = state.data[s][r][f.k];
+      inp.addEventListener("input", function () {
+        state.data[s][r][f.k] = inp.value.slice(0, 12);
+        save(); paintStation(); refreshChips(); queueGraph();
+      });
+      inp.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        var all = Array.prototype.slice.call(rows.querySelectorAll("input")), k = all.indexOf(inp);
+        if (k > -1 && k < all.length - 1) all[k + 1].focus();
+      });
+      inputs[r][f.k] = inp;
+      fld.appendChild(lab); fld.appendChild(inp); fs.appendChild(fld);
     });
-  }
-  function buildCounts(){
-    var html = "";
-    for(var i=0;i<COUNTS.length;i++){
-      html += '<button class="cvlab-cbtn" data-n="' + COUNTS[i] + '">' + COUNTS[i] + '</button>';
-    }
-    elCounts.innerHTML = html;
-    elCounts.addEventListener("click", function(e){
-      var b = e.target.closest ? e.target.closest(".cvlab-cbtn") : null;
-      if(!b) return;
-      n = parseInt(b.getAttribute("data-n"),10);
-      reading = measure(mat(), n);
-      say("<strong>" + n + "</strong> block" + (n>1?"s":"") + " of " + mat().name
-          + " on the balance. Read the ruler for the height.");
-      refreshAll();
+    br.appendChild(fs); rows.appendChild(br);
+  });
+  stationBox.appendChild(rows);
+  fbBar = el("div", "fbbar"); fbBar.setAttribute("aria-live", "polite");
+  stationBox.appendChild(fbBar);
+  var tools = el("div", "stationtools");
+  var prev = el("button", "btn ghost", "‹ Previous station"), next = el("button", "btn", "Next station ›"), clr = el("button", "btn ghost", "Clear this station");
+  prev.type = next.type = clr.type = "button";
+  prev.addEventListener("click", function () { state.cur = (state.cur + 7) % 8; save(); drawChips(); drawStation(); scrollToTable(); });
+  next.addEventListener("click", function () { state.cur = (state.cur + 1) % 8; save(); drawChips(); drawStation(); scrollToTable(); });
+  clr.addEventListener("click", function () {
+    askConfirm("Clear every box at Station #" + st.n + " (" + st.name + ")? This can't be undone.", function () {
+      state.data[s] = ROWS.map(blankRow); save(); drawStation(); refreshChips(); queueGraph();
     });
-  }
-
-  /* ------------------------------------------------ recording */
-  function record(nb){
-    var key = mat().key;
-    if(!data[key]) data[key] = {};
-    var r = (nb === n && reading) ? reading : measure(mat(), nb);
-    data[key][nb] = r;
-    newest = { key: key, n: nb };
-    return r;
-  }
-  function recordOne(){
-    var r = record(n);
-    say("Recorded " + n + " block" + (n>1?"s":"") + " of " + mat().name + ": <strong>"
-        + fmt(r.mass) + " g</strong> in <strong>" + fmt(volOf(r),2) + " cm\u00B3</strong>"
-        + (elHide.checked ? "." : ", so " + fmt(denOf(r)) + " g/cm\u00B3."));
-    refreshAll();
-  }
-  function recordAll(){
-    for(var i=0;i<COUNTS.length;i++) record(COUNTS[i]);
-    var md = meanDensity(mat().key);
-    say("All four rows recorded for <strong>" + mat().name + "</strong>"
-        + (elHide.checked ? "." : ", averaging <strong>" + fmt(md) + " g/cm\u00B3</strong>."));
-    refreshAll();
-  }
-
-  /* ------------------------------------------------ readouts */
-  function refreshAll(){
-    syncUI(); renderTable(); renderKey();
-    dirty = true; drawScene(); drawMV(); drawDB();
-  }
-  function syncUI(){
-    var m = mat();
-    roMat.textContent = m.name;
-    roN.textContent = String(n);
-    roMass.textContent = reading ? fmt(reading.mass) + " g" : "0.00 g";
-    roDen.textContent = elHide.checked ? "\u2014"
-      : (reading ? fmt(denOf(reading)) : "\u2014");
-
-    var bs = elMats.querySelectorAll(".cvlab-mat");
-    for(var i=0;i<bs.length;i++){
-      var idx = parseInt(bs[i].getAttribute("data-i"),10);
-      bs[i].className = "cvlab-mat" + (idx === mi ? " is-on" : "");
-      bs[i].style.background = idx === mi ? MATS[idx].head : "";
-    }
-    var ds = elMats.querySelectorAll("[data-done]");
-    for(var j=0;j<ds.length;j++){
-      var k = parseInt(ds[j].getAttribute("data-done"),10);
-      var cnt = rowsOf(MATS[k].key).length;
-      ds[j].textContent = cnt ? cnt + "/4" : "";
-    }
-    var cs = elCounts.querySelectorAll(".cvlab-cbtn");
-    for(var c=0;c<cs.length;c++){
-      var nv = parseInt(cs[c].getAttribute("data-n"),10);
-      cs[c].className = "cvlab-cbtn" + (nv === n ? " is-on" : "");
-    }
-
-    if(reading){
-      elLive.innerHTML = "Balance <b>" + fmt(reading.mass) + " g</b><br>"
-        + "Ruler <b>" + fmt(reading.L,1) + "</b> &times; <b>" + fmt(reading.W,1)
-        + "</b> &times; <b>" + fmt(reading.H,1) + "</b> cm"
-        + (elHide.checked ? "" : "<br>Volume <b>" + fmt(volOf(reading),2) + " cm\u00B3</b>"
-            + " &middot; density <b>" + fmt(denOf(reading)) + "</b>");
-    } else elLive.innerHTML = "&nbsp;";
-
-    elStHead.textContent = "Station #" + (mi+1) + " " + mat().name;
-    elStHead.style.background = mat().head;
-    elClearMat.disabled = rowsOf(mat().key).length === 0;
-    elClearAll.disabled = !anyData();
-    elCopy.disabled = !anyData();
-  }
-
-  function renderTable(){
-    var key = mat().key, hide = elHide.checked;
-    var html = "";
-    for(var i=0;i<COUNTS.length;i++){
-      var nb = COUNTS[i];
-      var r = data[key] ? data[key][nb] : null;
-      var isNew = newest && newest.key === key && newest.n === nb;
-      html += '<tr' + (isNew ? ' class="is-new"' : '') + '><td>' + nb
-            + (nb === 1 ? " block" : " blocks") + '</td>';
-      if(!r){
-        html += '<td class="blank">&mdash;</td><td class="blank">&mdash;</td>'
-              + '<td class="blank">&mdash;</td><td class="blank">&mdash;</td>'
-              + '<td class="blank">&mdash;</td><td class="blank">&mdash;</td>';
-      } else {
-        html += '<td>' + fmt(r.mass) + '</td><td>' + fmt(r.L,1) + '</td><td>'
-              + fmt(r.W,1) + '</td><td>' + fmt(r.H,1) + '</td>';
-        html += hide ? '<td class="blank">?</td><td class="blank">?</td>'
-                     : '<td>' + fmt(volOf(r),2) + '</td><td>' + fmt(denOf(r)) + '</td>';
-      }
-      html += '</tr>';
-    }
-    elBody.innerHTML = html;
-
-    var md = meanDensity(key);
-    if(md === null) elMean.innerHTML = "&nbsp;";
-    else if(hide) elMean.innerHTML = rowsOf(key).length + " of 4 rows measured.";
-    else elMean.innerHTML = "Average density: <b>" + fmt(md) + " g/cm\u00B3</b>";
-  }
-
-  function renderKey(){
-    var html = "";
-    for(var i=0;i<MATS.length;i++){
-      var md = meanDensity(MATS[i].key);
-      if(md === null) continue;
-      html += '<span class="cvlab-chip"><i style="background:' + headOf(MATS[i]) + '"></i>'
-            + MATS[i].name + (elHide.checked ? "" : " <b>" + fmt(md) + "</b>") + '</span>';
-    }
-    elKey.innerHTML = html;
-  }
-
-  /* ------------------------------------------------ scene */
-  var VIEW_W = 22, VIEW_H = 22;
-  var G = {};
-  function geometry(w,h){
-    G.w = w; G.h = h; G.compact = w < 250;
-    G.baseY = h - Math.max(9, h*0.05);
-    G.k = Math.min((w-8)/VIEW_W, (G.baseY - 6)/VIEW_H);
-    G.left = (w - VIEW_W*G.k)/2;
-    G.panY = 2.3;                 /* cm, top of the balance pan */
-  }
-  function X(cm){ return G.left + cm*G.k; }
-  function Y(cm){ return G.baseY - cm*G.k; }
-
-  function drawScene(){
-    var s = fit(sceneC, sctx), w = s.w, h = s.h;
-    geometry(w,h);
-    var ctx = sctx;
-    ctx.clearRect(0,0,w,h);
-    var wall = ctx.createLinearGradient(0,0,0,G.baseY);
-    wall.addColorStop(0,P["c-wall1"]); wall.addColorStop(1,P["c-wall2"]);
-    ctx.fillStyle = wall; ctx.fillRect(0,0,w,G.baseY);
-    var top = ctx.createLinearGradient(0,G.baseY,0,h);
-    top.addColorStop(0,"#33372F"); top.addColorStop(1,"#1D201B");
-    ctx.fillStyle = top; ctx.fillRect(0,G.baseY,w,h-G.baseY);
-    ctx.fillStyle = "#575C51"; ctx.fillRect(0,G.baseY,w,1.1);
-
-    drawCase(ctx);
-    drawBalance(ctx);
-    drawRuler(ctx);
-    drawStack(ctx);
-    drawHeightArrow(ctx);
-  }
-
-  /* the blue block set case, with the chosen compartment emptied */
-  function drawCase(ctx){
-    var k = G.k, x0 = X(0.3), x1 = X(7.3), y0 = Y(3.6), y1 = Y(0);
-    var g = ctx.createLinearGradient(0,y0,0,y1);
-    g.addColorStop(0,"#2E77D8"); g.addColorStop(.5,"#1B63C4"); g.addColorStop(1,"#0F4694");
-    ctx.fillStyle = g;
-    roundRect(ctx, x0, y0, x1-x0, y1-y0, 0.35*k); ctx.fill();
-    ctx.strokeStyle = "#0C3A7D"; ctx.lineWidth = 1; ctx.stroke();
-    /* compartments, 4 across and 2 down */
-    var padX = 0.55*k, padY = 0.5*k;
-    var cw = (x1-x0-padX*2)/4, ch = (y1-y0-padY*2)/2;
-    for(var r=0;r<2;r++){
-      for(var c=0;c<4;c++){
-        var idx = r*4+c;
-        var cx = x0+padX+c*cw, cy = y0+padY+r*ch;
-        ctx.fillStyle = "rgba(9,45,100,.55)";
-        roundRect(ctx, cx+1, cy+1, cw-2, ch-2, 2); ctx.fill();
-        if(idx === mi) continue;                       /* those blocks are on the balance */
-        var M = MATS[idx];
-        ctx.fillStyle = M.face;
-        roundRect(ctx, cx+cw*0.16, cy+ch*0.18, cw*0.68, ch*0.64, 1.5); ctx.fill();
-        ctx.strokeStyle = M.edge; ctx.lineWidth = 1;
-        roundRect(ctx, cx+cw*0.16, cy+ch*0.18, cw*0.68, ch*0.64, 1.5); ctx.stroke();
-      }
-    }
-    if(!G.compact){
-      ctx.fillStyle = "#DCE8F8";
-      ctx.font = "700 " + Math.max(6, 0.7*k).toFixed(1) + "px " + monoStack();
-      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-      ctx.fillText("DENSITY BLOCK SET", (x0+x1)/2, y0 - 3);
-    }
-  }
-
-  /* the digital balance */
-  function drawBalance(ctx){
-    var k = G.k;
-    var bx0 = X(8.0), bx1 = X(18.0), by0 = Y(1.8), by1 = Y(0);
-    var g = ctx.createLinearGradient(0,by0,0,by1);
-    g.addColorStop(0,"#E4E7E9"); g.addColorStop(.45,"#C6CBCF"); g.addColorStop(1,"#9EA4A9");
-    ctx.fillStyle = g;
-    roundRect(ctx, bx0, by0, bx1-bx0, by1-by0, 0.25*k); ctx.fill();
-    ctx.strokeStyle = "#8A9095"; ctx.lineWidth = 1; ctx.stroke();
-    /* the pan, a touch wider than the body */
-    var px0 = X(7.7), px1 = X(18.3), py0 = Y(G.panY), py1 = Y(1.8);
-    var pg = ctx.createLinearGradient(px0,0,px1,0);
-    pg.addColorStop(0,"#B9BEC2"); pg.addColorStop(.4,"#DDE1E4"); pg.addColorStop(1,"#AEB4B8");
-    ctx.fillStyle = pg;
-    roundRect(ctx, px0, py0, px1-px0, py1-py0, 0.12*k); ctx.fill();
-    ctx.strokeStyle = "#8A9095"; ctx.lineWidth = 1; ctx.stroke();
-    /* LCD on the front face */
-    var lx = X(8.7), ly = Y(1.42), lw = 5.4*k, lh = 0.95*k;
-    ctx.fillStyle = "#7FB6D8";
-    roundRect(ctx, lx, ly, lw, lh, 2); ctx.fill();
-    ctx.strokeStyle = "#5E8CA8"; ctx.lineWidth = 1; ctx.stroke();
-    ctx.fillStyle = "#16303F";
-    ctx.font = "700 " + Math.max(7, 0.95*k).toFixed(1) + "px " + monoStack();
-    ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    var txt = reading ? fmt(reading.mass) : "0.00";
-    ctx.fillText(txt, lx+lw-0.5*k, ly+lh/2);
-    ctx.font = "700 " + Math.max(5.5, 0.6*k).toFixed(1) + "px " + monoStack();
-    ctx.textAlign = "left";
-    ctx.fillText("g", lx+lw-0.42*k, ly+lh*0.72);
-    /* buttons */
-    ctx.fillStyle = "#AFB5B9";
-    for(var b=0;b<4;b++){
-      ctx.beginPath();
-      ctx.arc(X(14.9 + b*0.82), Y(0.88), 0.30*k, 0, Math.PI*2); ctx.fill();
-    }
-    if(!G.compact){
-      ctx.fillStyle = "#7E8489";
-      ctx.font = "700 " + Math.max(5.5, 0.62*k).toFixed(1) + "px " + monoStack();
-      ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      ctx.fillText("0.01 g", X(8.7), Y(0.42));
-    }
-  }
-
-  /* the wooden ruler, standing with 0 on the pan */
-  function drawRuler(ctx){
-    var k = G.k, x0 = X(19.0), x1 = X(21.3);
-    var y0 = Y(0), y1 = Y(20);
-    var g = ctx.createLinearGradient(x0,0,x1,0);
-    g.addColorStop(0,"#CDA765"); g.addColorStop(.4,"#E9CE97"); g.addColorStop(1,"#F3E4BE");
-    ctx.fillStyle = g;
-    roundRect(ctx, x0, y1, x1-x0, y0-y1, 2); ctx.fill();
-    ctx.strokeStyle = "#AE8B49"; ctx.lineWidth = 1; ctx.stroke();
-    ctx.strokeStyle = "#4A3A1E"; ctx.lineWidth = 1;
-    ctx.beginPath();
-    for(var cm=0; cm<=20; cm++){
-      var yy = Math.round(Y(cm)) + 0.5;
-      var len = (cm%5===0) ? (x1-x0)*0.62 : (x1-x0)*0.32;
-      ctx.moveTo(x0, yy); ctx.lineTo(x0+len, yy);
-    }
-    ctx.stroke();
-    ctx.fillStyle = "#3A2E17";
-    ctx.font = "700 " + Math.max(5.5, 0.62*k).toFixed(1) + "px " + monoStack();
-    ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for(var c2=0; c2<=20; c2+=5) ctx.fillText(String(c2), x1-1.5, Y(c2));
-    if(!G.compact){
-      ctx.fillStyle = P["c-unit"]; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-      ctx.fillText("cm", (x0+x1)/2, Y(20) - 2);
-    }
-  }
-
-  /* the stack of cubes on the pan */
-  function drawStack(ctx){
-    var k = G.k, M = mat();
-    var cx = X(11.4), half = EDGE*k/2;
-    for(var i=0;i<n;i++){
-      var yb = Y(G.panY + EDGE*i), yt = Y(G.panY + EDGE*(i+1));
-      var x0 = cx-half, hgt = yb-yt;
-      var g = ctx.createLinearGradient(x0,0,x0+2*half,0);
-      g.addColorStop(0, M.edge); g.addColorStop(.35, M.face); g.addColorStop(1, M.edge);
-      ctx.fillStyle = g;
-      ctx.fillRect(x0, yt, 2*half, hgt);
-      /* a hint of the top face so it reads as a cube */
-      ctx.fillStyle = "rgba(255,255,255,.30)";
-      ctx.fillRect(x0, yt, 2*half, Math.max(1.2, hgt*0.12));
-      ctx.strokeStyle = M.edge; ctx.lineWidth = 1;
-      ctx.strokeRect(x0+0.5, yt+0.5, 2*half-1, hgt-1);
-      /* wood gets grain, metals get a sheen */
-      if(M.key === "wood"){
-        ctx.strokeStyle = "rgba(120,86,44,.45)"; ctx.lineWidth = 1;
-        ctx.beginPath();
-        for(var g2=1;g2<4;g2++){
-          var gy = yt + hgt*g2/4;
-          ctx.moveTo(x0+2, gy); ctx.lineTo(x0+2*half-2, gy);
-        }
-        ctx.stroke();
-      } else {
-        ctx.fillStyle = "rgba(255,255,255,.18)";
-        ctx.fillRect(x0+2*half*0.62, yt+2, 2*half*0.12, hgt-4);
-      }
-    }
-    /* the label on the front of the stack */
-    if(!G.compact && n >= 1){
-      ctx.fillStyle = P["c-label"];
-      ctx.font = "700 " + Math.max(6.5, 0.72*k).toFixed(1) + "px " + monoStack();
-      ctx.textAlign = "center"; ctx.textBaseline = "top";
-      ctx.fillText(M.name.toUpperCase(), cx, Y(G.panY + EDGE*n) - 1.6*k);
-    }
-  }
-
-  /* the height being read off the ruler */
-  function drawHeightArrow(ctx){
-    if(!reading) return;
-    var k = G.k, ax = X(14.0);
-    var yb = Y(G.panY), yt = Y(G.panY + EDGE*n);
-    /* carry the base and the top across to the ruler, so the height is a difference */
-    ctx.save();
-    ctx.setLineDash([3,3]); ctx.strokeStyle = P["c-arrow-dash"]; ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(X(12.8), yb); ctx.lineTo(X(19.0), yb);
-    ctx.moveTo(X(12.8), yt); ctx.lineTo(X(19.0), yt);
-    ctx.stroke();
-    ctx.restore();
-    ctx.strokeStyle = P["c-arrow"]; ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(ax, yb); ctx.lineTo(ax, yt);
-    ctx.moveTo(ax-3, yb-5); ctx.lineTo(ax, yb); ctx.lineTo(ax+3, yb-5);
-    ctx.moveTo(ax-3, yt+5); ctx.lineTo(ax, yt); ctx.lineTo(ax+3, yt+5);
-    ctx.stroke();
-    if(G.compact) return;
-    /* the label goes between the arrow and the ruler, clear of the blocks */
-    var txt = fmt(reading.H,1) + " cm";
-    ctx.font = "700 " + Math.max(7, 0.8*k).toFixed(1) + "px " + monoStack();
-    var tw = ctx.measureText(txt).width;
-    var ly = (yb+yt)/2;
-    ctx.fillStyle = P["c-label-bg"];
-    roundRect(ctx, ax+5, ly-7.5, tw+7, 15, 2); ctx.fill();
-    ctx.fillStyle = P["c-arrow"]; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.fillText(txt, ax+8.5, ly);
-  }
-
-  /* ------------------------------------------------ graph: mass vs volume */
-  function drawMV(){
-    var s = fit(mvC, mctx), w = s.w, h = s.h;
-    var ctx = mctx;
-    var mL = 52, mR = 14, mT = 14, mB = 34;
-    var pw = w-mL-mR, ph = h-mT-mB;
-    var xMax = 70, hide = elHide.checked;
-    var maxM = 0;
-    for(var i=0;i<MATS.length;i++){
-      var rs = rowsOf(MATS[i].key);
-      for(var j=0;j<rs.length;j++) if(rs[j].mass > maxM) maxM = rs[j].mass;
-    }
-    var yStep = axisStep(Math.max(maxM*1.12, 50));
-    var yMax = Math.ceil(Math.max(maxM*1.12, 50)/yStep)*yStep;
-    var PX = function(v){ return mL + (v/xMax)*pw; };
-    var PY = function(m){ return mT + ph - (m/yMax)*ph; };
-
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
-    ctx.beginPath();
-    for(var m1=0; m1<=yMax+1e-9; m1+=yStep/2){ var y=Math.round(PY(m1))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
-    for(var v1=0; v1<=xMax; v1+=5){ var x=Math.round(PX(v1))+0.5; ctx.moveTo(x,mT); ctx.lineTo(x,mT+ph); }
-    ctx.stroke();
-    /* the four volumes a stack can actually have */
-    ctx.strokeStyle = P["c-guide"]; ctx.lineWidth = 1;
-    ctx.beginPath();
-    for(var c=1;c<=4;c++){ var xv=Math.round(PX(V1*c))+0.5; ctx.moveTo(xv,mT); ctx.lineTo(xv,mT+ph); }
-    ctx.stroke();
-    ctx.strokeStyle = P["c-grid-2"];
-    ctx.beginPath();
-    for(var m2=0; m2<=yMax+1e-9; m2+=yStep){ var y2=Math.round(PY(m2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
-    for(var v2=0; v2<=xMax; v2+=10){ var x2=Math.round(PX(v2))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
-    ctx.stroke();
-
-    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
-    ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for(var m3=0; m3<=yMax+1e-9; m3+=yStep) ctx.fillText(String(Math.round(m3)), mL-6, PY(m3));
-    ctx.textAlign = "center"; ctx.textBaseline = "top";
-    for(var v3=0; v3<=xMax; v3+=10) ctx.fillText(String(v3), PX(v3), mT+ph+6);
-    ctx.save();
-    ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = P["c-axis"]; ctx.font = "700 10px " + monoStack();
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText("MASS (g)", 0, 0);
-    ctx.restore();
-    ctx.fillStyle = P["c-axis"];
-    ctx.fillText("VOLUME (cm\u00B3)", mL+pw/2, mT+ph+19);
-
-    if(!anyData()){
-      ctx.fillStyle = P["c-empty"];
-      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("Record a measurement and its point lands here.", mL+pw/2, mT+ph/2);
-      return;
-    }
-
-    for(var q=0;q<MATS.length;q++){
-      var M = MATS[q], rs = rowsOf(M.key);
-      if(!rs.length) continue;
-      var sel = (q === mi);
-      ctx.globalAlpha = sel ? 1 : 0.34;
-      /* the line through the origin whose slope is the density */
-      if(!hide){
-        var sxy=0, sxx=0;
-        for(var a=0;a<rs.length;a++){ var vv=volOf(rs[a]); sxy += vv*rs[a].mass; sxx += vv*vv; }
-        var slope = sxx>0 ? sxy/sxx : 0;
-        var vEnd = Math.min(xMax, yMax/Math.max(slope,1e-9));
-        ctx.strokeStyle = headOf(M); ctx.lineWidth = sel ? 2.2 : 1.4;
-        ctx.beginPath(); ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(vEnd), PY(slope*vEnd)); ctx.stroke();
-      }
-      for(var b=0;b<rs.length;b++){
-        var cx = PX(volOf(rs[b])), cy = PY(Math.min(yMax, rs[b].mass));
-        ctx.fillStyle = headOf(M);
-        ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.6 : 3.4, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = P["c-plot"]; ctx.lineWidth = 1.4;
-        ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.6 : 3.4, 0, Math.PI*2); ctx.stroke();
-      }
-      if(sel){
-        var last = rs[rs.length-1];
-        ctx.fillStyle = headOf(M);
-        ctx.font = "700 10.5px " + monoStack();
-        ctx.textAlign = "right"; ctx.textBaseline = "bottom";
-        ctx.fillText(M.name, Math.min(PX(volOf(last)), mL+pw-4),
-                     PY(Math.min(yMax, last.mass)) - 8);
-      }
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  /* ------------------------------------------------ graph: density vs blocks */
-  function drawDB(){
-    var s = fit(dbC, dctx), w = s.w, h = s.h;
-    var ctx = dctx;
-    var mL = 44, mR = 14, mT = 12, mB = 32;
-    var pw = w-mL-mR, ph = h-mT-mB;
-    var hide = elHide.checked;
-    var maxD = 0;
-    for(var i=0;i<MATS.length;i++){
-      var rs = rowsOf(MATS[i].key);
-      for(var j=0;j<rs.length;j++){ var d = denOf(rs[j]); if(d > maxD) maxD = d; }
-    }
-    var yStep = axisStep(Math.max(maxD*1.15, 1));
-    var yMax = Math.ceil(Math.max(maxD*1.15, 1)/yStep)*yStep;
-    var PX = function(nb){ return mL + (nb/5)*pw; };
-    var PY = function(d){ return mT + ph - (d/yMax)*ph; };
-
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = P["c-plot"]; ctx.fillRect(mL,mT,pw,ph);
-    ctx.strokeStyle = P["c-grid"]; ctx.lineWidth = 1;
-    ctx.beginPath();
-    for(var d1=0; d1<=yMax+1e-9; d1+=yStep/2){ var y=Math.round(PY(d1))+0.5; ctx.moveTo(mL,y); ctx.lineTo(mL+pw,y); }
-    ctx.stroke();
-    ctx.strokeStyle = P["c-grid-2"];
-    ctx.beginPath();
-    for(var d2=0; d2<=yMax+1e-9; d2+=yStep){ var y2=Math.round(PY(d2))+0.5; ctx.moveTo(mL,y2); ctx.lineTo(mL+pw,y2); }
-    for(var c=1;c<=4;c++){ var x2=Math.round(PX(c))+0.5; ctx.moveTo(x2,mT); ctx.lineTo(x2,mT+ph); }
-    ctx.stroke();
-
-    ctx.strokeStyle = P["c-axis"]; ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(mL+0.5,mT); ctx.lineTo(mL+0.5,mT+ph); ctx.lineTo(mL+pw,mT+ph); ctx.stroke();
-    ctx.fillStyle = P["c-tick"]; ctx.font = "700 10px " + monoStack();
-    ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for(var d3=0; d3<=yMax+1e-9; d3+=yStep){
-      ctx.fillText(yMax >= 4 ? String(Math.round(d3)) : d3.toFixed(1), mL-6, PY(d3));
-    }
-    ctx.textAlign = "center"; ctx.textBaseline = "top";
-    for(var c2=1;c2<=4;c2++) ctx.fillText(String(c2), PX(c2), mT+ph+6);
-    ctx.save();
-    ctx.translate(11, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = P["c-axis"]; ctx.font = "700 10px " + monoStack();
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText("DENSITY (g/cm\u00B3)", 0, 0);
-    ctx.restore();
-    ctx.fillStyle = P["c-axis"];
-    ctx.fillText("NUMBER OF BLOCKS", mL+pw/2, mT+ph+19);
-
-    if(hide){
-      ctx.fillStyle = P["c-empty"];
-      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("Work the densities out first, then untick the box.", mL+pw/2, mT+ph/2);
-      return;
-    }
-    if(!anyData()){
-      ctx.fillStyle = P["c-empty"];
-      ctx.font = '700 12.5px "Poppins", system-ui, sans-serif';
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("Flat lines will appear here.", mL+pw/2, mT+ph/2);
-      return;
-    }
-
-    for(var q=0;q<MATS.length;q++){
-      var M = MATS[q], rs = rowsOf(M.key);
-      if(!rs.length) continue;
-      var sel = (q === mi);
-      ctx.globalAlpha = sel ? 1 : 0.34;
-      ctx.strokeStyle = headOf(M); ctx.lineWidth = sel ? 2.2 : 1.4;
-      ctx.beginPath();
-      for(var a=0;a<rs.length;a++){
-        var qx = PX(rs[a].n), qy = PY(Math.min(yMax, denOf(rs[a])));
-        if(a===0) ctx.moveTo(qx,qy); else ctx.lineTo(qx,qy);
-      }
-      ctx.stroke();
-      for(var b=0;b<rs.length;b++){
-        var cx = PX(rs[b].n), cy = PY(Math.min(yMax, denOf(rs[b])));
-        ctx.fillStyle = headOf(M);
-        ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.4 : 3.2, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = P["c-plot"]; ctx.lineWidth = 1.3;
-        ctx.beginPath(); ctx.arc(cx, cy, sel ? 4.4 : 3.2, 0, Math.PI*2); ctx.stroke();
-      }
-      if(sel){
-        var lastR = rs[rs.length-1];
-        ctx.fillStyle = headOf(M);
-        ctx.font = "700 10px " + monoStack();
-        ctx.textAlign = "left"; ctx.textBaseline = "middle";
-        ctx.fillText(M.name, Math.min(PX(lastR.n)+8, w-52), PY(Math.min(yMax, denOf(lastR))));
-      }
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  /* ------------------------------------------------ wiring */
-  elGo.addEventListener("click", recordOne);
-  elAll4.addEventListener("click", recordAll);
-  elClearMat.addEventListener("click", function(){
-    delete data[mat().key];
-    newest = null;
-    say("Cleared the <strong>" + mat().name + "</strong> station.");
-    refreshAll();
   });
-  elClearAll.addEventListener("click", function(){
-    data = {}; newest = null;
-    say("All stations cleared.");
-    refreshAll();
+  var lr = el("div"); lr.style.display = "flex"; lr.style.gap = "8px"; lr.style.flexWrap = "wrap";
+  lr.appendChild(prev); lr.appendChild(next);
+  tools.appendChild(lr); tools.appendChild(clr);
+  stationBox.appendChild(tools);
+  paintStation();
+}
+function scrollToTable() { var c = document.querySelector(".datawrap"); if (c) c.scrollIntoView({ block: "start", behavior: "smooth" }); }
+function paintStation() {
+  var s = state.cur, msgs = [], allDone = true, any = false;
+  state.data[s].forEach(function (row, r) {
+    var c = checkRow(row);
+    FIELDS.forEach(function (f) {
+      var inp = inputs[r] && inputs[r][f.k];
+      if (!inp) return;
+      inp.classList.remove("ok", "close", "bad");
+      if (c.cls[f.k]) inp.classList.add(c.cls[f.k]);
+      if (String(row[f.k]).trim()) any = true;
+    });
+    if (c.v !== "ok" || c.d !== "ok") allDone = false;
+    c.msgs.forEach(function (m) { if (msgs.length < 2) msgs.push([ROWS[r], m]); });
   });
-  elCopy.addEventListener("click", function(){
-    var rows = ["material\tblocks\tmass_g\tL_cm\tW_cm\tH_cm\tvolume_cm3\tdensity_g_cm3"];
-    for(var i=0;i<MATS.length;i++){
-      var rs = rowsOf(MATS[i].key);
-      for(var j=0;j<rs.length;j++){
-        var r = rs[j];
-        rows.push(MATS[i].name + "\t" + r.n + "\t" + fmt(r.mass) + "\t" + fmt(r.L,1)
-          + "\t" + fmt(r.W,1) + "\t" + fmt(r.H,1) + "\t" + fmt(volOf(r),3)
-          + "\t" + fmt(denOf(r),3));
-      }
-    }
-    var txt = rows.join("\n");
-    function fallback(){
-      var ta = document.createElement("textarea");
-      ta.value = txt; ta.setAttribute("readonly","");
-      ta.style.position = "fixed"; ta.style.opacity = "0";
-      document.body.appendChild(ta); ta.select();
-      try{ document.execCommand("copy"); }catch(err){}
-      document.body.removeChild(ta);
-    }
-    function ok(){ elCopyNote.innerHTML = "Copied <strong>" + (rows.length-1) + "</strong> rows."; }
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(txt).then(ok, function(){ fallback(); ok(); });
-    } else { fallback(); ok(); }
+  fbBar.innerHTML = "";
+  if (allDone) fbBar.textContent = "Nice work! Every volume and density at " + STATIONS[s].name + " checks out. Rotate to the next station when your teacher says so.";
+  else if (msgs.length) msgs.forEach(function (m, k) {
+    if (k) fbBar.appendChild(document.createElement("br"));
+    fbBar.appendChild(el("b", null, m[0] + ": ")); fbBar.appendChild(document.createTextNode(m[1]));
   });
-  elErr.addEventListener("change", function(){
-    reading = measure(mat(), n);
-    say(parseInt(elErr.value,10) === 0
-      ? "Perfect readings. Every row will give exactly the same density."
-      : "Readings will now scatter a little. The ruler is where most of it comes from.");
-    refreshAll();
-  });
-  elHide.addEventListener("change", function(){
-    say(elHide.checked
-      ? "Volume and density blanked out. Students calculate them from the measurements."
-      : "Volume and density filled in again.");
-    refreshAll();
-  });
+  else if (!any) fbBar.textContent = "Start with 1 block: find its mass on the scale, then measure it with the ruler.";
+  else fbBar.textContent = "Keep going: fill in every box, then work out the volume and density for each row.";
+}
 
-  var rt;
-  window.addEventListener("resize", function(){
-    clearTimeout(rt);
-    rt = setTimeout(function(){ dirty = true; drawScene(); drawMV(); drawDB(); }, 120);
+/* ============================== graph: mass (up) against volume (along) ============================== */
+var graph = document.getElementById("graph"), legend = document.getElementById("legend"), graphQueued = false;
+function queueGraph() { if (graphQueued) return; graphQueued = true; requestAnimationFrame(function () { graphQueued = false; drawGraph(); }); }
+function niceStep(range) {
+  var raw = range / 5, mag = Math.pow(10, Math.floor(Math.log10(raw || 1))), f = raw / mag;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
+}
+function pointsOf(s) {
+  var pts = [];
+  state.data[s].forEach(function (row, r) {
+    var m = num(row.m), v = num(row.v);
+    if (m > 0 && v > 0) pts.push({ x: v, y: m, r: r });
   });
-  if(window.ResizeObserver){
-    var ro = new ResizeObserver(function(){ dirty = true; drawScene(); drawMV(); drawDB(); });
-    ro.observe(sceneC.parentNode); ro.observe(dbC.parentNode);
+  return pts.sort(function (a, b) { return a.x - b.x; });
+}
+function markerPath(kind, x, y, s) {
+  var p = function (a) { return a.map(function (q, i) { return (i ? "L" : "M") + (x + q[0] * s).toFixed(1) + " " + (y + q[1] * s).toFixed(1); }).join(" ") + " Z"; };
+  switch (kind) {
+    case "square": return p([[-0.85, -0.85], [0.85, -0.85], [0.85, 0.85], [-0.85, 0.85]]);
+    case "triangle": return p([[0, -1.15], [1.05, 0.8], [-1.05, 0.8]]);
+    case "diamond": return p([[0, -1.2], [1.1, 0], [0, 1.2], [-1.1, 0]]);
+    case "down": return p([[-1.05, -0.8], [1.05, -0.8], [0, 1.15]]);
+    case "plus": return p([[-0.35, -1.1], [0.35, -1.1], [0.35, -0.35], [1.1, -0.35], [1.1, 0.35], [0.35, 0.35], [0.35, 1.1], [-0.35, 1.1], [-0.35, 0.35], [-1.1, 0.35], [-1.1, -0.35], [-0.35, -0.35]]);
+    case "star": var a = []; for (var i = 0; i < 10; i++) { var ang = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 0.5 : 1.25; a.push([Math.cos(ang) * rr, Math.sin(ang) * rr]); } return p(a);
+    case "hex": var h = []; for (var j = 0; j < 6; j++) { var an = j * Math.PI / 3; h.push([Math.cos(an) * 1.05, Math.sin(an) * 1.05]); } return p(h);
+    default: return "M " + (x - s) + " " + y + " a " + s + " " + s + " 0 1 0 " + (2 * s) + " 0 a " + s + " " + s + " 0 1 0 " + (-2 * s) + " 0 Z";
   }
-  if(document.fonts && document.fonts.ready){
-    document.fonts.ready.then(function(){ dirty = true; drawScene(); drawMV(); drawDB(); });
+}
+function drawGraph() {
+  var series = STATIONS.map(function (st, s) { return { s: s, st: st, pts: pointsOf(s), on: !state.hidden[s] }; });
+  var shown = series.filter(function (x) { return x.on && x.pts.length; });
+  var xMax = 1, yMax = 1;
+  shown.forEach(function (x) { x.pts.forEach(function (p) { xMax = Math.max(xMax, p.x); yMax = Math.max(yMax, p.y); }); });
+  var xs = niceStep(xMax), ys = niceStep(yMax);
+  xMax = Math.ceil(xMax / xs) * xs; yMax = Math.ceil(yMax / ys) * ys;
+  var W = Math.round(Math.max(360, Math.min(640, graph.parentNode.clientWidth || 640))), H = Math.round(W * 0.62);
+  graph.setAttribute("viewBox", "0 0 " + W + " " + H);
+  var L = 58, R = W - 18, T = 16, B = H - 36;
+  function X(v) { return L + v / xMax * (R - L); }
+  function Y(v) { return B - v / yMax * (B - T); }
+  while (graph.firstChild) graph.removeChild(graph.firstChild);
+  for (var gy = 0; gy <= yMax + ys / 2; gy += ys) {
+    graph.appendChild(svgEl("line", { "class": "g-grid", x1: L, x2: R, y1: Y(gy), y2: Y(gy) }));
+    var ty = svgEl("text", { "class": "g-tick", x: L - 8, y: Y(gy) + 5, "text-anchor": "end" }); ty.textContent = fmt(gy); graph.appendChild(ty);
   }
+  for (var gx = 0; gx <= xMax + xs / 2; gx += xs) {
+    if (gx > 0) graph.appendChild(svgEl("line", { "class": "g-grid", x1: X(gx), x2: X(gx), y1: T, y2: B }));
+    var tx = svgEl("text", { "class": "g-tick", x: X(gx), y: B + 22, "text-anchor": "middle" }); tx.textContent = fmt(gx); graph.appendChild(tx);
+  }
+  graph.appendChild(svgEl("line", { "class": "g-axis", x1: L, x2: R, y1: B, y2: B }));
+  graph.appendChild(svgEl("line", { "class": "g-axis", x1: L, x2: L, y1: T, y2: B }));
+  shown.forEach(function (x) {
+    var d = "M " + X(0) + " " + Y(0) + x.pts.map(function (p) { return " L " + X(p.x).toFixed(1) + " " + Y(p.y).toFixed(1); }).join("");
+    graph.appendChild(svgEl("path", { "class": "g-line", d: d, stroke: x.st.color }));
+  });
+  shown.forEach(function (x) {
+    var kind = MARKERS[x.s];
+    x.pts.forEach(function (p) {
+      var m = svgEl("path", { "class": "g-pt", d: markerPath(kind, X(p.x), Y(p.y), 6.5), fill: x.st.color });
+      var tt = svgEl("title", {}); tt.textContent = x.st.name + ", " + ROWS[p.r] + ": " + fmt(p.x) + " cm³, " + fmt(p.y) + " g";
+      m.appendChild(tt); graph.appendChild(m);
+    });
+  });
+  if (!shown.length) {
+    var e1 = svgEl("text", { "class": "g-empty", x: (L + R) / 2, y: (T + B) / 2 - 8, "text-anchor": "middle" });
+    e1.textContent = "Your points appear here as you type";
+    var e2 = svgEl("text", { "class": "g-empty", x: (L + R) / 2, y: (T + B) / 2 + 18, "text-anchor": "middle" });
+    e2.textContent = "each mass and volume.";
+    graph.appendChild(e1); graph.appendChild(e2);
+  }
+  drawLegend(series);
+}
+function drawLegend(series) {
+  legend.innerHTML = "";
+  series.forEach(function (x) {
+    var b = el("button", "leg" + (x.pts.length ? "" : " nodata")); b.type = "button";
+    b.setAttribute("aria-pressed", x.on ? "true" : "false");
+    var ic = svgEl("svg", { viewBox: "0 0 30 16", "aria-hidden": "true" });
+    ic.appendChild(svgEl("line", { x1: 1, x2: 29, y1: 8, y2: 8, stroke: x.st.color, "stroke-width": 3.5, "stroke-linecap": "round" }));
+    ic.appendChild(svgEl("path", { d: markerPath(MARKERS[x.s], 15, 8, 5), fill: x.st.color, stroke: "var(--paper)", "stroke-width": 1.5 }));
+    b.appendChild(ic);
+    b.appendChild(document.createTextNode(x.st.name));
+    if (!x.pts.length) b.appendChild(el("span", "nd", "(no data yet)"));
+    b.setAttribute("aria-label", x.st.name + (x.pts.length ? "" : ", no data yet") + (x.on ? ", shown" : ", hidden"));
+    b.addEventListener("click", function () {
+      if (state.hidden[x.s]) delete state.hidden[x.s]; else state.hidden[x.s] = true;
+      save(); drawGraph();
+    });
+    legend.appendChild(b);
+  });
+}
 
-  /* ------------------------------------------------ light / dark toggle */
-  var themeBtn = $("cvlab-theme");
-  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
-  var inFrame = window.parent !== window;
-  function paintToggle(){
-    var d = isDarkNow();
-    themeBtn.innerHTML = d ? SUN : MOON;
-    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
-  }
-  function repaint(){ readPalette(); paintToggle(); refreshAll(); }
-  function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
-  themeBtn.addEventListener("click", function(){
-    var next = isDarkNow() ? "light" : "dark";
-    applyTheme(next);
-    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
-    /* shown in a frame (a lab's questions page): tell that page, so it switches too */
-    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
-  });
-  /* the page around this sim switched its light / dark mode: follow it (not saved) */
-  window.addEventListener("message", function(e){
-    if (!inFrame || e.source !== window.parent) return;
-    var th = e.data && e.data.simTheme;
-    if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
-  });
-  if (window.matchMedia){
-    var mq = window.matchMedia("(prefers-color-scheme: dark)");
-    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
-    if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
-  }
-  paintToggle();
+/* ============================== pictures (drawn here so they match light and dark mode) ============================== */
+function iso(ox, oy, s) {   // a point (x along, y deep, z up) on the page
+  return function (x, y, z) { return [ox + (x - y) * s * 0.866, oy + (x + y) * s * 0.5 - z * s]; };
+}
+function poly(pts) { return pts.map(function (p) { return p[0].toFixed(1) + "," + p[1].toFixed(1); }).join(" "); }
+/** A box from (x,y,z) with size (l,w,h): top, front-left and front-right faces. */
+function isoBox(P, x, y, z, l, w, h, color, stroke) {
+  var st = stroke || "var(--pic-ink)";
+  return '<polygon points="' + poly([P(x, y, z + h), P(x + l, y, z + h), P(x + l, y + w, z + h), P(x, y + w, z + h)]) + '" fill="' + shade(color, 0.35) + '" stroke="' + st + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+         '<polygon points="' + poly([P(x, y + w, z), P(x + l, y + w, z), P(x + l, y + w, z + h), P(x, y + w, z + h)]) + '" fill="' + color + '" stroke="' + st + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+         '<polygon points="' + poly([P(x + l, y, z), P(x + l, y + w, z), P(x + l, y + w, z + h), P(x + l, y, z + h)]) + '" fill="' + shade(color, -0.25) + '" stroke="' + st + '" stroke-width="1.6" stroke-linejoin="round"/>';
+}
+function txt(x, y, s, opt) {
+  opt = opt || {};
+  return '<text x="' + x + '" y="' + y + '" text-anchor="' + (opt.a || "middle") + '" font-size="' + (opt.size || 16) + '" font-weight="' + (opt.w || 700) + '" fill="' + (opt.fill || "var(--pic-ink)") + '"' + (opt.extra || "") + '>' + s + '</text>';
+}
+function arrowDefs(id) {
+  return '<defs><marker id="' + id + '" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--pic-ink)"/></marker></defs>';
+}
+function put(id, label, svg, caption) {
+  var f = document.getElementById(id);
+  if (!f) return;
+  f.innerHTML = svg.replace("<svg ", '<svg role="img" aria-label="' + label + '" ') + (caption ? "<figcaption>" + caption + "</figcaption>" : "");
+}
+function drawPictures() {
+  // What you need: a scale with a block, a ruler, a calculator, a set of 4 blocks
+  var P1 = iso(150, 120, 22), s1 = "";
+  s1 += '<svg viewBox="0 0 520 210" xmlns="http://www.w3.org/2000/svg">';
+  // scale
+  s1 += '<rect x="30" y="120" width="160" height="62" rx="10" fill="var(--pic-mid)" stroke="var(--pic-ink)" stroke-width="2"/>';
+  s1 += '<rect x="22" y="110" width="176" height="14" rx="4" fill="var(--pic-soft)" stroke="var(--pic-ink)" stroke-width="2"/>';
+  s1 += '<rect x="60" y="136" width="100" height="32" rx="4" fill="#0f2a1a" stroke="var(--pic-ink)" stroke-width="2"/>';
+  s1 += txt(110, 160, "32.4 g", { size: 20, fill: "#7CFC9A", w: 800 });
+  s1 += isoBox(iso(84, 100, 18), 0, 0, 0, 2.6, 1.6, 1.6, "#9aa3ad");
+  s1 += txt(110, 204, "scale", { size: 15 });
+  // ruler
+  s1 += '<rect x="214" y="132" width="170" height="40" rx="4" fill="#f2d78a" stroke="var(--pic-ink)" stroke-width="2"/>';
+  for (var t = 0; t <= 15; t++) s1 += '<line x1="' + (222 + t * 10.2) + '" y1="132" x2="' + (222 + t * 10.2) + '" y2="' + (t % 5 === 0 ? 150 : 142) + '" stroke="#1f2430" stroke-width="1.6"/>';
+  s1 += txt(222, 166, "0", { size: 12, fill: "#1f2430" }) + txt(273, 166, "5", { size: 12, fill: "#1f2430" }) + txt(324, 166, "10", { size: 12, fill: "#1f2430" });
+  s1 += txt(299, 204, "metric ruler", { size: 15 });
+  // calculator
+  s1 += '<rect x="404" y="96" width="76" height="92" rx="10" fill="var(--pic-mid)" stroke="var(--pic-ink)" stroke-width="2"/>';
+  s1 += '<rect x="414" y="106" width="56" height="20" rx="3" fill="#0f2a1a"/>' + txt(464, 121, "2.7", { size: 13, fill: "#7CFC9A", a: "end" });
+  for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) s1 += '<rect x="' + (414 + c * 19) + '" y="' + (134 + r * 16) + '" width="14" height="11" rx="2" fill="var(--pic-soft)" stroke="var(--pic-ink)" stroke-width="1"/>';
+  s1 += txt(442, 204, "calculator", { size: 15 });
+  // 4 blocks
+  var P4 = iso(268, 62, 11);
+  for (var b = 0; b < 4; b++) s1 += isoBox(P4, b * 2.7, -b * 2.7, 0, 2.2, 1.5, 1.5, "#c9a227");
+  s1 += txt(350, 22, "4 blocks of one material", { size: 15 });
+  s1 += '</svg>';
+  put("picMaterials", "A digital scale reading 32.4 grams with a block on it, a metric ruler, a calculator, and a set of 4 blocks", s1);
 
-  buildMats();
-  buildCounts();
-  reading = measure(mat(), n);
-  refreshAll();
-})();
-</script>
-<script>
-/* Shown inside the textbook's Sims page: tell that page which sim is open, so its address can name the sim. */
-(function(){
-  if (window.parent === window) return;
-  window.addEventListener('pageshow', function(){
-    try { window.parent.postMessage({ simLibrary: { path: location.pathname, title: document.title } }, '*'); } catch (e) {}
+  // Station rotation map
+  var s2 = '<svg viewBox="0 0 520 330" xmlns="http://www.w3.org/2000/svg">' + arrowDefs("arrRot");
+  var cx = 260, cy = 168, rx = 196, ry = 120, pos = [];
+  STATIONS.forEach(function (st, i) { var a = -Math.PI / 2 + i * Math.PI / 4; pos.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); });
+  pos.forEach(function (p, i) {
+    var q = pos[(i + 1) % 8], a1 = Math.atan2(q[1] - p[1], q[0] - p[0]);
+    var sx = p[0] + Math.cos(a1) * 50, sy = p[1] + Math.sin(a1) * 30, ex = q[0] - Math.cos(a1) * 54, ey = q[1] - Math.sin(a1) * 32;
+    var mx = (sx + ex) / 2, my = (sy + ey) / 2, nx = (mx - cx) * 0.12, ny = (my - cy) * 0.12;
+    s2 += '<path d="M' + sx.toFixed(1) + ' ' + sy.toFixed(1) + ' Q' + (mx + nx).toFixed(1) + ' ' + (my + ny).toFixed(1) + ' ' + ex.toFixed(1) + ' ' + ey.toFixed(1) + '" fill="none" stroke="var(--pic-ink)" stroke-width="2.4" marker-end="url(#arrRot)"/>';
   });
+  STATIONS.forEach(function (st, i) {
+    var p = pos[i], ink = inkOn(st.color);
+    s2 += '<rect x="' + (p[0] - 50) + '" y="' + (p[1] - 26) + '" width="100" height="52" rx="10" fill="' + st.color + '" stroke="var(--pic-ink)" stroke-width="2"/>';
+    s2 += txt(p[0], p[1] - 4, "Station " + st.n, { size: 13, fill: ink });
+    s2 += txt(p[0], p[1] + 15, st.name, { size: 15, fill: ink, w: 800 });
+  });
+  s2 += txt(cx, cy - 10, "Rotate to the", { size: 16 }) + txt(cx, cy + 12, "next station", { size: 16 }) + txt(cx, cy + 34, "8 → 1", { size: 16, w: 800 });
+  s2 += '</svg>';
+  put("picRotation", "Eight stations in a loop, each a different color and material, with arrows from each station to the next and from Station 8 back to Station 1", s2,
+      "Each rotation, move one station ahead. After 8 rotations your group has measured every material.");
+
+  // Scale close-up
+  var s3 = '<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">';
+  s3 += '<rect x="90" y="112" width="220" height="70" rx="12" fill="var(--pic-mid)" stroke="var(--pic-ink)" stroke-width="2"/>';
+  s3 += '<rect x="78" y="98" width="244" height="16" rx="5" fill="var(--pic-soft)" stroke="var(--pic-ink)" stroke-width="2"/>';
+  s3 += '<rect x="140" y="128" width="120" height="38" rx="5" fill="#0f2a1a" stroke="var(--pic-ink)" stroke-width="2"/>';
+  s3 += txt(200, 156, "21.6 g", { size: 24, fill: "#7CFC9A", w: 800 });
+  s3 += isoBox(iso(178, 90, 22), 0, 0, 0, 2.2, 1.6, 1.6, "#3366cc");
+  s3 += '<circle cx="292" cy="147" r="9" fill="var(--pic-soft)" stroke="var(--pic-ink)" stroke-width="2"/>' + txt(292, 176, "zero", { size: 11 });
+  s3 += '</svg>';
+  put("picScale", "One block on a digital scale. The screen reads 21.6 grams.", s3, "Press zero (tare) with nothing on the scale, then add the block.");
+
+  // Ruler measuring L, W, H
+  var P5 = iso(205, 112, 30), s5 = '<svg viewBox="0 0 420 250" xmlns="http://www.w3.org/2000/svg">' + arrowDefs("arrDim");
+  s5 += isoBox(P5, 0, 0, 0, 4, 2, 2, "#ff9901");
+  function dim(a, b, label, dx, dy, lx, ly) {
+    return '<line x1="' + (a[0] + dx) + '" y1="' + (a[1] + dy) + '" x2="' + (b[0] + dx) + '" y2="' + (b[1] + dy) + '" stroke="var(--pic-ink)" stroke-width="2" marker-start="url(#arrDim)" marker-end="url(#arrDim)"/>' +
+           txt(lx, ly, label, { size: 15, w: 800 });
+  }
+  var a1 = P5(0, 2, 0), b1 = P5(4, 2, 0), a2 = P5(4, 0, 0), b2 = P5(4, 2, 0), a3 = P5(0, 2, 0), b3 = P5(0, 2, 2);
+  s5 += dim(a1, b1, "Length", -10, 17, (a1[0] + b1[0]) / 2 - 34, (a1[1] + b1[1]) / 2 + 44);
+  s5 += dim(a2, b2, "Width", 15, 9, (a2[0] + b2[0]) / 2 + 58, (a2[1] + b2[1]) / 2 + 26);
+  s5 += dim(a3, b3, "Height", -18, 0, a3[0] - 56, (a3[1] + b3[1]) / 2 + 5);
+  s5 += '</svg>';
+  put("picRuler", "A block with arrows showing its length along the front bottom edge, its width along the side, and its height going up", s5, "Measure all three edges in centimeters.");
+
+  // Stacks of 1, 2, 3, 4 blocks
+  var s4 = '<svg viewBox="0 0 520 212" xmlns="http://www.w3.org/2000/svg">';
+  [1, 2, 3, 4].forEach(function (n, i) {
+    var P = iso(66 + i * 128, 142, 16);
+    for (var k = 0; k < n; k++) s4 += isoBox(P, 0, 0, k * 1.6, 3, 2, 1.6, "#109618");
+    s4 += txt(66 + i * 128 + 8, 202, n + (n === 1 ? " block" : " blocks"), { size: 15 });
+  });
+  s4 += '</svg>';
+  put("picStacks", "Stacks of 1, 2, 3 and 4 blocks. Each stack is measured like one big block.", s4, "Measure each stack as one big block: its length, width and its new height.");
+
+  // Volume: 3 x 2 x 2 unit cubes
+  var P6 = iso(190, 132, 34), s6 = '<svg viewBox="0 0 420 240" xmlns="http://www.w3.org/2000/svg">';
+  var cubes = [];
+  for (var z = 0; z < 2; z++) for (var y = 0; y < 2; y++) for (var x = 0; x < 3; x++) cubes.push([x, y, z]);
+  cubes.sort(function (p, q) { return (p[2] - q[2]) || ((p[0] + p[1]) - (q[0] + q[1])); });
+  cubes.forEach(function (c) { s6 += isoBox(P6, c[0], c[1], c[2], 1, 1, 1, "#7fa6e6"); });
+  var f1 = P6(0, 2, 0), f2 = P6(3, 2, 0), g1 = P6(3, 0, 0), h1 = P6(0, 2, 2);
+  s6 += txt((f1[0] + f2[0]) / 2 - 10, (f1[1] + f2[1]) / 2 + 30, "L = 3 cm", { size: 15, w: 800 });
+  s6 += txt((g1[0] + f2[0]) / 2 + 52, (g1[1] + f2[1]) / 2 + 6, "W = 2 cm", { size: 15, w: 800 });
+  s6 += txt(h1[0] - 46, (f1[1] + h1[1]) / 2 + 5, "H = 2 cm", { size: 15, w: 800 });
+  s6 += txt(330, 30, "3 × 2 × 2 = 12 cubes", { size: 15 }) + txt(330, 52, "V = 12 cm³", { size: 17, w: 800 });
+  s6 += '</svg>';
+  put("picCubes", "A block made of 12 one-centimeter cubes: 3 cubes long, 2 cubes wide and 2 cubes tall. Its volume is 12 cubic centimeters.", s6, "Each small cube is 1 cm on every side, so it is 1 cm³.");
+
+  // Density: same volume, different packing
+  var s7 = '<svg viewBox="0 0 440 220" xmlns="http://www.w3.org/2000/svg">';
+  s7 += '<rect x="30" y="30" width="150" height="130" rx="8" fill="var(--pic-soft)" stroke="var(--pic-ink)" stroke-width="2.5"/>';
+  s7 += '<rect x="260" y="30" width="150" height="130" rx="8" fill="var(--pic-soft)" stroke="var(--pic-ink)" stroke-width="2.5"/>';
+  [[60, 60], [130, 52], [95, 100], [150, 120], [55, 135], [112, 140]].forEach(function (p) { s7 += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="11" fill="#ff9901" stroke="var(--pic-ink)" stroke-width="1.5"/>'; });
+  for (var rr = 0; rr < 5; rr++) for (var cc = 0; cc < 6; cc++) s7 += '<circle cx="' + (279 + cc * 22.5) + '" cy="' + (49 + rr * 23) + '" r="10.5" fill="#109618" stroke="var(--pic-ink)" stroke-width="1.5"/>';
+  s7 += txt(105, 186, "Less mass packed in", { size: 15 }) + txt(105, 208, "lower density", { size: 15, w: 800 });
+  s7 += txt(335, 186, "More mass packed in", { size: 15 }) + txt(335, 208, "higher density", { size: 15, w: 800 });
+  s7 += '</svg>';
+  put("picParticles", "Two boxes the same size. The left box has a few particles spread out, so lower density. The right box is packed full of particles, so higher density.", s7, "Same volume, different mass: the packed box is denser.");
+
+  // M D V triangle
+  var s8 = '<svg viewBox="0 0 320 250" xmlns="http://www.w3.org/2000/svg">';
+  s8 += '<polygon points="160,14 300,228 20,228" fill="var(--pic-soft)" stroke="var(--pic-ink)" stroke-width="3" stroke-linejoin="round"/>';
+  s8 += '<line x1="78" y1="140" x2="242" y2="140" stroke="var(--pic-ink)" stroke-width="3"/>';
+  s8 += txt(160, 118, "M", { size: 48, w: 800 }) + txt(98, 208, "D", { size: 44, w: 800 }) + txt(222, 208, "V", { size: 44, w: 800 });
+  s8 += txt(160, 202, "×", { size: 34, w: 800 });
+  s8 += txt(104, 150, "÷", { size: 26, w: 800 }) + txt(216, 150, "÷", { size: 26, w: 800 });
+  s8 += '</svg>';
+  put("picTriangle", "The density triangle: M for mass on top, D for density and V for volume on the bottom, with a divide line between the top and bottom and a times sign between D and V.", s8,
+      "Don't be dense! Follow directions!");
+}
+
+/* ============================== tabs (narrow screens) ============================== */
+var tabBtns = document.querySelectorAll(".tabs button");
+function setView(v) {
+  state.view = v; document.body.setAttribute("data-view", v);
+  Array.prototype.forEach.call(tabBtns, function (b) { b.setAttribute("aria-selected", b.getAttribute("data-view") === v ? "true" : "false"); });
+  save();
+}
+Array.prototype.forEach.call(tabBtns, function (b) {
+  b.addEventListener("click", function () { setView(b.getAttribute("data-view")); window.scrollTo(0, 0); });
+});
+
+/* ============================== light / dark mode ============================== */
+var ICONS = { dark: '<path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/>',
+              light: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>' };
+var themeBtn = document.getElementById("themeBtn");
+function theme() { return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light"; }
+function showThemeBtn() {
+  var next = theme() === "dark" ? "light" : "dark";
+  themeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[next] + "</svg>";
+  themeBtn.setAttribute("aria-label", "Switch to " + next + " mode");
+  themeBtn.title = "Switch to " + next + " mode";
+}
+function setTheme(t, tellParent) {
+  document.documentElement.setAttribute("data-theme", t);
+  try { localStorage.setItem("density-lab-theme", t); } catch (e) {}
+  showThemeBtn();
+  if (tellParent && window.parent && window.parent !== window) { try { window.parent.postMessage({ simTheme: t }, "*"); } catch (e) {} }
+}
+themeBtn.addEventListener("click", function () { setTheme(theme() === "dark" ? "light" : "dark", true); });
+window.addEventListener("message", function (e) {   // the Self-Check page tells this page when it switches
+  if (e.source !== window.parent) return;
+  var t = e.data && e.data.simTheme;
+  if ((t === "dark" || t === "light") && t !== theme()) setTheme(t, false);
+});
+
+/* ============================== in-page confirm ============================== */
+function askConfirm(text, onYes) {
+  var box = document.getElementById("confirmBox"), yes = document.getElementById("confirmYes"), no = document.getElementById("confirmNo");
+  document.getElementById("confirmText").textContent = text;
+  box.hidden = false; no.focus();
+  function close(go) { box.hidden = true; yes.onclick = no.onclick = box.onclick = null; document.removeEventListener("keydown", key); if (go) onYes(); }
+  function key(e) { if (e.key === "Escape") close(false); }
+  yes.onclick = function () { close(true); };
+  no.onclick = function () { close(false); };
+  box.onclick = function (e) { if (e.target === box) close(false); };
+  document.addEventListener("keydown", key);
+}
+
+var resizeTimer = 0;
+window.addEventListener("resize", function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawGraph, 150); });
+Array.prototype.forEach.call(tabBtns, function (b) { b.addEventListener("click", function () { setTimeout(drawGraph, 0); }); });
+
+/* ============================== start ============================== */
+showThemeBtn();
+setView(state.view);
+drawPictures();
+drawChips();
+drawStation();
+drawGraph();
 })();
 </script>
 </body>
