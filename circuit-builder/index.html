@@ -1,0 +1,674 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Circuit Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: split-screen first (~640px). Header → big-idea strip → [parts tray | workbench].
+   Results + challenges stack below; on wide screens they become a right column. */
+:root{
+  --bg:#eef2f7; --card:#ffffff; --ink:#18212d; --muted:#556274; --line:#d5dde8;
+  --stage:#a9c4ef; --stage-ink:#1d2a3d; --tray:#f3f6fa;
+  --accent:#b8622a; --accent-ink:#ffffff; --copper:#c87533;
+  --hl:#ffe66b; --hl-ink:#2b2200;
+  --good:#1f8a4c; --good-bg:#dcf3e5; --bad:#c0392b; --bad-bg:#fbe1de; --warn:#b26a00; --warn-bg:#fff0cf;
+  --chip:#e7edf5;
+  --font:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151d; --card:#19212c; --ink:#eef3fa; --muted:#a3b0c2; --line:#2c3746;
+  --stage:#1f2f4a; --stage-ink:#e6eefb; --tray:#141b25;
+  --accent:#e08a4c; --accent-ink:#1a0f06; --copper:#d98a4a;
+  --hl:#f5d443; --hl-ink:#231c00;
+  --good:#5fd38f; --good-bg:#16352a; --bad:#ff8a7c; --bad-bg:#3d1f1c; --warn:#ffc35c; --warn-bg:#3a2c10;
+  --chip:#243041; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#10151d; --card:#19212c; --ink:#eef3fa; --muted:#a3b0c2; --line:#2c3746;
+  --stage:#1f2f4a; --stage-ink:#e6eefb; --tray:#141b25;
+  --accent:#e08a4c; --accent-ink:#1a0f06; --copper:#d98a4a;
+  --hl:#f5d443; --hl-ink:#231c00;
+  --good:#5fd38f; --good-bg:#16352a; --bad:#ff8a7c; --bad-bg:#3d1f1c; --warn:#ffc35c; --warn-bg:#3a2c10;
+  --chip:#243041; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+.stage{user-select:none;-webkit-user-select:none}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-weight:700;font-size:16px;line-height:1.45}
+.wrap{max-width:min(1900px,100%);margin:0 auto;padding-block:10px 28px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:10px}
+header{display:flex;align-items:center;gap:10px}
+header h1{margin:0;font-size:clamp(19px,2.6vw,32px);font-weight:800;letter-spacing:-.01em;text-wrap:balance;line-height:1.15}
+header .series{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:800}
+header .grow{flex:1;min-width:0}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.icon-btn:focus-visible,button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.icon-btn svg{width:20px;height:20px}
+mark,.must{background:var(--hl);color:var(--hl-ink);padding:0 .25em;border-radius:4px;font-weight:800}
+.bigidea{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:8px 12px;font-size:15px;display:flex;gap:10px;align-items:flex-start}
+.bigidea .tag{flex:none;font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:var(--ink);color:var(--bg);border-radius:6px;padding:3px 7px;margin-top:2px}
+
+.lab{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px;align-items:start}
+.side{display:flex;flex-direction:column;gap:10px;min-width:0;grid-column:1/-1}
+@media (min-width:1150px){
+  .lab{grid-template-columns:108px minmax(0,1fr) minmax(340px,420px)}
+  .side{grid-column:auto}
+}
+@media (max-width:520px){ .lab{grid-template-columns:76px minmax(0,1fr)} }
+
+/* Tray */
+.tray{background:var(--tray);border:2px solid var(--line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;align-self:stretch;max-height:var(--stageH,520px)}
+.trayhead{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;text-align:center;padding:7px 4px;background:var(--accent);color:var(--accent-ink);line-height:1.2}
+.tabs button{font:inherit;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;border:0;border-bottom:2px solid var(--line);background:var(--card);color:var(--muted);padding:7px 4px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+.items{overflow-y:auto;flex:1;display:flex;flex-direction:column}
+.item{font:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.item:hover{background:var(--chip)}
+.item canvas{width:78px;height:40px;pointer-events:none}
+.item span{font-size:12px;line-height:1.15;text-align:center;font-weight:700}
+.ghost{position:fixed;pointer-events:none;z-index:50;opacity:.85;transform:translate(-50%,-50%)}
+
+/* Stage */
+.stagecol{display:flex;flex-direction:column;gap:8px;min-width:0}
+.statusbar{display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid var(--line);border-radius:12px;padding:8px 12px;min-height:58px}
+.statusbar .dot{width:16px;height:16px;border-radius:50%;flex:none;background:var(--muted)}
+.statusbar.ok{border-color:var(--good);background:var(--good-bg)} .statusbar.ok .dot{background:var(--good)}
+.statusbar.open{border-color:var(--line)} .statusbar.open .dot{background:var(--bad)}
+.statusbar.short{border-color:var(--bad);background:var(--bad-bg)} .statusbar.short .dot{background:var(--bad);animation:blink .5s infinite alternate}
+@keyframes blink{to{opacity:.25}}
+.statusbar .t{font-size:16px;font-weight:800;line-height:1.2}
+.statusbar .s{font-size:13px;color:var(--muted);font-weight:600;line-height:1.3}
+.stage{position:relative;border-radius:12px;overflow:hidden;border:2px solid var(--line);background:var(--stage)}
+#cv{display:block;width:100%;aspect-ratio:10/7;max-width:100%;touch-action:none;cursor:default}
+.hint{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);text-align:center;color:var(--stage-ink);opacity:.8;font-size:clamp(14px,2.2vw,20px);pointer-events:none;width:80%}
+.toolbar{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:6px;align-items:center;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:5px 6px 5px 14px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-width:calc(100% - 16px)}
+.toolbar .lbl{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{font:inherit;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--bad)}
+.toast{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:13px;padding:7px 14px;border-radius:999px;max-width:calc(100% - 20px);text-align:center;transition:opacity .3s}
+.controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;user-select:none}
+.chk input{width:16px;height:16px;accent-color:var(--accent)}
+.controls .sp{flex:1}
+
+/* Energy chain */
+.energy{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:12px}
+.energy .e{padding:4px 9px;border-radius:999px;background:var(--chip);color:var(--muted);transition:background .3s,color .3s}
+.energy.on .e{background:var(--hl);color:var(--hl-ink)}
+.energy .arr{color:var(--muted)}
+
+/* Cards */
+.card{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.card h2{margin:0 0 8px;font-size:15px;letter-spacing:.1em;text-transform:uppercase;font-weight:800}
+.card h2 small{font-size:12px;color:var(--muted);letter-spacing:.04em;margin-left:6px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:4px 6px;border-bottom:2px solid var(--line)}
+td{padding:6px;border-bottom:1px solid var(--line);vertical-align:top}
+td .why{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-top:2px;line-height:1.3}
+td select{font:inherit;font-size:13px;padding:3px 4px;border-radius:8px;border:2px solid var(--line);background:var(--card);color:var(--ink);max-width:118px}
+.pill{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.pill.lit{background:var(--hl);color:var(--hl-ink)}
+.pill.dark{background:var(--chip);color:var(--ink)}
+.pill.wait{color:var(--muted);font-weight:600}
+.cls{display:inline-block;font-size:12px;margin-top:3px}
+.cls.c{color:var(--good)} .cls.i{color:var(--bad)}
+.pred-ok{color:var(--good);font-size:12px} .pred-no{color:var(--warn);font-size:12px}
+.progress{font-size:13px;color:var(--muted);margin-bottom:6px}
+ul.chal{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+ul.chal li{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+ul.chal .box{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;margin-top:1px}
+ul.chal li.done .box{background:var(--good);border-color:var(--good)}
+ul.chal li.done .box::after{content:"";width:6px;height:11px;border:solid var(--card);border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+ul.chal li.done .txt{color:var(--muted)}
+
+/* Details */
+details.card{padding:0}
+details.card summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:15px;letter-spacing:.1em;text-transform:uppercase;font-weight:800}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary .chev{margin-left:auto;width:22px;height:22px;transition:transform .2s;flex:none}
+details[open].card summary .chev{transform:rotate(180deg)}
+details.card .body{padding:0 16px 14px;font-size:15px;font-weight:500}
+details.card .body strong{font-weight:800}
+details.card ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+.ngss{display:inline-block;font-size:11px;letter-spacing:.06em;background:var(--ink);color:var(--bg);border-radius:6px;padding:2px 6px;margin-right:4px;font-weight:800;white-space:nowrap}
+.idea{border-left:5px solid var(--hl);background:var(--chip);border-radius:8px;padding:8px 12px;margin:10px 0}
+.idea p{margin:4px 0}
+.lower{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@media (min-width:900px){.lower{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head><body><div class="wrap">
+  <header>
+    <div class="grow">
+      <span class="series">Motion Lab · Electricity</span>
+      <h1>Circuit Builder: Complete the Loop</h1>
+    </div>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch light or dark mode"></button>
+  </header>
+
+  <div class="bigidea"><span class="tag">Big idea</span>
+    <div>Electric current only flows through a <mark>complete (closed) circuit</mark>: an unbroken loop of <mark>conductors</mark> from one end of the battery, through the bulb, and back to the other end.</div>
+  </div>
+
+  <div class="lab">
+    <aside class="tray" id="tray" aria-label="Parts tray">
+      <div class="trayhead">Parts</div>
+      <div class="items" id="items"></div>
+    </aside>
+
+    <div class="stagecol">
+      <div class="statusbar open" id="status" aria-live="polite">
+        <span class="dot"></span>
+        <div><div class="t" id="statusT">Open circuit</div><div class="s" id="statusS">Drag a battery, a light bulb, and wires onto the workbench.</div></div>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="cv" aria-label="Circuit workbench. Drag parts here and connect their ends."></canvas>
+        <div class="hint" id="hint">Drag parts from the tray onto this workbench.<br>Connect the loose ends to build a loop.</div>
+        <div class="toast" id="toast" hidden></div>
+        <div class="toolbar" id="toolbar" hidden>
+          <span class="lbl" id="selLbl">Wire</span>
+          <button class="btn pri" type="button" id="btnToggle" hidden>Open switch</button>
+          <button class="btn" type="button" id="btnSplit" hidden>Disconnect</button>
+          <button class="btn danger" type="button" id="btnDelete">Delete</button>
+        </div>
+      </div>
+      <div class="controls">
+        <label class="chk"><input type="checkbox" id="optElec" checked> Show electrons</label>
+        <label class="chk"><input type="checkbox" id="optLabels" checked> Labels</label>
+        <span class="sp"></span>
+        <button class="btn" type="button" id="btnClear">Reset bench</button>
+      </div>
+      <div class="energy" id="energy" aria-label="Energy transfer">
+        <span class="e">Battery: stored chemical energy</span><span class="arr">→</span>
+        <span class="e">Electric current</span><span class="arr">→</span>
+        <span class="e">Bulb: light + heat</span>
+      </div>
+    </div>
+
+    <div class="side" id="side">
+      <section class="card">
+        <h2>Challenges <small id="chalCount"></small></h2>
+        <ul class="chal" id="chal"></ul>
+      </section>
+    </div>
+  </div>
+
+  <div class="lower">
+    <details class="card">
+      <summary>Must-know ideas (NGSS) <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="body">
+        <div class="idea">
+          <p><span class="ngss">MS-PS3</span> <mark>Energy transfer.</mark> A battery stores <strong>chemical potential energy</strong>. In a complete circuit, the battery pushes charges through the wires. The current carries energy to the bulb. The bulb changes it into <strong>light and heat</strong>.</p>
+        </div>
+        <div class="idea">
+          <p><span class="ngss">MS-PS2-3</span> <mark>Electric current</mark> is the flow of electric charge. In metal wires, the moving charges are tiny negative particles called <strong>electrons</strong>. The electrons are already in the wire. The battery gives them a push.</p>
+        </div>
+        <div class="idea">
+          <p><mark>Closed circuit vs. open circuit.</mark> A <strong>closed circuit</strong> is a full loop with no gaps, so current flows. An <strong>open circuit</strong> has a gap or an insulator somewhere in the loop, so current stops everywhere, not just at the gap.</p>
+          <p>A <strong>switch</strong> is a planned gap. Closing it completes the loop. Opening it breaks the loop.</p>
+        </div>
+        <div class="idea">
+          <p><span class="ngss">PS1.A</span> <mark>Conductors and insulators.</mark> How well a material lets current pass is a <strong>property</strong> of that material. A <strong>conductor</strong> lets current flow easily (most metals, and graphite). An <strong>insulator</strong> blocks current (plastic, glass, rubber, ceramic, dry paper).</p>
+          <p>Looks can fool you. Shiny or gold-colored does not always mean metal. Test it!</p>
+        </div>
+        <div class="idea">
+          <p><span class="ngss">Crosscutting</span> <mark>Systems and models.</mark> The battery, wires, and bulb work together as a <strong>system</strong>. This sim is a <strong>model</strong>. The blue dots show electrons, which are far too small to see in real life.</p>
+        </div>
+        <div class="idea">
+          <p><mark>Short circuit (safety).</mark> If wire connects the two battery ends with no bulb in the path, current takes that easy path. The current gets very large. The battery and wire get hot fast. Never do this with real batteries or wall outlets.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary>How to use this simulation <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="body">
+        <ol>
+          <li><strong>Add parts.</strong> Drag a part from the tray onto the blue workbench. You can also tap a part to drop it in the middle.</li>
+          <li><strong>Connect ends.</strong> Every part has two ends. A <strong>dashed red circle</strong> is a loose end. Drag one end onto another end to join them.</li>
+          <li><strong>Move or turn parts.</strong> Drag the middle of a part to move it. Drag one end to turn or stretch it.</li>
+          <li><strong>Check the status bar.</strong> It tells you if the circuit is <strong>open</strong>, <strong>complete</strong>, or a <strong>short circuit</strong>. Blue dots show electrons moving.</li>
+          <li><strong>Use the switch.</strong> Tap a switch to open or close it.</li>
+          <li><strong>Test items.</strong> The <strong>test items</strong> are in the tray below the switch. Predict: conductor or insulator? Then put an item in your loop in place of one wire. Connect a wire end right to each side of the item and watch the bulb.</li>
+          <li><strong>Fix mistakes.</strong> Tap a part to delete it. Tap a joined end to disconnect it. <strong>Reset bench</strong> starts over.</li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- Theme ---------- */
+const root=document.documentElement, themeBtn=document.getElementById('themeBtn');
+const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>';
+const MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
+function isDark(){const t=root.getAttribute('data-theme'); if(t) return t==='dark'; return matchMedia('(prefers-color-scheme: dark)').matches;}
+function paintThemeBtn(){themeBtn.innerHTML=isDark()?SUN:MOON; readColors(); redrawIcons();}
+try{const s=localStorage.getItem('motionlab-theme'); if(s==='dark'||s==='light') root.setAttribute('data-theme',s);}catch(e){}
+themeBtn.addEventListener('click',()=>{const n=isDark()?'light':'dark'; root.setAttribute('data-theme',n); try{localStorage.setItem('motionlab-theme',n);}catch(e){} paintThemeBtn();});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',paintThemeBtn);
+let C={};
+function readColors(){const cs=getComputedStyle(root); ['stage','stage-ink','copper','hl','bad','good','ink','card'].forEach(k=>C[k]=cs.getPropertyValue('--'+k).trim());}
+
+/* ---------- Model ---------- */
+const W=680,H=476, VBAT=9, RINT=0.1, RBULB=12, RWIRE=0.01;
+const MATS={
+  clip:   {name:'Paper Clip', cond:true, r:0.02, why:'Steel is a metal. Metals have electrons that move easily.'},
+  coatclip:{name:'Coated Paper Clip', cond:false, why:'There is metal inside, but the plastic coating blocks the current. Wires use this same trick to stay safe.'},
+  coin:   {name:'Coin', cond:true, r:0.02, why:'This coin is made of metal (copper and zinc).'},
+  toycoin:{name:'Gold Party Coin', cond:false, why:'It looks like gold, but it is plastic with gold paint. Color does not tell you if something conducts.'},
+  foil:   {name:'Aluminum Foil', cond:true, r:0.02, why:'Foil is a thin sheet of aluminum, a metal.'},
+  ribbon: {name:'Shiny Gift Ribbon', cond:false, why:'It is shiny, but the ribbon is plastic film. Shiny does not always mean metal.'},
+  key:    {name:'House Key', cond:true, r:0.02, why:'Keys are made of brass, a mix of metals.'},
+  glass:  {name:'Glass Rod', cond:false, why:'Glass holds its electrons tightly, so charges cannot flow through it.'},
+  lead:   {name:'Pencil Lead', cond:true, r:2.5, why:'Pencil "lead" is graphite, a form of carbon. It is not a metal, but it conducts! The bulb is a bit dimmer because graphite resists current more than metal.'},
+  tile:   {name:'Ceramic Tile', cond:false, why:'Ceramic is baked clay. It is an insulator, so it is used inside wall outlets and light sockets.'},
+  bill:   {name:'Dollar Bill', cond:false, why:'Paper money is made of cotton and linen fibers. Dry fibers are insulators.'}
+};
+const MATLEN={clip:66,coatclip:66,coin:38,toycoin:38,foil:72,ribbon:72,key:72,glass:72,lead:72,tile:60,bill:68};
+const MAT_ORDER=['clip','glass','coin','ribbon','lead','toycoin','foil','tile','key','coatclip','bill'];
+const PARTS=[{type:'wire',name:'Wire'},{type:'battery',name:'Battery'},{type:'bulb',name:'Light Bulb'},{type:'switch',name:'Switch'}];
+
+let verts=new Map(), elems=[], nid=1;
+function newVert(x,y){const v={id:nid++,x,y}; verts.set(v.id,v); return v;}
+function addElem(type,cx,cy,extra){
+  const L=type==='material'?MATLEN[extra.mat]:120;
+  const a=newVert(clampX(cx-L/2),clampY(cy)), b=newVert(clampX(cx+L/2),clampY(cy));
+  const e=Object.assign({id:nid++,type,a:a.id,b:b.id,closed:true,phase:0,I:0,P:0},extra||{});
+  elems.push(e); changed(); return e;
+}
+function clampX(x){return Math.max(14,Math.min(W-14,x));}
+function clampY(y){return Math.max(14,Math.min(H-14,y));}
+function degree(vid){let n=0; for(const e of elems) if(e.a===vid||e.b===vid) n++; return n;}
+function elemsAt(vid){return elems.filter(e=>e.a===vid||e.b===vid);}
+function elName(e){ if(e.type==='material') return MATS[e.mat].name; return PARTS.find(p=>p.type===e.type).name; }
+
+/* ---------- Circuit solver (nodal analysis) ---------- */
+function resOf(e,ov){
+  const o=ov&&ov.id===e.id?ov.mode:null;
+  if(o==='remove') return null;
+  if(o==='conduct') return 0.02;
+  switch(e.type){
+    case 'wire': return RWIRE;
+    case 'bulb': return RBULB;
+    case 'switch': return e.closed?RWIRE:null;
+    case 'material': return MATS[e.mat].cond?MATS[e.mat].r:null;
+  } return null;
+}
+function solve(ov){
+  const ids=[...verts.keys()], n=ids.length, ix=new Map(ids.map((id,i)=>[id,i]));
+  const G=[];for(let i=0;i<n;i++){G.push(new Float64Array(n)); G[i][i]=1e-9;}
+  const J=new Float64Array(n);
+  const st=(i,j,g)=>{G[i][i]+=g;G[j][j]+=g;G[i][j]-=g;G[j][i]-=g;};
+  for(const e of elems){
+    const i=ix.get(e.a), j=ix.get(e.b);
+    if(e.type==='battery'){const g=1/RINT; st(i,j,g); J[j]+=VBAT*g; J[i]-=VBAT*g; continue;}
+    const r=resOf(e,ov); if(r==null) continue; st(i,j,1/r);
+  }
+  // gaussian elimination with partial pivoting
+  const A=G.map(r=>Array.from(r)), b=Array.from(J);
+  for(let c=0;c<n;c++){
+    let p=c; for(let r=c+1;r<n;r++) if(Math.abs(A[r][c])>Math.abs(A[p][c])) p=r;
+    [A[c],A[p]]=[A[p],A[c]]; [b[c],b[p]]=[b[p],b[c]];
+    const d=A[c][c]; if(Math.abs(d)<1e-15) continue;
+    for(let r=c+1;r<n;r++){const f=A[r][c]/d; if(!f) continue; for(let k=c;k<n;k++) A[r][k]-=f*A[c][k]; b[r]-=f*b[c];}
+  }
+  const V=new Array(n).fill(0);
+  for(let r=n-1;r>=0;r--){let s=b[r]; for(let k=r+1;k<n;k++) s-=A[r][k]*V[k]; V[r]=Math.abs(A[r][r])<1e-15?0:s/A[r][r];}
+  const out=new Map();
+  for(const e of elems){
+    const va=V[ix.get(e.a)], vb=V[ix.get(e.b)]; let I=0;
+    if(e.type==='battery') I=(VBAT-(vb-va))/RINT;
+    else {const r=resOf(e,ov); I=r==null?0:(va-vb)/r;}
+    out.set(e.id,{I,P:e.type==='bulb'?I*I*RBULB:0});
+  }
+  return out;
+}
+const LIT=0.2, PMAX=VBAT*VBAT/RBULB*0.98;
+
+/* ---------- State / results ---------- */
+const liveSet=new Set();
+let state={short:false,flowing:false,litCount:0,hasBattery:false};
+const tested={}; // mat -> true
+const predictions={};
+const chal={lit:false,sw:false,swoff:false,two:false,tested:false,lead:false};
+let lastSwitchCarry=new Map();
+
+function changed(){
+  const sol=solve();
+  let litCount=0, batI=0, hasBat=false, short=false;
+  for(const e of elems){const r=sol.get(e.id); e.I=r.I; e.P=r.P;
+    if(e.type==='bulb'&&e.P>LIT) litCount++;
+    if(e.type==='battery'){hasBat=true; batI=Math.max(batI,Math.abs(e.I)); if(Math.abs(e.I)>8) short=true;}
+  }
+  state={short,flowing:batI>0.05,litCount,hasBattery:hasBat};
+  // material tests
+  for(const m of elems.filter(e=>e.type==='material')){
+    const sA=solve({id:m.id,mode:'conduct'}), sB=solve({id:m.id,mode:'remove'});
+    let valid=false;
+    for(const e of elems) if(e.type==='bulb'){ if(sA.get(e.id).P>LIT && sB.get(e.id).P<LIT) valid=true; }
+    if(valid && !tested[m.mat]){ tested[m.mat]=true; const M=MATS[m.mat];
+      toast(M.name+': '+(M.cond?'the bulb lit, so it is a conductor. ':'the bulb stayed dark, so it is an insulator. ')+M.why);
+    }
+  }
+  // challenges
+  if(litCount>0) chal.lit=true;
+  if(litCount>=2) chal.two=true;
+  for(const e of elems) if(e.type==='switch'&&e.closed&&Math.abs(e.I)>0.05&&litCount>0) chal.sw=true;
+  if(Object.keys(tested).length===MAT_ORDER.length) chal.tested=true;
+  if(tested.lead) chal.lead=true;
+  renderStatus(); renderChal(); updateHint();
+}
+
+/* ---------- Status ---------- */
+const statusEl=document.getElementById('status'), sT=document.getElementById('statusT'), sS=document.getElementById('statusS'), energy=document.getElementById('energy');
+function renderStatus(){
+  // loose ends only count in the part of the circuit that touches a battery
+  const reach=liveSet; reach.clear(); const stack=[]; for(const e of elems) if(e.type==='battery'){stack.push(e.a,e.b);}
+  while(stack.length){const v=stack.pop(); if(reach.has(v)) continue; reach.add(v); for(const e of elemsAt(v)){stack.push(e.a,e.b);}}
+  const loose=[...reach].filter(v=>degree(v)===1).length;
+  let cls='open', t, s;
+  if(!elems.some(e=>e.type!=='material')){t='Start building'; s='Drag a battery, a light bulb, and wires onto the workbench.';}
+  else if(!state.hasBattery){t='No energy source'; s='Add a battery. It gives the push that makes current flow.';}
+  else if(state.short){cls='short'; t='Short circuit!'; s='Current is skipping the bulb through wire alone. The battery is overheating. Move the bulb into that path or delete a wire.';}
+  else if(state.flowing){cls='ok'; t='Closed circuit: current is flowing';
+    s=state.litCount===0?'Current flows, but no bulb is in the loop.':(state.litCount===1?'The loop is complete, so the bulb lights.':state.litCount+' bulbs are lit.');}
+  else { t='Open circuit: no current';
+    const openSw=elems.some(e=>e.type==='switch'&&!e.closed);
+    s=loose?'There is a gap. Look for loose ends (dashed red circles) and connect them.':(openSw?'A switch is open. Tap it to close the loop.':'Something in the loop is blocking current. It might be an insulator.');}
+  statusEl.className='statusbar '+cls; sT.textContent=t; sS.textContent=s;
+  energy.classList.toggle('on',state.flowing&&state.litCount>0&&!state.short);
+}
+const hint=document.getElementById('hint');
+function updateHint(){hint.hidden=elems.length>0;}
+
+const CHAL=[
+  ['lit','Light one bulb with a battery and wires.'],
+  ['sw','Add a switch to your loop and light the bulb with it closed.'],
+  ['swoff','Open the switch to turn the bulb off. What happened to the electrons?'],
+  ['two','Light two bulbs at the same time.'],
+  ['lead','Find the item that conducts even though it is not a metal.'],
+  ['tested','Test all 11 items.']
+];
+function renderChal(){
+  const ul=document.getElementById('chal'); ul.innerHTML=''; let d=0;
+  for(const [k,txt] of CHAL){const li=document.createElement('li'); if(chal[k]){li.className='done'; d++;} li.innerHTML='<span class="box"></span><span class="txt">'+txt+(k==='tested'?' ('+Object.keys(tested).length+' of '+MAT_ORDER.length+')':'')+'</span>'; ul.appendChild(li);}
+  document.getElementById('chalCount').textContent=d+' of '+CHAL.length;
+}
+
+/* ---------- Drawing ---------- */
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+let scale=1, dpr=1;
+function resize(){
+  const r=cv.getBoundingClientRect(); dpr=window.devicePixelRatio||1; scale=r.width/W;
+  cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.width*H/W*dpr);
+  document.querySelector('.lab').style.setProperty('--stageH',(r.height+76)+'px');
+}
+new ResizeObserver(resize).observe(cv);
+
+function lead(c,x1,x2){c.beginPath(); c.moveTo(x1,0); c.lineTo(x2,0); c.stroke();}
+function copperStroke(c,w){c.lineCap='round'; c.strokeStyle='#6b3a17'; c.lineWidth=w+3;}
+function drawLeads(c,L,bw){
+  copperStroke(c,8); lead(c,-L/2,-bw/2); lead(c,bw/2,L/2);
+  c.strokeStyle='#c87533'; c.lineWidth=8; lead(c,-L/2,-bw/2); lead(c,bw/2,L/2);
+  c.strokeStyle='rgba(255,220,180,.55)'; c.lineWidth=2; c.beginPath(); c.moveTo(-L/2,-2); c.lineTo(-bw/2,-2); c.moveTo(bw/2,-2); c.lineTo(L/2,-2); c.stroke();
+}
+function rr(c,x,y,w,h,r){c.beginPath(); c.roundRect?c.roundRect(x,y,w,h,r):c.rect(x,y,w,h);}
+function clipJaw(c,x,dir){ // small alligator clip
+  c.fillStyle='#3a3f47'; c.beginPath(); c.moveTo(x,-7); c.lineTo(x+dir*10,-3); c.lineTo(x+dir*10,3); c.lineTo(x,7); c.closePath(); c.fill();
+  c.fillStyle='#9aa3ad'; c.fillRect(x+dir*2-1.5,-4,3,8);
+}
+const DRAW={
+  wire(c,L){ copperStroke(c,9); lead(c,-L/2,L/2); c.strokeStyle='#c87533'; c.lineWidth=9; lead(c,-L/2,L/2);
+    c.strokeStyle='rgba(255,220,180,.6)'; c.lineWidth=2; c.beginPath(); c.moveTo(-L/2+3,-2.5); c.lineTo(L/2-3,-2.5); c.stroke(); },
+  battery(c,L,e,hot){ drawLeads(c,L,76);
+    if(hot){const g=c.createRadialGradient(0,0,5,0,0,70); g.addColorStop(0,'rgba(255,90,0,.8)'); g.addColorStop(1,'rgba(255,90,0,0)'); c.fillStyle=g; c.fillRect(-80,-70,160,140);
+      c.fillStyle='rgba(255,170,0,.95)'; const t=performance.now()/120; c.beginPath(); for(let k=-2;k<=2;k++){const x=k*12, h=26+8*Math.sin(t+k*2); c.moveTo(x-7,-12); c.quadraticCurveTo(x-6,-12-h*.6,x,-12-h); c.quadraticCurveTo(x+6,-12-h*.6,x+7,-12);} c.fill();}
+    rr(c,-38,-14,58,28,4); c.fillStyle='#1d1f24'; c.fill();
+    rr(c,18,-14,18,28,3); c.fillStyle='#e0a03a'; c.fill();
+    c.fillStyle='#c9c9c9'; c.fillRect(36,-6,4,12);
+    c.fillStyle='rgba(255,255,255,.18)'; c.fillRect(-36,-11,72,5);
+    c.fillStyle='#fff'; c.font='800 11px Poppins, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('9 V',-10,1);
+    c.fillStyle='#1d1f24'; c.font='800 14px Poppins, sans-serif'; c.fillText('+',27,1);
+    c.fillStyle='#fff'; c.fillText('−',-30,0);
+  },
+  bulb(c,L,e){ drawLeads(c,L,26); const b=Math.min(1,(e?e.P:0)/PMAX);
+    if(b>0.02){const g=c.createRadialGradient(0,-42,6,0,-42,26+70*b); g.addColorStop(0,'rgba(255,240,140,'+(0.95*b+.05)+')'); g.addColorStop(1,'rgba(255,220,80,0)'); c.fillStyle=g; c.beginPath(); c.arc(0,-42,26+70*b,0,7); c.fill();}
+    // base
+    rr(c,-13,-20,26,20,3); c.fillStyle='#8d949c'; c.fill(); c.strokeStyle='#5b6168'; c.lineWidth=1.5; for(let y=-16;y<0;y+=5){c.beginPath(); c.moveTo(-13,y); c.lineTo(13,y); c.stroke();}
+    c.fillStyle='#2d3036'; c.fillRect(-5,-2,10,4);
+    // glass
+    c.beginPath(); c.moveTo(-10,-20); c.bezierCurveTo(-12,-28,-22,-34,-22,-46); c.arc(0,-46,22,Math.PI,0); c.bezierCurveTo(22,-34,12,-28,10,-20); c.closePath();
+    c.fillStyle=b>0.02?'rgba(255,245,170,'+(0.35+0.6*b)+')':'rgba(230,240,255,.35)'; c.fill(); c.strokeStyle='rgba(60,70,90,.65)'; c.lineWidth=1.6; c.stroke();
+    // filament
+    c.strokeStyle=b>0.02?'#ffb300':'#555'; c.lineWidth=1.6; c.beginPath(); c.moveTo(-6,-20); c.lineTo(-6,-42); for(let k=0;k<5;k++){c.lineTo(-6+k*3,-46-(k%2)*4);} c.lineTo(6,-42); c.lineTo(6,-20); c.stroke();
+  },
+  switch(c,L,e){ drawLeads(c,L,60); const closed=e?e.closed:true;
+    rr(c,-34,4,68,10,3); c.fillStyle='#b98a5a'; c.fill();
+    c.fillStyle='#3a3f47'; c.beginPath(); c.arc(-24,0,5,0,7); c.arc(24,0,5,0,7); c.fill();
+    c.save(); c.translate(-24,0); c.rotate(closed?0:-0.62); copperStroke(c,6); lead(c,0,50); c.strokeStyle='#c87533'; c.lineWidth=6; lead(c,0,50);
+    c.fillStyle='#222'; rr(c,40,-5,14,10,3); c.fill(); c.restore();
+    c.fillStyle='#ddd'; c.beginPath(); c.arc(-24,0,2.2,0,7); c.fill();
+  },
+  material(c,L,e,_,mat){ const k=e?e.mat:mat; MAT_DRAW[k](c); }
+};
+function clipShape(c,col,w){ c.lineJoin='round'; c.lineCap='round'; c.strokeStyle=col; c.lineWidth=w;
+  c.beginPath(); c.moveTo(-26,6); c.lineTo(22,6); c.arc(22,0,6,Math.PI/2,-Math.PI/2,true); c.lineTo(-30,-6); c.arc(-30,-1,5,-Math.PI/2,Math.PI/2,true); c.lineTo(16,4); c.arc(16,1,3,Math.PI/2,-Math.PI/2,true); c.lineTo(-20,-2); c.stroke(); }
+const MAT_DRAW={
+  clip(c){clipShape(c,'#5f666e',4.2); clipShape(c,'#b9c1c9',2.4);},
+  coatclip(c){clipShape(c,'#3b4f86',5.2); clipShape(c,'#6f88c9',2.6);},
+  coin(c){const g=c.createRadialGradient(-5,-5,2,0,0,18); g.addColorStop(0,'#f1b07a'); g.addColorStop(1,'#a2541f'); c.fillStyle=g; c.beginPath(); c.arc(0,0,17,0,7); c.fill(); c.strokeStyle='#7a3c12'; c.lineWidth=1.5; c.stroke(); c.beginPath(); c.arc(0,0,12.5,0,7); c.strokeStyle='rgba(122,60,18,.6)'; c.stroke(); c.fillStyle='#7a3c12'; c.font='800 10px Poppins, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('1¢',0,1);},
+  toycoin(c){const g=c.createRadialGradient(-5,-5,2,0,0,18); g.addColorStop(0,'#fff0a0'); g.addColorStop(1,'#c4931d'); c.fillStyle=g; c.beginPath(); c.arc(0,0,17,0,7); c.fill(); c.strokeStyle='#8a6410'; c.lineWidth=1.5; c.stroke();
+    c.fillStyle='#a87b14'; c.beginPath(); for(let i=0;i<10;i++){const r=i%2?4:9, a=-Math.PI/2+i*Math.PI/5; c.lineTo(Math.cos(a)*r,Math.sin(a)*r);} c.closePath(); c.fill();},
+  foil(c){c.fillStyle='#cfd5db'; c.beginPath(); const p=[[-34,-9],[-20,-12],[-8,-8],[6,-12],[20,-9],[34,-11],[36,9],[22,12],[8,8],[-6,12],[-20,9],[-35,11]]; p.forEach((q,i)=>i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1])); c.closePath(); c.fill(); c.strokeStyle='#8e979f'; c.lineWidth=1; c.stroke();
+    c.strokeStyle='rgba(255,255,255,.9)'; c.lineWidth=1.5; c.beginPath(); c.moveTo(-26,-6); c.lineTo(-14,4); c.moveTo(0,-7); c.lineTo(10,5); c.moveTo(18,-5); c.lineTo(28,6); c.stroke(); c.strokeStyle='rgba(90,100,110,.5)'; c.beginPath(); c.moveTo(-14,-8); c.lineTo(-4,8); c.moveTo(12,-8); c.lineTo(20,8); c.stroke();},
+  ribbon(c){const g=c.createLinearGradient(-36,0,36,0); g.addColorStop(0,'#c9ced6'); g.addColorStop(.3,'#f4f6fa'); g.addColorStop(.5,'#a9b1bf'); g.addColorStop(.75,'#eef1f6'); g.addColorStop(1,'#9aa4b4'); c.fillStyle=g;
+    c.beginPath(); c.moveTo(-36,-6); c.bezierCurveTo(-18,-14,0,2,36,-6); c.lineTo(36,5); c.bezierCurveTo(0,13,-18,-3,-36,5); c.closePath(); c.fill(); c.strokeStyle='#7e8796'; c.lineWidth=1; c.stroke();
+    c.strokeStyle='rgba(255,255,255,.9)'; c.lineWidth=1.4; c.beginPath(); c.moveTo(-30,-3); c.bezierCurveTo(-14,-9,0,3,30,-3); c.stroke();},
+  key(c){c.fillStyle='#d4a640'; c.strokeStyle='#8b6a1d'; c.lineWidth=1.4; c.beginPath(); c.arc(-24,0,12,0,7); c.fill(); c.stroke();
+    c.fillStyle=getComputedStyle(cv.parentElement).backgroundColor; c.globalCompositeOperation='destination-out'; c.beginPath(); c.arc(-28,0,4,0,7); c.fill(); c.globalCompositeOperation='source-over';
+    c.fillStyle='#d4a640'; c.beginPath(); c.moveTo(-13,-4); c.lineTo(34,-4); c.lineTo(34,2); c.lineTo(30,2); c.lineTo(28,7); c.lineTo(24,2); c.lineTo(20,8); c.lineTo(16,2); c.lineTo(12,6); c.lineTo(8,2); c.lineTo(-13,2); c.closePath(); c.fill(); c.stroke();},
+  glass(c){rr(c,-36,-7,72,14,7); c.fillStyle='rgba(190,230,240,.55)'; c.fill(); c.strokeStyle='rgba(90,140,160,.9)'; c.lineWidth=1.4; c.stroke(); c.strokeStyle='rgba(255,255,255,.95)'; c.lineWidth=2; c.beginPath(); c.moveTo(-30,-3); c.lineTo(30,-3); c.stroke();},
+  lead(c){rr(c,-36,-3.5,72,7,3.5); const g=c.createLinearGradient(0,-4,0,4); g.addColorStop(0,'#8a8f96'); g.addColorStop(.4,'#4b5057'); g.addColorStop(1,'#2a2d31'); c.fillStyle=g; c.fill();},
+  tile(c){rr(c,-30,-15,60,30,4); const g=c.createLinearGradient(-30,-15,30,15); g.addColorStop(0,'#ffffff'); g.addColorStop(1,'#dde3ea'); c.fillStyle=g; c.fill(); c.strokeStyle='#97a3b2'; c.lineWidth=1.4; c.stroke();
+    c.strokeStyle='#4f78b5'; c.lineWidth=1.6; c.beginPath(); c.moveTo(-18,0); c.lineTo(0,-9); c.lineTo(18,0); c.lineTo(0,9); c.closePath(); c.stroke(); c.beginPath(); c.arc(0,0,3,0,7); c.stroke();},
+  bill(c){rr(c,-34,-15,68,30,2); c.fillStyle='#cfe3c4'; c.fill(); c.strokeStyle='#4e7a45'; c.lineWidth=1.6; c.stroke(); rr(c,-30,-11,60,22,2); c.strokeStyle='rgba(78,122,69,.6)'; c.lineWidth=1; c.stroke();
+    c.beginPath(); c.ellipse(0,0,9,9,0,0,7); c.fillStyle='#9cc08f'; c.fill(); c.stroke(); c.fillStyle='#355b2e'; c.font='800 9px Poppins, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('1',-24,-6); c.fillText('1',24,6);}
+};
+
+const opt={elec:true,labels:true};
+let sel=null; // {kind:'elem'|'vert', id}
+let snapTarget=null;
+function drawScene(t){
+  ctx.setTransform(dpr*scale,0,0,dpr*scale,0,0);
+  ctx.clearRect(0,0,W,H);
+  // grid dots
+  ctx.fillStyle='rgba(255,255,255,.18)'; for(let x=20;x<W;x+=40) for(let y=20;y<H;y+=40){ctx.fillRect(x-1,y-1,2,2);}
+  for(const e of elems){
+    const A=verts.get(e.a), B=verts.get(e.b), L=Math.hypot(B.x-A.x,B.y-A.y), ang=Math.atan2(B.y-A.y,B.x-A.x);
+    ctx.save(); ctx.translate((A.x+B.x)/2,(A.y+B.y)/2); ctx.rotate(ang);
+    if(sel&&sel.kind==='elem'&&sel.id===e.id){ctx.strokeStyle='rgba(255,255,255,.75)'; ctx.lineWidth=26; ctx.lineCap='round'; lead(ctx,-L/2,L/2);}
+    DRAW[e.type](ctx,L,e,state.short&&e.type==='battery'&&Math.abs(e.I)>8);
+    ctx.restore();
+  }
+  // electrons
+  if(opt.elec){
+    for(const e of elems){ if(Math.abs(e.I)<0.02) continue;
+      const A=verts.get(e.a), B=verts.get(e.b), L=Math.hypot(B.x-A.x,B.y-A.y); if(L<1) continue;
+      const ux=(B.x-A.x)/L, uy=(B.y-A.y)/L, sp=22;
+      const ph=((e.phase%sp)+sp)%sp;
+      for(let s=ph;s<L;s+=sp){ const x=A.x+ux*s, y=A.y+uy*s;
+        ctx.beginPath(); ctx.arc(x,y,5,0,7); ctx.fillStyle='#4fb3ff'; ctx.fill(); ctx.strokeStyle='#0c4f86'; ctx.lineWidth=1.2; ctx.stroke();
+        ctx.strokeStyle='#08355c'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(x-2.5,y); ctx.lineTo(x+2.5,y); ctx.stroke(); }
+    }
+  }
+  // vertices
+  const pulse=0.5+0.5*Math.sin(t/260);
+  for(const v of verts.values()){ const d=degree(v.id);
+    if(d===1){ const live=liveSet.has(v.id); ctx.setLineDash([4,3]); ctx.strokeStyle=live?(C.bad||'#c0392b'):'rgba(30,40,60,.35)'; ctx.lineWidth=2.2; ctx.beginPath(); ctx.arc(v.x,v.y,live?12+pulse*1.5:11,0,7); ctx.stroke(); ctx.setLineDash([]); }
+    else { ctx.fillStyle='#3a2410'; ctx.beginPath(); ctx.arc(v.x,v.y,5,0,7); ctx.fill(); }
+    if(sel&&sel.kind==='vert'&&sel.id===v.id){ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(v.x,v.y,14,0,7); ctx.stroke();}
+  }
+  if(snapTarget){const v=verts.get(snapTarget); if(v){ctx.strokeStyle=C.good||'#1f8a4c'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(v.x,v.y,16,0,7); ctx.stroke();}}
+  // labels
+  if(opt.labels){ ctx.font='700 16px Poppins, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(const e of elems){ if(e.type==='wire') continue; const A=verts.get(e.a), B=verts.get(e.b);
+      const mx=(A.x+B.x)/2, my=(A.y+B.y)/2; const ang=Math.atan2(B.y-A.y,B.x-A.x);
+      let nx=-Math.sin(ang), ny=Math.cos(ang); // perpendicular (local +y)
+      const off=e.type==='material'?24:30; ctx.font=(e.type==='material'?'700 14px':'700 16px')+' Poppins, sans-serif'; const lx=mx+nx*off, ly=my+ny*off;
+      const txt=elName(e)+(e.type==='switch'?(e.closed?' (closed)':' (open)'):'');
+      const w=ctx.measureText(txt).width+12; ctx.fillStyle='rgba(0,0,0,.0)';
+      ctx.fillStyle=C['stage-ink']||'#1d2a3d'; ctx.globalAlpha=.92; ctx.fillText(txt,lx,ly); ctx.globalAlpha=1; }
+  }
+}
+let last=performance.now();
+function loop(t){ const dt=Math.min(0.05,(t-last)/1000); last=t;
+  for(const e of elems){ if(Math.abs(e.I)<0.02) continue; let v=Math.min(Math.abs(e.I)*110,state.short?320:180); v=Math.max(v,25); e.phase+=(e.I>0?-1:1)*v*dt; }
+  if(cv.width) drawScene(t); requestAnimationFrame(loop);}
+
+/* ---------- Hit testing ---------- */
+function toWorld(ev){const r=cv.getBoundingClientRect(); return {x:(ev.clientX-r.left)/scale, y:(ev.clientY-r.top)/scale};}
+function hitVert(p,excl){ const R=Math.max(16,18/scale); let best=null,bd=R;
+  for(const v of verts.values()){ if(excl&&excl.has(v.id)) continue; const d=Math.hypot(v.x-p.x,v.y-p.y); if(d<bd){bd=d;best=v;} } return best; }
+function hitElem(p){ for(let i=elems.length-1;i>=0;i--){ const e=elems[i], A=verts.get(e.a), B=verts.get(e.b);
+    const L=Math.hypot(B.x-A.x,B.y-A.y)||1, ang=Math.atan2(B.y-A.y,B.x-A.x); const dx=p.x-(A.x+B.x)/2, dy=p.y-(A.y+B.y)/2;
+    const lx=dx*Math.cos(ang)+dy*Math.sin(ang), ly=-dx*Math.sin(ang)+dy*Math.cos(ang);
+    const hh=e.type==='wire'?Math.max(10,14/scale):20;
+    if(Math.abs(lx)<=L/2&&Math.abs(ly)<=hh) return e;
+    if(e.type==='bulb'&&Math.hypot(lx,ly+40)<26) return e;
+    if(e.type==='switch'&&lx>-30&&lx<30&&ly>-34&&ly<4) return e; }
+  return null; }
+
+/* ---------- Pointer interaction on canvas ---------- */
+let drag=null;
+cv.addEventListener('pointerdown',ev=>{
+  const p=toWorld(ev); const v=hitVert(p);
+  if(v){ drag={kind:'vert',id:v.id,start:p,moved:false}; }
+  else { const e=hitElem(p); if(e) drag={kind:'elem',id:e.id,start:p,last:p,moved:false}; else { select(null); return; } }
+  cv.setPointerCapture(ev.pointerId); ev.preventDefault();
+});
+cv.addEventListener('pointermove',ev=>{
+  const p=toWorld(ev);
+  if(!drag){ cv.style.cursor=(hitVert(p)||hitElem(p))?'grab':'default'; return; }
+  if(!drag.moved && Math.hypot(p.x-drag.start.x,p.y-drag.start.y)*scale<5) return;
+  drag.moved=true; cv.style.cursor='grabbing';
+  if(drag.kind==='vert'){ const v=verts.get(drag.id); v.x=clampX(p.x); v.y=clampY(p.y);
+    // keep components from collapsing
+    const m0=elemsAt(v.id).find(e=>e.type==='material');
+    if(m0){ const o=verts.get(m0.a===v.id?m0.b:m0.a), len=MATLEN[m0.mat], d=Math.hypot(v.x-o.x,v.y-o.y)||1; v.x=o.x+(v.x-o.x)/d*len; v.y=o.y+(v.y-o.y)/d*len; enforceRigid(new Set([v.id])); }
+    for(const e of elemsAt(v.id)){ if(e.type==='wire'||e.type==='material') continue; const o=verts.get(e.a===v.id?e.b:e.a); const d=Math.hypot(v.x-o.x,v.y-o.y), min=e.type==='material'?104:(e.type==='battery'?88:72);
+      if(d<min){ const ux=d?(v.x-o.x)/d:1, uy=d?(v.y-o.y)/d:0; v.x=o.x+ux*min; v.y=o.y+uy*min; } }
+    const excl=new Set([v.id]); for(const e of elemsAt(v.id)) {excl.add(e.a); excl.add(e.b);}
+    const tgt=hitVert(v,excl); snapTarget=tgt?tgt.id:null;
+  } else { const e=elems.find(x=>x.id===drag.id); let dx=p.x-drag.last.x, dy=p.y-drag.last.y; drag.last=p;
+    const A=verts.get(e.a), B=verts.get(e.b);
+    dx=Math.max(14-Math.min(A.x,B.x),Math.min(W-14-Math.max(A.x,B.x),dx)); dy=Math.max(14-Math.min(A.y,B.y),Math.min(H-14-Math.max(A.y,B.y),dy));
+    A.x+=dx;A.y+=dy;B.x+=dx;B.y+=dy; enforceRigid(new Set([e.a,e.b]));
+    snapTarget=null; for(const vid of [e.a,e.b]){ const vv=verts.get(vid); const excl=new Set([e.a,e.b]); for(const x of elemsAt(vid)){excl.add(x.a);excl.add(x.b);} const t=hitVert(vv,excl); if(t){snapTarget=t.id;break;} }
+  }
+});
+function endDrag(ev){
+  if(!drag) return; const d=drag; drag=null; snapTarget=null; cv.style.cursor='default';
+  if(!d.moved){ // tap
+    if(d.kind==='elem'){ const e=elems.find(x=>x.id===d.id); if(e.type==='switch') toggleSwitch(e); select({kind:'elem',id:d.id}); }
+    else { select(degree(d.id)>1?{kind:'vert',id:d.id}:null); }
+    return; }
+  if(d.kind==='vert') trySnap(d.id);
+  else { const e=elems.find(x=>x.id===d.id); if(e){ trySnap(e.a); if(verts.has(e.b)) trySnap(e.b); } }
+  select(null); changed();
+}
+cv.addEventListener('pointerup',endDrag); cv.addEventListener('pointercancel',endDrag);
+
+function trySnap(vid){ const v=verts.get(vid); if(!v) return;
+  const excl=new Set([vid]); for(const e of elemsAt(vid)){excl.add(e.a);excl.add(e.b);}
+  const t=hitVert(v,excl); if(!t) return;
+  // don't create two connections between the same pair of vertices through one element
+  for(const e of elems){ if(e.a===vid) e.a=t.id; if(e.b===vid) e.b=t.id; }
+  verts.delete(vid); enforceRigid(new Set([t.id])); changed();
+}
+function enforceRigid(fixed){
+  for(const e of elems){ if(e.type!=='material') continue; const len=MATLEN[e.mat];
+    let A=verts.get(e.a), B=verts.get(e.b); if(fixed.has(e.b)&&!fixed.has(e.a)){const t=A;A=B;B=t;}
+    if(fixed.has(e.a)&&fixed.has(e.b)) continue;
+    const d=Math.hypot(B.x-A.x,B.y-A.y); if(Math.abs(d-len)<0.5) continue;
+    const ux=d?(B.x-A.x)/d:1, uy=d?(B.y-A.y)/d:0; B.x=A.x+ux*len; B.y=A.y+uy*len; }
+}
+function toggleSwitch(e){
+  const wasCarrying=Math.abs(e.I)>0.05 && state.litCount>0;
+  e.closed=!e.closed; changed();
+  if(!e.closed && wasCarrying && state.litCount===0){ chal.swoff=true; renderChal(); }
+}
+
+/* ---------- Selection toolbar ---------- */
+const tb=document.getElementById('toolbar'), selLbl=document.getElementById('selLbl'), bT=document.getElementById('btnToggle'), bS=document.getElementById('btnSplit'), bD=document.getElementById('btnDelete');
+function select(s){ sel=s; if(!s){tb.hidden=true; return;}
+  tb.hidden=false;
+  if(s.kind==='elem'){ const e=elems.find(x=>x.id===s.id); selLbl.textContent=elName(e); bS.hidden=true; bD.hidden=false;
+    bT.hidden=e.type!=='switch'; if(e.type==='switch') bT.textContent=e.closed?'Open switch':'Close switch'; }
+  else { selLbl.textContent='Joined ends'; bT.hidden=true; bD.hidden=true; bS.hidden=false; }
+}
+bT.addEventListener('click',()=>{ const e=elems.find(x=>x.id===sel.id); if(e){toggleSwitch(e); select(sel);} });
+bD.addEventListener('click',()=>{ if(sel&&sel.kind==='elem') delElem(sel.id); select(null); });
+bS.addEventListener('click',()=>{ if(sel&&sel.kind==='vert') split(sel.id); select(null); });
+function delElem(id){ const e=elems.find(x=>x.id===id); if(!e) return; elems=elems.filter(x=>x!==e);
+  for(const v of [e.a,e.b]) if(!degree(v)) verts.delete(v); changed(); }
+function split(vid){ const v=verts.get(vid), list=elemsAt(vid); list.slice(1).forEach((e,i)=>{ const o=verts.get(e.a===vid?e.b:e.a); const d=Math.hypot(o.x-v.x,o.y-v.y)||1;
+    const nv=newVert(v.x+(o.x-v.x)/d*24, v.y+(o.y-v.y)/d*24); if(e.a===vid) e.a=nv.id; else e.b=nv.id; }); changed(); }
+document.addEventListener('keydown',ev=>{ if((ev.key==='Delete'||ev.key==='Backspace')&&sel&&sel.kind==='elem'&&document.activeElement===document.body){ delElem(sel.id); select(null);} });
+
+/* ---------- Toast ---------- */
+const toastEl=document.getElementById('toast'); let toastT=0;
+function toast(msg){ toastEl.textContent=msg; toastEl.hidden=false; toastEl.style.opacity=1; clearTimeout(toastT); toastT=setTimeout(()=>{toastEl.style.opacity=0; setTimeout(()=>toastEl.hidden=true,300);},6000); }
+
+/* ---------- Tray ---------- */
+const itemsEl=document.getElementById('items');
+function iconCanvas(type,mat){ const c=document.createElement('canvas'); c.width=156; c.height=80; c.dataset.type=type; if(mat) c.dataset.mat=mat; paintIcon(c); return c; }
+function paintIcon(c){ const x=c.getContext('2d'); x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,c.width,c.height);
+  const type=c.dataset.type, mat=c.dataset.mat; const s=type==='material'?1.7:(type==='wire'?1.4:1.25);
+  x.translate(78,type==='bulb'?58:40); x.scale(s,s);
+  const fake=type==='switch'?{closed:false}:(type==='bulb'?{P:PMAX*0.0}:(mat?{mat}:null));
+  DRAW[type](x,type==='material'?72:(type==='wire'?96:96),fake,false,mat); }
+function redrawIcons(){ document.querySelectorAll('.item canvas').forEach(paintIcon); }
+function buildTray(){ itemsEl.innerHTML='';
+  const list=PARTS.map(p=>({type:p.type,name:p.name})).concat([{head:'Test items'}],MAT_ORDER.map(k=>({type:'material',mat:k,name:MATS[k].name})));
+  for(const it of list){ if(it.head){const h=document.createElement('div'); h.className='trayhead'; h.textContent=it.head; itemsEl.appendChild(h); continue;} const b=document.createElement('button'); b.type='button'; b.className='item'; b.setAttribute('aria-label','Add '+it.name);
+    b.appendChild(iconCanvas(it.type,it.mat)); const sp=document.createElement('span'); sp.textContent=it.name; b.appendChild(sp);
+    b.addEventListener('pointerdown',ev=>startTrayDrag(ev,it,b));
+    b.addEventListener('keydown',ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); placeFree(it);} });
+    itemsEl.appendChild(b); }
+}
+let placeN=0;
+function placeFree(it){ const k=placeN++%8; const cx=W/2+((k%4)-1.5)*60, cy=H/2+(Math.floor(k/4)-0.5)*90+((k%2)?20:-20);
+  addElem(it.type,cx,cy,it.mat?{mat:it.mat}:null); }
+let tdrag=null;
+function startTrayDrag(ev,it,btn){
+  if(ev.button>0) return;
+  tdrag={it,x0:ev.clientX,y0:ev.clientY,moved:false,ghost:null,pid:ev.pointerId,btn};
+  try{btn.setPointerCapture(ev.pointerId);}catch(e){}
+  const mv=e=>{ if(!tdrag) return; if(!tdrag.moved&&Math.hypot(e.clientX-tdrag.x0,e.clientY-tdrag.y0)<6) return;
+    if(!tdrag.moved){ tdrag.moved=true; const g=iconCanvas(it.type,it.mat); g.className='ghost'; g.style.width='110px'; g.style.height='56px'; document.body.appendChild(g); tdrag.ghost=g; }
+    tdrag.ghost.style.left=e.clientX+'px'; tdrag.ghost.style.top=e.clientY+'px'; };
+  const up=e=>{ btn.removeEventListener('pointermove',mv); btn.removeEventListener('pointerup',up); btn.removeEventListener('pointercancel',cancel);
+    const d=tdrag; tdrag=null; if(!d) return; if(d.ghost) d.ghost.remove();
+    if(!d.moved){ placeFree(it); return; }
+    const r=cv.getBoundingClientRect();
+    if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){ const p=toWorld(e); addElem(it.type,p.x,p.y,it.mat?{mat:it.mat}:null); } };
+  const cancel=()=>{ btn.removeEventListener('pointermove',mv); btn.removeEventListener('pointerup',up); btn.removeEventListener('pointercancel',cancel); if(tdrag&&tdrag.ghost) tdrag.ghost.remove(); tdrag=null; };
+  btn.addEventListener('pointermove',mv); btn.addEventListener('pointerup',up); btn.addEventListener('pointercancel',cancel);
+}
+
+/* ---------- Controls ---------- */
+document.getElementById('optElec').addEventListener('change',e=>opt.elec=e.target.checked);
+document.getElementById('optLabels').addEventListener('change',e=>opt.labels=e.target.checked);
+document.getElementById('btnClear').addEventListener('click',()=>{ elems=[]; verts.clear(); select(null); changed(); });
+
+/* ---------- Boot ---------- */
+readColors(); paintThemeBtn(); buildTray(); changed(); resize(); requestAnimationFrame(loop);
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(redrawIcons);
+})();
+</script>
+</body></html>
