@@ -18,7 +18,8 @@
   THE MODEL  (SI units in the readouts; cm for distances on the bench)
     Release heights: 10, 20, 30 ... 80 cm, measured from the bench to where the
     car's back wheels sit. The board's top is clamped at 80 cm and its foot is
-    120 cm from the ring stand (about 34 degrees), so 80 cm is the top.
+    60 cm from the ring stand (about 53 degrees), so 80 cm is the top. The speed
+    at A depends only on the height, so a steeper board gives the same numbers.
       v1 = sqrt(2 * g * h * 0.75)     speed at A (the ramp and wheels take away
                                       about a quarter of the energy; 80 cm gives
                                       3.43 m/s)
@@ -111,11 +112,11 @@ body{margin:0;background:var(--bench)}
   cursor:pointer;display:flex;align-items:center;justify-content:center;align-self:center;flex:none;padding:0}
 .cvlab-theme:hover{border-color:var(--tape)}
 .cvlab-theme svg{width:20px;height:20px}
-.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:112px}
-.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.12em;
+.cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 12px;min-width:126px}
+.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:13px;letter-spacing:.12em;
   text-transform:uppercase;color:#8C9284;white-space:nowrap}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:22px;font-weight:700;color:#DDE3D2;
-  font-variant-numeric:tabular-nums;white-space:nowrap}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:clamp(24px,2.7vw,34px);font-weight:700;color:#DDE3D2;
+  font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.25}
 .cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
 .cvlab-ro-sp .cvlab-ro-v{color:#8FC2FF}
 .cvlab-ro-ke .cvlab-ro-v{color:#FF9C8F}
@@ -123,8 +124,8 @@ body{margin:0;background:var(--bench)}
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 5px 5px;padding:10px 10px 12px}
 .cvlab canvas{display:block;width:100%}
-#cvlab-scene{height:clamp(240px,34vw,600px);border-radius:3px}
-.cvlab-hint{font-family:var(--font-m);font-size:13.5px;letter-spacing:.06em;text-transform:uppercase;
+#cvlab-scene{height:clamp(240px,42vw,700px);border-radius:3px}   /* the script sets the exact height from the width */
+.cvlab-hint{font-family:var(--font-m);font-size:15px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--ink-2);margin-top:6px}
 
 /* the release height buttons */
@@ -450,20 +451,21 @@ body{margin:0;background:var(--bench)}
   var A_SLIDE = MU*GRAV*M_BOX/(M_CAR + M_BOX);   // m/s^2, about 1.67
   var HEIGHTS = [10,20,30,40,50,60,70,80];
   var RAMP_TOP = 80;           // cm, the top of the board is clamped 80 cm up the ring stand
-  var RUN     = 120;           // cm, the board's footprint on the bench
+  var RUN     = 60;            // cm, the board's footprint on the bench (a steep board keeps the scene compact; the speeds don't change)
   var THETA   = Math.atan2(RAMP_TOP, RUN);
   var SIN = Math.sin(THETA), COS = Math.cos(THETA), TAN = Math.tan(THETA);
   var EXTRA   = 6;             // cm of board past the 80 cm mark, where the clamp grips it
   var SLOPE_LEN = Math.hypot(RUN, RAMP_TOP) + EXTRA;   // cm along the board, foot to its top end
   var BOARD_T = 1.8;           // cm, board thickness: the car rides its top face
-  var CAR_L = 12, CAR_H = 3.6, WHEEL_R = 1.1, INSET = 2.1;
+  var CAR_L = 11, CAR_H = 3.6, WHEEL_R = 1.1, INSET = 2.0;
   var CAR_WB = CAR_L - 2*INSET;
-  var BOX_L = 22, BOX_H = 9, WALL = 0.8;     // the box: open at the end facing the ramp
+  var BOX_L = 15, BOX_H = 9, WALL = 0.8;     // the box: open at the end facing the ramp
   var A_X     = 16;            // cm right of the ramp's foot: the box's open end, and 0 on the meter stick
   var GATE_X  = 3;             // the photogate, where the bottom of the ramp meets the bench
   var STICK   = 100;           // one meter stick from A
-  var ROD_X   = -RUN - EXTRA*COS - 3.5, ROD_H = 94;     // the ring stand's rod, just behind the clamp
-  var X0 = ROD_X - 22, X1 = A_X + STICK + BOX_L + 6;     // world window, cm
+  var ROD_X   = -RUN - EXTRA*COS - 3.5, ROD_H = 90;     // the ring stand's rod, just behind the clamp
+  /* world window, cm: the meter stick runs almost to the right edge (room for the box at about 88 cm, the 80 cm run) */
+  var X0 = ROD_X - 20, X1 = A_X + STICK + 5;
   var TOP = ROD_H + 3;   /* the clamp and its rod reach a little above the 80 cm mark */
 
   /* ------------------------------------------------ state */
@@ -700,21 +702,36 @@ body{margin:0;background:var(--bench)}
 
   /* ------------------------------------------------ scene geometry */
   var V = {};
+  var PAD_X = 6, PAD_T = 8;
+  /* the bench top under the bench edge holds the meter stick: its height, the gap above it and the room below it, in px */
+  function stickH(k){ return clamp(8*k, 17, 52); }
+  function belowH(k){ return stickH(k) + clamp(1.2*k, 3, 8) + clamp(2.5*k, 6, 14); }
+  /* the width sets the scale; the canvas is made just tall enough for it (but never taller than about 2/3 of the window) */
+  function sceneHeight(w){
+    var k = (w - 2*PAD_X)/(X1 - X0);
+    var cap = Math.max(240, Math.round((window.innerHeight || 800)*0.68));
+    return Math.max(170, Math.min(cap, Math.ceil(PAD_T + TOP*k + belowH(k))));
+  }
   function geometry(w,h){
     V.w = w; V.h = h; V.compact = w < 620;
-    V.stickH = clamp(h*0.055, 13, 24);
-    var pad = 8;
-    var kw = (w - 2*pad)/(X1 - X0);
-    var kh = (h - V.stickH - 22 - pad)/TOP;
-    V.k = Math.min(kw, kh);
-    V.left = (w - (X1 - X0)*V.k)/2;
-    V.benchY = h - V.stickH - 14;
+    var kw = (w - 2*PAD_X)/(X1 - X0), k = kw;
+    for(var i=0;i<3;i++) k = Math.min(kw, (h - PAD_T - belowH(k))/TOP);
+    V.k = k;
+    V.stickH = stickH(k);
+    V.stickGap = clamp(1.2*k, 3, 8);
+    V.benchY = h - belowH(k);
+    V.left = w - PAD_X - (X1 - X0)*k;     /* right-aligned: the meter stick always reaches the right side */
   }
   function PX(cm){ return V.left + (cm - X0)*V.k; }
   function PY(cm){ return V.benchY - cm*V.k; }
+  /* text sizes grow with the scene: cm tall at this scale, kept between lo and hi px */
+  function fpx(cm, lo, hi){ return Math.round(clamp(cm*V.k, lo, hi)*10)/10; }
+  function font(weight, px){ return weight + " " + px + "px " + FONT; }
 
   /* ------------------------------------------------ the scene */
   function drawScene(){
+    var want = sceneHeight(sceneC.getBoundingClientRect().width);
+    if(Math.abs((parseFloat(sceneC.style.height) || 0) - want) > 1) sceneC.style.height = want + "px";
     var sz = fit(sceneC, sctx), w = sz.w, h = sz.h;
     geometry(w,h);
     var ctx = sctx;
@@ -755,16 +772,18 @@ body{margin:0;background:var(--bench)}
     ctx.strokeStyle = ink; ctx.lineWidth = 1.4;
     ctx.beginPath(); ctx.moveTo(x, PY(0)); ctx.lineTo(x, PY(RAMP_TOP)); ctx.stroke();
     ctx.fillStyle = ink;
-    ctx.font = "700 " + (V.compact ? 8.5 : 11.5) + "px " + FONT;
+    var nf = fpx(4.2, 11, 26), nx = x - 2.6*k;
+    ctx.font = font(800, nf);
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var cm=0; cm<=RAMP_TOP; cm+=5){
       var big = cm % 10 === 0;
       ctx.beginPath(); ctx.moveTo(x, PY(cm)); ctx.lineTo(x - (big ? 2.2 : 1.1)*k, PY(cm)); ctx.stroke();
-      if(big && (!V.compact || cm % 20 === 0)) ctx.fillText(String(cm), x - 2.8*k, PY(cm));
+      if(big && (!V.compact || cm % 20 === 0)) ctx.fillText(String(cm), nx, PY(cm));
     }
+    var tf = fpx(3.0, 10, 18);
     ctx.save();
-    ctx.translate(x - 9*k, PY(RAMP_TOP/2)); ctx.rotate(-Math.PI/2);
-    ctx.textAlign = "center"; ctx.font = "800 " + (V.compact ? 8.5 : 11.5) + "px " + FONT;
+    ctx.translate(nx - ctx.measureText("80").width - 0.6*tf - 4, PY(RAMP_TOP/2)); ctx.rotate(-Math.PI/2);
+    ctx.textAlign = "center"; ctx.font = font(800, tf);
     ctx.fillText("HEIGHT (cm)", 0, 0);
     ctx.restore();
   }
@@ -831,69 +850,75 @@ body{margin:0;background:var(--bench)}
       ctx.beginPath(); ctx.moveTo(PX(p.x), PY(p.y)); ctx.lineTo(PX(p.x + nx*BOARD_T), PY(p.y + ny*BOARD_T)); ctx.stroke();
       if(!V.compact || hh % 20 === 0){
         ctx.fillStyle = css("--ink-2");
-        ctx.font = "800 " + (V.compact ? 8 : 11) + "px " + FONT;
+        ctx.font = font(800, fpx(3.7, 10, 22));
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(String(hh), PX(p.x + nx*(BOARD_T + 3.2)), PY(p.y + ny*(BOARD_T + 3.2)));
+        ctx.fillText(String(hh), PX(p.x + nx*(BOARD_T + 3.6)), PY(p.y + ny*(BOARD_T + 3.6)));
       }
     }
     var r = T(-relH/SIN);
     ctx.save();
-    ctx.setLineDash([5,4]); ctx.strokeStyle = good; ctx.lineWidth = 1.4;
+    ctx.setLineDash([5,4]); ctx.strokeStyle = good; ctx.lineWidth = Math.max(1.4, 0.4*k);
     ctx.beginPath(); ctx.moveTo(PX(ROD_X - 4), PY(relH)); ctx.lineTo(PX(r.x), PY(relH)); ctx.stroke();
     ctx.restore();
-    ctx.strokeStyle = good; ctx.lineWidth = 3;
+    ctx.strokeStyle = good; ctx.lineWidth = Math.max(3, 0.8*k);
     ctx.beginPath(); ctx.moveTo(PX(r.x), PY(r.y)); ctx.lineTo(PX(r.x + nx*(BOARD_T + 1.2)), PY(r.y + ny*(BOARD_T + 1.2))); ctx.stroke();
     if(!V.compact){
+      /* above the dashed line, left of the board when there's room there (low starts), else up and right of the start */
+      var txt = "START " + relH + " cm";
       ctx.fillStyle = good;
-      ctx.font = "800 12px " + FONT;
-      ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      ctx.fillText("START " + relH + " cm", PX(r.x) + 4*k, PY(r.y) - 7*k);
+      ctx.font = font(800, fpx(3.7, 12, 22));
+      ctx.textBaseline = "bottom";
+      var tw = ctx.measureText(txt).width, gapL = PX(r.x) - 3*k - (PX(ROD_X) + 2*k);
+      if(gapL > tw){ ctx.textAlign = "right"; ctx.fillText(txt, PX(r.x) - 3*k, PY(relH) - 2); }
+      else { ctx.textAlign = "left"; ctx.fillText(txt, PX(r.x) + 3*k, PY(r.y) - 3*k); }
     }
   }
 
   /* the meter stick on the bench, 0 cm at A */
   function drawStick(ctx){
-    var k = V.k, y = V.benchY + 4, hh = V.stickH;
+    var k = V.k, y = V.benchY + V.stickGap, hh = V.stickH;
     var g = ctx.createLinearGradient(0,y,0,y+hh);
     g.addColorStop(0,"#F2DFB8"); g.addColorStop(.45,"#E3C48D"); g.addColorStop(1,"#CDA765");
     ctx.fillStyle = g;
     roundRect(ctx, PX(A_X), y, STICK*k, hh, 2); ctx.fill();
     ctx.strokeStyle = "#AE8B49"; ctx.lineWidth = 1; ctx.stroke();
     var minor = k >= 3.2 ? 1 : (k >= 1.6 ? 5 : 10);
-    ctx.strokeStyle = "#4A3A1E"; ctx.lineWidth = 1;
+    ctx.strokeStyle = "#4A3A1E"; ctx.lineWidth = k >= 5 ? 1.4 : 1;
     ctx.beginPath();
     for(var cm=0; cm<=STICK; cm+=minor){
-      var L = (cm%50===0) ? hh*0.66 : ((cm%10===0) ? hh*0.46 : hh*0.24);
+      var L = (cm%50===0) ? hh*0.46 : ((cm%10===0) ? hh*0.34 : ((cm%5===0) ? hh*0.24 : hh*0.15));
       var px = Math.round(PX(A_X + cm)) + 0.5;
       ctx.moveTo(px, y); ctx.lineTo(px, y+L);
     }
     ctx.stroke();
-    var labStep = k >= 3.0 ? 10 : 20;
+    var lf = clamp(hh*0.5, 11, 26);
     ctx.fillStyle = "#3A2E17";
-    ctx.font = "700 " + (V.compact ? 8.5 : 11.5) + "px " + FONT;
+    ctx.font = font(800, lf);
+    var labStep = ctx.measureText("100").width + 6 < 10*k ? 10 : 20;
+    var ly = y + hh - Math.max(1.5, hh*0.06);
+    /* 100 sits at the very end of the stick; it gets a little smaller if it would bump into the label before it */
+    var prev = STICK - labStep, room = PX(A_X + STICK) - 3 - (PX(A_X + prev) + ctx.measureText(String(prev)).width/2 + 5);
+    var lf100 = Math.min(lf, lf*room/ctx.measureText("100").width), skipPrev = lf100 < lf*0.7;
+    if(skipPrev) lf100 = lf;
     ctx.textBaseline = "bottom";
     for(var c=0; c<=STICK; c+=labStep){
+      if(c === prev && skipPrev) continue;
       ctx.textAlign = c === 0 ? "left" : (c === STICK ? "right" : "center");
-      ctx.fillText(String(c), PX(A_X + c) + (c === 0 ? 3 : (c === STICK ? -3 : 0)), y+hh-1.5);
+      if(c === STICK) ctx.font = font(800, Math.round(lf100*10)/10);
+      ctx.fillText(String(c), PX(A_X + c) + (c === 0 ? 3 : (c === STICK ? -3 : 0)), ly);
     }
   }
 
-  /* chalk marks where the box stopped on earlier runs */
+  /* chalk marks where the box stopped on earlier runs (no numbers: the meter stick gives the distance) */
   function drawChalk(ctx){
     var k = V.k;
     for(var i=0;i<marks.length;i++){
       var m = marks[i];
       if(stage === "done" && i === marks.length - 1) continue;   /* the box is sitting on this one */
-      var mx = Math.round(PX(m.x)) + 0.5, tip = V.benchY - (3 + 3.2*(i%3))*k;
-      ctx.globalAlpha = 0.45 + 0.5*(i+1)/marks.length;
-      ctx.strokeStyle = "#F2F3EC"; ctx.lineWidth = 1.4;
+      var mx = Math.round(PX(m.x)) + 0.5, tip = V.benchY - 4*k;
+      ctx.globalAlpha = 0.35 + 0.5*(i+1)/marks.length;
+      ctx.strokeStyle = "#F2F3EC"; ctx.lineWidth = Math.max(1.4, 0.45*k);
       ctx.beginPath(); ctx.moveTo(mx, V.benchY - 1); ctx.lineTo(mx, tip); ctx.stroke();
-      if(!V.compact){
-        ctx.fillStyle = "#E7E9DF";
-        ctx.font = "700 10.5px " + FONT;
-        ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-        ctx.fillText(m.lab, mx, tip - 2);
-      }
       ctx.globalAlpha = 1;
     }
   }
@@ -923,27 +948,28 @@ body{margin:0;background:var(--bench)}
     ctx.setLineDash([]);
     ctx.fillStyle = inGate ? "#FF4A3D" : "#7C3A38";
     ctx.beginPath(); ctx.arc(x, base - hgt + 0.7*k, 0.5*k, 0, Math.PI*2); ctx.fill();
-    if(!V.compact){
-      ctx.fillStyle = css("--ink-2");
-      ctx.font = "800 " + 11 + "px " + FONT;
-      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-      ctx.fillText("PHOTOGATE", x, base - hgt - 4);
-    }
+    /* its name on the front of the bench, under the gate and just left of the meter stick */
+    ctx.fillStyle = "#C9CEC2";
+    ctx.font = font(800, fpx(3.1, 10, 19));
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.fillText("PHOTOGATE", PX(A_X) - 2*k - 4, V.benchY + V.stickGap + V.stickH/2);
   }
 
   /* A: where the box starts; B: where it stopped */
+  function abTop(){ return PY(BOX_H + 3.6); }        /* the bottom of the A and B letters */
+  function abFont(){ return fpx(5.6, 14, 32); }
   function drawAB(ctx){
     var k = V.k, red = css("--red");
-    var yTop = PY(BOX_H + 4.5);
+    var yTop = abTop();
     ctx.save();
-    ctx.setLineDash([4,3]); ctx.strokeStyle = red; ctx.lineWidth = 1.3;
-    ctx.beginPath(); ctx.moveTo(PX(A_X)+0.5, yTop + 4); ctx.lineTo(PX(A_X)+0.5, V.benchY); ctx.stroke();
+    ctx.setLineDash([4,3]); ctx.strokeStyle = red; ctx.lineWidth = Math.max(1.3, 0.35*k);
+    ctx.beginPath(); ctx.moveTo(PX(A_X)+0.5, yTop + 4); ctx.lineTo(PX(A_X)+0.5, V.benchY + V.stickGap); ctx.stroke();
     if(stage === "done"){
-      ctx.beginPath(); ctx.moveTo(PX(A_X + travel)+0.5, yTop + 4); ctx.lineTo(PX(A_X + travel)+0.5, V.benchY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(PX(A_X + travel)+0.5, yTop + 4); ctx.lineTo(PX(A_X + travel)+0.5, V.benchY + V.stickGap); ctx.stroke();
     }
     ctx.restore();
     ctx.fillStyle = red;
-    ctx.font = "800 " + (V.compact ? 13 : 18) + "px " + FONT;
+    ctx.font = font(800, abFont());
     ctx.textAlign = "center"; ctx.textBaseline = "bottom";
     ctx.fillText("A", PX(A_X), yTop + 2);
     if(stage === "done") ctx.fillText("B", PX(A_X + travel), yTop + 2);
@@ -987,12 +1013,14 @@ body{margin:0;background:var(--bench)}
     ctx.beginPath(); ctx.moveTo(b.x, b.y - b.h); ctx.lineTo(b.x - 3.2*k, b.y - b.h - 2.2*k);
     ctx.lineTo(b.x - 2.6*k, b.y - b.h - 1.2*k); ctx.lineTo(b.x + 0.4*k, b.y - b.h + 0.6*k); ctx.closePath(); ctx.fill();
     if(k > 2.4 && !V.compact){
-      ctx.fillStyle = "rgba(255,250,236,.85)";
-      ctx.fillRect(b.x + b.w*0.55, b.y - b.h*0.86, b.w*0.30, b.h*0.20);
+      var lf = fpx(2.5, 9, 18);
+      ctx.font = font(800, lf);
+      var lw = ctx.measureText("100 g").width + 0.8*lf, lx = b.x + b.w - wall - 0.6*k - lw;
+      ctx.fillStyle = "rgba(255,250,236,.88)";
+      ctx.fillRect(lx, b.y - b.h + 1.3*k, lw, lf*1.3);
       ctx.fillStyle = "#5B3F17";
-      ctx.font = "800 " + Math.max(7, 0.95*k).toFixed(1) + "px " + FONT;
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("100 g", b.x + b.w*0.70, b.y - b.h*0.76);
+      ctx.fillText("100 g", lx + lw/2, b.y - b.h + 1.3*k + lf*0.68);
     }
   }
 
@@ -1052,26 +1080,27 @@ body{margin:0;background:var(--bench)}
   function drawDistance(ctx){
     if(!run || !run.hit) return;
     var k = V.k, blue = css("--blue");
-    var y = PY(BOX_H + 10);
+    var y = abTop() - abFont()*0.85 - 6;              /* the arrow runs just above the A and B letters */
     var xa = PX(A_X), xb = PX(A_X + travel);
     if(travel > 0.3){
-      ctx.strokeStyle = blue; ctx.fillStyle = blue; ctx.lineWidth = 2;
+      var aw = Math.max(4, 0.9*k);
+      ctx.strokeStyle = blue; ctx.fillStyle = blue; ctx.lineWidth = Math.max(2, 0.5*k);
       ctx.beginPath(); ctx.moveTo(xa, y); ctx.lineTo(xb, y); ctx.stroke();
-      var ah = Math.min(7, (xb - xa)/2);
-      ctx.beginPath(); ctx.moveTo(xb, y); ctx.lineTo(xb - ah, y - 4); ctx.lineTo(xb - ah, y + 4); ctx.closePath(); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(xa, y); ctx.lineTo(xa + ah, y - 4); ctx.lineTo(xa + ah, y + 4); ctx.closePath(); ctx.fill();
+      var ah = Math.min(1.8*aw, (xb - xa)/2);
+      ctx.beginPath(); ctx.moveTo(xb, y); ctx.lineTo(xb - ah, y - aw); ctx.lineTo(xb - ah, y + aw); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(xa, y); ctx.lineTo(xa + ah, y - aw); ctx.lineTo(xa + ah, y + aw); ctx.closePath(); ctx.fill();
     }
     var txt = fmt(travel) + " cm";
-    var fs = V.compact ? 11 : 15;
-    ctx.font = "800 " + fs + "px " + FONT;
+    var fs = fpx(5.2, 13, 30), padX = 0.45*fs, padY = 0.25*fs;
+    ctx.font = font(800, fs);
     var tw = ctx.measureText(txt).width;
-    var lx = clamp((xa + xb)/2 - tw/2, 4, V.w - tw - 10), ly = y - fs - 10;
+    var lx = clamp((xa + xb)/2 - tw/2, padX + 4, V.w - tw - padX - 4), ly = y - fs - padY*2 - 6;
     ctx.fillStyle = css("--paper");
-    roundRect(ctx, lx - 6, ly - 3, tw + 12, fs + 8, 3); ctx.fill();
-    ctx.strokeStyle = blue; ctx.lineWidth = 1.2;
-    roundRect(ctx, lx - 6, ly - 3, tw + 12, fs + 8, 3); ctx.stroke();
+    roundRect(ctx, lx - padX, ly - padY, tw + 2*padX, fs + 2*padY, 4); ctx.fill();
+    ctx.strokeStyle = blue; ctx.lineWidth = Math.max(1.2, 0.35*k);
+    roundRect(ctx, lx - padX, ly - padY, tw + 2*padX, fs + 2*padY, 4); ctx.stroke();
     ctx.fillStyle = blue; ctx.textAlign = "left"; ctx.textBaseline = "top";
-    ctx.fillText(txt, lx, ly + 1);
+    ctx.fillText(txt, lx, ly + fs*0.06);
   }
 
   /* ------------------------------------------------ graphs */
@@ -1098,7 +1127,7 @@ body{margin:0;background:var(--bench)}
   }
   function plot(ctx, canvas, o){
     var sz = fit(canvas, ctx), w = sz.w, h = sz.h;
-    var mL = 52, mR = 14, mT = 14, mB = 44;
+    var mL = 60, mR = 14, mT = 14, mB = 52;
     var pw = w - mL - mR, ph = h - mT - mB;
     var maxX = o.xMin, maxY = 20;
     for(var i=0;i<trials.length;i++){
@@ -1152,13 +1181,13 @@ body{margin:0;background:var(--bench)}
     for(var m=0;m<trials.length;m++){
       var cx = PXg(o.x(trials[m])), cy = PYg(trials[m].d);
       ctx.fillStyle = o.col;
-      ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI*2); ctx.fill();
       ctx.strokeStyle = C.bg; ctx.lineWidth = 1.6;
-      ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI*2); ctx.stroke();
     }
     ctx.restore();
     if(dp){
-      ctx.fillStyle = C.ok; ctx.font = "800 12.5px " + FONT;
+      ctx.fillStyle = C.ok; ctx.font = "800 14px " + FONT;
       ctx.textAlign = "center"; ctx.textBaseline = "bottom";
       var xr = o.x(dp.hi)/o.x(dp.lo);
       ctx.fillText((o.sq ? "speed² ×" + fmt(xr,1) : "speed ×" + fmt(xr,1)), (PXg(o.x(dp.lo)) + PXg(o.x(dp.hi)))/2, PYg(0) - 4);
@@ -1171,23 +1200,23 @@ body{margin:0;background:var(--bench)}
 
     ctx.strokeStyle = C.axis; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(mL+0.5, mT); ctx.lineTo(mL+0.5, mT+ph); ctx.lineTo(mL+pw, mT+ph); ctx.stroke();
-    ctx.fillStyle = C.lab; ctx.font = "700 12px " + FONT;
+    ctx.fillStyle = C.lab; ctx.font = "800 14px " + FONT;
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     for(var y2=0; y2<=maxY+1e-9; y2+=ys) ctx.fillText(String(Math.round(y2)), mL-6, PYg(y2));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
     var dec = xs < 0.1 ? 2 : (xs < 1 ? 1 : 0);
-    for(var x2=0; x2<=maxX+1e-9; x2+=xs) ctx.fillText(x2.toFixed(dec), PXg(x2), mT+ph+5);
+    for(var x2=0; x2<=maxX+1e-9; x2+=xs) ctx.fillText(x2.toFixed(dec), PXg(x2), mT+ph+6);
     ctx.save();
-    ctx.translate(12, mT+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = C.axis; ctx.font = "800 11.5px " + FONT;
+    ctx.translate(13, mT+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = C.axis; ctx.font = "800 13px " + FONT;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("DISTANCE A TO B (cm)", 0, 0);
     ctx.restore();
-    ctx.fillStyle = C.axis; ctx.font = "800 11.5px " + FONT;
+    ctx.fillStyle = C.axis; ctx.font = "800 13px " + FONT;
     ctx.textAlign = "center"; ctx.textBaseline = "top";
-    ctx.fillText(o.label, mL+pw/2, mT+ph+24);
+    ctx.fillText(o.label, mL+pw/2, mT+ph+28);
     if(!trials.length){
-      ctx.fillStyle = C.empty; ctx.font = "700 13.5px " + FONT;
+      ctx.fillStyle = C.empty; ctx.font = "700 15px " + FONT;
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Points land here.", mL+pw/2, mT+ph/2);
     }
