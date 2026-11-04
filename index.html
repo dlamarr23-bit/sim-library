@@ -122,26 +122,8 @@
     max-width: 60ch;
   }
   .hero-pic { display: block; justify-self: end; width: 240px; height: 160px; border-radius: 18px; box-shadow: var(--shadow); }
-  .theme-toggle {
-    position: absolute;
-    top: 18px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-    background: var(--card-bg);
-    color: var(--text);
-    font-size: 17px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow);
-  }
-  .theme-toggle:hover { border-color: var(--accent); }
   @media (max-width: 700px) {
-    .hero-inner { grid-template-columns: minmax(0, 1fr); padding: 26px 70px 26px 20px; }
+    .hero-inner { grid-template-columns: minmax(0, 1fr); padding: 26px 20px; }
     .hero-pic { display: none; }
   }
   main {
@@ -234,11 +216,11 @@
   }
 </style>
 <script>
-  // light or dark before the page draws: the textbook's Sims page names one (?theme=light or dark), else the saved one
+  // light or dark before the page draws: the textbook's Sims page names one (?theme=light or dark), else the
+  // device's setting. The switch is only in the textbook's Class Pass menu (Donny, 2026-11-03), like every other page.
   (function(){
     var t = null;
     try { t = new URLSearchParams(location.search).get('theme'); } catch (e) {}
-    if (t !== 'light' && t !== 'dark') { try { t = localStorage.getItem('sim-library-theme'); } catch (e) {} }
     if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
@@ -251,7 +233,6 @@
       <p class="site-subtitle">Interactive simulations, sorted by the same units and chapters as the book. Pick one to open it.</p>
     </div>
     <img class="hero-pic" src="assets/sims-icon.webp" width="240" height="160" alt="">
-    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
   </div>
 </header>
 <main>
@@ -494,7 +475,6 @@
 <script>
 (function() {
   var root = document.documentElement;
-  var btn = document.getElementById('themeToggle');
   var inFrame = window.parent !== window;
   function current() {
     var t = root.getAttribute('data-theme');
@@ -503,7 +483,6 @@
   // a sim opened from here starts in the same mode (the sims read ?theme= too)
   function show(t) {
     root.setAttribute('data-theme', t);
-    btn.textContent = t === 'dark' ? '☀️' : '🌙';
     document.querySelectorAll('a.sim-card').forEach(function(a) {
       var u = new URL(a.getAttribute('href'), location.href);
       u.searchParams.set('theme', t);
@@ -511,14 +490,7 @@
     });
   }
   if (root.getAttribute('data-theme')) show(root.getAttribute('data-theme'));
-  btn.addEventListener('click', function() {
-    var next = current() === 'dark' ? 'light' : 'dark';
-    show(next);
-    try { localStorage.setItem('sim-library-theme', next); } catch (e) {}
-    // inside the textbook's Sims page: that site switches too
-    if (inFrame) try { window.parent.postMessage({ simTheme: next }, '*'); } catch (e) {}
-  });
-  // the textbook switched its light/dark mode: follow it (not saved, so the library on its own keeps its own choice)
+  // the textbook switched its light/dark mode: follow it
   window.addEventListener('message', function(e) {
     if (!inFrame || e.source !== window.parent) return;
     var t = e.data && e.data.simTheme;
