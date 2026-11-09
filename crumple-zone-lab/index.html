@@ -12,7 +12,7 @@
    At ≥1000px wide it becomes two columns: scene left, controls right. Guides sit below the shell. */
 :root{
   --bg:#EEF1F4; --surface:#FFFFFF; --surface-2:#E4E9EF; --ink:#141A22; --muted:#5A6573; --line:#CED6E0;
-  --accent:#F2B705; --accent-ink:#141A22; --car1:#2F5BD8; --car2:#D23A30; --dummy:#E5A91C; --series2:#E06A12;
+  --accent:#F2B705; --accent-ink:#141A22; --car1:#739ED0; --car2:#D23A30; --dummy:#E5A91C; --series2:#E06A12;
   --good:#1D9A55; --warn:#C98200; --bad:#CF3328;
   --sky:#DCE3EB; --labwall:#E8ECF1; --grid:#C9D2DD; --asphalt:#5A6069; --asphalt-line:#E7EAEE; --concrete:#B8BDC4; --glass:#9FB6CF; --interior:#3A414B;
   --font: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -20,13 +20,13 @@
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0F1318; --surface:#171C23; --surface-2:#222A35; --ink:#EDF1F6; --muted:#9AA6B5; --line:#2D3643;
-  --accent:#F5C02A; --accent-ink:#141A22; --car1:#5B84F0; --car2:#EE5A50; --dummy:#F0B930; --series2:#F59342;
+  --accent:#F5C02A; --accent-ink:#141A22; --car1:#83AFE0; --car2:#EE5A50; --dummy:#F0B930; --series2:#F59342;
   --good:#3CC57A; --warn:#E7A632; --bad:#F0605A;
   --sky:#18202A; --labwall:#1B222B; --grid:#2A3440; --asphalt:#2B3037; --asphalt-line:#6B737D; --concrete:#5A616B; --glass:#3B5068; --interior:#0E1217;
   color-scheme:dark; } }
 :root[data-theme="dark"]{
   --bg:#0F1318; --surface:#171C23; --surface-2:#222A35; --ink:#EDF1F6; --muted:#9AA6B5; --line:#2D3643;
-  --accent:#F5C02A; --accent-ink:#141A22; --car1:#5B84F0; --car2:#EE5A50; --dummy:#F0B930; --series2:#F59342;
+  --accent:#F5C02A; --accent-ink:#141A22; --car1:#83AFE0; --car2:#EE5A50; --dummy:#F0B930; --series2:#F59342;
   --good:#3CC57A; --warn:#E7A632; --bad:#F0605A;
   --sky:#18202A; --labwall:#1B222B; --grid:#2A3440; --asphalt:#2B3037; --asphalt-line:#6B737D; --concrete:#5A616B; --glass:#3B5068; --interior:#0E1217;
   color-scheme:dark; }
@@ -218,7 +218,7 @@ details[open] summary .chev{transform:rotate(-135deg)}
         <div class="row"><label for="style">Body style</label>
           <select id="style" style="grid-column:2/-1">
             <option value="subcompact">Subcompact (950 kg)</option>
-            <option value="sedan" selected>Sedan (1,450 kg)</option>
+            <option value="sedan" selected>Compact sedan (1,450 kg)</option>
             <option value="suv">SUV (2,000 kg)</option>
           </select></div>
         <div class="row"><label for="czLen">Crumple zone length <span class="unit">(cm)</span></label>
@@ -388,9 +388,9 @@ readColors();
 /* ---------------- car geometry ---------------- */
 // local coords: x = meters back from front bumper, y = height above ground (m)
 const STYLES = {
-  subcompact:{ name:'Subcompact', mass:950, L:3.9, top:[[0,.32],[0,.6],[.1,.72],[.85,.92],[1.55,1.48],[3.2,1.48],[3.85,.98],[3.9,.6],[3.9,.32]],
-               glass:[[.98,.97],[1.55,1.4],[3.1,1.4],[3.62,.98]], fw:.72, rw:3.2, wr:.29, hip:2.05 },
-  sedan:{ name:'Sedan', mass:1450, L:4.7, top:[[0,.33],[0,.62],[.14,.74],[1.25,.93],[2.0,1.42],[3.25,1.42],[3.85,1.0],[4.62,.96],[4.7,.62],[4.7,.33]],
+  subcompact:{ name:'Subcompact', mass:950, L:3.9, top:[[0,.32],[0,.56],[.12,.72],[.4,.83],[.95,.94],[1.35,1.35],[1.65,1.51],[2.2,1.57],[3.2,1.52],[3.55,1.38],[3.86,.82],[3.9,.45],[3.9,.32]],
+               glass:[[1.08,.98],[1.65,1.43],[3.12,1.43],[3.52,.98]], fw:.72, rw:3.2, wr:.29, hip:2.05 },
+  sedan:{ name:'Compact sedan', mass:1450, L:4.7, top:[[0,.33],[0,.57],[.14,.74],[.55,.84],[1.25,.93],[1.8,1.36],[2.1,1.47],[2.9,1.47],[3.25,1.4],[3.85,1.0],[4.5,.94],[4.66,.81],[4.7,.43],[4.7,.33]],
           glass:[[1.36,.98],[2.02,1.35],[3.2,1.35],[3.72,1.0]], fw:.85, rw:3.85, wr:.32, hip:2.4 },
   suv:{ name:'SUV', mass:2000, L:4.8, top:[[0,.42],[0,.78],[.12,.92],[1.2,1.1],[1.85,1.74],[4.55,1.74],[4.8,1.2],[4.8,.42]],
         glass:[[1.32,1.15],[1.88,1.66],[4.4,1.66],[4.62,1.18]], fw:.88, rw:3.95, wr:.37, hip:2.3 }
@@ -609,13 +609,23 @@ function drawCar(ctx, o){
   for (let lx=st.L; lx>=0; lx-=.1) ctx.lineTo(X(wx(lx)), Y(yb + (lx<Lz?wig(lx)*.5:0)));
   ctx.lineTo(X(wx(0)), Y(yb)); ctx.closePath();
   ctx.globalAlpha = xray ? .16 : 1; ctx.fillStyle = color; ctx.fill();
-  ctx.globalAlpha = 1; ctx.lineWidth = Math.max(1.5, ppm*.012); ctx.strokeStyle = xray ? color : 'rgba(0,0,0,.28)'; ctx.stroke();
+  ctx.globalAlpha = 1; ctx.lineWidth = Math.max(1.5, ppm*.012); ctx.strokeStyle = xray ? color : '#203650'; ctx.stroke();
+  if (!xray){
+    ctx.clip();
+    const panel = (points, fill) => {
+      ctx.beginPath(); points.forEach(([x,y],i)=>i?ctx.lineTo(X(wx(x)),Y(y+wig(x))):ctx.moveTo(X(wx(x)),Y(y+wig(x))));
+      ctx.closePath(); ctx.fillStyle=fill; ctx.fill();
+    };
+    panel([[0,.75],[st.L,.75],[st.L,.35],[0,.35]], 'rgba(16,38,68,.19)');
+    panel([[0,.82],[st.L,.96],[st.L,.84],[0,.7]], 'rgba(255,255,255,.25)');
+    panel([[0,.26],[st.L,.26],[st.L,.39],[0,.39]], '#31445c');
+  }
   ctx.restore();
 
   // glass + interior
   const gpts = st.glass.map(([lx,ly]) => [X(wx(lx)), Y(ly)]);
   const glassPath = () => { ctx.beginPath(); gpts.forEach(([x,y],i)=> i?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.closePath(); };
-  if (!xray){ glassPath(); ctx.fillStyle = C.interior; ctx.fill(); }
+  if (!xray){ glassPath(); ctx.fillStyle = '#bddbea'; ctx.fill(); }
   // structure (x-ray)
   if (xray){
     const thick = (.035 + o.cfg.czRig/3000*.05)*ppm;
@@ -645,15 +655,60 @@ function drawCar(ctx, o){
     if (!xray){ ctx.restore(); glassPath(); ctx.fillStyle=C.glass; ctx.globalAlpha=.28; ctx.fill(); ctx.globalAlpha=1;
       ctx.lineWidth=Math.max(1.5,ppm*.012); ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.stroke(); }
   }
+  // Cel-style exterior details share the crush map with the body.
+  if (!xray) drawTrim(ctx, o, wx, wig);
   // wheels
   for (const lx of [st.fw, st.rw]){
     const cx = X(wx(lx)), cy = Y(st.wr), rr = st.wr*ppm;
     ctx.beginPath(); ctx.arc(cx,cy,rr,0,Math.PI*2); ctx.fillStyle='#1b1e22'; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx,cy,rr*.58,0,Math.PI*2); ctx.fillStyle='#c9ced5'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,rr*.58,0,Math.PI*2); ctx.fillStyle='#b9c9d8'; ctx.fill();
+    ctx.strokeStyle='#203650'; ctx.lineWidth=Math.max(1,rr*.04); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,rr*.84,0,Math.PI*2); ctx.strokeStyle='#384353'; ctx.lineWidth=rr*.08; ctx.stroke();
     const ang = -o.dist/st.wr;
     ctx.strokeStyle='#6b727b'; ctx.lineWidth=Math.max(1.5,rr*.12);
     for(let k=0;k<5;k++){ const a=ang+k*Math.PI*2/5; ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*rr*.15,cy+Math.sin(a)*rr*.15); ctx.lineTo(cx+Math.cos(a)*rr*.5,cy+Math.sin(a)*rr*.5); ctx.stroke(); }
   }
+}
+
+// All trim is expressed in vehicle meters, so mirrors and crush deformation agree.
+function drawTrim(ctx, o, wx, wig){
+  const {st,X,Y,ppm}=o;
+  const suv=st===STYLES.suv, hatch=st===STYLES.subcompact;
+  const P=(x,y)=>[X(wx(x)),Y(y+wig(x))];
+  const line=(points,color='#203650',width=.012)=>{
+    ctx.beginPath(); points.forEach(([x,y],i)=>i?ctx.lineTo(...P(x,y)):ctx.moveTo(...P(x,y)));
+    ctx.strokeStyle=color; ctx.lineWidth=Math.max(1,ppm*width); ctx.stroke();
+  };
+  const panel=(points,color)=>{
+    ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(...P(x,y)):ctx.moveTo(...P(x,y)));
+    ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#203650';ctx.lineWidth=Math.max(1,ppm*.012);ctx.stroke();
+  };
+  ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+  const belt=st.glass[0][1], pillar=st.hip+.37;
+  line([[pillar,belt],[pillar,st.glass[1][1]]],'#263c55',.065);
+  if(suv) line([[3.55,belt],[3.55,1.66]],'#263c55',.055);
+  const doors=hatch?[pillar]:[pillar,st.glass[3][0]-.1];
+  line([[st.glass[0][0],belt],[st.glass[0][0]+.12,.43],[doors[0],.43],[doors[0],belt]]);
+  for(const d of doors){
+    line([[d,belt],[d,.45]]);
+    if(!hatch && d!==doors[0]) line([[doors[0],.43],[d-.08,.43],[d,.55]]);
+    panel([[d-.36,belt-.13],[d-.12,belt-.13],[d-.12,belt-.19],[d-.36,belt-.19]],'#476b91');
+  }
+  // A-pillar mirror, headlamp, rear lamp and bumper.
+  panel([[st.glass[0][0]-.03,belt+.08],[st.glass[0][0]+.19,belt+.1],[st.glass[0][0]+.21,belt-.06],[st.glass[0][0]-.03,belt-.06]],'#42668b');
+  panel([[.1,.61],[.34,.67],[.37,.76],[.14,.71]],'#f8e6b9');
+  panel([[st.L-.22,.78],[st.L-.04,.74],[st.L-.04,.55],[st.L-.22,.57]],'#d65b51');
+  line([[.04,.4],[.35,.4]],'#203650',.055);
+  line([[st.L-.32,.4],[st.L-.05,.4]],'#203650',.055);
+  for(const x of [st.fw,st.rw]){
+    const points=[];
+    for(let a=0;a<=Math.PI+.01;a+=Math.PI/24) points.push([x+Math.cos(a)*(st.wr+.055),st.wr+Math.sin(a)*(st.wr+.055)]);
+    line(points,suv?'#31445c':'#203650',suv?.07:.025);
+  }
+  if(suv){
+    line([[2.05,1.76],[2.05,1.86],[4.25,1.86],[4.25,1.76]],'#263c55',.045);
+  }
+  ctx.restore();
 }
 
 function drawDummy(ctx, o, wx){
@@ -671,11 +726,24 @@ function drawDummy(ctx, o, wx){
   const ang = base + Math.asin(Math.max(-.3, Math.min(.98, s/.42)));
   const sh = [hipX - Math.sin(ang)*torso, hipY + Math.cos(ang)*torso];
   const hd = [hipX - Math.sin(ang*1.15)*(torso+.2), hipY + Math.cos(ang*1.15)*(torso+.2)];
+  const segment=(a,b,width)=>{
+    ctx.lineCap='round';
+    for(const [w,c] of [[width+.025,'#26364a'],[width,'#e9ae32'],[width*.35,'#f6cd62']]){
+      ctx.beginPath();ctx.moveTo(...P(...a));ctx.lineTo(...P(...b));ctx.lineWidth=ppm*w;ctx.strokeStyle=c;ctx.stroke();
+    }
+  };
+  const joint=(p,r=.045)=>{
+    ctx.beginPath();ctx.arc(...P(...p),ppm*r,0,Math.PI*2);ctx.fillStyle='#657080';ctx.fill();ctx.strokeStyle='#26364a';ctx.lineWidth=Math.max(1,ppm*.012);ctx.stroke();
+    ctx.beginPath();ctx.arc(...P(...p),ppm*r*.4,0,Math.PI*2);ctx.fillStyle='#d7dce0';ctx.fill();
+  };
   ctx.strokeStyle = C.dummy;
   // legs
-  ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(...P(hipX, hipY)); ctx.lineTo(...P(hipX-.45, hipY+.08)); ctx.lineTo(...P(hipX-.62, .22)); ctx.stroke();
-  // torso
-  ctx.lineWidth = lw*1.35; ctx.beginPath(); ctx.moveTo(...P(hipX, hipY)); ctx.lineTo(...P(sh[0], sh[1])); ctx.stroke();
+  segment([hipX,hipY],[hipX-.45,hipY+.08],.13);
+  segment([hipX-.45,hipY+.08],[hipX-.62,.22],.1);
+  joint([hipX-.45,hipY+.08]);
+  segment([hipX,hipY],[sh[0],sh[1]-.04],.19);
+  segment([sh[0],sh[1]],[hd[0],hd[1]-.08],.065);
+  joint([hipX,hipY]);
   // steering wheel
   ctx.strokeStyle = '#2a2f36'; ctx.lineWidth = lw*.55;
   ctx.beginPath(); ctx.moveTo(...P(wheelX-.18, wheelY-.22)); ctx.lineTo(...P(wheelX, wheelY)); ctx.stroke();
@@ -685,7 +753,7 @@ function drawDummy(ctx, o, wx){
   ctx.strokeStyle = C.dummy; ctx.lineWidth = lw*.75;
   const hand = [Math.min(wheelX+.03, sh[0]-.15), wheelY+.08];
   const elbow = [(sh[0]+hand[0])/2+.03, Math.min(sh[1], hand[1]) - .12];
-  ctx.beginPath(); ctx.moveTo(...P(sh[0],sh[1])); ctx.lineTo(...P(elbow[0],elbow[1])); ctx.lineTo(...P(hand[0],hand[1])); ctx.stroke();
+  segment(sh,elbow,.075); segment(elbow,hand,.065); joint(sh); joint(elbow,.035);
   // airbag
   if (cfg.bag && fr.infl > 0){
     const rmax = .24*fr.infl, cx = wheelX + .14, cy = wheelY + .1;
@@ -696,10 +764,18 @@ function drawDummy(ctx, o, wx){
   }
   // head with calibration target
   const [hx,hy] = P(hd[0], hd[1]), hr = .11*ppm;
-  ctx.beginPath(); ctx.arc(hx,hy,hr,0,Math.PI*2); ctx.fillStyle=C.dummy; ctx.fill();
-  ctx.beginPath(); ctx.arc(hx,hy,hr*.5,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
-  ctx.fillStyle='#111'; ctx.beginPath(); ctx.moveTo(hx,hy); ctx.arc(hx,hy,hr*.5,0,Math.PI/2); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(hx,hy); ctx.arc(hx,hy,hr*.5,Math.PI,Math.PI*1.5); ctx.closePath(); ctx.fill();
+  // Profile face turns with the torso; direction also supports mirrored cars.
+  ctx.save();ctx.translate(hx,hy);ctx.scale(o.dir,1);ctx.rotate(-ang*.35);
+  ctx.beginPath();ctx.moveTo(.5*hr,-.85*hr);
+  ctx.bezierCurveTo(-.3*hr,-1.3*hr,-.95*hr,-.85*hr,-.85*hr,-.25*hr);
+  ctx.lineTo(-1.2*hr,.15*hr);ctx.lineTo(-.88*hr,.25*hr);ctx.lineTo(-.8*hr,.65*hr);
+  ctx.quadraticCurveTo(-.4*hr,1.05*hr,.2*hr,.7*hr);
+  ctx.quadraticCurveTo(1.15*hr,.1*hr,.5*hr,-.85*hr);
+  ctx.fillStyle='#edb437';ctx.fill();ctx.strokeStyle='#26364a';ctx.lineWidth=Math.max(1,ppm*.014);ctx.stroke();
+  ctx.beginPath();ctx.arc(-.65*hr,-.22*hr,hr*.07,0,Math.PI*2);ctx.fillStyle='#26364a';ctx.fill();ctx.restore();
+  ctx.beginPath(); ctx.arc(hx+o.dir*hr*.25,hy-hr*.12,hr*.38,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.fillStyle='#111'; ctx.beginPath(); ctx.moveTo(hx+o.dir*hr*.25,hy-hr*.12); ctx.arc(hx+o.dir*hr*.25,hy-hr*.12,hr*.38,0,Math.PI/2); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(hx+o.dir*hr*.25,hy-hr*.12); ctx.arc(hx+o.dir*hr*.25,hy-hr*.12,hr*.38,Math.PI,Math.PI*1.5); ctx.closePath(); ctx.fill();
   // belt
   if (cfg.belt){
     ctx.strokeStyle = '#3d4450'; ctx.lineWidth = Math.max(2, ppm*.035);
