@@ -12,7 +12,7 @@
    At ≥1000px wide it becomes two columns: scene left, controls right. Guides sit below the shell. */
 :root{
   --bg:#EEF1F4; --surface:#FFFFFF; --surface-2:#E4E9EF; --ink:#141A22; --muted:#5A6573; --line:#CED6E0;
-  --accent:#F2B705; --accent-ink:#141A22; --car1:#739ED0; --car2:#D23A30; --dummy:#E5A91C; --series2:#E06A12;
+  --accent:#F2B705; --accent-ink:#141A22; --car1:#87B7E8; --car2:#D23A30; --dummy:#E5A91C; --series2:#E06A12;
   --good:#1D9A55; --warn:#C98200; --bad:#CF3328;
   --sky:#DCE3EB; --labwall:#E8ECF1; --grid:#C9D2DD; --asphalt:#5A6069; --asphalt-line:#E7EAEE; --concrete:#B8BDC4; --glass:#9FB6CF; --interior:#3A414B;
   --font: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -20,13 +20,13 @@
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0F1318; --surface:#171C23; --surface-2:#222A35; --ink:#EDF1F6; --muted:#9AA6B5; --line:#2D3643;
-  --accent:#F5C02A; --accent-ink:#141A22; --car1:#83AFE0; --car2:#EE5A50; --dummy:#F0B930; --series2:#F59342;
+  --accent:#F5C02A; --accent-ink:#141A22; --car1:#87B7E8; --car2:#EE5A50; --dummy:#F0B930; --series2:#F59342;
   --good:#3CC57A; --warn:#E7A632; --bad:#F0605A;
   --sky:#18202A; --labwall:#1B222B; --grid:#2A3440; --asphalt:#2B3037; --asphalt-line:#6B737D; --concrete:#5A616B; --glass:#3B5068; --interior:#0E1217;
   color-scheme:dark; } }
 :root[data-theme="dark"]{
   --bg:#0F1318; --surface:#171C23; --surface-2:#222A35; --ink:#EDF1F6; --muted:#9AA6B5; --line:#2D3643;
-  --accent:#F5C02A; --accent-ink:#141A22; --car1:#83AFE0; --car2:#EE5A50; --dummy:#F0B930; --series2:#F59342;
+  --accent:#F5C02A; --accent-ink:#141A22; --car1:#87B7E8; --car2:#EE5A50; --dummy:#F0B930; --series2:#F59342;
   --good:#3CC57A; --warn:#E7A632; --bad:#F0605A;
   --sky:#18202A; --labwall:#1B222B; --grid:#2A3440; --asphalt:#2B3037; --asphalt-line:#6B737D; --concrete:#5A616B; --glass:#3B5068; --interior:#0E1217;
   color-scheme:dark; }
@@ -68,7 +68,6 @@ h1{margin:0;font-size:clamp(19px,2.4vw,30px);font-weight:800;line-height:1.1;tex
 #scene{display:block;width:100%;height:100%}
 .tag{position:absolute;left:10px;bottom:10px;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
   background:var(--accent);color:var(--accent-ink)}
-.tag.xray{left:auto;right:10px;top:10px;bottom:auto;background:var(--surface);color:var(--ink);border:2px solid var(--line)}
 .overview-wrap{border-radius:10px;overflow:hidden;border:2px solid var(--line);height:42px;flex:none}
 #overview{display:block;width:100%;height:100%}
 .transport{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:none}
@@ -191,7 +190,6 @@ details[open] summary .chev{transform:rotate(-135deg)}
     <div class="scene-wrap">
       <canvas id="scene" aria-label="Side view of the crash"></canvas>
       <span class="tag" id="slowTag" hidden>Slow-mo replay</span>
-      <span class="tag xray" id="xrayTag" hidden>X-ray view</span>
     </div>
     <div class="overview-wrap"><canvas id="overview" aria-label="Overview of the test track"></canvas></div>
     <div class="transport">
@@ -299,7 +297,7 @@ details[open] summary .chev{transform:rotate(-135deg)}
   <details open id="howto">
     <summary>How to use this simulation <span class="chev" aria-hidden="true"></span></summary>
     <div class="dbody"><ol>
-      <li>Open the <strong>Design</strong> tab. Pick a body style. Then set the <strong>crumple zone</strong>, the <strong>safety cell</strong>, the <strong>seat belt</strong>, and the <strong>airbag</strong>. The scene shows an x-ray view so you can see the parts you change.</li>
+      <li>Open the <strong>Design</strong> tab. Pick a body style. Then set the <strong>crumple zone</strong>, the <strong>safety cell</strong>, the <strong>seat belt</strong>, and the <strong>airbag</strong>. The finished car remains visible while you adjust its design. Run a test to see how the crumple zone and restraints respond.</li>
       <li>Open the <strong>Crash test</strong> tab. Choose one car hitting a wall, or two cars hitting head-on. Set each speed. In a two-car crash you can also change car 2's mass.</li>
       <li>Press <strong>Play</strong>. The car drives up at normal speed. The crash itself plays back in <strong>slow motion</strong>, because the real crash lasts only about a tenth of a second.</li>
       <li>Watch the <strong>Time</strong> and <strong>Car 1 speed</strong> readouts. The thin strip under the scene shows the whole test track from above.</li>
@@ -388,28 +386,14 @@ readColors();
 /* ---------------- car geometry ---------------- */
 // local coords: x = meters back from front bumper, y = height above ground (m)
 const STYLES = {
-  subcompact:{ name:'Subcompact', mass:950, L:3.9, top:[[0,.32],[0,.56],[.12,.72],[.4,.83],[.95,.94],[1.35,1.35],[1.65,1.51],[2.2,1.57],[3.2,1.52],[3.55,1.38],[3.86,.82],[3.9,.45],[3.9,.32]],
-               glass:[[1.08,.98],[1.65,1.43],[3.12,1.43],[3.52,.98]], fw:.72, rw:3.2, wr:.29, hip:2.05 },
-  sedan:{ name:'Compact sedan', mass:1450, L:4.7, top:[[0,.33],[0,.57],[.14,.74],[.55,.84],[1.25,.93],[1.8,1.36],[2.1,1.47],[2.9,1.47],[3.25,1.4],[3.85,1.0],[4.5,.94],[4.66,.81],[4.7,.43],[4.7,.33]],
-          glass:[[1.36,.98],[2.02,1.35],[3.2,1.35],[3.72,1.0]], fw:.85, rw:3.85, wr:.32, hip:2.4 },
-  suv:{ name:'SUV', mass:2000, L:4.8, top:[[0,.42],[0,.78],[.12,.92],[1.2,1.1],[1.85,1.74],[4.55,1.74],[4.8,1.2],[4.8,.42]],
-        glass:[[1.32,1.15],[1.88,1.66],[4.4,1.66],[4.62,1.18]], fw:.88, rw:3.95, wr:.37, hip:2.3 }
+  subcompact:{ name:'Subcompact', mass:950, L:3.9, fw:.72, rw:3.2, wr:.29, hip:2.05 },
+  sedan:{ name:'Compact sedan', mass:1450, L:4.7, fw:.85, rw:3.85, wr:.32, hip:2.4 },
+  suv:{ name:'SUV', mass:2000, L:4.8, fw:.88, rw:3.95, wr:.37, hip:2.3 }
 };
 const CAR2 = { L:.7, cz:1000, cell:2500 };
 const CELL = 2.0;      // safety-cell length used for % deformation (m)
 const MD = 75;         // dummy mass (kg)
 const S_BAG = .18, S_WHEEL = .45;
-
-function samplePoly(pts, step){
-  const out=[];
-  for(let i=0;i<pts.length-1;i++){
-    const [x0,y0]=pts[i],[x1,y1]=pts[i+1];
-    const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)/step));
-    for(let k=0;k<n;k++){ const f=k/n; out.push([x0+(x1-x0)*f, y0+(y1-y0)*f]); }
-  }
-  out.push(pts[pts.length-1]); return out;
-}
-for (const k in STYLES){ const s=STYLES[k]; s.topS = samplePoly(s.top,.05); }
 
 /* crush mapping: rear stays put, front region compresses */
 function makeDeform(Lcz, crush){
@@ -548,7 +532,7 @@ function drawScene(){
   if (!run) return;
   const { w:W, h:H, dpr } = fitCanvas(scene);
   const ctx = sctx, fr = frameAt(T), r = run, st = r.st;
-  const ppm = Math.min(H/400, W/1000)*170, groundY = Math.min(H*.83, H/2 + 200*ppm/170);
+  const ppm = Math.min(H/440, W/1150)*170, groundY = Math.min(H*.83, H/2 + 200*ppm/170);
   const anchorScreen = Math.min(W*.22, ppm + 10*dpr);
   const front1 = fr.p1 + fr.c1;
   let anchor;
@@ -580,9 +564,8 @@ function drawScene(){
     ctx.restore();
     ctx.fillStyle=C['accent-ink']; ctx.globalAlpha=.25; ctx.fillRect(bx1-.12*ppm,by,.12*ppm,groundY-by); ctx.globalAlpha=1;
   }
-  const xray = tab==='design' && !playing && T===0;
-  if (r.two) drawCar(ctx, {st:STYLES.sedan, Lz:CAR2.L, crush:fr.c2, ref:fr.p2, dir:-1, color:C.car2, X, Y, ppm, dist:fr.p2 - r.p2_0, xray:false, dummy:false});
-  drawCar(ctx, {st, Lz:r.Lz, crush:fr.c1, ref:fr.p1, dir:1, color:C.car1, X, Y, ppm, dist:fr.p1 - r.p1_0, xray, dummy:true, fr, cfg:r.cfg});
+  if (r.two) drawCar(ctx, {st:STYLES.sedan, Lz:CAR2.L, crush:fr.c2, ref:fr.p2, dir:-1, color:C.car2, X, Y, ppm, dist:fr.p2 - r.p2_0, dummy:false});
+  drawCar(ctx, {st, Lz:r.Lz, crush:fr.c1, ref:fr.p1, dir:1, color:C.car1, X, Y, ppm, dist:fr.p1 - r.p1_0, dummy:true, fr, cfg:r.cfg});
   // debris
   for (const p of r.parts){
     if (p.t > fr.t) continue;
@@ -591,198 +574,263 @@ function drawScene(){
     ctx.fillStyle = C[p.col]; ctx.save(); ctx.translate(X(px),Y(py)); ctx.rotate(p.vx*tt*3);
     ctx.fillRect(-p.s*ppm/2,-p.s*ppm/3,p.s*ppm,p.s*ppm*.66); ctx.restore();
   }
-  $('xrayTag').hidden = !xray;
   $('slowTag').hidden = !(r.crashed && T >= r.slowStart && T <= r.slowEnd + .05 && (playing || T>0));
 }
 
-function drawCar(ctx, o){
-  const { st, Lz, crush, ref, dir, color, X, Y, ppm, xray } = o;
-  const def = makeDeform(Lz, crush);
-  const crushedFrac = Lz>0 ? Math.min(1, crush/Lz) : 1;
-  const wx = lx => ref + dir*def(lx);
-  const wig = lx => (lx < Lz && crush>0) ? Math.sin(lx*38)*.05*crushedFrac*Math.min(1, (Lz-lx)/Lz*2+.2) : 0;
-  const pts = st.topS.map(([lx,ly]) => [X(wx(lx)), Y(ly + (ly>.5 ? wig(lx) : 0))]);
-  // body
-  ctx.save();
-  ctx.beginPath(); pts.forEach(([x,y],i)=> i?ctx.lineTo(x,y):ctx.moveTo(x,y));
-  const yb = .22; ctx.lineTo(X(wx(st.L)), Y(yb));
-  for (let lx=st.L; lx>=0; lx-=.1) ctx.lineTo(X(wx(lx)), Y(yb + (lx<Lz?wig(lx)*.5:0)));
-  ctx.lineTo(X(wx(0)), Y(yb)); ctx.closePath();
-  ctx.globalAlpha = xray ? .16 : 1; ctx.fillStyle = color; ctx.fill();
-  ctx.globalAlpha = 1; ctx.lineWidth = Math.max(1.5, ppm*.012); ctx.strokeStyle = xray ? color : '#203650'; ctx.stroke();
-  if (!xray){
-    ctx.clip();
-    const panel = (points, fill) => {
-      ctx.beginPath(); points.forEach(([x,y],i)=>i?ctx.lineTo(X(wx(x)),Y(y+wig(x))):ctx.moveTo(X(wx(x)),Y(y+wig(x))));
-      ctx.closePath(); ctx.fillStyle=fill; ctx.fill();
-    };
-    panel([[0,.75],[st.L,.75],[st.L,.35],[0,.35]], 'rgba(16,38,68,.19)');
-    panel([[0,.82],[st.L,.96],[st.L,.84],[0,.7]], 'rgba(255,255,255,.25)');
-    panel([[0,.26],[st.L,.26],[st.L,.39],[0,.39]], '#31445c');
+/* Curved illustration paths, authored in a 1000-unit side elevation.
+   Paths are sampled once, then every point uses the simulation's crush mapping. */
+const CAR_ART = {
+  sedan: {
+    body:'M 12 371 Q 0 365 7 350 L 8 304 Q 8 283 28 267 Q 69 218 238 198 Q 333 131 391 102 Q 451 65 572 76 Q 647 77 693 111 L 805 183 Q 878 188 959 202 Q 984 208 986 241 L 990 322 Q 1000 335 992 370 Q 970 384 898 385 L 895 362 C 895 260 743 260 743 362 L 742 385 L 258 385 L 257 362 C 257 261 105 261 105 362 L 104 385 Q 30 387 12 371 Z',
+    glass:'M 277 216 Q 340 149 416 112 Q 455 91 566 95 Q 634 95 675 123 L 765 194 Q 778 207 777 217 Z',
+    frontDoor:'M 283 220 Q 283 275 303 365 Q 305 376 326 376 L 544 376 L 550 221',
+    rearDoor:'M 550 222 L 544 376 L 673 376 Q 696 374 710 348 L 754 287 Q 773 263 777 220',
+    pillar:552, rearPillar:714, roof:94, belt:220, handles:[513,724],
+    headlight:'M 19 284 Q 39 252 59 246 L 129 241 Q 139 242 128 255 L 104 278 Q 72 290 19 284 Z',
+    taillight:'M 922 236 Q 941 230 984 234 L 989 279 Q 955 283 937 268 Z',
+    hood:'M 35 261 Q 114 221 237 208 L 272 215',
+    mirror:'M 288 217 Q 284 190 307 185 Q 337 180 339 201 Q 341 218 328 220 Z'
+  },
+  subcompact: {
+    body:'M 10 373 Q 1 364 5 332 L 10 282 Q 16 258 54 239 Q 97 217 219 194 L 330 86 C 364 53 385 39 424 36 C 547 30 706 30 804 42 Q 836 46 854 73 L 953 223 L 963 235 Q 991 255 995 288 L 998 355 Q 1000 380 984 385 L 896 385 L 895 356 C 895 259 747 259 747 356 L 746 385 L 260 385 L 259 356 C 259 258 111 258 111 356 L 110 385 Q 26 389 10 373 Z',
+    glass:'M 268 211 L 365 100 C 390 71 397 62 430 59 C 550 53 704 55 780 65 Q 809 67 823 87 L 897 198 Q 904 214 886 215 Z',
+    frontDoor:'M 271 219 L 297 365 Q 299 376 315 376 L 624 376 Q 639 374 638 357 L 638 219',
+    pillar:638, roof:57, belt:219, handles:[600],
+    headlight:'M 25 287 Q 38 254 63 247 L 109 239 Q 121 241 112 263 L 97 286 Q 62 296 25 287 Z',
+    taillight:'M 935 190 L 960 227 Q 972 246 975 283 L 947 282 Q 933 244 935 190 Z',
+    hood:'M 38 250 Q 110 220 221 205 L 264 211',
+    mirror:'M 278 217 Q 275 189 298 185 Q 329 183 330 206 Q 331 219 318 221 Z'
+  },
+  suv: {
+    body:'M 8 377 Q 0 366 5 337 L 8 247 Q 8 222 31 216 L 243 202 L 348 62 Q 360 37 389 36 L 887 36 Q 914 39 920 61 L 969 206 Q 995 223 995 255 L 998 363 Q 997 382 976 385 L 901 385 L 901 353 C 901 247 745 247 745 353 L 744 385 L 263 385 L 262 353 C 262 247 104 247 104 353 L 103 385 Z',
+    glass:'M 282 213 L 374 74 Q 382 63 396 63 L 867 63 Q 884 62 888 80 L 927 198 Q 932 213 918 216 Z',
+    frontDoor:'M 285 222 L 297 365 Q 299 376 315 376 L 567 376 L 567 221',
+    rearDoor:'M 567 221 L 567 376 L 699 376 Q 715 373 721 352 L 757 286 L 759 221',
+    pillar:567, rearPillar:760, roof:64, belt:220, handles:[528,716],
+    headlight:'M 15 235 L 91 231 Q 100 232 100 245 L 100 278 L 13 278 Z',
+    taillight:'M 969 223 L 993 231 L 996 300 L 972 300 Z',
+    hood:'M 24 220 L 243 215 L 280 220',
+    mirror:'M 287 219 L 285 182 Q 289 170 308 174 L 329 178 Q 338 185 336 216 Q 332 229 315 227 Z'
   }
-  ctx.restore();
-
-  // glass + interior
-  const gpts = st.glass.map(([lx,ly]) => [X(wx(lx)), Y(ly)]);
-  const glassPath = () => { ctx.beginPath(); gpts.forEach(([x,y],i)=> i?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.closePath(); };
-  if (!xray){ glassPath(); ctx.fillStyle = '#bddbea'; ctx.fill(); }
-  // structure (x-ray)
-  if (xray){
-    const thick = (.035 + o.cfg.czRig/3000*.05)*ppm;
-    for (const hy of [.42,.62]){
-      if (Lz>0){
-        const x0=X(wx(.04)), x1=X(wx(Lz));
-        ctx.save(); ctx.beginPath(); ctx.rect(Math.min(x0,x1), Y(hy)-thick/2, Math.abs(x1-x0), thick); ctx.clip();
-        ctx.fillStyle=C.accent; ctx.fillRect(Math.min(x0,x1), Y(hy)-thick/2, Math.abs(x1-x0), thick);
-        ctx.fillStyle=C['accent-ink']; for(let sx=Math.min(x0,x1)-thick; sx<Math.max(x0,x1); sx+=thick*1.6){ ctx.beginPath(); ctx.moveTo(sx,Y(hy)+thick/2); ctx.lineTo(sx+thick*.8,Y(hy)-thick/2); ctx.lineTo(sx+thick*1.3,Y(hy)-thick/2); ctx.lineTo(sx+thick*.5,Y(hy)+thick/2); ctx.fill(); }
-        ctx.restore();
-      }
+};
+const illustrationPaths = new Map();
+function illustrationPoints(data){
+  if (illustrationPaths.has(data)) return illustrationPaths.get(data);
+  const t=data.match(/[MLQCZ]|-?\d*\.?\d+/g), points=[];
+  let i=0,x=0,y=0,start;
+  while(i<t.length){
+    const op=t[i++];
+    if(op==='Z'){points.push(start);continue;}
+    const n=op==='C'?6:op==='Q'?4:2, a=t.slice(i,i+n).map(Number);i+=n;
+    if(op==='M'){x=a[0];y=a[1];start=[x,y];if(points.length)points.push(null);points.push(start);continue;}
+    const ex=a[n-2],ey=a[n-1];
+    const steps=Math.max(2,Math.ceil((Math.hypot(ex-x,ey-y)+(n>2?Math.hypot(a[0]-x,a[1]-y):0))/6));
+    for(let j=1;j<=steps;j++){
+      const u=j/steps,v=1-u;
+      if(op==='L')points.push([x+(ex-x)*u,y+(ey-y)*u]);
+      if(op==='Q')points.push([v*v*x+2*v*u*a[0]+u*u*ex,v*v*y+2*v*u*a[1]+u*u*ey]);
+      if(op==='C')points.push([v*v*v*x+3*v*v*u*a[0]+3*v*u*u*a[2]+u*u*u*ex,v*v*v*y+3*v*v*u*a[1]+3*v*u*u*a[3]+u*u*u*ey]);
     }
-    const cw = (.02 + o.cfg.cellRig/5000*.05)*ppm;
-    const cage = [[st.glass[0][0]-.05, .25],[st.glass[0][0]-.05, st.glass[0][1]],[st.glass[1][0], st.glass[1][1]+.02],[st.glass[2][0], st.glass[2][1]+.02],[st.glass[3][0], st.glass[3][1]],[st.glass[3][0], .25]];
-    ctx.beginPath(); cage.forEach(([lx,ly],i)=>{ const x=X(wx(lx)),y=Y(ly); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.closePath();
-    ctx.lineWidth=cw; ctx.strokeStyle=C.ink; ctx.globalAlpha=.75; ctx.stroke(); ctx.globalAlpha=1;
-    const bp = (st.glass[1][0]+st.glass[2][0])/2 + .35; // B-pillar
-    ctx.beginPath(); ctx.moveTo(X(wx(bp)),Y(.25)); ctx.lineTo(X(wx(bp)),Y(st.glass[2][1])); ctx.lineWidth=cw*.8; ctx.strokeStyle=C.ink; ctx.globalAlpha=.75; ctx.stroke(); ctx.globalAlpha=1;
-    ctx.font = `800 ${Math.max(10, ppm*.075)}px Poppins, system-ui, sans-serif`; ctx.fillStyle=C.ink; ctx.textBaseline='bottom';
-    if (Lz>0) ctx.fillText('Crumple zone', X(wx(.05)), Y(.72));
-    ctx.fillText('Safety cell', X(wx(st.glass[1][0]+.1)), Y(st.glass[1][1]-.05));
+    x=ex;y=ey;
   }
-  // dummy + wheel + bag
-  if (o.dummy){
-    if (!xray){ ctx.save(); glassPath(); ctx.clip(); }
-    drawDummy(ctx, o, wx);
-    if (!xray){ ctx.restore(); glassPath(); ctx.fillStyle=C.glass; ctx.globalAlpha=.28; ctx.fill(); ctx.globalAlpha=1;
-      ctx.lineWidth=Math.max(1.5,ppm*.012); ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.stroke(); }
-  }
-  // Cel-style exterior details share the crush map with the body.
-  if (!xray) drawTrim(ctx, o, wx, wig);
-  // wheels
-  for (const lx of [st.fw, st.rw]){
-    const cx = X(wx(lx)), cy = Y(st.wr), rr = st.wr*ppm;
-    ctx.beginPath(); ctx.arc(cx,cy,rr,0,Math.PI*2); ctx.fillStyle='#1b1e22'; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx,cy,rr*.58,0,Math.PI*2); ctx.fillStyle='#b9c9d8'; ctx.fill();
-    ctx.strokeStyle='#203650'; ctx.lineWidth=Math.max(1,rr*.04); ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx,cy,rr*.84,0,Math.PI*2); ctx.strokeStyle='#384353'; ctx.lineWidth=rr*.08; ctx.stroke();
-    const ang = -o.dist/st.wr;
-    ctx.strokeStyle='#6b727b'; ctx.lineWidth=Math.max(1.5,rr*.12);
-    for(let k=0;k<5;k++){ const a=ang+k*Math.PI*2/5; ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*rr*.15,cy+Math.sin(a)*rr*.15); ctx.lineTo(cx+Math.cos(a)*rr*.5,cy+Math.sin(a)*rr*.5); ctx.stroke(); }
-  }
+  illustrationPaths.set(data,points);return points;
 }
 
-// All trim is expressed in vehicle meters, so mirrors and crush deformation agree.
-function drawTrim(ctx, o, wx, wig){
-  const {st,X,Y,ppm}=o;
-  const suv=st===STYLES.suv, hatch=st===STYLES.subcompact;
-  const P=(x,y)=>[X(wx(x)),Y(y+wig(x))];
-  const line=(points,color='#203650',width=.012)=>{
-    ctx.beginPath(); points.forEach(([x,y],i)=>i?ctx.lineTo(...P(x,y)):ctx.moveTo(...P(x,y)));
-    ctx.strokeStyle=color; ctx.lineWidth=Math.max(1,ppm*width); ctx.stroke();
+function drawCar(ctx,o){
+  const {st,Lz,crush,ref,dir,X,Y,ppm}=o;
+  const kind=st===STYLES.suv?'suv':st===STYLES.subcompact?'subcompact':'sedan';
+  const art=CAR_ART[kind], scale=st.L/1000, outline='#132f4c';
+  const def=makeDeform(Lz,crush), wx=x=>ref+dir*def(x);
+  const wig=x=>x<Lz&&crush>0?Math.sin(x*38)*.045*Math.min(1,crush/Math.max(.01,Lz)):0;
+  const P=(x,y)=>[X(wx(x*scale)),Y((430-y)*scale+wig(x*scale))];
+  const trace=data=>{
+    ctx.beginPath();let penDown=false;
+    for(const point of illustrationPoints(data)){
+      if(!point){penDown=false;continue;}
+      if(penDown)ctx.lineTo(...P(...point));else ctx.moveTo(...P(...point));
+      penDown=true;
+    }
+    if(data.trim().endsWith('Z'))ctx.closePath();
   };
-  const panel=(points,color)=>{
-    ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(...P(x,y)):ctx.moveTo(...P(x,y)));
-    ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#203650';ctx.lineWidth=Math.max(1,ppm*.012);ctx.stroke();
+  const path=(data,fill,stroke=outline,width=2)=>{
+    trace(data);if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.65,width*scale*ppm);ctx.stroke();}
+  };
+  const gradient=(top,bottom,y0=80,y1=390)=>{
+    const g=ctx.createLinearGradient(0,P(0,y0)[1],0,P(0,y1)[1]);g.addColorStop(0,top);g.addColorStop(1,bottom);return g;
   };
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
-  const belt=st.glass[0][1], pillar=st.hip+.37;
-  line([[pillar,belt],[pillar,st.glass[1][1]]],'#263c55',.065);
-  if(suv) line([[3.55,belt],[3.55,1.66]],'#263c55',.055);
-  const doors=hatch?[pillar]:[pillar,st.glass[3][0]-.1];
-  line([[st.glass[0][0],belt],[st.glass[0][0]+.12,.43],[doors[0],.43],[doors[0],belt]]);
-  for(const d of doors){
-    line([[d,belt],[d,.45]]);
-    if(!hatch && d!==doors[0]) line([[doors[0],.43],[d-.08,.43],[d,.55]]);
-    panel([[d-.36,belt-.13],[d-.12,belt-.13],[d-.12,belt-.19],[d-.36,belt-.19]],'#476b91');
+  // Tires sit behind the actual cut-out wheel arches, not on top of a solid slab.
+  drawCarWheels(ctx,o,wx);
+  path(art.body,o.color,outline,3.2);
+  ctx.save();trace(art.body);ctx.clip();
+  path(art.body,gradient('rgba(224,244,255,.13)','rgba(16,58,105,.10)'),null);
+  path('M 0 190 Q 490 225 1000 196 L 1000 253 Q 550 280 0 290 Z',gradient('rgba(255,255,255,.26)','rgba(255,255,255,0)'),null);
+  path('M 0 350 Q 240 359 318 340 L 1000 312 L 1000 398 L 0 398 Z','rgba(12,53,104,.23)',null);
+  path('M 306 365 Q 499 339 710 352 L 684 374 L 315 376 Z','rgba(175,216,255,.32)',null);
+  path('M 0 298 Q 60 290 122 285 L 211 202 L 0 275 Z','rgba(225,244,255,.22)',null);
+  path('M 12 374 L 115 374 M 264 381 L 742 381 M 902 377 L 993 366',null,'rgba(21,55,94,.8)',5);
+  // Sculpted wheel-arch highlights follow each vehicle's original axle positions.
+  for(const ax of [st.fw,st.rw]){
+    const x=ax/scale,r=st.wr/scale+11,y=430-st.wr/scale;
+    path(`M ${x-r} ${y+8} C ${x-r-4} ${y-r*1.35} ${x+r+4} ${y-r*1.35} ${x+r} ${y+8}`,null,kind==='suv'?'#344555':'rgba(25,68,115,.65)',kind==='suv'?17:8);
+    path(`M ${x-r-6} ${y-15} C ${x-r} ${y-r*1.42} ${x+r} ${y-r*1.42} ${x+r+6} ${y-15}`,null,'rgba(190,224,255,.32)',3);
   }
-  // A-pillar mirror, headlamp, rear lamp and bumper.
-  panel([[st.glass[0][0]-.03,belt+.08],[st.glass[0][0]+.19,belt+.1],[st.glass[0][0]+.21,belt-.06],[st.glass[0][0]-.03,belt-.06]],'#42668b');
-  panel([[.1,.61],[.34,.67],[.37,.76],[.14,.71]],'#f8e6b9');
-  panel([[st.L-.22,.78],[st.L-.04,.74],[st.L-.04,.55],[st.L-.22,.57]],'#d65b51');
-  line([[.04,.4],[.35,.4]],'#203650',.055);
-  line([[st.L-.32,.4],[st.L-.05,.4]],'#203650',.055);
-  for(const x of [st.fw,st.rw]){
-    const points=[];
-    for(let a=0;a<=Math.PI+.01;a+=Math.PI/24) points.push([x+Math.cos(a)*(st.wr+.055),st.wr+Math.sin(a)*(st.wr+.055)]);
-    line(points,suv?'#31445c':'#203650',suv?.07:.025);
+  ctx.restore();
+  // Window opening and its black rubber surround.
+  path(art.glass,gradient('#a8d4ed','#d7eef6',70,225),outline,4.5);
+  ctx.save();trace(art.glass);ctx.clip();
+  path('M 700 224 Q 698 173 722 172 Q 742 172 742 223 Z','#526b80',null);
+  path('M 730 225 Q 735 184 751 185 Q 772 185 780 225 Z','#708b9e',null);
+  // Reflections are behind the driver, keeping its face and joints legible.
+  path('M 411 75 L 440 75 L 306 225 L 280 225 Z','rgba(255,255,255,.24)',null);
+  path('M 648 83 L 676 86 L 560 225 L 528 225 Z','rgba(255,255,255,.28)',null);
+  path('M 717 100 L 738 112 L 637 222 L 613 222 Z','rgba(255,255,255,.15)',null);
+  if(o.dummy)drawDummy(ctx,o,wx);
+  ctx.restore();
+  path(art.glass,null,outline,3);
+  // B/C pillars are clipped to the curved glazing to avoid protruding into the roof.
+  ctx.save();trace(art.glass);ctx.clip();
+  path(`M ${art.pillar-7} 60 L ${art.pillar+10} 60 L ${art.pillar+3} 225 L ${art.pillar-14} 225 Z`,'#29445d',null);
+  path(`M ${art.pillar-5} 70 L ${art.pillar-3} 222`,null,'#5b7d99',3);
+  if(art.rearPillar)path(`M ${art.rearPillar-4} 75 L ${art.rearPillar+3} 75 L ${art.rearPillar+4} 225 L ${art.rearPillar-3} 225 Z`,'#29445d',null);
+  ctx.restore();
+  path(art.frontDoor,null,outline,1.7);
+  if(art.rearDoor)path(art.rearDoor,null,outline,1.7);
+  path(art.hood,null,'#315b83',2);
+  path(`M 277 ${art.belt+5} Q 520 ${art.belt+9} 918 ${art.belt-1}`,null,'rgba(214,239,255,.55)',3);
+  // Each handle is placed inside its door, independently of the window pillar.
+  for(const d of art.handles){
+    path(`M ${d-19} 249 Q ${d} 236 ${d+15} 248`,'#376897',null);
+    path(`M ${d-24} 249 L ${d+21} 247 Q ${d+28} 248 ${d+26} 255 Q ${d+25} 259 ${d+20} 259 L ${d-24} 262 Q ${d-31} 259 ${d-28} 253 Z`,gradient('#afdaff','#608fbe',248,262),outline,1.8);
   }
-  if(suv){
-    line([[2.05,1.76],[2.05,1.86],[4.25,1.86],[4.25,1.76]],'#263c55',.045);
+  const fx=kind==='subcompact'?906:868;
+  path(`M ${fx-15} 258 C ${fx-35} 258 ${fx-35} 292 ${fx-15} 292 C ${fx+9} 292 ${fx+9} 258 ${fx-15} 258 Z`,null,'#315b83',1.8);
+  path(art.headlight,'#eef5f5',outline,2.3);
+  ctx.save();trace(art.headlight);ctx.clip();
+  path('M 93 225 L 137 231 L 134 292 L 73 292 Z','#ffbb55',null);
+  path('M 16 256 Q 55 241 82 250 Q 95 264 55 282 L 32 280 Z','#fff', '#c2cdd6',2);
+  path('M 10 246 L 137 237',null,'#ffe7b1',5);ctx.restore();
+  path(art.taillight,'#df4947',outline,2.2);
+  ctx.save();trace(art.taillight);ctx.clip();
+  path('M 915 237 L 1000 234 L 1000 247 L 920 249 Z','#ff7164',null);
+  path('M 927 272 L 1000 272 L 1000 287 L 936 287 Z','#edf4f5',null);ctx.restore();
+  path('M 15 329 L 57 329 Q 66 329 69 340 L 73 355 Q 73 362 65 362 L 14 362 Z','#263e52',outline,1.5);
+  path('M 20 338 L 64 338 M 21 347 L 68 347',null,'#627789',2);
+  path('M 16 317 L 45 316',null,'rgba(217,240,255,.65)',3);
+  path(art.mirror,gradient('#a7d5fc','#4c80b4',178,224),outline,2.5);
+  ctx.save();trace(art.mirror);ctx.clip();path('M 270 207 L 343 207 L 343 223 L 270 223 Z','#4474a2',null);ctx.restore();
+  if(kind==='suv'){
+    path('M 400 36 L 400 21 L 851 21 L 860 36',null,'#263a4c',9);
+    path('M 416 20 L 837 20',null,'#728b9d',2);
+    path('M 330 392 L 699 392',null,'#334b60',9);
   }
   ctx.restore();
 }
 
-function drawDummy(ctx, o, wx){
-  const { st, X, Y, ppm, fr, cfg } = o;
-  const hipX = st.hip, hipY = st===STYLES.suv ? .68 : .5;
-  const s = Math.max(-.05, fr.sd);
-  const lw = Math.max(2, ppm*.09);
-  const P = (lx,ly) => [X(wx(lx)), Y(ly)];
-  const wheelX = hipX - .62, wheelY = hipY + .5;
-  // seat
-  ctx.strokeStyle = C.muted; ctx.lineCap='round'; ctx.lineWidth = lw*1.1;
-  ctx.beginPath(); ctx.moveTo(...P(hipX-.38, hipY-.06)); ctx.lineTo(...P(hipX+.08, hipY-.06)); ctx.lineTo(...P(hipX+.2, hipY+.62)); ctx.stroke();
-  // torso rotation about hip
-  const torso = .52, base = -.22; // lean back (rad from vertical, + = forward)
-  const ang = base + Math.asin(Math.max(-.3, Math.min(.98, s/.42)));
-  const sh = [hipX - Math.sin(ang)*torso, hipY + Math.cos(ang)*torso];
-  const hd = [hipX - Math.sin(ang*1.15)*(torso+.2), hipY + Math.cos(ang*1.15)*(torso+.2)];
-  const segment=(a,b,width)=>{
-    ctx.lineCap='round';
-    for(const [w,c] of [[width+.025,'#26364a'],[width,'#e9ae32'],[width*.35,'#f6cd62']]){
-      ctx.beginPath();ctx.moveTo(...P(...a));ctx.lineTo(...P(...b));ctx.lineWidth=ppm*w;ctx.strokeStyle=c;ctx.stroke();
+function drawCarWheels(ctx,o,wx){
+  const {st,X,Y,ppm}=o;
+  for(const x of [st.fw,st.rw]){
+    const radius=st.wr*ppm;
+    ctx.save();ctx.translate(X(wx(x)),Y(st.wr));
+    const circle=(r,fill,stroke,width=1)=>{ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}};
+    circle(radius,'#26303c','#14283b',Math.max(1,ppm*.012));
+    circle(radius*.91,'#3e4854','#505d69',radius*.035);
+    circle(radius*.71,'#acb9c5','#172c40',radius*.055);
+    circle(radius*.62,'#253b50','#dbe3e8',radius*.03);
+    ctx.rotate(-o.dist/st.wr);
+    for(let k=0;k<5;k++){
+      ctx.save();ctx.rotate(k*Math.PI*2/5);
+      ctx.beginPath();ctx.moveTo(-radius*.13,-radius*.08);ctx.lineTo(-radius*.16,-radius*.64);ctx.lineTo(radius*.14,-radius*.66);ctx.lineTo(radius*.07,-radius*.28);ctx.lineTo(radius*.22,-radius*.15);ctx.closePath();
+      ctx.fillStyle='#d3dbe0';ctx.fill();ctx.strokeStyle='#738390';ctx.lineWidth=radius*.022;ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-radius*.13,-radius*.6);ctx.lineTo(-radius*.1,-radius*.17);ctx.strokeStyle='#f8faf9';ctx.lineWidth=radius*.027;ctx.stroke();
+      ctx.beginPath();ctx.arc(0,-radius*.25,radius*.047,0,7);ctx.fillStyle='#364c60';ctx.fill();ctx.strokeStyle='#f3f5f6';ctx.lineWidth=radius*.025;ctx.stroke();
+      ctx.restore();
     }
-  };
-  const joint=(p,r=.045)=>{
-    ctx.beginPath();ctx.arc(...P(...p),ppm*r,0,Math.PI*2);ctx.fillStyle='#657080';ctx.fill();ctx.strokeStyle='#26364a';ctx.lineWidth=Math.max(1,ppm*.012);ctx.stroke();
-    ctx.beginPath();ctx.arc(...P(...p),ppm*r*.4,0,Math.PI*2);ctx.fillStyle='#d7dce0';ctx.fill();
-  };
-  ctx.strokeStyle = C.dummy;
-  // legs
-  segment([hipX,hipY],[hipX-.45,hipY+.08],.13);
-  segment([hipX-.45,hipY+.08],[hipX-.62,.22],.1);
-  joint([hipX-.45,hipY+.08]);
-  segment([hipX,hipY],[sh[0],sh[1]-.04],.19);
-  segment([sh[0],sh[1]],[hd[0],hd[1]-.08],.065);
-  joint([hipX,hipY]);
-  // steering wheel
-  ctx.strokeStyle = '#2a2f36'; ctx.lineWidth = lw*.55;
-  ctx.beginPath(); ctx.moveTo(...P(wheelX-.18, wheelY-.22)); ctx.lineTo(...P(wheelX, wheelY)); ctx.stroke();
-  ctx.save(); const [wcx,wcy]=P(wheelX,wheelY); ctx.translate(wcx,wcy); ctx.rotate(-.45);
-  ctx.beginPath(); ctx.ellipse(0,0,.05*ppm,.2*ppm,0,0,Math.PI*2); ctx.lineWidth=lw*.5; ctx.stroke(); ctx.restore();
-  // arms
-  ctx.strokeStyle = C.dummy; ctx.lineWidth = lw*.75;
-  const hand = [Math.min(wheelX+.03, sh[0]-.15), wheelY+.08];
-  const elbow = [(sh[0]+hand[0])/2+.03, Math.min(sh[1], hand[1]) - .12];
-  segment(sh,elbow,.075); segment(elbow,hand,.065); joint(sh); joint(elbow,.035);
-  // airbag
-  if (cfg.bag && fr.infl > 0){
-    const rmax = .24*fr.infl, cx = wheelX + .14, cy = wheelY + .1;
-    const chestGap = Math.max(.04, (sh[0]-.05) - cx);
-    ctx.save(); const [bx,by]=P(cx,cy); ctx.translate(bx,by);
-    ctx.beginPath(); ctx.ellipse(0,0,Math.min(rmax,chestGap)*ppm, rmax*ppm*1.05,0,0,Math.PI*2);
-    ctx.fillStyle = '#f2f4f6'; ctx.globalAlpha=.92; ctx.fill(); ctx.globalAlpha=1; ctx.lineWidth=Math.max(1,ppm*.01); ctx.strokeStyle='#9aa3ad'; ctx.stroke(); ctx.restore();
+    circle(radius*.13,'#a7b5c0','#4c6173',radius*.025);
+    ctx.restore();
   }
-  // head with calibration target
-  const [hx,hy] = P(hd[0], hd[1]), hr = .11*ppm;
-  // Profile face turns with the torso; direction also supports mirrored cars.
-  ctx.save();ctx.translate(hx,hy);ctx.scale(o.dir,1);ctx.rotate(-ang*.35);
-  ctx.beginPath();ctx.moveTo(.5*hr,-.85*hr);
-  ctx.bezierCurveTo(-.3*hr,-1.3*hr,-.95*hr,-.85*hr,-.85*hr,-.25*hr);
-  ctx.lineTo(-1.2*hr,.15*hr);ctx.lineTo(-.88*hr,.25*hr);ctx.lineTo(-.8*hr,.65*hr);
-  ctx.quadraticCurveTo(-.4*hr,1.05*hr,.2*hr,.7*hr);
-  ctx.quadraticCurveTo(1.15*hr,.1*hr,.5*hr,-.85*hr);
-  ctx.fillStyle='#edb437';ctx.fill();ctx.strokeStyle='#26364a';ctx.lineWidth=Math.max(1,ppm*.014);ctx.stroke();
-  ctx.beginPath();ctx.arc(-.65*hr,-.22*hr,hr*.07,0,Math.PI*2);ctx.fillStyle='#26364a';ctx.fill();ctx.restore();
-  ctx.beginPath(); ctx.arc(hx+o.dir*hr*.25,hy-hr*.12,hr*.38,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
-  ctx.fillStyle='#111'; ctx.beginPath(); ctx.moveTo(hx+o.dir*hr*.25,hy-hr*.12); ctx.arc(hx+o.dir*hr*.25,hy-hr*.12,hr*.38,0,Math.PI/2); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(hx+o.dir*hr*.25,hy-hr*.12); ctx.arc(hx+o.dir*hr*.25,hy-hr*.12,hr*.38,Math.PI,Math.PI*1.5); ctx.closePath(); ctx.fill();
-  // belt
-  if (cfg.belt){
-    ctx.strokeStyle = '#3d4450'; ctx.lineWidth = Math.max(2, ppm*.035);
-    const anchorP = [hipX+.24, hipY+.72];
-    const chest = [sh[0]+.02, sh[1]-.12];
-    ctx.beginPath(); ctx.moveTo(...P(anchorP[0],anchorP[1])); ctx.lineTo(...P(chest[0],chest[1])); ctx.lineTo(...P(hipX-.05, hipY+.04)); ctx.stroke();
+}
+
+function drawDummy(ctx,o,wx){
+  const {st,X,Y,ppm,fr,cfg}=o;
+  const hipX=st.hip-(st===STYLES.sedan?.13:0), hipY=st===STYLES.suv?.76:st===STYLES.subcompact?.54:.58;
+  const s=Math.max(-.05,fr.sd),ang=-.19+Math.asin(Math.max(-.3,Math.min(.98,s/.42)));
+  const P=(x,y)=>[X(wx(x)),Y(y)];
+  // Drawing coordinates are meters, facing left. Local transforms articulate the
+  // mannequin; their points still pass through the existing safety-cell mapping.
+  const poly=(points,fill,stroke='#7c571c',width=.008)=>{
+    ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(...P(x,y)):ctx.moveTo(...P(x,y)));ctx.closePath();
+    ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.6,ppm*width);ctx.stroke();}
+  };
+  const line=(points,color,width)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(...P(x,y)):ctx.moveTo(...P(x,y)));ctx.strokeStyle=color;ctx.lineWidth=Math.max(.5,ppm*width);ctx.stroke();};
+  const disc=(x,y,r,fill,stroke='#6a562e')=>{ctx.beginPath();ctx.ellipse(...P(x,y),r*ppm,r*ppm,0,0,7);ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.5,ppm*.006);ctx.stroke();};
+  const target=(x,y,r)=>{
+    disc(x,y,r,'#f6cb46','#2a3034');
+    const [cx,cy]=P(x,y);ctx.fillStyle='#20292d';
+    for(const a of [0,Math.PI]){ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r*ppm,a,a+Math.PI/2);ctx.closePath();ctx.fill();}
+  };
+  const sh=[hipX-Math.sin(ang)*.54,hipY+Math.cos(ang)*.54];
+  const body=(x,y)=>[hipX+x*Math.cos(ang)-y*Math.sin(ang),hipY+x*Math.sin(ang)+y*Math.cos(ang)];
+  const shape=(points,fill,stroke,width)=>poly(points.map(([x,y])=>body(x,y)),fill,stroke,width);
+  ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+  // Contoured upholstery and head restraint.
+  poly([[hipX+.07,hipY-.12],[hipX+.24,hipY-.1],[hipX+.36,hipY+.52],[hipX+.33,hipY+.65],[hipX+.21,hipY+.65],[hipX+.14,hipY+.5]],'#4b5d6e','#1b3145');
+  poly([[hipX+.21,hipY+.48],[hipX+.23,hipY+.77],[hipX+.28,hipY+.82],[hipX+.36,hipY+.81],[hipX+.4,hipY+.75],[hipX+.38,hipY+.5]],'#566a7c','#1b3145');
+  line([[hipX+.26,hipY+.54],[hipX+.28,hipY+.76],[hipX+.32,hipY+.78]],'#8396a4',.01);
+  // Molded torso, broad chest, narrower waist and a separate shaded flank.
+  shape([[-.09,-.03],[-.15,.1],[-.17,.31],[-.13,.48],[-.07,.55],[.055,.56],[.13,.45],[.14,.24],[.1,.01]],'#e9af2f');
+  shape([[.05,.54],[.13,.45],[.14,.24],[.1,.01],[.04,.01],[.055,.29]],'#c78a1e',null);
+  shape([[-.13,.13],[-.15,.32],[-.11,.46],[-.065,.5],[-.08,.36],[-.085,.12]],'#ffda66',null);
+  line([body(.015,.02),body(.045,.24),body(.025,.48)],'#9d6b1c',.005);
+  // Accordion neck: alternating metal rings, like the supplied mannequin.
+  for(let k=0;k<6;k++){
+    const y=.55+k*.018;
+    shape([[-.055,y],[.055,y],[.055,y+.017],[-.055,y+.017]],k%2?'#a9afb0':'#30383c','#2a343b',.004);
+    line([body(-.035,y+.012),body(.035,y+.012)],'#dce0db',.004);
   }
+  // Anatomical head profile, sampled from a curved path instead of a circle.
+  const headAngle=ang*1.12, base=body(0,.62);
+  const head=(x,y)=>[base[0]+x*Math.cos(headAngle)-y*Math.sin(headAngle),base[1]+x*Math.sin(headAngle)+y*Math.cos(headAngle)];
+  const headPath=data=>illustrationPoints(data).map(([x,y])=>head((x-60)*.0024,(130-y)*.0024));
+  poly(headPath('M 56 8 C 19 7 14 25 15 43 L 13 57 L 2 74 Q 0 79 13 80 L 16 88 L 14 95 L 21 112 Q 26 122 38 116 L 61 104 L 65 88 L 93 86 Q 104 54 97 31 Q 89 9 56 8 Z'),'#eab334','#73531f',.007);
+  poly(headPath('M 63 11 Q 93 14 97 34 L 94 81 L 65 85 L 64 60 Z'),'#ca8b20',null);
+  poly(headPath('M 19 31 Q 30 8 59 12 Q 77 12 89 24 L 60 23 L 30 26 Z'),'#ffdc6b',null);
+  poly(headPath('M 17 45 L 30 40 L 33 51 L 23 56 L 18 64 Z'),'#ce901f',null);
+  line([head(-.107,.112),head(-.086,.113)],'#513e28',.008);
+  const eye=head(-.094,.177);disc(...eye,.008,'#3d3525','#3d3525');
+  line([head(-.005,.28),head(.012,.2),head(.014,.1)],'#8e631f',.004);
+  const mark=head(.015,.196);target(...mark,.044);
+  // Steering column and rim. Both hands wrap over it.
+  const wheel=[hipX-.62,hipY+.48];
+  line([[wheel[0]-.15,wheel[1]-.18],wheel],'#344451',.035);
+  const rim=[];for(let i=0;i<=48;i++){const a=i*Math.PI/24;rim.push([wheel[0]+Math.cos(a)*.04-Math.sin(a)*.06,wheel[1]+Math.sin(a)*.15]);}
+  line(rim,'#1e303f',.026);line([[wheel[0]-.035,wheel[1]+.1],[wheel[0]+.035,wheel[1]-.1]],'#778796',.007);
+  const hand=[Math.min(wheel[0]+.03,sh[0]-.17),wheel[1]+.035];
+  const elbow=[(sh[0]+hand[0])/2+.005,Math.min(sh[1],hand[1])-.1];
+  const limb=(a,b,w0,w1)=>{
+    const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy),nx=-dy/len,ny=dx/len;
+    const at=(p,w)=>[p[0]+nx*w,p[1]+ny*w];
+    poly([at(a,w0),at(b,w1),at(b,-w1),at(a,-w0)],'#e9b132');
+    poly([at(a,w0*.75),at(b,w1*.7),at(b,w1*.25),at(a,w0*.3)],'#ffdb65',null);
+    poly([at(a,-w0*.45),at(b,-w1*.4),at(b,-w1),at(a,-w0)],'#cd9021',null);
+  };
+  limb(sh,elbow,.061,.043);limb(elbow,hand,.041,.027);
+  disc(...sh,.057,'#747a76','#674f25');disc(...sh,.043,'#d2ae53');target(...sh,.03);
+  disc(...elbow,.027,'#8a762f');disc(...elbow,.013,'#3d474b');
+  line([[hand[0]+.007,hand[1]-.023],[hand[0]+.012,hand[1]+.025]],'#252f36',.024);
+  poly([[hand[0]+.008,hand[1]-.026],[hand[0]-.04,hand[1]-.02],[hand[0]-.07,hand[1]+.018],[hand[0]-.08,hand[1]+.05],[hand[0]-.053,hand[1]+.062],[hand[0]-.014,hand[1]+.04],[hand[0]+.014,hand[1]+.022]],'#f0b938');
+  for(let k=0;k<3;k++)line([[hand[0]-.065,hand[1]+.04-k*.014],[hand[0]-.034,hand[1]+.02-k*.014]],'#ab7923',.004);
+  if(cfg.belt){
+    line([[hipX+.28,hipY+.56],[sh[0]-.08,sh[1]-.055],[hipX-.09,hipY+.03]],'#1c2d3c',.038);
+    line([[hipX+.28,hipY+.56],[sh[0]-.08,sh[1]-.055],[hipX-.09,hipY+.03]],'#536371',.023);
+  }
+  if(cfg.bag&&fr.infl>0){
+    const radius=.25*fr.infl,cx=wheel[0]+.14,cy=wheel[1]+.1;
+    ctx.beginPath();ctx.ellipse(...P(cx,cy),Math.min(radius,Math.max(.04,sh[0]-.05-cx))*ppm,radius*ppm*1.05,0,0,7);
+    ctx.fillStyle='#f3f5ef';ctx.fill();ctx.strokeStyle='#9aaeba';ctx.lineWidth=Math.max(1,ppm*.007);ctx.stroke();
+  }
+  ctx.restore();
 }
 
 /* ---------------- overview strip ---------------- */
