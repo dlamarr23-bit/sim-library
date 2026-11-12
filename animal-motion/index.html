@@ -196,6 +196,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:26px}
 }
 .formula b{color:var(--text-primary)}
 /* -------- table + chart -------- */
+.table-scroll{max-width:100%;overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
 th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--grid)}
 th:first-child,td:first-child{text-align:left}
@@ -208,6 +209,11 @@ tbody tr:last-child td{border-bottom:0}
 .key.tick{width:3px;height:16px;border-radius:1px;background:var(--series-2)}
 footer.note{color:var(--muted);font-size:12.5px;margin-top:8px}
 .hidden{display:none !important}
+.closeup{display:grid;grid-template-columns:220px minmax(0,1fr);align-items:center;gap:16px;margin-top:14px;padding:14px 20px;background:var(--plane);border:1px solid var(--border);border-radius:11px}
+.closeup h3{margin:0 0 5px;font-size:15px}
+.closeup p{margin:0;color:var(--text-secondary);font-size:12px;font-weight:600}
+#animalDetail{display:block;width:100%;height:220px;overflow:hidden}
+@media(max-width:640px){.closeup{grid-template-columns:1fr;gap:3px;padding:12px}#animalDetail{height:200px}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 /* -------- how-to-use directions -------- */
 .howto ol{margin:0;padding-left:22px;color:var(--text-secondary);font-size:14.5px}
@@ -217,11 +223,12 @@ footer.note{color:var(--muted);font-size:12.5px;margin-top:8px}
 .howto .tips p{margin:5px 0;color:var(--text-secondary);font-size:14px}
 </style>
 <script>
-/* apply a light/dark choice before the page paints: the textbook names a mode with ?theme=light or dark,
-   otherwise the device's setting decides */
+/* apply a light/dark choice before the page paints: the page showing this sim in a frame can name one
+   (?theme=light or dark, so both sides match), else the saved one, else the computer's setting */
 (function(){
   var t = null;
   try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
   if (t !== "light" && t !== "dark") { try { t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } catch (e) {} }
   if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
 })();
@@ -234,6 +241,8 @@ footer.note{color:var(--muted);font-size:12.5px;margin-top:8px}
       <h1>Measuring Motion — Savanna Speed Lab</h1>
       <p>Film an animal crossing the savanna, pause the tape, measure how far it travelled and how long it took, then work out its speed.</p>
     </div>
+    <div class="spacer"></div>
+    <button class="btn ghost sm" id="themeBtn" aria-label="Toggle dark mode">🌙 Dark</button>
   </header>
   <!-- ===================== SUBJECT PICKER ===================== -->
   <section class="card">
@@ -280,6 +289,12 @@ footer.note{color:var(--muted);font-size:12.5px;margin-top:8px}
         <input type="range" id="scrub" min="0" max="100" step="0.01" value="0" aria-label="Tape position">
         <span class="clock" id="clock">0.00 s</span>
       </div>
+    </div>
+  </section>
+  <section class="card" aria-label="Animal movement close-up">
+    <div class="closeup" style="margin-top:0">
+      <div><h3 id="detailName">Cheetah · running</h3><p>Movement close-up</p><p style="margin-top:10px">Play, pause, or step through the tape to inspect the stride.</p><p style="margin-top:8px">Enlarged view. Use the ruler above for measurements.</p></div>
+      <svg id="animalDetail" viewBox="0 0 620 250" role="img" aria-label="Enlarged animal movement"></svg>
     </div>
   </section>
   <div class="cols">
@@ -377,10 +392,12 @@ footer.note{color:var(--muted);font-size:12.5px;margin-top:8px}
     <svg id="chart" viewBox="0 0 900 140" role="img" aria-label="Bar chart comparing measured animal speeds"></svg>
     <p class="hint" id="chartCap" style="margin:4px 0 10px"></p>
     <div id="chartEmpty" class="empty">No trials saved yet — work out a speed above, then press <b>Save this trial</b>.</div>
+    <div class="table-scroll" role="region" aria-label="Saved trial measurements" tabindex="0">
     <table id="logTable" class="hidden">
       <thead><tr><th>Animal</th><th>Gait</th><th>x₁ (m)</th><th>x₂ (m)</th><th>d (m)</th><th>t₁ (s)</th><th>t₂ (s)</th><th>t (s)</th><th>Speed (m/s)</th></tr></thead>
       <tbody></tbody>
     </table>
+    </div>
     <footer class="note">Animals are drawn to true relative size within the 24 m field of view, and the acacias are planted exactly 5 m apart.</footer>
   </section>
   <!-- ===================== HOW TO USE ===================== -->
@@ -423,17 +440,17 @@ const fmt = (v, n = 2) => Number(v).toFixed(n);
    ================================================================== */
 const ANIMALS = [
  { id:"cheetah", name:"Cheetah", plan:"quad",
-   shoulder:0.85, body:1.25, depth:0.40, neck:{len:0.36, ang:-42}, head:{len:0.26, h:0.19},
+   shoulder:0.85, body:1.25, depth:0.40, neck:{len:0.14, ang:-8}, head:{len:0.19, h:0.23},
    tail:{len:0.75, ang:14, type:"thin"},
    backTilt:-3, coat:"#d9ab52", belly:"#f4e5bd", dark:"#8a6a2c", pattern:"spots",
    speed:{walk:1.4, run:29.0}, stride:{walk:1.0, run:6.5}, duty:{walk:0.60, run:0.32}, bob:{walk:0.03, run:0.14} },
  { id:"gazelle", name:"Gazelle", plan:"quad",
-   shoulder:0.65, body:0.98, depth:0.31, neck:{len:0.32, ang:-54}, head:{len:0.20, h:0.13},
+   shoulder:0.72, body:0.94, depth:0.33, neck:{len:0.32, ang:-54}, head:{len:0.20, h:0.13},
    tail:{len:0.20, ang:10, type:"thin"}, horns:"straight",
    backTilt:-3, coat:"#c9904f", belly:"#f7f0e2", dark:"#4a3a24", pattern:"band",
    speed:{walk:1.3, run:22.0}, stride:{walk:0.80, run:4.2}, duty:{walk:0.60, run:0.34}, bob:{walk:0.03, run:0.15} },
  { id:"lion", name:"Lion", plan:"quad",
-   shoulder:1.10, body:1.80, depth:0.58, neck:{len:0.38, ang:-24}, head:{len:0.34, h:0.28},
+   shoulder:1.10, body:1.80, depth:0.58, neck:{len:0.18, ang:-10}, head:{len:0.26, h:0.32},
    tail:{len:0.85, ang:16, type:"tuft"}, mane:true,
    backTilt:-2, coat:"#cf9d5e", belly:"#e9d7b0", dark:"#6d4a23", pattern:"none",
    speed:{walk:1.4, run:22.0}, stride:{walk:1.2, run:5.5}, duty:{walk:0.60, run:0.34}, bob:{walk:0.03, run:0.12} },
@@ -443,7 +460,7 @@ const ANIMALS = [
    backTilt:-7, coat:"#7d6f66", belly:"#8d8078", dark:"#3f3830", pattern:"none",
    speed:{walk:1.3, run:22.0}, stride:{walk:1.4, run:4.8}, duty:{walk:0.60, run:0.35}, bob:{walk:0.03, run:0.12} },
  { id:"zebra", name:"Zebra", plan:"quad",
-   shoulder:1.35, body:1.95, depth:0.62, neck:{len:0.66, ang:-42}, head:{len:0.45, h:0.20},
+   shoulder:1.35, body:1.95, depth:0.62, neck:{len:0.66, ang:-42}, head:{len:0.45, h:0.26},
    tail:{len:0.58, ang:4, type:"brush"}, mane:true,
    coat:"#f4f1ea", belly:"#ffffff", dark:"#26241f", pattern:"stripes",
    speed:{walk:1.4, run:18.0}, stride:{walk:1.5, run:4.6}, duty:{walk:0.62, run:0.36}, bob:{walk:0.03, run:0.11} },
@@ -518,8 +535,8 @@ function geom(a){
   const hAng = (a.neck.ang*0.30)*Math.PI/180;
   const headC = { x: ne.x + a.head.len*M*0.5*Math.cos(hAng), y: ne.y + a.head.len*M*0.5*Math.sin(hAng) };
   let noseX = ne.x + a.head.len*M*Math.cos(hAng);
-  if (a.trunk) noseX += a.head.len*M*0.15 + 1.55*M*0.55;
-  if (human)   noseX = D*0.55;
+  if (a.trunk) noseX = ne.x + a.head.len*M*0.94;
+  if (human)   noseX = 0.11*M;
   noseX = Math.max(noseX, D*0.4);
   const rump = biped ? { x: torso.cx - L*0.42, y: torso.cy + D*0.10 }
                      : { x: -L,               y: -(H*0.94 - D*0.16) };
@@ -611,298 +628,345 @@ function buildRuler(){
 }
 let rulerMarks;
 /* ==================================================================
-   PARAMETRIC ANIMAL RENDERER
+   ILLUSTRATED, ARTICULATED ANIMALS
+   SVG paths remain editable code; there are no images or sprite sheets.
+   Artwork is in a 200-unit body frame, mapped back to metres by geom().
+   Every pose is a pure function of tape time, so seeking is repeatable.
    ================================================================== */
-function footOffset(u, S_px, lift, duty){
-  u -= Math.floor(u);
-  if (u < duty){ const s = u/duty; return { x: S_px/2 - s*S_px, y: 0 }; }
-  const s = (u - duty)/(1 - duty);
-  return { x: -S_px/2 + s*S_px, y: -lift*Math.sin(Math.PI*s) };
+const TAU = Math.PI*2;
+const mix = (a,b,t) => a+(b-a)*t;
+const xy = p => p.map(n=>n.toFixed(3)).join(',');
+const blendCoat=(a,b,t)=>'#'+[1,3,5].map(i=>Math.round(mix(parseInt(a.slice(i,i+2),16),parseInt(b.slice(i,i+2),16),t)).toString(16).padStart(2,'0')).join('');
+function roundedPatch(points){
+  const mid=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+  let d=`M${xy(mid(points.at(-1),points[0]))}`;
+  points.forEach((p,i)=>{d+=`Q${xy(p)} ${xy(mid(p,points[(i+1)%points.length]))}`;});
+  return d+'Z';
 }
-/* two-link limb; bend = +1 knee backwards (elbow), -1 knee forwards.
-   The sideways knee bulge is capped so a long-legged animal keeps a gentle
-   bend instead of folding shut like a compass and crossing its other legs. */
-function legPoints(hx, hy, fx, fy, L, bend, maxBulge){
-  let dx = fx - hx, dy = fy - hy;
-  let d = Math.hypot(dx, dy);
-  const max = 2*L - 0.001;
-  if (d > max){ const k = max/d; dx *= k; dy *= k; d = max; fx = hx+dx; fy = hy+dy; }
-  if (d < 0.001) d = 0.001;
-  let h = Math.sqrt(Math.max(0, L*L - (d/2)*(d/2)));
-  if (maxBulge != null) h = Math.min(h, maxBulge);
-  const mx = hx + dx/2, my = hy + dy/2;
-  const nx = -dy/d, ny = dx/d;
-  return [[hx,hy], [mx + nx*h*bend, my + ny*h*bend], [fx,fy]];
+const curve = (parent, d, fill, extra={}) => {
+  const p=mk('path',{d,fill,...extra}); parent.appendChild(p); return p;
+};
+const oval = (parent,cx,cy,rx,ry,fill,extra={}) => {
+  const p=mk('ellipse',{cx,cy,rx,ry,fill,...extra}); parent.appendChild(p); return p;
+};
+const COATS = {
+  cheetah: {coat:'#c5a36d',light:'#eadbc0',shade:'#a58256',ink:'#3e3932',mark:'#40382d'},
+  gazelle: {coat:'#b89d7d',light:'#eee8db',shade:'#917a61',ink:'#3d3934',mark:'#302b26'},
+  lion: {coat:'#bba078',light:'#dfcfaf',shade:'#9d805b',ink:'#443b31',mark:'#67513d'},
+  wildebeest: {coat:'#8f877c',light:'#b3a99a',shade:'#71685f',ink:'#383631',mark:'#48443d'},
+  zebra: {coat:'#e7e3d8',light:'#f7f3e8',shade:'#bebaae',ink:'#383835',mark:'#383835'},
+  giraffe: {coat:'#cfb184',light:'#e8d8b8',shade:'#b2936a',ink:'#50463a',mark:'#8d6747'},
+  elephant: {coat:'#96968c',light:'#b2b2a6',shade:'#787b73',ink:'#4a4e48',mark:'#656b63'},
+  ostrich: {coat:'#514e48',light:'#e0dccf',shade:'#383b38',ink:'#373b37',mark:'#b8a18a'},
+  human: {coat:'#637f91',light:'#d1ad91',shade:'#b78e73',ink:'#36444c',mark:'#3b4245'}
+};
+let clipSeq=0;
+/* Exact two-bone IK. The target stays attached to the foot; segment lengths
+   are never capped independently (which would leave floating hooves). */
+function jointBetween(root, end, l1, l2, bend){
+  const dx=end[0]-root[0],dy=end[1]-root[1],raw=Math.hypot(dx,dy);
+  const d=Math.max(.001,Math.min(l1+l2-.001,raw));
+  const along=(l1*l1-l2*l2+d*d)/(2*d);
+  const h=Math.sqrt(Math.max(0,l1*l1-along*along));
+  const nx=dx/Math.max(.001,raw),ny=dy/Math.max(.001,raw);
+  return [root[0]+nx*along-ny*h*bend,root[1]+ny*along+nx*h*bend];
 }
-const ptsStr = (p) => p.map(q => q[0].toFixed(1)+","+q[1].toFixed(1)).join(" ");
-let clipSeq = 0;
+/* An organic tapered limb, with a rounded muscle and a narrow ankle. */
+function limbOutline(points,widths,contourOnly=false){
+  const left=[],right=[];
+  points.forEach((p,i)=>{
+    const before=points[Math.max(0,i-1)],after=points[Math.min(points.length-1,i+1)];
+    const dx=after[0]-before[0],dy=after[1]-before[1],len=Math.hypot(dx,dy)||1;
+    left.push([p[0]-dy/len*widths[i],p[1]+dx/len*widths[i]]);
+    right.push([p[0]+dy/len*widths[i],p[1]-dx/len*widths[i]]);
+  });
+  const edge=[...left,...right.reverse()];
+  const midpoint=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+  if(contourOnly){
+    // Leave the attachment open so the shoulder/thigh blends into the torso.
+    let d=`M${xy(midpoint(edge[0],edge[1]))}`;
+    for(let i=1;i<edge.length-1;i++)d+=`Q${xy(edge[i])} ${xy(midpoint(edge[i],edge[i+1]))}`;
+    return d;
+  }
+  let d=`M${xy(midpoint(edge.at(-1),edge[0]))}`;
+  edge.forEach((p,i)=>{d+=`Q${xy(p)} ${xy(midpoint(p,edge[(i+1)%edge.length]))}`;});
+  return d+'Z';
+}
 function buildActor(a){
-  const G = geom(a);
-  const M = G.M, H = G.H, L = G.L, D = G.D;
-  const biped = G.biped, legLen = G.legLen, seg = G.seg;
-  const noseOffPx = G.noseX;
-  const g = mk("g", { class:"actor" });
-  const shadow = mk("ellipse", {
-    cx: biped ? 0 : (noseOffPx - L)/2, cy:2,
-    rx: biped ? Math.max(L*0.34, legLen*0.30) : (L+noseOffPx)*0.40,
-    ry: Math.max(4, D*0.13), fill:"var(--shadow)" });
-  g.appendChild(shadow);
-  const bob = mk("g");                              // everything that bobs
-  g.appendChild(bob);
-  const farLegs = mk("g", { opacity:.72 });
-  bob.appendChild(farLegs);
-  /* ---- tail (behind torso; tilts with the back) ---- */
-  const rump = G.rump;
-  const tailG = mk("g", a.backTilt
-    ? { transform:`rotate(${a.backTilt} ${G.torso.cx} ${G.torso.cy})` } : {});
-  bob.appendChild(tailG);
-  if (a.tail){
-    const tl = a.tail.len*M;
-    const flow = S.gait === "run" ? 1 : 0;                 // streams out when running
-    const ex = rump.x - tl*(0.52 + 0.40*flow), ey = rump.y + tl*(0.66 - 0.50*flow);
-    const tail = mk("path", { d:`M${rump.x},${rump.y} Q${rump.x - tl*0.62},${rump.y + tl*(0.16 - 0.30*flow)} ${ex},${ey}`,
-      stroke:a.tail.type === "plume" ? a.belly : a.coat,
-      "stroke-width": a.tail.type === "brush" ? Math.max(3, D*0.13) : Math.max(2.4, D*0.06),
-      fill:"none", "stroke-linecap":"round" });
-    tailG.appendChild(tail);
-    if (a.tail.type === "tuft")
-      tailG.appendChild(mk("ellipse", { cx:ex, cy:ey + tl*0.06, rx:Math.max(3.5, D*0.09), ry:Math.max(5.5, D*0.15),
-        fill:a.dark }));
-    if (a.tail.type === "brush")
-      tailG.appendChild(mk("path", { d:`M${ex},${ey} q${-tl*0.10},${tl*0.30} ${tl*0.06},${tl*0.42}`,
-        stroke:a.dark, "stroke-width":Math.max(4, D*0.16), fill:"none", "stroke-linecap":"round" }));
-    if (a.tail.type === "plume")
-      tailG.appendChild(mk("ellipse", { cx:rump.x - tl*0.30, cy:rump.y + tl*0.06,
-        rx:tl*0.86, ry:tl*0.66, fill:a.belly, opacity:.95,
-        transform:`rotate(-18 ${rump.x - tl*0.34} ${rump.y + tl*0.10})` }));
-  }
-  /* ---- torso ---- */
-  const cx = G.torso.cx, cy = G.torso.cy;
-  const clipId = "clip-" + a.id + "-" + (++clipSeq);
-  const clip = mk("clipPath", { id: clipId });
-  let torsoShape;
-  if (G.human){
-    torsoShape = mk("rect", { x:-D*0.46, y:-(H + L), width:D*0.92, height:L, rx:D*0.36 });
-  } else if (biped){
-    torsoShape = mk("ellipse", { cx:cx, cy:cy, rx:L*0.56, ry:D/2 });
-  } else {
-    torsoShape = mk("ellipse", { cx:cx, cy:cy, rx:L/2, ry:D/2 });
-  }
-  clip.appendChild(torsoShape.cloneNode());
-  bob.appendChild(clip);
-  /* torso group carries the back-slope so the coat pattern tilts with it */
-  const torsoG = mk("g", a.backTilt ? { transform:`rotate(${a.backTilt} ${cx} ${cy})` } : {});
-  bob.appendChild(torsoG);
-  const torso = torsoShape.cloneNode();
-  torso.setAttribute("fill", a.coat);
-  torsoG.appendChild(torso);
-  /* belly wash */
-  if (!biped){
-    torsoG.appendChild(mk("ellipse", { cx:cx + L*0.06, cy:cy + D*0.22, rx:L*0.40, ry:D*0.26,
-      fill:a.belly, opacity:.75, "clip-path":`url(#${clipId})` }));
-  }
-  /* folded wing (ratites) */
-  if (a.wing)
-    torsoG.appendChild(mk("ellipse", { cx:cx - L*0.06, cy:cy + D*0.06, rx:L*0.36, ry:D*0.26,
-      fill:a.belly, opacity:.9, transform:`rotate(-8 ${cx - L*0.06} ${cy + D*0.06})` }));
-  /* ---- coat pattern ---- */
-  const pat = mk("g", { "clip-path":`url(#${clipId})` });
-  const rnd = lcg(a.id.length*977 + 13);
-  if (a.pattern === "spots"){
-    for (let i = 0; i < 46; i++){
-      const px = cx + (rnd()-0.5)*L, py = cy + (rnd()-0.5)*D;
-      pat.appendChild(mk("ellipse", { cx:px, cy:py, rx:Math.max(1.1, D*0.055), ry:Math.max(1.1, D*0.045),
-        fill:a.dark, opacity:.85 }));
-    }
-  } else if (a.pattern === "stripes"){
-    for (let i = 0; i <= 13; i++){
-      const px = cx - L/2 + (i/13)*L;
-      pat.appendChild(mk("path", { d:`M${px},${cy-D} q${D*0.16},${D} 0,${2*D}`,
-        stroke:a.dark, "stroke-width":Math.max(2.4, L*0.030), fill:"none" }));
-    }
-  } else if (a.pattern === "patches"){
-    for (let i = 0; i < 34; i++){
-      const px = cx + (rnd()-0.5)*L*1.06, py = cy + (rnd()-0.5)*D*1.06;
-      const r0 = Math.max(3.5, D*0.19);
-      pat.appendChild(mk("path", { d:hexPath(px, py, r0*(0.75+rnd()*0.5)), fill:a.dark, opacity:.9 }));
-    }
-  } else if (a.pattern === "band"){
-    pat.appendChild(mk("rect", { x:cx-L/2, y:cy+D*0.06, width:L, height:D*0.20, fill:a.dark, opacity:.85 }));
-    pat.appendChild(mk("rect", { x:cx-L/2, y:cy+D*0.26, width:L, height:D*0.30, fill:"#ffffff", opacity:.85 }));
-  }
-  torsoG.appendChild(pat);
-  /* ---- neck + head group ---- */
-  const headG = mk("g");
-  bob.appendChild(headG);
-  const nb = G.nb, ne = G.ne;
-  if (!G.human){
-    headG.appendChild(mk("line", { x1:nb.x, y1:nb.y, x2:ne.x, y2:ne.y, stroke:a.coat,
-      "stroke-width": Math.max(6, D*(a.id==="giraffe"?0.30:a.id==="ostrich"?0.16:0.55)), "stroke-linecap":"round" }));
-    if (a.pattern === "patches"){
-      const nStripe = mk("g");
-      for (let i = 1; i < 7; i++){
-        const f = i/7, px = nb.x + (ne.x-nb.x)*f, py = nb.y + (ne.y-nb.y)*f;
-        nStripe.appendChild(mk("path", { d:hexPath(px, py, D*0.11), fill:a.dark, opacity:.9 }));
-      }
-      headG.appendChild(nStripe);
-    }
-    if (a.pattern === "stripes"){
-      for (let i = 1; i < 6; i++){
-        const f = i/6, px = nb.x + (ne.x-nb.x)*f, py = nb.y + (ne.y-nb.y)*f;
-        headG.appendChild(mk("circle", { cx:px, cy:py, r:D*0.09, fill:a.dark }));
-      }
-    }
-  }
-  if (a.mane){
-    headG.appendChild(a.id === "lion"
-      ? mk("circle", { cx:ne.x*0.75, cy:ne.y*1.0, r:Math.max(9, D*0.72), fill:a.dark, opacity:.9 })
-      : mk("path", { d:`M${nb.x},${nb.y} Q${(nb.x+ne.x)/2 - D*0.18},${(nb.y+ne.y)/2 - D*0.30} ${ne.x},${ne.y}`,
-          stroke:a.dark, "stroke-width":Math.max(4, D*0.20), fill:"none", "stroke-linecap":"round" }));
-  }
-  const hAng = G.hAng;
-  const hx = G.headC.x, hy = G.headC.y;
-  const headEl = mk("ellipse", { cx:hx, cy:hy, rx:a.head.len*M*0.58, ry:a.head.h*M*0.52,
-    fill:a.coat, transform:`rotate(${a.neck.ang*0.30} ${hx} ${hy})` });
-  headG.appendChild(headEl);
-  const noseX = ne.x + a.head.len*M*Math.cos(hAng), noseY = ne.y + a.head.len*M*Math.sin(hAng);
-  /* eye */
-  headG.appendChild(mk("circle", { cx:hx + a.head.len*M*0.16, cy:hy - a.head.h*M*0.16,
-    r:Math.max(1.3, a.head.h*M*0.10), fill:"#1b1b1b" }));
-  /* ear */
-  if (!a.bigEar && !G.human && !a.noEar)
-    headG.appendChild(mk("ellipse", { cx:hx - a.head.len*M*0.34, cy:hy - a.head.h*M*0.55,
-      rx:Math.max(2.5, a.head.h*M*0.24), ry:Math.max(3.5, a.head.h*M*0.36), fill:a.dark, opacity:.85,
-      transform:`rotate(-24 ${hx - a.head.len*M*0.34} ${hy - a.head.h*M*0.55})` }));
-  if (a.horns === "straight"){
-    const hh = a.head.h*M;
-    [-2.5, 1.5].forEach(dx => headG.appendChild(mk("path", {
-      d:`M${hx+dx},${hy - hh*0.45} q${-hh*0.35},${-hh*1.1} ${hh*0.15},${-hh*2.0}`,
-      stroke:a.dark, "stroke-width":Math.max(1.8, hh*0.13), fill:"none", "stroke-linecap":"round" })));
-  }
-  if (a.horns === "curved"){
-    const hh = a.head.h*M, bx = hx - a.head.len*M*0.20, by = hy - hh*0.42;
-    headG.appendChild(mk("path", {
-      d:`M${bx},${by} q${-hh*0.34},${-hh*0.30} ${hh*0.04},${-hh*0.54} q${hh*0.40},${-hh*0.06} ${hh*0.36},${hh*0.20}`,
-      stroke:"#e9e2d0", "stroke-width":Math.max(2.4, hh*0.15), fill:"none", "stroke-linecap":"round" }));
-  }
-  if (a.beak){
-    const hh = a.head.h*PPM;
-    headG.appendChild(mk("path", { d:`M${G.noseX - hh*0.30},${hy - hh*0.10} L${G.noseX + hh*0.10},${hy + hh*0.10} `
-      + `L${G.noseX - hh*0.30},${hy + hh*0.30} Z`, fill:a.dark }));
-  }
-  if (a.horns === "ossicone"){
-    [-4, 5].forEach(dx => {
-      headG.appendChild(mk("line", { x1:hx+dx, y1:hy - a.head.h*M*0.45, x2:hx+dx-1, y2:hy - a.head.h*M*1.35,
-        stroke:a.dark, "stroke-width":3.2, "stroke-linecap":"round" }));
-      headG.appendChild(mk("circle", { cx:hx+dx-1, cy:hy - a.head.h*M*1.4, r:3, fill:a.dark }));
-    });
-  }
-  if (a.bigEar)
-    headG.insertBefore(mk("ellipse", { cx:hx - a.head.len*M*0.62, cy:hy - a.head.h*M*0.12,
-      rx:a.head.len*M*0.62, ry:a.head.h*M*0.80, fill:a.dark, opacity:.85 }), headEl);
-  if (a.tusks)
-    [0.30, 0.44].forEach((f,i) => headG.appendChild(mk("path", {
-      d:`M${noseX - a.head.len*M*0.25},${noseY + a.head.h*M*0.10} q${a.head.len*M*0.5},${a.head.h*M*(0.5+f*0.2)} ${a.head.len*M*0.78},${a.head.h*M*0.55}`,
-      stroke:"#f0ead6", "stroke-width":4 - i, fill:"none", "stroke-linecap":"round", opacity:.95 })));
-  if (a.trunk){
-    const t0x = noseX - a.head.len*M*0.10, t0y = noseY + a.head.h*M*0.18;
-    const tw = 1.55*M;
-    headG.appendChild(mk("path", {
-      d:`M${t0x},${t0y} q${tw*0.42},${tw*0.30} ${tw*0.40},${tw*0.62} q-0.02,${tw*0.26} ${tw*0.22},${tw*0.20}`,
-      stroke:a.coat, "stroke-width":Math.max(7, a.head.h*M*0.30), fill:"none", "stroke-linecap":"round" }));
-  }
-  if (G.human){
-    const hcy = -(H + L + a.head.h*M*0.42);
-    headG.appendChild(mk("circle", { cx:0, cy:hcy, r:a.head.h*M*0.46, fill:a.belly }));
-    headG.appendChild(mk("path", { d:`M${-a.head.h*M*0.48},${hcy - a.head.h*M*0.24} `
-      + `a${a.head.h*M*0.50},${a.head.h*M*0.50} 0 0 1 ${a.head.h*M*0.96},0 z`, fill:"#3a2a1c" }));
-  }
-  /* ---- legs (or arms for human) ---- */
-  const nearLegs = mk("g");
-  bob.appendChild(nearLegs);
-  const legDefs = [];
-  let hipSpan = legLen;                    // distance between fore and hind hips
-  if (biped){
-    const hp = G.hips[0];
-    legDefs.push({ ...hp, phase:0.0, far:true  });
-    legDefs.push({ ...hp, phase:0.5, far:false });
-  } else {
-    const hind = G.hips[0], fore = G.hips[1];
-    hipSpan = fore.hx - hind.hx;
-    legDefs.push({ ...hind, phase:0.00, far:true  });
-    legDefs.push({ ...fore, phase:0.25, far:true  });
-    legDefs.push({ ...hind, phase:0.50, far:false });
-    legDefs.push({ ...fore, phase:0.75, far:false });
-  }
-  const legW = Math.max(2.6, Math.min(legLen*0.20, D*0.26) * (a.legWFactor || 1));
-  const legEls = legDefs.map(def => {
-    const p = mk("polyline", { points:"", fill:"none",
-      stroke: a.legColor || (G.human ? a.belly : a.coat),
-      "stroke-width": legW, "stroke-linecap":"round", "stroke-linejoin":"round" });
-    (def.far ? farLegs : nearLegs).appendChild(p);
-    return p;
-  });
-  /* hooves / feet */
-  const hoofEls = a.id === "human" ? [] : legDefs.map(def => {
-    const c = mk("ellipse", { rx:legW*0.62, ry:legW*0.40, fill:a.hoof || a.dark, opacity:.9 });
-    (def.far ? farLegs : nearLegs).appendChild(c);
-    return c;
-  });
-  /* human arms */
-  let armEls = [];
-  if (G.human){
-    armEls = [0.5, 0.0].map((ph,i) => {
-      const p = mk("polyline", { points:"", fill:"none", stroke:a.belly,
-        "stroke-width":Math.max(3, legLen*0.10), "stroke-linecap":"round", "stroke-linejoin":"round" });
-      (i === 0 ? farLegs : nearLegs).appendChild(p);
-      return { el:p, phase:ph };
-    });
-  }
-  /* head-bob amplitude shrinks as the neck gets long, or a giraffe's head would swing metres */
-  const headSwing = Math.min(4, 60/Math.max(12, Math.hypot(ne.x, ne.y)));
-  return {
-    node: g, spec: a, legDefs, legEls, hoofEls, armEls, bob, headG, shadow, headSwing, hipSpan, kneeCap: legLen*0.13,
-    H, L, D, legLen, seg, noseOffsetPx: noseOffPx,
-    update(t){
-      const strideM = a.stride[S.gait], duty = a.duty[S.gait];
-      const f  = a.speed[S.gait]/strideM;                  // gait cycles per second
-      const stridePx = Math.min(strideM*duty*M, this.legLen*0.62, this.hipSpan*0.62);
-      const lift = this.legLen*(S.gait === "run" ? 0.26 : 0.16);
-      const bobAmp = this.H*a.bob[S.gait];
-      const u0 = f*t;
-      const bobY = S.gait === "run"
-        ? -bobAmp*Math.pow(Math.max(0, Math.sin(2*Math.PI*(u0 + 0.22))), 1.4)
-        : -bobAmp*Math.abs(Math.sin(2*Math.PI*u0));
-      this.bob.setAttribute("transform", `translate(0,${bobY.toFixed(2)})`);
-      this.headG.setAttribute("transform",
-        `rotate(${(Math.sin(2*Math.PI*(u0 + 0.4))*this.headSwing*(S.gait === "run" ? 1 : 0.5)).toFixed(2)} 0 ${(-this.H).toFixed(1)})`);
-      this.legDefs.forEach((d, i) => {
-        const off = footOffset(u0 + d.phase, stridePx, lift, duty);
-        const fx = d.hx + off.x, fy = -bobY + off.y;
-        this.legEls[i].setAttribute("points", ptsStr(legPoints(d.hx, d.hy, fx, fy, this.seg, d.bend, this.kneeCap)));
-        if (this.hoofEls[i]){
-          this.hoofEls[i].setAttribute("cx", fx.toFixed(1));
-          this.hoofEls[i].setAttribute("cy", fy.toFixed(1));
-        }
-      });
-      this.armEls.forEach(am => {
-        const off = footOffset(u0 + am.phase, stridePx*0.7, 0, duty);
-        const sy = -(this.H + this.L*0.86);
-        const pts = legPoints(0, sy, off.x*0.9, sy + this.L*0.78, this.L*0.43, off.x > 0 ? -1 : 1, this.L*0.10);
-        am.el.setAttribute("points", ptsStr(pts));
-      });
-      this.shadow.setAttribute("rx", ((this.L + this.noseOffsetPx)*0.40*(1 - 0.09*(bobY/-Math.max(1, bobAmp)))).toFixed(1));
-    }
+  const G=geom(a),unit=G.L/200, H=G.H/unit,D=G.D/unit,L=200;
+  const p=COATS[a.id], id=a.id, human=G.human, bird=id==='ostrich', elephant=id==='elephant';
+  const cat=id==='cheetah'||id==='lion', hoofed=!cat&&!human&&!bird&&!elephant;
+  const nx=G.ne.x/unit,ny=G.ne.y/unit,nose=G.noseX/unit;
+  const hw=a.head.len*PPM/unit,hh=a.head.h*PPM/unit;
+  const g=mk('g',{class:'actor','data-species':id});
+  const art=mk('g',{transform:`scale(${unit})`});g.appendChild(art);
+  // Gentle tonal transitions soften the painted forms without blurring their silhouettes.
+  const paintId='paint-'+(++clipSeq),paints=mk('defs');art.appendChild(paints);
+  const paint=(name,base)=>{
+    const gradient=mk('linearGradient',{id:paintId+'-'+name,x1:'0%',y1:'0%',x2:'38%',y2:'100%'});
+    [[0,blendCoat(base,p.light,.16)],[.40,base],[1,blendCoat(base,p.shade,.23)]].forEach(([offset,color])=>gradient.appendChild(mk('stop',{offset,'stop-color':color})));
+    paints.appendChild(gradient);return `url(#${paintId}-${name})`;
   };
-}
-function hexPath(cx, cy, r){
-  let d = "";
-  for (let i = 0; i < 6; i++){
-    const th = (Math.PI/3)*i + 0.3;
-    d += (i ? "L" : "M") + (cx + r*Math.cos(th)).toFixed(1) + "," + (cy + r*Math.sin(th)*0.85).toFixed(1);
+  const coatPaint=paint('coat',p.coat),farPaint=paint('far',blendCoat(p.shade,p.coat,.22));
+  const skinPaint=paint('skin',human?p.light:bird?p.mark:p.coat);
+  const softId=paintId+'-soft',soft=mk('filter',{id:softId,x:'-20%',y:'-20%',width:'140%',height:'140%','color-interpolation-filters':'sRGB'});
+  soft.appendChild(mk('feGaussianBlur',{stdDeviation:1.45}));paints.appendChild(soft);
+  const softPaint={filter:`url(#${softId})`};
+  const shadow=oval(art,human?0:-75,2,human?30:135,5,'var(--shadow)',{opacity:.48,...softPaint});
+  const bob=mk('g');art.appendChild(bob);
+  const outline={'stroke':blendCoat(p.ink,p.coat,.26),'stroke-width':1.05,'stroke-opacity':.82,'stroke-linejoin':'round','stroke-linecap':'round'};
+  const far=mk('g'),tailG=mk('g'),body=mk('g'),near=mk('g'),head=mk('g');
+  bob.append(far,tailG,body,near,head);
+  const line=(parent,d,color=p.ink,w=1.1,extra={})=>curve(parent,d,'none',{stroke:color,'stroke-width':w,'stroke-opacity':.76,'stroke-linecap':'round','stroke-linejoin':'round',...extra});
+  let tail,tuft,bodyPath,bellyPath,bodyClip,wing,ear,neckPath;
+
+  const torsoD=(flex=0)=>{
+    const rear=-200+flex,top=-H;
+    if(elephant) return `M${rear},${top+D*.33} C${rear-14},${top-D*.12} -75,${top-D*.21} -14,${top+D*.07} Q22,${top+D*.25} 4,${top+D*.76} Q-82,${top+D*1.12} ${rear+27},${top+D*.88} Q${rear-4},${top+D*.64} ${rear},${top+D*.33}Z`;
+    const high=id==='wildebeest'?-.17:id==='giraffe'?-.08:.05;
+    return `M${rear},${top+D*.31} C${rear+4},${top-D*.13} -156,${top-D*.08} -116,${top+D*.03} C-72,${top+D*.1} -42,${top+D*high} -16,${top+D*.1} Q14,${top+D*.3} 2,${top+D*.64} Q-8,${top+D*.91} -45,${top+D*.96} C-80,${top+D*1.01} -104,${top+D*(cat?.6:.92)} -144,${top+D*.78} Q${rear+14},${top+D*1.02} ${rear},${top+D*.31}Z`;
+  };
+  if(!human&&!bird){
+    bodyPath=curve(body,torsoD(),coatPaint,outline);
+    const clipId='coat-'+(++clipSeq),clip=mk('clipPath',{id:clipId});
+    bodyClip=bodyPath.cloneNode();clip.appendChild(bodyClip);body.appendChild(clip);
+    const wash=mk('g',{'clip-path':`url(#${clipId})`});body.appendChild(wash);
+    bellyPath=curve(wash,`M-204,${-H+D*.55} Q-155,${-H+D*.73} -115,${-H+D*.72} Q-63,${-H+D*.88} 4,${-H+D*.51} L15,${-H+D*1.2} H-204Z`,p.light);
+    curve(wash,`M-195,${-H+D*.22} Q-150,${-H+D*.04} -126,${-H+D*.26} Q-150,${-H+D*.17} -173,${-H+D*.48}Z`,p.light,{opacity:.29,...softPaint});
+    curve(wash,`M-72,${-H+D*.13} Q-33,${-H+D*.12} -16,${-H+D*.48} Q-32,${-H+D*.75} -42,${-H+D*.83} Q-40,${-H+D*.42} -72,${-H+D*.13}Z`,p.shade,{opacity:.25,...softPaint});
+    if(id==='gazelle'){
+      curve(wash,`M-161,${-H+D*.31} C-132,${-H+D*.37} -89,${-H+D*.6} -34,${-H+D*.64} L-46,${-H+D*.83} C-102,${-H+D*.67} -137,${-H+D*.57} -161,${-H+D*.31}Z`,p.mark);
+      curve(wash,`M-198,${-H+D*.4} Q-183,${-H+D*.65} -162,${-H+D*.83} Q-172,${-H+D*.97} -179,${-H+D*.95}Z`,p.light,{...softPaint});
+    }
+    if(id==='cheetah'){
+      const rnd=lcg(291);
+      for(let i=0;i<64;i++){let x=-196+rnd()*195,y=-H+rnd()*D;oval(wash,x,y,1.3+rnd()*1.3,1.2+rnd()*1.4,p.mark,{transform:`rotate(${rnd()*70} ${x} ${y})`});}
+    }
+    if(id==='zebra'){
+      for(let i=0;i<15;i++){
+        let x=-202+i*14;
+        curve(wash,`M${x},${-H-3} C${x+9},${-H+D*.3} ${x-11},${-H+D*.54} ${x+12},${-H+D+5} L${x+19},${-H+D+5} C${x-1},${-H+D*.5} ${x+17},${-H+D*.35} ${x+7},${-H-3}Z`,p.mark);
+      }
+    }
+    if(id==='giraffe'){
+      for(let row=0;row<4;row++)for(let col=0;col<10;col++){
+        let x=-205+col*24+(row%2)*11,y=-H+row*D/3.5;
+        curve(wash,roundedPatch([[x,y+3],[x+16,y+1],[x+22,y+12],[x+17,y+24],[x+1,y+23],[x-4,y+12]]),p.mark);
+      }
+    }
+    if(id==='wildebeest')for(let i=0;i<7;i++)line(wash,`M${-80+i*9},${-H+D*.1} q-5,${D*.35} 1,${D*.55}`,p.mark,2,{opacity:.5});
+    if(elephant){
+      for(let i=0;i<5;i++)line(wash,`M${-174+i*24},${-H+D*.23} q-11,${D*.31} 0,${D*.5}`,p.mark,1,{opacity:.4});
+    }
+    line(body,`M-176,${-H+D*.35} Q-160,${-H+D*.52} -163,${-H+D*.68}`,p.shade,1.4);
+    line(body,`M-42,${-H+D*.3} Q-18,${-H+D*.48} -35,${-H+D*.75}`,p.shade,1.3);
+    if(!elephant){
+      /* A tapered shoulder-to-throat silhouette replaces the old tube neck. */
+      const thick=id==='giraffe'?D*.25:cat?D*.4:D*.34;
+      const throat=cat?.59:.88;
+      neckPath=curve(head,`M-38,${-H+D*.12} Q-7,${-H+D*.27} ${nx-thick*.6},${ny-hh*.25} Q${nx+thick*.15},${ny-hh*.5} ${nx+thick*.6},${ny+hh*.25} C${nx+thick*.28},${ny+hh*.9} 17,${-H+D*throat} -29,${-H+D*(throat+.02)}`,coatPaint,{'stroke':'none'});
+      line(head,`M-38,${-H+D*.12} Q-7,${-H+D*.27} ${nx-thick*.6},${ny-hh*.25}`,p.ink);
+      line(head,`M${nx+thick*.6},${ny+hh*.25} C${nx+thick*.28},${ny+hh*.9} 17,${-H+D*throat} -29,${-H+D*(throat+.02)}`,p.ink);
+      curve(head,`M${nx+thick*.22},${ny+hh*.22} C${nx+thick*.18},${ny+hh*.9} 8,${-H+D*.56} -14,${-H+D*.77} Q-21,${-H+D*.84} -27,${-H+D*.79} C-5,${-H+D*.63} ${nx-thick*.02},${ny+hh*.9} ${nx-thick*.15},${ny+hh*.22}Z`,p.light,{opacity:cat?.22:.34,...softPaint});
+      if(id==='giraffe'){
+        for(let i=0;i<10;i++){
+          const q=i/10,x=mix(-12,nx,q),y=mix(-H+D*.25,ny,q),r=mix(7,3.7,q);
+          curve(head,roundedPatch([[x-r,y-r],[x+r*.5,y-r*1.2],[x+r*1.2,y-r*.2],[x+r*.6,y+r*1.2],[x-r*.8,y+r]]),p.mark);
+        }
+      }
+      if(id==='zebra')for(let i=1;i<7;i++){
+        const q=i/7,x=mix(-14,nx,q),y=mix(-H+D*.14,ny,q);
+        curve(head,`M${x-9},${y-5} l23,3 -2,5 -23,-3Z`,p.mark);
+      }
+      if(id==='zebra'||id==='wildebeest'||id==='giraffe'){
+        const w=id==='giraffe'?3:8;
+        line(head,`M-34,${-H+D*.05} Q-14,${-H} ${nx-thick*.7},${ny-hh*.3}`,p.mark,w);
+      }
+    }
   }
-  return d + "Z";
+  if(a.tail&&!bird){
+    tail=curve(tailG,'M0,0', 'none',{stroke:p.coat,'stroke-width':cat?4:elephant?2.5:3.3,'stroke-linecap':'round'});
+    const border=tail.cloneNode();border.setAttribute('stroke',p.ink);border.setAttribute('stroke-width',cat?6:elephant?4:5);tailG.insertBefore(border,tail);tail.border=border;
+    if(a.tail.type==='tuft'||a.tail.type==='brush'||id==='gazelle'||id==='cheetah')tuft=curve(tailG,'M0,0',p.mark,{stroke:p.ink,'stroke-width':.8});
+  }
+  let noseY=ny+hh*.2;
+  if(!human&&!bird&&!elephant){
+    if(id==='lion'){
+      curve(head,`M${nx-14},${ny-27} C${nx+8},${ny-36} ${nx+29},${ny-18} ${nx+32},${ny+1} Q${nx+36},${ny+22} ${nx+9},${ny+35} Q${nx-13},${ny+35} ${nx-24},${ny+16} Q${nx-35},${ny-7} ${nx-14},${ny-27}Z`,p.mark,outline);
+      line(head,`M${nx-13},${ny-15} q-8,20 7,36`,p.shade,3);
+    }
+    /* Long muzzles for ungulates, shorter cheeks and muzzle pads for cats. */
+    const skull=nx-hw*.16, muzzleY=ny+hh*(id==='gazelle'?.53:.20);
+    noseY=muzzleY;
+    curve(head,`M${skull},${ny-hh*.40} Q${nx+hw*.20},${ny-hh*.62} ${nx+hw*.43},${ny-hh*.22} L${nose-hw*.07},${muzzleY-hh*.17} Q${nose},${muzzleY-hh*.12} ${nose},${muzzleY} Q${nose},${muzzleY+hh*.24} ${nose-hw*.20},${muzzleY+hh*.25} L${nx+hw*.20},${ny+hh*.46} Q${skull-hw*.2},${ny+hh*.32} ${skull},${ny-hh*.4}Z`,coatPaint,outline);
+    curve(head,`M${nx+hw*.1},${ny+hh*.1} Q${nx+hw*.35},${ny+hh*.1} ${nose-hw*.02},${muzzleY+hh*.06} Q${nose-hw*.04},${muzzleY+hh*.29} ${nose-hw*.3},${muzzleY+hh*.2} L${nx+hw*.12},${ny+hh*.4}Z`,p.light);
+    if(id==='gazelle'){
+      curve(head,`M${nx+hw*.12},${ny-hh*.32} Q${nx+hw*.3},${ny-hh*.2} ${nose-hw*.15},${muzzleY-hh*.03} L${nose-hw*.25},${muzzleY+hh*.03} ${nx+hw*.06},${ny-hh*.02}Z`,p.shade);
+      curve(head,`M${nx+hw*.18},${ny-hh*.41} L${nose-hw*.09},${muzzleY-hh*.1} ${nose-hw*.21},${muzzleY-hh*.14} ${nx+hw*.09},${ny-hh*.46}Z`,p.light);
+    }
+    if(id==='wildebeest')curve(head,`M${nx+hw*.22},${ny+hh*.35} l${-hw*.1},${hh*.42} ${-hw*.2},${-hh*.08} ${-hw*.06},${-hh*.44}Z`,p.mark);
+    if(id==='zebra'){
+      curve(head,`M${nose-hw*.35},${muzzleY-hh*.2} Q${nose},${muzzleY-hh*.25} ${nose},${muzzleY} L${nose-hw*.07},${muzzleY+hh*.22} ${nose-hw*.28},${muzzleY+hh*.2}Z`,p.shade);
+      for(let i=0;i<4;i++)line(head,`M${nx+hw*(.05+i*.13)},${ny-hh*.35+i*hh*.045} l${-hw*.06},${hh*.46}`,p.mark,1.7);
+    }
+    const ex=nx+hw*.21,ey=ny-hh*.15;
+    oval(head,ex,ey,cat?2:1.9,1.65,p.ink);
+    oval(head,ex+.45,ey-.5,.48,.45,p.light);
+    if(id==='cheetah'){
+      line(head,`M${ex},${ey+1} Q${ex+1},${ey+hh*.24} ${ex+hw*.23},${muzzleY+hh*.16}`,p.mark,1.6);
+      for(let i=0;i<7;i++)oval(head,nx-1+(i%3)*4,ny-hh*.28+Math.floor(i/3)*3,.8,.7,p.mark);
+    }
+    oval(head,nose-1.8,muzzleY-.2,1.6,1.1,p.ink);
+    line(head,`M${nose-2},${muzzleY+hh*.14} q${-hw*.12},${hh*.04} ${-hw*.24},0`,p.ink,.9);
+    /* Paired, tapered ears and horns sit behind the forehead. */
+    const earX=nx-hw*.07,earY=ny-hh*.36;
+    if(cat){
+      oval(head,earX,earY,4.2,4.4,coatPaint,outline);oval(head,earX,earY,2.2,2.7,p.shade);
+    }else{
+      curve(head,`M${earX},${earY} Q${earX-17},${earY-23} ${earX-18},${earY-11} Q${earX-17},${earY-2} ${earX},${earY+4}Z`,coatPaint,outline);
+      line(head,`M${earX-3},${earY} l-11,-12`,p.shade,2.4);
+      curve(head,`M${earX+5},${earY-2} q3,-17 11,-15 q2,10 -8,20Z`,coatPaint,outline);
+    }
+    if(id==='gazelle'){
+      [-3,4].forEach((dx,i)=>{
+        const bx=nx+dx,by=ny-hh*.45;
+        curve(head,`M${bx-2},${by} C${bx-3},${by-21} ${bx-17-i*3},${by-27} ${bx-18-i*3},${by-51} C${bx-12-i*2},${by-34} ${bx+3},${by-22} ${bx+2},${by}Z`,p.mark,{'stroke':p.ink,'stroke-width':.8});
+        for(let j=1;j<5;j++)line(head,`M${bx-2-j*.55},${by-j*4} l3,-1`,p.shade,.8);
+      });
+    }
+    if(id==='giraffe')[-4,6].forEach(dx=>{line(head,`M${nx+dx},${ny-hh*.4} l-2,-12`,p.coat,3.6);oval(head,nx+dx-2,ny-hh*.4-12,2.6,2.2,p.mark);});
+    if(id==='wildebeest'){
+      curve(head,`M${nx+hw*.04},${ny-hh*.36} Q${nx-23},${ny-hh*1.3} ${nx-27},${ny-hh*.7} Q${nx-32},${ny-hh*.17} ${nx-34},${ny-hh*.92} Q${nx-30},${ny+hh*.2} ${nx+hw*.04},${ny-hh*.12}Z`,p.light,outline);
+    }
+  }
+  if(elephant){
+    curve(head,`M${nx-25},${ny-hh*.42} Q${nx+hw*.45},${ny-hh*.8} ${nose-19},${ny-hh*.02} Q${nose-12},${ny+hh*.70} ${nose-9},${ny+hh*1.63} Q${nose-7},${ny+hh*1.85} ${nose},${ny+hh*1.70} Q${nose+0},${ny+hh*1.97} ${nose-13},${ny+hh*1.92} Q${nose-25},${ny+hh*1.64} ${nose-29},${ny+hh*.31} Q${nx+hw*.06},${ny+hh*.55} ${nx-23},${ny+hh*.1}Z`,coatPaint,outline);
+    noseY=ny+hh*1.70;
+    ear=curve(head,`M${nx-9},${ny-hh*.28} C${nx-65},${ny-hh*.76} ${nx-66},${ny+hh*.71} ${nx-28},${ny+hh*.78} Q${nx-9},${ny+hh*.44} ${nx-4},${ny+hh*.06}Z`,p.shade,outline);
+    line(head,`M${nx-18},${ny-hh*.22} Q${nx-46},${ny+hh*.07} ${nx-29},${ny+hh*.59}`,p.light,1.5,{opacity:.55});
+    oval(head,nx+hw*.28,ny-hh*.02,2.5,1.8,p.ink);
+    curve(head,`M${nose-32},${ny+hh*.22} Q${nose-12},${ny+hh*.61} ${nose-2},${ny+hh*.28} Q${nose-18},${ny+hh*.46} ${nose-26},${ny+hh*.18}Z`,'#e8dfc8',outline);
+    for(let i=0;i<8;i++)line(head,`M${nose-23+i*.65},${ny+hh*(.5+i*.14)} l8,-1`,p.mark,1,{opacity:.55});
+  }
+  if(bird){
+    const cy=G.torso.cy/unit;
+    curve(body,`M-106,${cy-13} C-117,${cy-79} 42,${cy-95} 86,${cy-28} Q105,${cy+37} -3,${cy+55} Q-81,${cy+52} -106,${cy-13}Z`,coatPaint,outline);
+    curve(tailG,`M-77,${cy-16} Q-120,${cy-56} -164,${cy-28} l22,9 -22,5 28,5 -16,12 57,11Z`,p.light,outline);
+    neckPath=curve(head,`M47,${cy-30} C94,${cy-65} ${nx-18},${ny+50} ${nx-7},${ny+7} Q${nx-10},${ny-7} ${nx+5},${ny-11} Q${nx+13},${ny} ${nx+8},${ny+11} C${nx-2},${ny+64} 103,${cy-55} 78,${cy-15}Z`,p.mark,outline);
+    oval(head,nx+hw*.28,ny,hw*.46,hh*.54,p.light,outline);
+    curve(head,`M${nx+hw*.58},${ny-hh*.07} L${nose},${ny+hh*.13} ${nx+hw*.57},${ny+hh*.25}Z`,p.mark,outline);
+    noseY=ny+hh*.13;oval(head,nx+hw*.37,ny-hh*.13,2.2,2.2,p.ink);
+    wing=mk('g');body.appendChild(wing);
+    curve(wing,`M-66,${cy-19} Q4,${cy-56} 59,${cy+8} Q5,${cy+57} -71,${cy+15}Z`,p.light,outline);
+    for(let i=0;i<8;i++)line(wing,`M${-51+i*10},${cy-14} q26,12 36,31`,p.shade,1,{opacity:.7});
+  }
+  if(human){
+    const hip=-H,top=-(G.H+G.L)/unit;
+    curve(body,`M-27,${hip+4} L-22,${top+26} Q-22,${top-3} 8,${top-2} L27,${top+5} Q32,${top+58} 18,${hip+2}Z`,coatPaint,outline);
+    curve(body,`M-26,${hip-24} Q0,${hip-17} 21,${hip-27} L26,${hip+13} -8,${hip+14} -29,${hip+6}Z`,p.mark,outline);
+    curve(head,`M-5,${top+5} L-6,${top-17} Q-29,${top-28} -20,${top-55} Q-8,${top-76} 13,${top-61} L18,${top-44} ${nose},${top-36} 18,${top-31} Q19,${top-11} 7,${top-15} L10,${top+4}Z`,p.light,outline);
+    curve(head,`M-23,${top-36} Q-32,${top-69} -6,${top-70} Q16,${top-71} 17,${top-50} L3,${top-55} -7,${top-43} -13,${top-35}Z`,p.mark);
+    oval(head,13,top-42,1.5,1.4,p.ink);noseY=top-36;
+  }
+  /* Four distinct jointed limbs; the far pair is opaque and slightly darker. */
+  const defs=G.hips.flatMap((hp,i)=>[false,true].map(farSide=>({
+    x:hp.hx/unit,y:hp.hy/unit,hind:!G.biped&&i===0,far:farSide
+  })));
+  const legs=defs.map((def,i)=>{
+    const parent=def.far?far:near;
+    const group=mk('g',{'data-limb':`${def.hind?'hind':'fore'}-${def.far?'far':'near'}`});parent.appendChild(group);
+    const fill=def.far?farPaint:skinPaint;
+    const shape=curve(group,'M0,0',fill);
+    const wash=curve(group,'M0,0',def.far?p.coat:p.light,{opacity:.25,...softPaint});
+    const edge=curve(group,'M0,0','none',{...outline,'stroke-opacity':.66});
+    const foot=curve(group,'M0,0',hoofed?p.mark:human?p.mark:fill,outline);
+    const details=mk('g');group.appendChild(details);
+    const marks=[];
+    const n=id==='zebra'?5:id==='giraffe'?4:id==='cheetah'?5:elephant?3:0;
+    for(let j=0;j<n;j++)marks.push(curve(details,'M0,0',id==='giraffe'||id==='cheetah'?p.mark:'none',{stroke:p.mark,'stroke-width':id==='zebra'?2.1:.8,opacity:.85}));
+    return {...def,shape,wash,edge,foot,marks,group};
+  });
+  const arms=human?[true,false].map(farSide=>{
+    const path=curve(farSide?far:head,'M0,0',farSide?p.shade:p.light,outline);
+    return {path,far:farSide};
+  }):[];
+  const actor={node:g,noseOffsetPx:G.noseX,update(t){
+    const run=S.gait==='run', stride=a.stride[S.gait]*PPM/unit;
+    const cycle=a.speed[S.gait]/a.stride[S.gait]*t,phase=cycle-Math.floor(cycle);
+    const legH=Math.abs(defs[0].y);
+    const duty=elephant?(run?.56:.66):Math.min(a.duty[S.gait],legH*.96/stride);
+    const offsets=defs.map(d=>G.biped?(d.far?.5:0):!run||elephant?
+      (id==='giraffe'?(d.far?.5:0)+(d.hind?0:.08):(d.hind?(d.far?.5:0):(d.far?.75:.25))):
+      (d.hind?(d.far?.1:0):(d.far?.6:.5)));
+    const phases=offsets.map(o=>(phase+o)%1),grounded=phases.some(q=>q<duty);
+    // Aerial rise is smoothly zero at the closest stance boundary.
+    let air=0;
+    if(!grounded){
+      const since=Math.min(...phases.map(q=>q-duty));
+      const until=Math.min(...phases.map(q=>1-q));
+      air=Math.sin(Math.PI*since/(since+until));
+    }
+    const bobY=run?-legH*(elephant?.012:.10)*air:-legH*.012*(1-Math.cos(phase*TAU*2));
+    bob.setAttribute('transform',`translate(0 ${bobY.toFixed(3)})`);
+    const flex=id==='cheetah'&&run?Math.sin(phase*TAU)*9:0;
+    if(bodyPath){const d=torsoD(flex);bodyPath.setAttribute('d',d);bodyClip.setAttribute('d',d);}
+    shadow.setAttribute('rx',(human?30:135)*(1-.1*air));shadow.setAttribute('opacity',.48-.12*air);
+    const feet=[];
+    legs.forEach((leg,i)=>{
+      const q=phases[i],stance=q<duty,span=stride*duty;
+      let footX,lift=0,swing=0;
+      if(stance)footX=span*(.5-q/duty);
+      else{
+        swing=(q-duty)/(1-duty);
+        const ease=swing*swing*(3-2*swing);
+        footX=mix(-span/2,span/2,ease);
+        lift=legH*(run?(human?.66:bird?.58:.54):.18)*Math.pow(Math.sin(Math.PI*swing),1.25);
+      }
+      const root=[leg.x+(leg.hind?flex:0),leg.y];
+      const foot=[leg.x+footX,-lift-bobY];
+      const distal=legH*(elephant?.14:human?.13:bird?.3:.24);
+      const ankle=[foot[0]-(stance?distal*.12:distal*(.15+.5*Math.sin(Math.PI*swing))),foot[1]-distal];
+      const total=legH*(elephant?1.06:1.15)-distal;
+      const bend=leg.hind||human?-1:1;
+      const knee=jointBetween(root,ankle,total*(leg.hind?.55:.49),total*(leg.hind?.45:.51),bend);
+      const pts=[root,knee,ankle,foot];
+      const upper=elephant?D*.18:human?D*.14:bird?D*.09:leg.hind?D*(cat?.26:.245):D*(cat?.19:.17);
+      const narrow=elephant?D*.11:human?D*.055:bird?D*.043:D*(cat?.075:id==='giraffe'?.058:.067);
+      const widths=[upper,Math.max(upper*.56,narrow*1.45),narrow,narrow*.88];
+      leg.shape.setAttribute('d',limbOutline(pts,widths));
+      leg.edge.setAttribute('d',limbOutline(pts,widths,true));
+      leg.wash.setAttribute('d',limbOutline(pts,[upper*.38,upper*.22,narrow*.28,narrow*.18]));
+      const toe=elephant?narrow*1.15:human?narrow*2.6:bird?narrow*3.1:narrow*1.55;
+      const sole=stance?0:Math.sin(Math.PI*swing)*.6;
+      leg.foot.setAttribute('d',`M${foot[0]-narrow*.75},${foot[1]-narrow*1.45} Q${foot[0]+narrow*.35},${foot[1]-narrow*1.65} ${foot[0]+toe*.65},${foot[1]-narrow*.7-sole} Q${foot[0]+toe},${foot[1]-narrow*.35} ${foot[0]+toe},${foot[1]} L${foot[0]-narrow*.8},${foot[1]} Q${foot[0]-narrow*1.1},${foot[1]-narrow*.4} ${foot[0]-narrow*.75},${foot[1]-narrow*1.45}Z`);
+      leg.group.dataset.contact=String(stance);
+      leg.marks.forEach((mark,j)=>{
+        const k=(j+1)/(leg.marks.length+1),pt=[mix(root[0],knee[0],k),mix(root[1],knee[1],k)],w=mix(upper,upper*.43,k)*.73;
+        mark.setAttribute('d',id==='cheetah'?`M${pt[0]-1},${pt[1]} l2,-1 1,2 -2,1Z`:id==='giraffe'?`M${pt[0]-w},${pt[1]-3} l${w*1.5},-1 1,6 ${-w*1.6},1Z`:`M${pt[0]-w},${pt[1]} l${w*2},-1`);
+      });
+      feet.push({contact:stance,x:foot[0]*unit,y:(foot[1]+bobY)*unit});
+    });
+    if(tail){
+      const len=a.tail.len*PPM/unit,rx=-198+flex,ry=-H+D*.33;
+      const ex=rx-len*(run?.88:.44),ey=ry+len*(run?.04:.68)+Math.sin(phase*TAU+.6)*len*.1;
+      const d=`M${rx},${ry} C${rx-len*.35},${ry+len*.10} ${ex+len*.2},${ey+len*.17} ${ex},${ey}`;
+      tail.setAttribute('d',d);tail.border.setAttribute('d',d);
+      if(tuft)tuft.setAttribute('d',`M${ex+5},${ey-2} Q${ex-6},${ey+5} ${ex-14},${ey-2} Q${ex-9},${ey+10} ${ex-2},${ey+7} L${ex+7},${ey+2}Z`);
+    }
+    if(wing)wing.setAttribute('transform',`rotate(${Math.sin(phase*TAU)*2.5} 0 ${G.torso.cy/unit})`);
+    if(ear)ear.setAttribute('transform',`rotate(${Math.sin(phase*TAU)*2} ${nx-7} ${ny})`);
+    arms.forEach(arm=>{
+      const q=phase+(arm.far?.5:0),angle=Math.sin(q*TAU)*(run?.75:.38),sy=-(G.H+G.L*.85)/unit;
+      const shoulder=[0,sy],elbow=[Math.sin(angle)*48,sy+Math.cos(angle)*48];
+      const hand=[elbow[0]+(run?33:Math.sin(angle)*28),elbow[1]+(run?-28:28)];
+      arm.path.setAttribute('d',limbOutline([shoulder,elbow,hand],[8,5,4]));
+    });
+    // Used by the read-only close-up and regression checks, never by physics.
+    this.pose={feet,phase,duty,noseX:G.noseX,noseY:(noseY+bobY)*unit};
+  }};
+  return actor;
 }
+
 /* ==================================================================
    FLAGS
    ================================================================== */
@@ -1019,18 +1083,35 @@ function wireFlagDrag(flag, key){
 /* ==================================================================
    ACTOR PLACEMENT
    ================================================================== */
-let actor = null;
+let actor = null, detailActor = null;
 function loadActor(){
   actorLayer.textContent = "";
   actor = buildActor(S.animal);
   actorLayer.appendChild(actor.node);
+  const detail=el("animalDetail");
+  detail.textContent="";
+  detail.appendChild(mk("line",{x1:15,y1:232,x2:605,y2:232,stroke:"var(--baseline)","stroke-width":1}));
+  detailActor=buildActor(S.animal);
+  detailActor.update(0);
+  detail.appendChild(detailActor.node);
+  const G=geom(S.animal);
+  // Fit a conservative envelope for the full stride, tail, ears and horns.
+  const bb=detailActor.node.getBBox();
+  const minX=Math.min(bb.x,-G.L-(S.animal.tail?S.animal.tail.len*PPM:0))-G.H*.18;
+  const maxX=Math.max(bb.x+bb.width,G.noseX,G.H*.8)+G.H*.18;
+  const top=Math.min(bb.y,-G.H)-G.H*.15;
+  const scale=Math.min(560/(maxX-minX),200/-top);
+  detailActor.node.setAttribute("transform",`translate(${310-(minX+maxX)*scale/2} 232) scale(${scale})`);
+  el("detailName").textContent=S.animal.name+" · "+(S.gait==="run"?"running":"walking");
+  detail.setAttribute("aria-label",S.animal.name+" "+(S.gait==="run"?"running":"walking")+" animation close-up");
 }
 const nosePosM = (t) => v()*t;                     // nose starts at x = 0 m
 function renderFrame(){
   const xNoseM = nosePosM(S.t);
   const tx = xNoseM*PPM - actor.noseOffsetPx;
-  actor.node.setAttribute("transform", `translate(${tx.toFixed(1)},${GROUND_Y})`);
+  actor.node.setAttribute("transform", `translate(${tx.toFixed(4)},${GROUND_Y})`);
   actor.update(S.t);
+  if(detailActor) detailActor.update(S.t);
   el("timecode").textContent = timecode(S.t);
   el("clock").textContent = fmt(S.t, 2) + " s";
   const sc = el("scrub");
@@ -1414,14 +1495,23 @@ el("clearLog").onclick = () => { S.trials = []; drawResults(); };
 const isDark = () => document.documentElement.getAttribute("data-theme") === "dark";
 const applyTheme = (t) => {
   document.documentElement.setAttribute("data-theme", t);
+  el("themeBtn").textContent = t === "dark" ? "☀️ Light" : "🌙 Dark";
 };
 const inFrame = window.parent !== window;
-// the page around this sim switched its light/dark mode: follow it
+el("themeBtn").onclick = () => {
+  const next = isDark() ? "light" : "dark";
+  applyTheme(next);
+  try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
+  // shown in a frame (the textbook's Sims page): tell that page, so it switches too
+  if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
+};
+// the page around this sim switched its light/dark mode: follow it (not saved, so the sim on its own keeps its own choice)
 window.addEventListener("message", (e) => {
   if (!inFrame || e.source !== window.parent) return;
   const t = e.data && e.data.simTheme;
   if ((t === "light" || t === "dark") && t !== (isDark() ? "dark" : "light")) applyTheme(t);
 });
+applyTheme(isDark() ? "dark" : "light");
 document.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT") return;
   if (e.code === "Space"){ e.preventDefault(); el("playBtn").click(); }
