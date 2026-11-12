@@ -11,7 +11,11 @@
 <style>
   /* Laid out like the pages of the textbook site (physical-science-8.pages.dev), which shows this page under its
      own top bar: a light banner with the title and a picture, then each unit as a card with the unit's color
-     along the top (2026-10-20). Every unit starts closed; click one to open it (2026-10-28). */
+     along the top (2026-10-20). Every unit starts closed; click one to open it (2026-10-28).
+     2026-11-11 (from Donny's screen recording): each unit card lists its chapters and counts its sims; open, each
+     chapter is a "TOPIC n" label (the book's chapter number) beside a list of sims, one per row, with a play
+     button, a bigger name and a one-line description. Chapters with no sims yet are named in the card but left
+     out of the list. PhET sims carry PhET's logo and open straight to the sim, not PhET's info page. */
   :root {
     --bg: #f6f7fb;
     --card-bg: #ffffff;
@@ -131,12 +135,14 @@
     margin: 0 auto;
     padding: 30px 20px 70px;
   }
+
+  /* ---- a unit: its name, its chapters, how many sims, an arrow ---- */
   details.unit {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-top: 6px solid var(--unit, var(--accent));
     border-radius: 18px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
     overflow: hidden;
     box-shadow: var(--shadow);
   }
@@ -145,68 +151,167 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     padding: 18px 22px;
-    font-weight: 700;
-    font-size: clamp(16px, 2vw, 19px);
   }
   summary.unit-summary::-webkit-details-marker { display: none; }
-  .unit-name { flex: 1 1 auto; }
-  .unit-chevron {
-    font-size: 20px;
+  summary.unit-summary:focus-visible { outline: 3px solid var(--unit); outline-offset: -3px; border-radius: 12px; }
+  .unit-text { flex: 1 1 auto; min-width: 0; }
+  .unit-name {
+    display: block;
+    font-size: clamp(18px, 2.2vw, 20px);
+    font-weight: 700;
+    line-height: 1.3;
+    transition: color 0.12s ease;
+  }
+  summary.unit-summary:hover .unit-name,
+  summary.unit-summary:focus-visible .unit-name { color: var(--unit-ink); }
+  .unit-topics {
+    display: block;
+    margin-top: 4px;
+    font-size: 13.5px;
+    line-height: 1.5;
     color: var(--text-muted);
-    transition: transform 0.15s ease;
   }
-  details.unit[open] .unit-chevron { transform: rotate(90deg); }
-  .unit-body {
-    padding: 4px 22px 22px;
-    border-top: 1px solid var(--border);
-  }
-  .topic { margin-top: 20px; }
-  h3.topic-title {
+  .unit-count {
+    flex: 0 0 auto;
     font-size: 13px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--unit-ink, var(--accent-dark));
-    margin: 0 0 10px;
+    line-height: 1;
+    padding: 7px 12px;
+    border-radius: 999px;
+    color: var(--unit-ink);
+    background: var(--unit-tint);
+    white-space: nowrap;
   }
-  .sim-grid {
+  .unit-chevron {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    color: var(--text);
+    transition: transform 0.15s ease;
+  }
+  .unit-chevron svg, .sim-chevron svg { display: block; width: 100%; height: 100%; }
+  details.unit[open] .unit-chevron { transform: rotate(90deg); }
+  .unit-body {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: 10px;
+    gap: 18px;
+    padding: 24px 22px 22px;
+    border-top: 1px solid var(--border);
   }
-  .sim-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+
+  /* ---- a chapter: "TOPIC n" and its name on the left, its sims on the right ---- */
+  .topic {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .topic-label { padding-top: 12px; }
+  .topic-num {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--unit-ink);
+  }
+  h3.topic-title {
+    margin: 2px 0 0;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  .sim-list {
     background: var(--sim-card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 11px 14px;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 1.35;
-    transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease;
+    overflow: hidden;
   }
-  .sim-card:hover, .sim-card:focus-visible {
-    border-color: var(--unit, var(--accent));
-    background: var(--unit-tint, var(--accent-tint));
-    transform: translateY(-1px);
+
+  /* ---- one sim: play button, name, one-line description, PhET's logo if it is theirs, arrow ---- */
+  .sim-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px 12px 14px;
+    border-top: 1px solid var(--border);
+    transition: background 0.12s ease;
   }
-  .sim-card-icon {
+  .sim-row:first-child { border-top: 0; }
+  .sim-play {
     flex: 0 0 auto;
-    width: 28px;
-    height: 28px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     display: grid;
     place-items: center;
-    color: var(--unit-ink, var(--accent));
-    background: var(--unit-tint, var(--accent-tint));
-    font-size: 10px;
-    padding-left: 2px;
+    color: var(--unit-ink);
+    background: var(--unit-tint);
+    transition: background 0.12s ease, color 0.12s ease;
   }
-  .sim-card-name { flex: 1 1 auto; }
+  .sim-play::before {
+    content: "";
+    width: 11px;
+    height: 13px;
+    margin-left: 3px;
+    background: currentColor;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+  }
+  .sim-text { flex: 1 1 auto; min-width: 0; }
+  .sim-name {
+    display: block;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .sim-desc {
+    display: block;
+    margin-top: 3px;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--text-muted);
+  }
+  .sim-source {
+    flex: 0 0 auto;
+    display: block;
+    width: 64px;
+    height: 30px;
+    color: var(--text);
+  }
+  .sim-chevron {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    transition: transform 0.12s ease, color 0.12s ease;
+  }
+  .sim-row:hover, .sim-row:focus-visible { background: var(--unit-tint); }
+  .sim-row:hover .sim-play, .sim-row:focus-visible .sim-play { background: var(--unit); color: #fff; }
+  .sim-row:hover .sim-chevron, .sim-row:focus-visible .sim-chevron { color: var(--unit-ink); transform: translateX(2px); }
+  .sim-row:focus-visible { outline: 3px solid var(--unit); outline-offset: -3px; }
+
+  @media (max-width: 760px) {
+    summary.unit-summary { padding: 16px; gap: 10px; }
+    .unit-body { padding: 18px 14px 16px; }
+    .topic { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .topic-label { padding: 0 2px; }
+    .sim-row { gap: 12px; padding: 12px; }
+    .sim-play { width: 38px; height: 38px; }
+    .sim-name { font-size: 16px; }
+    .sim-desc { font-size: 13.5px; }
+    .sim-source { width: 48px; height: 23px; }
+  }
+  /* phones: the whole row is the link, so its arrow goes and the play button and logo shrink to leave room for words */
+  @media (max-width: 520px) {
+    .unit-count { padding: 6px 9px; font-size: 12px; }
+    .sim-row { gap: 10px; padding: 11px 10px; }
+    .sim-play { width: 34px; height: 34px; }
+    .sim-play::before { width: 9px; height: 11px; margin-left: 2px; }
+    .sim-source { width: 40px; height: 19px; }
+    .sim-chevron { display: none; }
+  }
+
   footer.site-footer {
     max-width: 1100px;
     margin: 0 auto;
@@ -214,6 +319,8 @@
     color: var(--text-muted);
     font-size: 13px;
   }
+  footer.site-footer p { margin: 0 0 6px; }
+  footer.site-footer a { text-decoration: underline; text-underline-offset: 2px; }
 </style>
 <script>
   // light or dark before the page draws: the textbook's Sims page names one (?theme=light or dark), else the
@@ -226,252 +333,865 @@
 </script>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="phet-logo" viewBox="0 0 572 270"><g><rect x="1.562" y="239.43" fill="currentColor" width="7.455" height="28.963"/><polygon fill="currentColor" points="35.618,256.809 23.85,239.43 16.375,239.43 16.375,268.393 23.85,268.393 23.85,251.154 35.713,268.393 43.098,268.393 43.098,239.43 35.618,239.43 "/><polygon fill="currentColor" points="48.27,246.201 56.611,246.201 56.611,268.393 64.076,268.393 64.076,246.201 72.514,246.201 72.514,239.43 48.27,239.43 "/><polygon fill="currentColor" points="77.212,268.393 97.41,268.393 97.41,262.28 84.677,262.28 84.677,256.969 95.717,256.969 95.717,250.847 84.677,250.847 84.677,245.507 97.41,245.507 97.41,239.43 77.212,239.43 "/><path fill="currentColor" d="M126.516,248.852c0-6.122-4.772-9.431-11.676-9.431h-11.431v28.972h7.479v-9.678h3.082l5.385,9.678h8.34 l-6.998-10.804C124.053,256.494,126.516,253.629,126.516,248.852z M115.314,253.112h-4.426v-7.604h4.426 c1.941,0,3.732,1.476,3.732,3.822C119.047,251.627,117.256,253.112,115.314,253.112z"/><path fill="currentColor" d="M143,239.43l-11.52,28.963h8.044l2.255-6.939h9.467l2.266,6.939h8.037l-11.514-28.963H143z M143.562,255.931l2.959-8.992l2.902,8.992H143.562z"/><path fill="currentColor" d="M164.206,253.891c0,12.244,7.378,14.817,13.596,14.817c3.084,0,6.261-0.824,9.292-2.047v-6.478 c-3.172,1.527-5.865,2.096-8.854,2.096c-3.439,0-6.568-1.526-6.568-8.389c0-6.865,3.129-8.384,6.568-8.384 c2.989,0,5.683,0.562,8.854,2.08v-6.471c-3.031-1.211-6.208-2.04-9.292-2.04C171.584,239.077,164.206,241.637,164.206,253.891z"/><polygon fill="currentColor" points="191.061,246.201 199.401,246.201 199.401,268.393 206.874,268.393 206.874,246.201 215.298,246.201 215.298,239.43 191.061,239.43 "/><rect x="220.039" y="239.43" fill="currentColor" width="7.471" height="28.963"/><polygon fill="currentColor" points="246.585,259.926 240.119,239.43 232.129,239.43 243.247,268.393 250.02,268.393 261.057,239.43 253.065,239.43 "/><polygon fill="currentColor" points="265.54,268.393 285.732,268.393 285.732,262.28 273.008,262.28 273.008,256.969 284.045,256.969 284.045,250.847 273.008,250.847 273.008,245.507 285.732,245.507 285.732,239.43 265.54,239.43 "/><path fill="currentColor" d="M306.405,247.114c0-3.213,2.566-4.952,7.173-4.952c2.953,0,5.339,0.913,6.948,1.826v-3.222 c-1.863-0.916-4.309-1.731-7.258-1.731c-7.381,0-9.99,4.173-9.99,8.079c0,9.695,15.981,5.429,15.981,13.897 c0,3.826-4.03,4.606-7.391,4.606c-3.938,0-6.632-1.167-8.327-2.3v3.389c2.04,1.095,4.865,2.046,8.555,2.046 c6.475,0,10.299-2.922,10.299-7.741C322.396,249.934,306.405,253.454,306.405,247.114z"/><rect x="328.833" y="239.421" fill="currentColor" width="3.127" height="28.972"/><polygon fill="currentColor" points="352.808,254.159 342.864,239.43 339.476,239.43 339.476,268.393 342.606,268.393 342.606,244.55 352.808,259.323 363.062,244.55 363.062,268.393 366.19,268.393 366.19,239.43 362.808,239.43 "/><path fill="currentColor" d="M394.271,256.669c0,6.21-2.827,9.213-8.651,9.213c-5.823,0-8.65-3.003-8.65-9.213V239.43h-3.123v17.057 c0,7.92,4.178,12.266,11.773,12.266c7.607,0,11.777-4.346,11.777-12.266V239.43h-3.126V256.669z"/><polygon fill="currentColor" points="407.835,239.43 404.7,239.43 404.7,268.393 422.644,268.393 422.644,265.36 407.835,265.36 "/><path fill="currentColor" d="M437.815,239.43l-11.557,28.963h3.383l3.479-9.02h12.512l3.479,9.02h3.337l-11.511-28.963H437.815z M434.284,256.37l5.094-13.251l5.079,13.251H434.284z"/><polygon fill="currentColor" points="450.979,242.461 461.229,242.461 461.229,268.393 464.363,268.393 464.363,242.461 474.568,242.461 474.568,239.43 450.979,239.43 "/><rect x="479.307" y="239.421" fill="currentColor" width="3.127" height="28.972"/><path fill="currentColor" d="M502.121,239.035c-8.902,0-13.418,4.991-13.418,14.856c0,9.857,4.516,14.861,13.418,14.861 c8.949,0,13.473-5.004,13.473-14.861C515.594,244.026,511.07,239.035,502.121,239.035z M502.121,265.793 c-7.121,0-10.299-3.646-10.299-11.902c0-8.21,3.178-11.903,10.299-11.903c7.174,0,10.344,3.693,10.344,11.903 C512.465,262.147,509.295,265.793,502.121,265.793z"/><polygon fill="currentColor" points="542.576,263.835 525.291,239.43 521.727,239.43 521.727,268.393 524.854,268.393 524.854,243.988 542.182,268.393 545.703,268.393 545.703,239.43 542.576,239.43 "/><path fill="currentColor" d="M555.135,247.114c0-3.213,2.561-4.952,7.174-4.952c2.949,0,5.338,0.913,6.953,1.826v-3.222 c-1.871-0.916-4.303-1.731-7.26-1.731c-7.381,0-9.986,4.173-9.986,8.079c0,9.695,15.99,5.429,15.99,13.897 c0,3.826-4.049,4.606-7.395,4.606c-3.949,0-6.641-1.167-8.34-2.3v3.389c2.043,1.095,4.873,2.046,8.561,2.046 c6.471,0,10.293-2.922,10.293-7.741C571.125,249.934,555.135,253.454,555.135,247.114z"/></g><g><g><path fill="#6ACEF5" d="M72.444,51.607H5.73c-2.303,0-4.168,1.873-4.168,4.161v166.815c0,2.303,1.865,4.169,4.168,4.169h36.82 c2.309,0,4.174-1.866,4.174-4.169v-43.639c0-2.32,1.859-4.176,4.176-4.176h21.544c42.55,0,66.969-22.587,66.969-61.716 C139.413,74.194,114.994,51.607,72.444,51.607 M68.244,137.483H50.9c-2.316,0-4.176-1.875-4.176-4.184V92.543 c0-2.309,1.859-4.166,4.176-4.166h17.344c19.95,0,26.268,13.65,26.268,24.676C94.512,124.62,88.194,137.483,68.244,137.483"/><path fill="#6ACEF5" d="M566.957,51.607H310.864c-2.303,0-4.176,1.873-4.176,4.161v166.815c0,2.303,1.873,4.169,4.176,4.169 h113.764c2.305,0,4.17-1.866,4.17-4.169v-28.678c0-2.304-1.865-4.178-4.17-4.178h-70.693c-1.151,0-2.082-0.931-2.082-2.089 v-27.862c0-1.15,0.931-2.093,2.082-2.093h60.449c2.303,0,4.168-1.857,4.168-4.16v-28.678c0-2.305-1.865-4.18-4.168-4.18h-60.449 c-1.151,0-2.082-0.932-2.082-2.087v-28.12c0-1.148,0.931-2.082,2.082-2.082L472.92,88.5c1.158,0,2.1,0.938,2.1,2.085v131.999 c0,2.303,1.871,4.169,4.16,4.169h36.832c2.299,0,4.17-1.866,4.17-4.169V90.584c0-1.146,0.934-2.085,2.086-2.085h44.689 c2.289,0,4.168-1.875,4.168-4.161v-28.57C571.125,53.48,569.246,51.607,566.957,51.607"/><path fill="#FEE105" d="M251.91,98.883c-1.674,5.188-3.257,10.438-4.684,15.795c-0.299,1.124-0.575,2.272-0.883,3.408 c-13.424,58.008-6.145,95.92-3.615,108.266c0.605,0.256,1.215,0.4,1.844,0.4h34.041c2.304,0,4.192-1.866,4.192-4.169v-73.032 C282.806,125.348,271.836,107.185,251.91,98.883"/><path fill="#FEE105" d="M202.447,95.461V50.004c0-2.305-1.879-4.184-4.167-4.184h-36.837c-2.301,0-4.174,1.879-4.174,4.184 v172.579c0,2.303,1.873,4.169,4.174,4.169h23.162c1.066,0,2.076-0.4,2.914-1.026c6.533-52.292,26.07-97.769,45.346-131.446 c-2.616-0.258-5.295-0.385-8.107-0.385C217.688,93.895,208.75,94.404,202.447,95.461"/><polygon fill="#FEE105" points="223.613,35.178 249.447,44.523 282.689,16.838 257.101,47.133 284.746,56.877 294.714,1.286 "/><polyline fill="#F2E916" points="259.645,62.437 258.566,50.036 268.104,53.473 "/></g><g><path fill="#6ACEF5" d="M533.501,226.752v-10.048h-3.753v-1.344h9.029v1.344h-3.769v10.048H533.501z"/><path fill="#6ACEF5" d="M540.277,226.752V215.36h2.27l2.696,8.066c0.249,0.751,0.431,1.313,0.544,1.687 c0.129-0.415,0.332-1.023,0.606-1.826l2.728-7.927h2.028v11.393h-1.453v-9.535l-3.311,9.535h-1.36l-3.295-9.699v9.699H540.277z"/></g></g></symbol>
+</svg>
 <header class="hero">
   <div class="hero-inner">
     <div>
       <h1 class="site-title">Sims</h1>
-      <p class="site-subtitle">Interactive simulations, sorted by the same units and chapters as the book. Pick one to open it.</p>
+      <p class="site-subtitle">Interactive simulations, sorted by the same units and chapters as the book. Open a unit, then pick a sim.</p>
     </div>
     <img class="hero-pic" src="assets/sims-icon.webp" width="240" height="160" alt="">
   </div>
 </header>
 <main>
-  
-      <details class="unit" data-unit="u1">
-        <summary class="unit-summary">
+    <details class="unit" data-unit="u1">
+      <summary class="unit-summary">
+        <span class="unit-text">
           <span class="unit-name">Unit 1: Energy of Motion</span>
-          <span class="unit-chevron" aria-hidden="true">›</span>
-        </summary>
-        <div class="unit-body">
-          <div class="topic">
+          <span class="unit-topics">Frames of Reference &middot; Speed and Distance/Time Graphs &middot; Inertia and Net Forces &middot; Energy Transfer via Friction &middot; Mass and Acceleration &middot; Collisions and Newton&#x27;s Third Law</span>
+        </span>
+        <span class="unit-count">23 sims</span>
+        <span class="unit-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </summary>
+      <div class="unit-body">
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 2</span>
             <h3 class="topic-title">Speed and Distance/Time Graphs</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./position-time-graphs/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Position Time Graphs</span>
-            </a>
-            <a class="sim-card" href="./animal-motion/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Animal Motion</span>
-            </a>
-            <a class="sim-card" href="./constant-velocity-car/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Constant Velocity Car</span>
-            </a></div>
           </div>
-          <div class="topic">
+          <div class="sim-list">
+            <a class="sim-row" href="./position-time-graphs/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Position Time Graphs</span>
+                <span class="sim-desc">Walk toward and away from a motion sensor and match a position graph.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row" href="./animal-motion/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Animal Motion</span>
+                <span class="sim-desc">Film an animal crossing the savanna and work out its speed.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row" href="./constant-velocity-car/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Constant Velocity Car</span>
+                <span class="sim-desc">Load a toy car with masses and measure how far it goes each second.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/cheerpj/moving-man/latest/moving-man.html?simulation=moving-man">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">The Moving Man</span>
+                <span class="sim-desc">Walk a man back and forth and graph his position and velocity.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 3</span>
             <h3 class="topic-title">Inertia and Net Forces</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./net-forces/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Net Forces</span>
-            </a>
-            <a class="sim-card" href="./egg-drop-inertia/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Egg Drop Inertia</span>
-            </a></div>
           </div>
-          <div class="topic">
+          <div class="sim-list">
+            <a class="sim-row" href="./net-forces/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Net Forces</span>
+                <span class="sim-desc">Push a stack of objects, add friction and see the net force change speed.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row" href="./egg-drop-inertia/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Egg Drop Inertia</span>
+                <span class="sim-desc">Strike a tray out from under an egg. Does the egg land in the water?</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/forces-and-motion-basics/latest/forces-and-motion-basics_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Forces and Motion: Basics</span>
+                <span class="sim-desc">Play tug of war and push crates to see what net force does.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 4</span>
             <h3 class="topic-title">Energy Transfer via Friction</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./how-friction-affects-speed/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">How Friction Affects Speed</span>
-            </a>
-            <a class="sim-card" href="./does-friction-create-heat/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Does Friction Create Heat</span>
-            </a>
-            <a class="sim-card" href="./determining-how-mass-affects-friction-lab/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Determining How Mass Affects Friction</span>
-            </a>
-            <a class="sim-card" href="./kinetic-energy-and-stopping-distance/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Kinetic Energy and Stopping Distance</span>
-            </a></div>
           </div>
-          <div class="topic">
+          <div class="sim-list">
+            <a class="sim-row" href="./how-friction-affects-speed/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">How Friction Affects Speed</span>
+                <span class="sim-desc">Roll a car down a ramp onto four surfaces and time how far it goes.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row" href="./does-friction-create-heat/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Does Friction Create Heat</span>
+                <span class="sim-desc">Rub your hands together and measure how much warmer they get.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row" href="./determining-how-mass-affects-friction-lab/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Determining How Mass Affects Friction</span>
+                <span class="sim-desc">Load a tray with masses and compare the starting and sliding force.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row" href="./kinetic-energy-and-stopping-distance/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Kinetic Energy and Stopping Distance</span>
+                <span class="sim-desc">Release a car from different heights and see how far it pushes a box.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/friction/latest/friction_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Friction</span>
+                <span class="sim-desc">Rub two books together and watch atoms heat up and break off.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 5</span>
             <h3 class="topic-title">Mass and Acceleration</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./acceleration/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Acceleration</span>
-            </a>
-            <a class="sim-card" href="./acceleration-on-a-ramp/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Acceleration on a Ramp</span>
-            </a></div>
           </div>
-          <div class="topic">
+          <div class="sim-list">
+            <a class="sim-row" href="./acceleration/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Acceleration</span>
+                <span class="sim-desc">Carry a string accelerometer as you speed up, slow down and turn.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row" href="./acceleration-on-a-ramp/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Acceleration on a Ramp</span>
+                <span class="sim-desc">Change the ramp and cart, then use photogates to find the acceleration.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/cheerpj/forces-1d/latest/forces-1d.html?simulation=forces-1d">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Forces in 1 Dimension</span>
+                <span class="sim-desc">Push a cabinet, crate or fridge and graph how it accelerates.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 6</span>
             <h3 class="topic-title">Collisions and Newton&#x27;s Third Law</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./poker-chip-inertia/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Poker Chip Inertia</span>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row" href="./poker-chip-inertia/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Poker Chip Inertia</span>
+                <span class="sim-desc">Slide chips into a stack and count how many get knocked out.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./balloon-rocket/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Balloon Rocket</span>
+            <a class="sim-row" href="./balloon-rocket/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Balloon Rocket</span>
+                <span class="sim-desc">Blow up balloons of different sizes and measure how far they fly.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./bouncing-ball/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Bouncing Ball</span>
+            <a class="sim-row" href="./bouncing-ball/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Bouncing Ball</span>
+                <span class="sim-desc">Drop a ball from different heights and measure the first bounce.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./receiver-object-mass-and-motion/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Ramp Collision Lab</span>
+            <a class="sim-row" href="./receiver-object-mass-and-motion/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Ramp Collision Lab</span>
+                <span class="sim-desc">Roll one car into another and measure how far the second car goes.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./inertia-and-collisions/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Inertia and Collisions</span>
+            <a class="sim-row" href="./inertia-and-collisions/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Inertia and Collisions</span>
+                <span class="sim-desc">Tap a rolling lab car and watch what a loose poker chip does.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./crumple-zone-lab/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Crumple Zone Lab</span>
+            <a class="sim-row" href="./crumple-zone-lab/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Crumple Zone Lab</span>
+                <span class="sim-desc">Design crumple zones, seat belts and airbags, then crash test the car.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./newtons-third-law-spring-scales/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Newton&#x27;s 3rd Law: Spring Scale Pull</span>
-            </a></div>
-          </div></div>
-      </details>
-      <details class="unit" data-unit="u2">
-        <summary class="unit-summary">
+            <a class="sim-row" href="./newtons-third-law-spring-scales/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Newton&#x27;s 3rd Law: Spring Scale Pull</span>
+                <span class="sim-desc">Pull two spring scales against each other and compare the forces.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/collision-lab/latest/collision-lab_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Collision Lab</span>
+                <span class="sim-desc">Crash balls of different masses and see momentum conserved.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </details>
+
+    <details class="unit" data-unit="u2">
+      <summary class="unit-summary">
+        <span class="unit-text">
           <span class="unit-name">Unit 2: Gravity &amp; Energy Related to Position</span>
-          <span class="unit-chevron" aria-hidden="true">›</span>
-        </summary>
-        <div class="unit-body">
-          <div class="topic">
+          <span class="unit-topics">Gravitational Potential Energy &middot; Universal Law of Gravity &middot; Gravitational Potential Energy to Kinetic Energy</span>
+        </span>
+        <span class="unit-count">9 sims</span>
+        <span class="unit-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </summary>
+      <div class="unit-body">
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 1</span>
+            <h3 class="topic-title">Gravitational Potential Energy</h3>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/energy-skate-park-basics/latest/energy-skate-park-basics_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Energy Skate Park: Basics</span>
+                <span class="sim-desc">Raise a skater on a ramp and watch potential energy grow.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 2</span>
+            <h3 class="topic-title">Universal Law of Gravity</h3>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/gravity-force-lab-basics/latest/gravity-force-lab-basics_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Gravity Force Lab: Basics</span>
+                <span class="sim-desc">See how mass and distance change the pull of gravity.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/gravity-and-orbits/latest/gravity-and-orbits_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Gravity and Orbits</span>
+                <span class="sim-desc">See how gravity holds the earth and moon in their orbits.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 3</span>
             <h3 class="topic-title">Gravitational Potential Energy to Kinetic Energy</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./hot-wheels-potential-energy/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Hot Wheels Potential Energy</span>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row" href="./hot-wheels-potential-energy/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Hot Wheels Potential Energy</span>
+                <span class="sim-desc">Pick a release height and see if the car makes it over the hill.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./roller-coaster-physics/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Roller Coaster Physics</span>
+            <a class="sim-row" href="./roller-coaster-physics/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Roller Coaster Physics</span>
+                <span class="sim-desc">Build a toy car coaster that reaches the egg without breaking it.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./coaster-creator/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Coaster Creator</span>
+            <a class="sim-row" href="./coaster-creator/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Coaster Creator</span>
+                <span class="sim-desc">Design hills and loops with enough energy to finish, then stop safely.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./sled-energy-and-collisions/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Sled Energy and Collisions</span>
-            </a></div>
-          </div></div>
-      </details>
-      <details class="unit" data-unit="u3">
-        <summary class="unit-summary">
+            <a class="sim-row" href="./sled-energy-and-collisions/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Sled Energy and Collisions</span>
+                <span class="sim-desc">Sled a polar bear down a hill into another bear. Where does the energy go?</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/energy-skate-park/latest/energy-skate-park_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Energy Skate Park</span>
+                <span class="sim-desc">Change the skater&#x27;s mass, add friction and graph the energy.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/pendulum-lab/latest/pendulum-lab_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Pendulum Lab</span>
+                <span class="sim-desc">Swing a pendulum and watch potential energy turn into kinetic.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </details>
+
+    <details class="unit" data-unit="u3">
+      <summary class="unit-summary">
+        <span class="unit-text">
           <span class="unit-name">Unit 3: Electricity &amp; Magnetism</span>
-          <span class="unit-chevron" aria-hidden="true">›</span>
-        </summary>
-        <div class="unit-body">
-          <div class="topic">
-            <h3 class="topic-title">Electric Circuits</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./circuit-builder/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Circuit Builder</span>
-            </a></div>
-          </div></div>
-      </details>
-      <details class="unit" data-unit="u5">
-        <summary class="unit-summary">
+          <span class="unit-topics">Magnetism &middot; Electromagnetic Fields</span>
+        </span>
+        <span class="unit-count">7 sims</span>
+        <span class="unit-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </summary>
+      <div class="unit-body">
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 1</span>
+            <h3 class="topic-title">Magnetism</h3>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/magnet-and-compass/latest/magnet-and-compass_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Magnet and Compass</span>
+                <span class="sim-desc">Move a compass around a bar magnet to map its magnetic field.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 2</span>
+            <h3 class="topic-title">Electromagnetic Fields</h3>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row" href="./circuit-builder/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Circuit Builder</span>
+                <span class="sim-desc">Drag a battery, bulb and wires onto the bench and complete the loop.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/circuit-construction-kit-dc/latest/circuit-construction-kit-dc_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Circuit Construction Kit: DC</span>
+                <span class="sim-desc">Build circuits with batteries, bulbs, wires and switches.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/magnets-and-electromagnets/latest/magnets-and-electromagnets_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Magnets and Electromagnets</span>
+                <span class="sim-desc">Add loops and current to make a stronger electromagnet.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/faradays-law/latest/faradays-law_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Faraday&#x27;s Law</span>
+                <span class="sim-desc">Push a magnet through a coil of wire and light a bulb.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/generator/latest/generator_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Generator</span>
+                <span class="sim-desc">Use running water to spin a magnet and make electricity.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/balloons-and-static-electricity/latest/balloons-and-static-electricity_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Balloons and Static Electricity</span>
+                <span class="sim-desc">Rub a balloon on a sweater and see its charge pull on a wall.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </details>
+
+    <details class="unit" data-unit="u4">
+      <summary class="unit-summary">
+        <span class="unit-text">
+          <span class="unit-name">Unit 4: Waves Transmitting Energy &amp; Information</span>
+          <span class="unit-topics">Intro to Wave Properties &middot; Light Waves &middot; Waves &amp; Information Technology</span>
+        </span>
+        <span class="unit-count">9 sims</span>
+        <span class="unit-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </summary>
+      <div class="unit-body">
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 1</span>
+            <h3 class="topic-title">Intro to Wave Properties</h3>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/waves-intro/latest/waves-intro_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Waves Intro</span>
+                <span class="sim-desc">Make water, sound and light waves and see what they share.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/wave-on-a-string/latest/wave-on-a-string_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Wave on a String</span>
+                <span class="sim-desc">Wiggle a string and change its frequency and amplitude.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/sound-waves/latest/sound-waves_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Sound Waves</span>
+                <span class="sim-desc">Change a speaker&#x27;s pitch and loudness and watch the wave.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/wave-interference/latest/wave-interference_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Wave Interference</span>
+                <span class="sim-desc">Overlap two sets of waves and see them add up or cancel.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 2</span>
+            <h3 class="topic-title">Light Waves</h3>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/bending-light/latest/bending-light_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Bending Light</span>
+                <span class="sim-desc">Aim a laser into water and glass and watch the light bend.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/color-vision/latest/color-vision_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Color Vision</span>
+                <span class="sim-desc">Mix red, green and blue light and see what color the eye sees.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/geometric-optics-basics/latest/geometric-optics-basics_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Geometric Optics: Basics</span>
+                <span class="sim-desc">Move lenses and mirrors to bend light and make an image.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/molecules-and-light/latest/molecules-and-light_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Molecules and Light</span>
+                <span class="sim-desc">See what microwaves, infrared and UV light do to molecules.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 3</span>
+            <h3 class="topic-title">Waves &amp; Information Technology</h3>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/cheerpj/radio-waves/latest/radio-waves.html?simulation=radio-waves">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Radio Waves and Electromagnetic Fields</span>
+                <span class="sim-desc">Shake electrons in a radio tower and send a signal to a house.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </details>
+
+    <details class="unit" data-unit="u5">
+      <summary class="unit-summary">
+        <span class="unit-text">
           <span class="unit-name">Unit 5: Thermal Energy &amp; Heat Flow</span>
-          <span class="unit-chevron" aria-hidden="true">›</span>
-        </summary>
-        <div class="unit-body">
-          <div class="topic">
+          <span class="unit-topics">Energy Transfer and Temperature &middot; Changes in Energy at the Molecular Level &middot; Phase Changes and Energy Transfer</span>
+        </span>
+        <span class="unit-count">11 sims</span>
+        <span class="unit-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </summary>
+      <div class="unit-body">
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 1</span>
             <h3 class="topic-title">Energy Transfer and Temperature</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./heat-conduction-lab/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Heat Conduction Lab</span>
-            </a>
-             <a class="sim-card" href="./heating-water/">
-    <span class="sim-card-icon" aria-hidden="true">▶</span>
-    <span class="sim-card-name">Heating Water</span>
-  </a>
-  <a class="sim-card" href="./temperature-and-diffusion/">
-    <span class="sim-card-icon" aria-hidden="true">▶</span>
-    <span class="sim-card-name">Hot vs Cold Diffusion Lab</span>
-  </a></div>
           </div>
-          <div class="topic">
+          <div class="sim-list">
+            <a class="sim-row" href="./heat-conduction-lab/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Heat Conduction Lab</span>
+                <span class="sim-desc">Join hot and cold water with a rod and see how fast heat moves through it.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row" href="./heating-water/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Heating Water</span>
+                <span class="sim-desc">Heat different amounts of water on a hot plate and graph the temperature.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row" href="./temperature-and-diffusion/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Hot vs Cold Diffusion Lab</span>
+                <span class="sim-desc">Drop dye into hot and cold water and see which mixes faster.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/energy-forms-and-changes/latest/energy-forms-and-changes_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Energy Forms and Changes</span>
+                <span class="sim-desc">Heat and cool iron, brick, water and oil and watch energy flow.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 2</span>
             <h3 class="topic-title">Changes in Energy at the Molecular Level</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./states-of-matter/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">States of Matter</span>
-            </a></div>
           </div>
-          <div class="topic">
+          <div class="sim-list">
+            <a class="sim-row" href="./states-of-matter/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">States of Matter</span>
+                <span class="sim-desc">Pick a substance and watch its particles as a solid, liquid and gas.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/states-of-matter-basics/latest/states-of-matter-basics_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">States of Matter: Basics</span>
+                <span class="sim-desc">Heat and cool atoms and molecules and watch them change state.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/gases-intro/latest/gases-intro_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Gases Intro</span>
+                <span class="sim-desc">Pump gas into a box and see where its pressure comes from.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 3</span>
             <h3 class="topic-title">Phase Changes and Energy Transfer</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./freezing-point-of-stearic-acid/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Freezing Point of Stearic Acid</span>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row" href="./freezing-point-of-stearic-acid/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Freezing Point of Stearic Acid</span>
+                <span class="sim-desc">Let melted stearic acid cool and graph what happens as it freezes.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./phase-changes/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Phase Changes</span>
+            <a class="sim-row" href="./phase-changes/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Phase Changes</span>
+                <span class="sim-desc">Heat or cool water and watch it melt, boil and freeze up close.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./pressure-and-phase-changes/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Pressure and Phase Changes</span>
-            </a></div>
-          </div></div>
-      </details>
-      <details class="unit" data-unit="u6">
-        <summary class="unit-summary">
+            <a class="sim-row" href="./pressure-and-phase-changes/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Pressure and Phase Changes</span>
+                <span class="sim-desc">Heat it, squeeze it or pump in molecules and watch the phase diagram.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/states-of-matter/latest/states-of-matter_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">States of Matter</span>
+                <span class="sim-desc">Heat, cool and squeeze molecules and follow the phase diagram.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </details>
+
+    <details class="unit" data-unit="u6">
+      <summary class="unit-summary">
+        <span class="unit-text">
           <span class="unit-name">Unit 6: Chemical Energy &amp; Reactions</span>
-          <span class="unit-chevron" aria-hidden="true">›</span>
-        </summary>
-        <div class="unit-body">
-          <div class="topic">
+          <span class="unit-topics">Molecular Composition &middot; Physical and Chemical Properties &middot; Conservation of Matter &middot; Synthetic vs. Natural</span>
+        </span>
+        <span class="unit-count">12 sims</span>
+        <span class="unit-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </summary>
+      <div class="unit-body">
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 1</span>
             <h3 class="topic-title">Molecular Composition</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./molecular-model-kit/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Molecular Model Kit</span>
-            </a></div>
           </div>
-          <div class="topic">
+          <div class="sim-list">
+            <a class="sim-row" href="./molecular-model-kit/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Molecular Model Kit</span>
+                <span class="sim-desc">Take atoms out of the kit and snap them together to build molecules.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/build-an-atom/latest/build-an-atom_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Build an Atom</span>
+                <span class="sim-desc">Add protons, neutrons and electrons to build an atom.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/build-a-molecule/latest/build-a-molecule_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Build a Molecule</span>
+                <span class="sim-desc">Join atoms to build water, carbon dioxide and more.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 2</span>
             <h3 class="topic-title">Physical and Chemical Properties</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./density-block-lab/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Density Block Lab</span>
-            </a>
-            <a class="sim-card" href="./flame-test-demo/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Flame Test Demo</span>
-            </a></div>
           </div>
-          <div class="topic">
+          <div class="sim-list">
+            <a class="sim-row" href="./density-block-lab/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Density Block Lab</span>
+                <span class="sim-desc">Put blocks of different materials on a balance and find their density.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row" href="./flame-test-demo/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Flame Test Demo</span>
+                <span class="sim-desc">Heat a salt in a flame and use the color to name the metal.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/density/latest/density_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Density</span>
+                <span class="sim-desc">Find the mass and volume of blocks to work out their density.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/cheerpj/reactions-and-rates/latest/reactions-and-rates.html?simulation=reactions-and-rates">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Reactions and Rates</span>
+                <span class="sim-desc">Collide molecules and see what makes a reaction speed up.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+        <section class="topic">
+          <div class="topic-label">
+            <span class="topic-num">Topic 3</span>
             <h3 class="topic-title">Conservation of Matter</h3>
-            <div class="sim-grid">
-            <a class="sim-card" href="./rates-of-chemical-reactions/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Rates of Chemical Reactions</span>
+          </div>
+          <div class="sim-list">
+            <a class="sim-row" href="./rates-of-chemical-reactions/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Rates of Chemical Reactions</span>
+                <span class="sim-desc">Drop an Alka-Seltzer tablet into warm or cold water and time the fizz.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./ph-endo-exo/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">pH / Endo-Exo Reactions</span>
+            <a class="sim-row" href="./ph-endo-exo/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">pH / Endo-Exo Reactions</span>
+                <span class="sim-desc">Test the pH, then mix reactants and see if they give off or take in heat.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </a>
-            <a class="sim-card" href="./chemical-changes/">
-              <span class="sim-card-icon" aria-hidden="true">▶</span>
-              <span class="sim-card-name">Chemical Changes Lab</span>
-            </a></div>
-          </div></div>
-      </details>
+            <a class="sim-row" href="./chemical-changes/">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Chemical Changes Lab</span>
+                <span class="sim-desc">Mix two substances and look for signs of a chemical change.</span>
+              </span>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/balancing-chemical-equations/latest/balancing-chemical-equations_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Balancing Chemical Equations</span>
+                <span class="sim-desc">Change the numbers in front of each formula so atoms balance.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+            <a class="sim-row phet" href="https://phet.colorado.edu/sims/html/reactants-products-and-leftovers/latest/reactants-products-and-leftovers_en.html">
+              <span class="sim-play" aria-hidden="true"></span>
+              <span class="sim-text">
+                <span class="sim-name">Reactants, Products and Leftovers</span>
+                <span class="sim-desc">Make sandwiches and molecules and count what is left over.</span>
+              </span>
+              <svg class="sim-source" viewBox="0 0 572 270" role="img" aria-label="PhET"><use href="#phet-logo"/></svg>
+              <span class="sim-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </details>
 </main>
 <footer class="site-footer">
-  Physical Science 8 Sim Library, a companion to the course textbook.
+  <p>Physical Science 8 Sim Library, a companion to the course textbook.</p>
+  <p>Sims with the PhET logo are by <a href="https://phet.colorado.edu" target="_blank" rel="noopener">PhET Interactive Simulations</a>, University of Colorado Boulder, shared under CC BY 4.0.</p>
 </footer>
+<script>
+/* Each unit's sim count, counted from its rows (so a row added by hand is counted too). */
+(function() {
+  document.querySelectorAll('details.unit').forEach(function(u) {
+    var n = u.querySelectorAll('a.sim-row').length, c = u.querySelector('.unit-count');
+    if (c) c.textContent = n + (n === 1 ? ' sim' : ' sims');
+  });
+})();
+</script>
 <script>
 (function() {
   var root = document.documentElement;
@@ -480,11 +1200,12 @@
     var t = root.getAttribute('data-theme');
     return t ? t : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   }
-  // a sim opened from here starts in the same mode (the sims read ?theme= too)
+  // a sim of ours opened from here starts in the same mode (the sims read ?theme= too); PhET's links stay as they are
   function show(t) {
     root.setAttribute('data-theme', t);
-    document.querySelectorAll('a.sim-card').forEach(function(a) {
+    document.querySelectorAll('a.sim-row').forEach(function(a) {
       var u = new URL(a.getAttribute('href'), location.href);
+      if (u.origin !== location.origin) return;
       u.searchParams.set('theme', t);
       a.setAttribute('href', u.pathname + u.search);
     });
