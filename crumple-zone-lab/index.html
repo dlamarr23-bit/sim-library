@@ -159,11 +159,10 @@ details[open] summary .chev{transform:rotate(-135deg)}
 @media (prefers-reduced-motion:reduce){ summary .chev{transition:none} }
 </style>
 <script>
-  // apply a light/dark choice before the page paints: the page showing this sim in a frame can name one (?theme=light or dark, so both sides match), else the saved one
+  // apply a light/dark choice before the page paints: the textbook names a mode with ?theme=light or dark, otherwise the device's setting decides
   (function(){
     var t = null;
     try{ t = new URLSearchParams(location.search).get('theme'); }catch(e){}
-    if(t !== 'light' && t !== 'dark'){ try{ t = localStorage.getItem('motionlab-theme'); }catch(e){} }
     if(t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
@@ -180,9 +179,6 @@ details[open] summary .chev{transform:rotate(-135deg)}
     </div>
     <button class="iconbtn" id="helpBtn" title="How to use this simulation" aria-label="How to use this simulation">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 1 1 3.9 2.6c-.8.4-1.2 1-1.2 1.8v.6"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/></svg>
-    </button>
-    <button class="iconbtn" id="themeBtn" aria-label="Switch to dark mode" title="Light / dark">
-      <svg id="themeIcon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
     </button>
   </header>
 
@@ -347,26 +343,11 @@ const $ = id => document.getElementById(id);
 const root = document.documentElement;
 function systemDark(){ return window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches; }
 function currentTheme(){ return root.dataset.theme || (systemDark() ? 'dark' : 'light'); }
-function setIcon(){
-  const dark = currentTheme()==='dark';
-  $('themeIcon').innerHTML = dark
-    ? '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>'
-    : '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>';
-  $('themeBtn').setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-}
-// the script in the head already applied ?theme= or the saved choice
-setIcon();
-function repaint(){ setIcon(); readColors(); drawAll(); drawGraph(); }
+// the script in the head already applied ?theme= (with none, the device's setting decides)
+function repaint(){ readColors(); drawAll(); drawGraph(); }
 function applyTheme(t){ root.dataset.theme = t; repaint(); }
 const inFrame = window.parent !== window;
-$('themeBtn').addEventListener('click', () => {
-  const next = currentTheme()==='dark' ? 'light' : 'dark';
-  applyTheme(next);
-  try { localStorage.setItem('motionlab-theme', next); } catch(e){}
-  // shown in a frame (the textbook's Sims page): tell that page, so it switches too
-  if (inFrame) try { window.parent.postMessage({ simTheme: next }, '*'); } catch(e){}
-});
-// the page around this sim switched its light/dark mode: follow it (not saved, so the sim on its own keeps its own choice)
+// the page around this sim switched its light/dark mode: follow it
 window.addEventListener('message', e => {
   if (!inFrame || e.source !== window.parent) return;
   const t = e.data && e.data.simTheme;

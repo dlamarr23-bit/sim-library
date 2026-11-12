@@ -146,13 +146,6 @@ body{margin:0;background:var(--page)}
 }
 .cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
 .cvlab-ro-rec .cvlab-ro-v{color:#E8646E}
-.cvlab-themebtn{
-  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
-  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
-}
-.cvlab-themebtn:hover{border-color:var(--tape)}
-.cvlab-themebtn svg{width:21px;height:21px}
-.cvlab-readouts .cvlab-themebtn{align-self:center}
 
 /* ---------- scene ----------------------------------------------------- */
 .cvlab-bench{
@@ -236,7 +229,6 @@ body{margin:0;background:var(--page)}
   .cvlab-readouts{gap:5px;flex-wrap:nowrap;width:100%}
   .cvlab-ro{min-width:0;padding:4px 7px;flex:1 1 70px}
   .cvlab-ro-v{font-size:14px}
-  .cvlab-themebtn{width:36px;height:36px}
   .cvlab-ro-k{font-size:8px;letter-spacing:.1em}
   .cvlab-bench{padding:7px 7px 9px}
   #cvlab-scene{height:clamp(190px,42vw,280px)}
@@ -257,12 +249,11 @@ body{margin:0;background:var(--page)}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
 <script>
-/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-   (?theme=light or dark, so both sides match), else the one saved on this computer */
+/* apply a light / dark choice before the page paints: the textbook names a mode with ?theme=light or dark,
+   otherwise the device's setting decides */
 (function(){
   var t = null;
   try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
-  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
   if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
 })();
 </script>
@@ -281,7 +272,6 @@ body{margin:0;background:var(--page)}
       <div class="cvlab-ro"><span class="cvlab-ro-k">Stopwatch</span><span class="cvlab-ro-v" id="cvlab-ro-time">0.00 s</span></div>
       <div class="cvlab-ro" id="cvlab-ro-speedwrap"><span class="cvlab-ro-k">Speed</span><span class="cvlab-ro-v" id="cvlab-ro-speed">&mdash;</span></div>
       <div class="cvlab-ro cvlab-ro-rec"><span class="cvlab-ro-k">Sensor</span><span class="cvlab-ro-v" id="cvlab-ro-state">Idle</span></div>
-      <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
     </div>
   </header>
 
@@ -1091,26 +1081,11 @@ body{margin:0;background:var(--page)}
     document.fonts.ready.then(function(){ dirty = true; drawScene(); drawGraph(); });
   }
 
-  /* ------------------------------------------------ light / dark toggle */
-  var themeBtn = $("cvlab-theme");
-  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  /* ------------------------------------------------ light / dark mode */
   var inFrame = window.parent !== window;
-  function paintToggle(){
-    var d = isDarkNow();
-    themeBtn.innerHTML = d ? SUN : MOON;
-    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
-  }
   /* new colors for both canvases; the run, the last run and the target are kept */
-  function repaint(){ readPalette(); paintToggle(); dirty = true; drawScene(); drawGraph(); }
+  function repaint(){ readPalette(); dirty = true; drawScene(); drawGraph(); }
   function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
-  themeBtn.addEventListener("click", function(){
-    var next = isDarkNow() ? "light" : "dark";
-    applyTheme(next);
-    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
-    /* shown in a frame (the textbook's Sims page): tell that page, so it switches too */
-    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
-  });
   /* the page around this sim switched its light / dark mode: follow it (not saved) */
   window.addEventListener("message", function(e){
     if (!inFrame || e.source !== window.parent) return;
@@ -1122,7 +1097,6 @@ body{margin:0;background:var(--page)}
     var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
     if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
   }
-  paintToggle();
 
   syncUI(); drawScene(); drawGraph();
   requestAnimationFrame(frame);

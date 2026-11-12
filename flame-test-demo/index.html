@@ -89,15 +89,6 @@ h1{
   -webkit-background-clip:text; background-clip:text; color:transparent;
 }
 .sub{margin:6px 0 0; font-size:clamp(14px,1.1vw,18px); font-weight:600; color:var(--ink2)}
-/* light / dark switch at the right end of the header */
-.theme-toggle{
-  display:inline-flex; align-items:center; gap:8px; cursor:pointer; white-space:nowrap;
-  background:var(--btn-bg); color:var(--ink); border:2px solid var(--btn-line); border-radius:999px;
-  padding:8px 16px 8px 12px; font-weight:800; font-size:clamp(11px,.82vw,13.5px);
-  letter-spacing:.11em; text-transform:uppercase; transition:.16s;
-}
-.theme-toggle:hover{border-color:var(--accent)}
-.theme-toggle .icon{font-size:15px; line-height:1; letter-spacing:0}
 .grid{display:grid; grid-template-columns:1.5fr 1fr; gap:clamp(12px,1.2vw,22px); align-items:start}
 @media (max-width:1080px){ .grid{grid-template-columns:1fr} }
 .card{
@@ -270,11 +261,10 @@ p.body strong{font-weight:800; color:var(--ink)}
 }
 </style>
 <script>
-/* apply a light/dark choice before the page paints: the page showing this sim in a frame can name one (?theme=light or dark), else the saved one */
+/* apply a light/dark choice before the page paints: the textbook names a mode with ?theme=, otherwise the device's setting decides */
 (function(){
   var t0 = null;
   try{ t0 = new URLSearchParams(location.search).get('theme'); }catch(e){}
-  if(t0 !== 'light' && t0 !== 'dark'){ try{ t0 = localStorage.getItem('motionlab-theme'); }catch(e){} }
   if(t0 === 'light' || t0 === 'dark') document.documentElement.setAttribute('data-theme', t0);
 })();
 </script>
@@ -287,10 +277,6 @@ p.body strong{font-weight:800; color:var(--ink)}
       <h1>Flame Test Lab</h1>
       <p class="sub">Every metal ion glows its own color. Heat the salt, read the light, name the metal.</p>
     </div>
-    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
-      <span class="icon" aria-hidden="true">🌙</span>
-      <span class="label">Dark mode</span>
-    </button>
   </header>
 
   <div class="grid">
@@ -919,8 +905,6 @@ $('btnClean').addEventListener('click', function(){
   LIGHT / DARK MODE  (the flame canvas redraws every frame, so it
   picks up a change at once; flame colors are the same in both)
 ------------------------------------------------------------------ */
-var themeToggle = $('themeToggle');
-var THEME_KEY = 'motionlab-theme';
 var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 var inFrame = window.parent !== window;
 function effectiveTheme(){
@@ -928,39 +912,19 @@ function effectiveTheme(){
   if(a === 'light' || a === 'dark') return a;
   return mq && mq.matches ? 'dark' : 'light';
 }
-function paintToggle(theme){
-  var dark = theme === 'dark';
-  themeToggle.querySelector('.icon').textContent = dark ? '☀️' : '🌙';
-  themeToggle.querySelector('.label').textContent = dark ? 'Light mode' : 'Dark mode';
-  themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-}
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme', theme);
-  paintToggle(theme);
 }
-themeToggle.addEventListener('click', function(){
-  var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-  try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
-  /* shown in a frame (the textbook's Sims page): tell that page, so it switches too */
-  if(inFrame){ try{ window.parent.postMessage({ simTheme: next }, '*'); }catch(e){} }
-});
-/* the page around this sim switched its light/dark mode: follow it (not saved, so the sim on its own keeps its own choice) */
+/* the page around this sim switched its light/dark mode: follow it */
 window.addEventListener('message', function(e){
   if(!inFrame || e.source !== window.parent) return;
   var t = e.data && e.data.simTheme;
   if((t === 'light' || t === 'dark') && t !== effectiveTheme()) applyTheme(t);
 });
-if(mq){
-  var onSystemChange = function(){ if(!document.documentElement.getAttribute('data-theme')) paintToggle(effectiveTheme()); };
-  if(mq.addEventListener) mq.addEventListener('change', onSystemChange);
-  else if(mq.addListener) mq.addListener(onSystemChange);
-}
 
 /* ------------------------------------------------------------------
   14.  GO
 ------------------------------------------------------------------ */
-paintToggle(effectiveTheme());
 newUnknowns();
 resetReadout();
 requestAnimationFrame(function(t){ last = t; frame(t); });

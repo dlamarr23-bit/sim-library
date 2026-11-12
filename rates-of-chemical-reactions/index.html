@@ -144,12 +144,6 @@ header.page .sub{color:var(--muted);font-weight:600;font-size:clamp(14px,1.15vw,
   color:#04121b;background:linear-gradient(90deg,var(--accent),#7dd3fc);
   padding:8px 16px;border-radius:999px;white-space:nowrap;
 }
-/* light / dark toggle: a pill beside the badge */
-.theme-toggle{display:inline-flex;align-items:center;gap:7px;padding:8px 14px 8px 11px;border-radius:999px;
-  font-size:13px;letter-spacing:.1em;white-space:nowrap}
-.theme-toggle .icon{display:flex}
-.theme-toggle svg{width:16px;height:16px}
-@media (max-width:520px){.theme-toggle{padding:8px}.theme-toggle .label{display:none}}
 
 .grid-main{display:grid;grid-template-columns:340px minmax(0,1fr) 320px;gap:18px;align-items:start}
 .grid-two{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;margin-top:18px;align-items:start}
@@ -320,12 +314,11 @@ ol.howto strong{font-weight:800;color:var(--strong)}
 }
 </style>
 <script>
-/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-   (?theme=light or dark, so both sides match), else the one saved on this computer */
+/* apply a light / dark choice before the page paints: the textbook names a mode with ?theme=,
+   otherwise the device's setting decides */
 (function(){
   var t = null;
   try { t = new URLSearchParams(location.search).get('theme'); } catch (e) {}
-  if (t !== 'light' && t !== 'dark') { try { t = localStorage.getItem('motionlab-theme'); } catch (e) {} }
   if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
 })();
 </script>
@@ -339,10 +332,6 @@ ol.howto strong{font-weight:800;color:var(--strong)}
     <div class="sub">Measure how <strong>water temperature</strong> changes the <strong>rate of a chemical reaction</strong>. Heat the water, drop the Alka-Seltzer tablet, and time the fizz until the tablet is completely gone.</div>
   </div>
   <div class="badge">Reaction Rate Lab</div>
-  <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to light mode">
-    <span class="icon" aria-hidden="true"></span>
-    <span class="label">Light mode</span>
-  </button>
 </header>
 
 <div class="grid-main">
@@ -1428,33 +1417,17 @@ function updatePhExplain(){
   box.innerHTML = html;
 }
 
-/* ================= LIGHT / DARK TOGGLE ================= */
+/* ================= LIGHT / DARK MODE ================= */
 /* this sim's own look is dark, so with no choice made it is dark unless the computer asks for light */
-var themeBtn = $('themeToggle');
-var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
 var inFrame = window.parent !== window;
 function isDarkNow(){
   var a = document.documentElement.getAttribute('data-theme');
   return a === 'dark' || (!a && !(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches));
 }
-function paintToggle(){
-  var d = isDarkNow();
-  themeBtn.querySelector('.icon').innerHTML = d ? SUN : MOON;
-  themeBtn.querySelector('.label').textContent = d ? 'Light mode' : 'Dark mode';
-  themeBtn.setAttribute('aria-label', d ? 'Switch to light mode' : 'Switch to dark mode');
-}
 // the lab bench redraws itself every frame; the graph only redraws when asked
-function repaint(){ readPalette(); paintToggle(); drawScene(); drawChart(); }
+function repaint(){ readPalette(); drawScene(); drawChart(); }
 function applyTheme(th){ document.documentElement.setAttribute('data-theme', th); repaint(); }
-themeBtn.addEventListener('click', function(){
-  var next = isDarkNow() ? 'light' : 'dark';
-  applyTheme(next);
-  try { localStorage.setItem('motionlab-theme', next); } catch (e) {}
-  // shown in a frame (the textbook's Sims page): tell that page, so it switches too
-  if (inFrame) try { window.parent.postMessage({ simTheme: next }, '*'); } catch (e) {}
-});
-// the page around this sim switched its light / dark mode: follow it (not saved)
+// the page around this sim switched its light / dark mode: follow it
 window.addEventListener('message', function(e){
   if (!inFrame || e.source !== window.parent) return;
   var th = e.data && e.data.simTheme;
@@ -1465,7 +1438,6 @@ if (window.matchMedia){
   var onSys = function(){ if (!document.documentElement.getAttribute('data-theme')) repaint(); };
   if (mqLight.addEventListener) mqLight.addEventListener('change', onSys); else if (mqLight.addListener) mqLight.addListener(onSys);
 }
-paintToggle();
 
 /* ================= INIT ================= */
 renderPhRows();

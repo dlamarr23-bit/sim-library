@@ -6,12 +6,11 @@
 <title>Poker Chip Collision Lab</title>
 <style>*,*::before,*::after{box-sizing:border-box;}html{-webkit-text-size-adjust:100%;}body{margin:0;}img,svg,canvas{display:block;max-width:100%;}</style>
 <script>
-/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-   (?theme=light or dark, so both sides match), else the one saved on this computer */
+/* apply a light / dark choice before the page paints: the textbook names a mode with ?theme=,
+   otherwise the device's setting decides */
 (function(){
   var t = null;
   try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
-  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
   if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
 })();
 </script>
@@ -136,23 +135,8 @@ h1{margin:0;font-size:clamp(26px,3vw,43px);font-weight:800;letter-spacing:-.02em
 }
 .qbox .lab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-deep);font-weight:800;}
 .qbox p{margin:2px 0 0;font-size:clamp(14px,1.05vw,18px);font-weight:800;line-height:1.25;}
-/* light / dark switch, above the lab question */
 .mast-side{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
-.theme-toggle{
-  appearance:none;cursor:pointer;
-  display:inline-flex;align-items:center;gap:7px;
-  padding:7px 14px 7px 11px;border-radius:999px;
-  background:var(--card);border:2px solid var(--line-2);color:var(--ink-2);
-  font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;
-}
-.theme-toggle:hover{border-color:var(--accent);color:var(--ink);}
-.theme-toggle svg{width:16px;height:16px;}
 @media (max-width:760px){.mast-side{align-items:flex-start;}}
-/* wide screens: the switch sits just above the question box without making the header taller */
-@media (min-width:1120px){
-  .mast-side{position:relative;}
-  .mast-side .theme-toggle{position:absolute;right:0;bottom:100%;margin-bottom:8px;}
-}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);}
 .card-hd{
@@ -367,10 +351,6 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
       <p class="deck">Four chips are stacked in a tower on a countertop. Slide 1, 2, or 3 chips into the bottom of the tower and count how many come out the other side.</p>
     </div>
     <div class="mast-side">
-      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
-        <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg></span>
-        <span class="label">Dark mode</span>
-      </button>
       <div class="qbox">
         <div class="lab">Lab question</div>
         <p>How does Newton&rsquo;s First Law explain what happens to a stack of chips?</p>
@@ -1065,10 +1045,7 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
   });
   document.getElementById('clear').addEventListener('click',function(){ rows=[]; S.trial=0; renderRows(); });
 
-  /* ---- light / dark toggle ---- */
-  var themeBtn=document.getElementById('themeToggle');
-  var MOON='<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-  var SUN='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  /* ---- light / dark mode ---- */
   var inFrame = window.parent !== window;
   var sysDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
   function themeNow(){
@@ -1076,23 +1053,10 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
     if(t==='light'||t==='dark') return t;
     return sysDark && sysDark.matches ? 'dark' : 'light';
   }
-  function paintToggle(){
-    var d = themeNow()==='dark';
-    themeBtn.querySelector('.icon').innerHTML = d ? SUN : MOON;
-    themeBtn.querySelector('.label').textContent = d ? 'Light mode' : 'Dark mode';
-    themeBtn.setAttribute('aria-label', d ? 'Switch to light mode' : 'Switch to dark mode');
-  }
   // redraw the countertop right away, whether the chips are still, sliding or finished
-  function repaint(){ readColors(); paintToggle(); draw(); }
+  function repaint(){ readColors(); draw(); }
   function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); repaint(); }
-  themeBtn.addEventListener('click',function(){
-    var next = themeNow()==='dark' ? 'light' : 'dark';
-    applyTheme(next);
-    try{ localStorage.setItem('motionlab-theme', next); }catch(e){}
-    // shown in a frame (the textbook's Sims page): tell that page, so it switches too
-    if(inFrame) try{ window.parent.postMessage({ simTheme: next }, '*'); }catch(e){}
-  });
-  // the page around this sim switched its light / dark mode: follow it (not saved, so the sim alone keeps its own choice)
+  // the page around this sim switched its light / dark mode: follow it
   window.addEventListener('message',function(e){
     if(!inFrame || e.source !== window.parent) return;
     var t = e.data && e.data.simTheme;
@@ -1103,7 +1067,6 @@ tbody tr:nth-child(even) td{background:var(--card-2);}
     if(sysDark.addEventListener) sysDark.addEventListener('change', onSys);
     else if(sysDark.addListener) sysDark.addListener(onSys);
   }
-  paintToggle();
 
   reset();
 })();

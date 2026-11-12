@@ -111,17 +111,7 @@ header.masthead .q{
   font-size:clamp(20px,1.7vw,27px); color:var(--accent); line-height:1.2;
   max-width:34ch;
 }
-/* light / dark switch, top right of the header */
 .mast-side{display:flex; flex-direction:column; align-items:flex-end;}
-.theme-toggle{
-  display:inline-flex; align-items:center; gap:7px;
-  padding:7px 14px 7px 11px; border-radius:999px;
-  border:1.5px solid var(--line); background:var(--panel); color:var(--ink);
-  font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap;
-}
-.theme-toggle:hover{border-color:var(--accent);}
-.theme-toggle .icon{display:grid; place-items:center;}
-.theme-toggle svg{width:16px; height:16px; display:block;}
 @media (max-width:1080px){ .mast-side{align-items:flex-start;} }
 .grid-main{
   display:grid; grid-template-columns:minmax(0,1.5fr) minmax(340px,.95fr);
@@ -264,12 +254,11 @@ footer.note{margin-top:22px; font-size:13px; font-weight:600; color:var(--ink-3)
 }
 </style>
 <script>
-/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-   (?theme=light or dark, so both sides match), else the one saved on this computer */
+/* apply a light / dark choice before the page paints: the textbook names a mode with ?theme=,
+   otherwise the device's setting decides */
 (function(){
   var t = null;
   try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
-  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
   if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
 })();
 </script>
@@ -283,10 +272,6 @@ footer.note{margin-top:22px; font-size:13px; font-weight:600; color:var(--ink-3)
       <h1>Describing Acceleration<br>Using an Accelerometer</h1>
     </div>
     <div class="mast-side">
-      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
-        <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg></span>
-        <span class="label">Dark mode</span>
-      </button>
       <p class="q">When does an object accelerate?</p>
     </div>
   </header>
@@ -1050,10 +1035,7 @@ function frame(ts){
   requestAnimationFrame(frame);
 }
 
-/* ---------- light / dark toggle ---------- */
-var themeBtn = $("themeToggle");
-var MOON = '<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-var SUN  = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+/* ---------- light / dark mode ---------- */
 var inFrame = window.parent !== window;
 var sysDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 function themeNow(){
@@ -1061,23 +1043,10 @@ function themeNow(){
   if (t === "light" || t === "dark") return t;
   return sysDark && sysDark.matches ? "dark" : "light";
 }
-function paintToggle(){
-  var d = themeNow() === "dark";
-  themeBtn.querySelector(".icon").innerHTML = d ? SUN : MOON;
-  themeBtn.querySelector(".label").textContent = d ? "Light mode" : "Dark mode";
-  themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
-}
 // redraw both canvases right away (the diagrams below use CSS colors, so they follow on their own)
-function repaint(){ readTokens(); paintToggle(); drawCard(); drawTop(); }
+function repaint(){ readTokens(); drawCard(); drawTop(); }
 function applyTheme(t){ document.documentElement.setAttribute("data-theme", t); repaint(); }
-themeBtn.addEventListener("click", function(){
-  var next = themeNow() === "dark" ? "light" : "dark";
-  applyTheme(next);
-  try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
-  // shown in a frame (the textbook's Sims page): tell that page, so it switches too
-  if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
-});
-// the page around this sim switched its light / dark mode: follow it (not saved, so the sim alone keeps its own choice)
+// the page around this sim switched its light / dark mode: follow it
 window.addEventListener("message", function(e){
   if (!inFrame || e.source !== window.parent) return;
   var t = e.data && e.data.simTheme;
@@ -1088,7 +1057,6 @@ if (sysDark){
   if (sysDark.addEventListener) sysDark.addEventListener("change", onSys);
   else if (sysDark.addListener) sysDark.addListener(onSys);
 }
-paintToggle();
 
 buildTable();
 syncSliderLabels();

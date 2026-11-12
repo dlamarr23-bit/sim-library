@@ -52,10 +52,6 @@ header{display:flex;align-items:center;gap:12px;justify-content:space-between}
 .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800}
 h1{margin:0;font-size:clamp(24px,3vw,34px);font-weight:800;line-height:1.1;text-wrap:balance}
 h1 .h{color:var(--hot)} h1 .c{color:var(--cold)}
-.icon-btn{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:var(--panel);
-  color:var(--fg);display:grid;place-items:center;cursor:pointer}
-.icon-btn:hover{border-color:var(--muted)}
-.icon-btn svg{width:22px;height:22px}
 :focus-visible{outline:3px solid var(--cold);outline-offset:2px}
 
 .main{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:'scene' 'ctrl' 'chart' 'table' 'docs';gap:14px}
@@ -155,6 +151,10 @@ details[open] summary .chev{transform:rotate(180deg)}
 .docs{display:flex;flex-direction:column;gap:12px;min-width:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<script>
+/* apply a light/dark choice before the page paints: the textbook names a mode with ?theme=light or dark, otherwise the device's setting decides */
+(function(){var t=null;try{t=new URLSearchParams(location.search).get('theme')}catch(e){}if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)})();
+</script>
 </head>
 <body>
 
@@ -164,7 +164,6 @@ details[open] summary .chev{transform:rotate(180deg)}
       <span class="eyebrow">Motion Lab · Diffusion</span>
       <h1><span class="h">Hot</span> vs <span class="c">Cold</span> Diffusion Lab</h1>
     </div>
-    <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="main">
@@ -361,14 +360,12 @@ const $=id=>document.getElementById(id);
 const GAP=5, MIX_TARGET=90, N=10000;
 
 /* ---------- theme ---------- */
-const root=document.documentElement, themeBtn=$('themeBtn');
-const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>';
-const MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+const root=document.documentElement;
 function isDark(){const t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
-function paintThemeBtn(){const d=isDark();themeBtn.innerHTML=d?SUN:MOON;themeBtn.setAttribute('aria-label',d?'Switch to light mode':'Switch to dark mode');readColors();drawChart()}
-try{const s=localStorage.getItem('motionlab-theme');if(s==='dark'||s==='light')root.setAttribute('data-theme',s)}catch(e){}
-themeBtn.addEventListener('click',()=>{const n=isDark()?'light':'dark';root.setAttribute('data-theme',n);try{localStorage.setItem('motionlab-theme',n)}catch(e){}paintThemeBtn()});
-matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',paintThemeBtn);
+function repaint(){readColors();drawChart()}
+/* the textbook around this sim switched its light/dark mode: follow it */
+window.addEventListener('message',e=>{if(window.parent===window||e.source!==window.parent)return;const t=e.data&&e.data.simTheme;if((t==='light'||t==='dark')&&t!==(isDark()?'dark':'light')){root.setAttribute('data-theme',t);repaint()}});
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',repaint);
 let C={};
 function readColors(){const cs=getComputedStyle(root);['--hot','--cold','--fg','--muted','--line','--glass','--glass-edge','--water','--panel','--ink'].forEach(k=>C[k]=cs.getPropertyValue(k).trim())}
 
@@ -760,7 +757,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
-readColors(); setTemps(80,10); paintThemeBtn(); sizeFx(); sizeChart(); renderTable(); syncButtons(); updateReadouts(); drawChart();
+readColors(); setTemps(80,10); sizeFx(); sizeChart(); renderTable(); syncButtons(); updateReadouts(); drawChart();
 requestAnimationFrame(frame);
 })();
 </script>

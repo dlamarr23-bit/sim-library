@@ -122,11 +122,6 @@ header.top{display:flex;align-items:center;gap:14px;margin-bottom:12px}
 header.top .eyebrow{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
 header.top h1{margin:0;font-size:clamp(26px,3vw,36px);font-weight:800;line-height:1.1;letter-spacing:-.01em}
 header.top p{margin:4px 0 0;color:var(--ink-2);font-size:clamp(15px,1.2vw,17px);font-weight:600}
-.spacer{flex:1 1 auto}
-.themebtn{flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);
-  color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow)}
-.themebtn:hover{border-color:var(--accent)}
-.themebtn svg{width:21px;height:21px}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
 
@@ -278,12 +273,11 @@ fieldset:disabled .radio{cursor:not-allowed}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script>
-/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-   (?theme=light or dark, so both sides match), else the one saved on this computer */
+/* apply a light / dark choice before the page paints: the textbook names a mode with ?theme=light or dark,
+   otherwise the device's setting decides */
 (function(){
   var t = null;
   try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
-  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
   if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
 })();
 </script>
@@ -297,8 +291,6 @@ fieldset:disabled .radio{cursor:not-allowed}
       <h1>Sled Energy and Collisions</h1>
       <p>Send a polar bear down a snowy hill into another bear, or crash two sleds together. Where does the energy go?</p>
     </div>
-    <div class="spacer"></div>
-    <button class="themebtn" id="themeBtn" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="main">
@@ -1348,10 +1340,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
-/* ------------------------------------------------ light / dark toggle */
-const themeBtn = el("themeBtn");
-const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-const SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+/* ------------------------------------------------ light / dark mode */
 const inFrame = window.parent !== window;
 function isDark(){
   const t = document.documentElement.getAttribute("data-theme");
@@ -1359,21 +1348,9 @@ function isDark(){
   return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
 }
 function pal(){ return isDark() ? PAL.dark : PAL.light; }
-const paintToggle = () => {
-  const d = isDark();
-  themeBtn.innerHTML = d ? SUN : MOON;
-  themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
-};
-const repaint = () => { paintToggle(); if (TS){ buildBg(); dirty = true; } };
+const repaint = () => { if (TS){ buildBg(); dirty = true; } };
 const applyTheme = t => { document.documentElement.setAttribute("data-theme", t); repaint(); };
-themeBtn.addEventListener("click", () => {
-  const next = isDark() ? "light" : "dark";
-  applyTheme(next);
-  try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
-  /* shown in a frame (a lab's questions page): tell that page, so it switches too */
-  if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
-});
-/* the page around this sim switched its light / dark mode: follow it (not saved, so the sim on its own keeps its own choice) */
+/* the textbook around this sim switched its light / dark mode: follow it */
 window.addEventListener("message", e => {
   if (!inFrame || e.source !== window.parent) return;
   const t = e.data && e.data.simTheme;
@@ -1388,7 +1365,6 @@ if (window.matchMedia){
 /* ==================================================================
    BOOT
    ================================================================== */
-paintToggle();
 resize();
 applyMode();
 renderRuns(false);

@@ -164,22 +164,6 @@
     margin-bottom:22px;
     position:relative;
   }
-  /* light / dark toggle: a pill at the top right of the header */
-  .theme-toggle{
-    position:absolute;top:0;right:0;
-    display:inline-flex;align-items:center;gap:7px;
-    background:var(--card);border:1px solid var(--line);border-radius:999px;
-    padding:8px 15px 8px 12px;cursor:pointer;
-    font-family:inherit;font-size:14px;font-weight:800;color:var(--ink);white-space:nowrap;
-  }
-  .theme-toggle:hover{border-color:var(--accent);}
-  .theme-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-  .theme-toggle .icon{display:flex;}
-  .theme-toggle svg{width:18px;height:18px;}
-  @media (max-width:640px){
-    .theme-toggle{padding:9px;}
-    .theme-toggle .label{display:none;}
-  }
   header.hero .kicker{
     display:inline-block;
     background:var(--accent);
@@ -604,10 +588,8 @@
     .wrap{padding:0 8px;}
     header.hero{margin-bottom:10px;}
     header.hero .kicker{display:none;}
-    header.hero h1{font-size:24px;margin:0 0 4px;padding:0 52px;}
+    header.hero h1{font-size:24px;margin:0 0 4px;}
     header.hero p{font-size:14.5px;line-height:1.45;}
-    .theme-toggle{padding:8px;}
-    .theme-toggle .label{display:none;}
     .lab-grid{
       grid-template-columns:1fr;
       grid-template-areas:"scene" "controls" "info";
@@ -669,12 +651,11 @@
   }
 </style>
 <script>
-  /* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-     (?theme=light or dark, so both sides match), else the one saved on this computer */
+  /* apply a light / dark choice before the page paints: the textbook names a mode with ?theme=,
+     otherwise the device's setting decides */
   (function(){
     var t = null;
     try { t = new URLSearchParams(location.search).get('theme'); } catch (e) {}
-    if (t !== 'light' && t !== 'dark') { try { t = localStorage.getItem('motionlab-theme'); } catch (e) {} }
     if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
@@ -683,10 +664,6 @@
 <div class="wrap">
 
   <header class="hero">
-    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
-      <span class="icon" aria-hidden="true"></span>
-      <span class="label">Dark mode</span>
-    </button>
     <span class="kicker">Motion Lab</span>
     <h1>Egg Drop Inertia</h1>
     <p>An egg sits on a cardboard tube. The tube stands on a tray that rests on a glass of water. Strike the tray from the side, and the tray zips away. Does the egg drop into the water, or does it end up on the table? Find out how hard you need to hit &mdash; and why.</p>
@@ -1812,28 +1789,12 @@
     chartRows.appendChild(row);
   }
 
-  // ---------- LIGHT / DARK TOGGLE ----------
-  var themeBtn = document.getElementById('themeToggle');
-  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  // ---------- LIGHT / DARK MODE ----------
   var inFrame = window.parent !== window;
-  function paintToggle(){
-    var d = isDarkNow();
-    themeBtn.querySelector('.icon').innerHTML = d ? SUN : MOON;
-    themeBtn.querySelector('.label').textContent = d ? 'Light mode' : 'Dark mode';
-    themeBtn.setAttribute('aria-label', d ? 'Switch to light mode' : 'Switch to dark mode');
-  }
   // mid-run, the next animation frame picks up the new colors by itself
-  function repaint(){ readPalette(); paintToggle(); if(!animating) render(); }
+  function repaint(){ readPalette(); if(!animating) render(); }
   function applyTheme(th){ document.documentElement.setAttribute('data-theme', th); repaint(); }
-  themeBtn.addEventListener('click', function(){
-    var next = isDarkNow() ? 'light' : 'dark';
-    applyTheme(next);
-    try { localStorage.setItem('motionlab-theme', next); } catch (e) {}
-    // shown in a frame (the textbook's Sims page): tell that page, so it switches too
-    if (inFrame) try { window.parent.postMessage({ simTheme: next }, '*'); } catch (e) {}
-  });
-  // the page around this sim switched its light / dark mode: follow it (not saved)
+  // the page around this sim switched its light / dark mode: follow it
   window.addEventListener('message', function(e){
     if (!inFrame || e.source !== window.parent) return;
     var th = e.data && e.data.simTheme;
@@ -1851,7 +1812,6 @@
   });
 
   // ---------- START ----------
-  paintToggle();
   updatePrediction();
   render();
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(function(){ if(!animating) render(); }); }

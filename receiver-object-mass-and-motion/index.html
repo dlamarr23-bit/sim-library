@@ -109,10 +109,6 @@ body{margin:0;background:var(--bench)}
   text-transform:uppercase;color:var(--tape);margin-bottom:2px}
 .cvlab-head h1{font-size:clamp(24px,3vw,34px);text-transform:uppercase;letter-spacing:.04em;line-height:1}
 .cvlab-readouts{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
-.cvlab-theme{width:44px;height:44px;border-radius:50%;border:1.5px solid #4A4F45;background:#000;color:var(--tape);
-  cursor:pointer;display:flex;align-items:center;justify-content:center;align-self:center;flex:none;padding:0}
-.cvlab-theme:hover{border-color:var(--tape)}
-.cvlab-theme svg{width:20px;height:20px}
 .cvlab-ro{background:#000;border:1px solid #35392F;border-radius:3px;padding:5px 10px;min-width:104px}
 .cvlab-ro-k{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.12em;
   text-transform:uppercase;color:#8C9284;white-space:nowrap}
@@ -289,12 +285,11 @@ body{margin:0;background:var(--bench)}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
 <script>
-/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-   (?theme=light or dark, so both sides match), else the one saved on this computer */
+/* apply a light / dark choice before the page paints: the textbook names a mode with ?theme=light or dark,
+   otherwise the device's setting decides */
 (function(){
   var t = null;
   try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
-  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
   if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
 })();
 </script>
@@ -314,7 +309,6 @@ body{margin:0;background:var(--bench)}
       <div class="cvlab-ro"><span class="cvlab-ro-k">Speed at bottom &middot; <span class="sym">v<sub>1</sub></span></span><span class="cvlab-ro-v" id="cvlab-ro-v1">0 cm/s</span></div>
       <div class="cvlab-ro"><span class="cvlab-ro-k">After the hit &middot; <span class="sym">v</span></span><span class="cvlab-ro-v" id="cvlab-ro-v">0.0 cm/s</span></div>
       <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Distance &middot; <span class="sym">d</span></span><span class="cvlab-ro-v" id="cvlab-ro-dist">0.0 cm</span></div>
-      <button class="cvlab-theme" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
     </div>
   </header>
 
@@ -1544,33 +1538,18 @@ body{margin:0;background:var(--bench)}
     document.fonts.ready.then(function(){ dirty = true; drawScene(); drawGraph(); });
   }
 
-  /* ------------------------------------------------ light / dark toggle */
-  var elTheme = $("cvlab-theme");
-  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  /* ------------------------------------------------ light / dark mode */
   var inFrame = window.parent !== window;
   function isDark(){
     var t = document.documentElement.getAttribute("data-theme");
     if(t) return t === "dark";
     return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
   }
-  function paintToggle(){
-    var d = isDark();
-    elTheme.innerHTML = d ? SUN : MOON;
-    elTheme.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
-  }
   function applyTheme(t){
     document.documentElement.setAttribute("data-theme", t);
-    paintToggle(); dirty = true; drawScene(); drawGraph();
+    dirty = true; drawScene(); drawGraph();
   }
-  elTheme.addEventListener("click", function(){
-    var next = isDark() ? "light" : "dark";
-    applyTheme(next);
-    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
-    /* shown in a frame (the lab's questions page): tell that page, so it switches too */
-    if(inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
-  });
-  /* the page around this sim switched its light / dark mode: follow it (not saved, so the sim on its own keeps its own choice) */
+  /* the textbook around this sim switched its light / dark mode: follow it */
   window.addEventListener("message", function(e){
     if(!inFrame || e.source !== window.parent) return;
     var t = e.data && e.data.simTheme;
@@ -1578,10 +1557,9 @@ body{margin:0;background:var(--bench)}
   });
   if(window.matchMedia){
     var mq = window.matchMedia("(prefers-color-scheme: dark)");
-    var onSys = function(){ if(!document.documentElement.getAttribute("data-theme")){ paintToggle(); dirty = true; drawScene(); drawGraph(); } };
+    var onSys = function(){ if(!document.documentElement.getAttribute("data-theme")){ dirty = true; drawScene(); drawGraph(); } };
     if(mq.addEventListener) mq.addEventListener("change", onSys); else if(mq.addListener) mq.addListener(onSys);
   }
-  paintToggle();
 
   elH.min = H_MIN; elH.max = H_MAX; elR.min = REL_MIN;
   setRamp(H_DEF);

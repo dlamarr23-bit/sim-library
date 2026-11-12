@@ -113,12 +113,6 @@ body{margin:0;background:var(--bench)}
   font-variant-numeric:tabular-nums;white-space:nowrap}
 .cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
 .cvlab-ro-peak .cvlab-ro-v{color:#F08B7E}
-.cvlab-themebtn{
-  flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid #4A4F47;background:#000;
-  color:var(--head-ink);display:grid;place-items:center;cursor:pointer;padding:0;
-}
-.cvlab-themebtn:hover{border-color:var(--tape)}
-.cvlab-themebtn svg{width:21px;height:21px}
 
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 5px 5px;padding:10px 10px 12px}
@@ -202,12 +196,11 @@ body{margin:0;background:var(--bench)}
 @media (prefers-reduced-motion:reduce){.cvlab *{transition:none!important}}
 </style>
 <script>
-/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-   (?theme=light or dark, so both sides match), else the one saved on this computer */
+/* apply a light / dark choice before the page paints: the textbook names a mode with ?theme=light or dark,
+   otherwise the device's setting decides */
 (function(){
   var t = null;
   try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
-  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
   if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
 })();
 </script>
@@ -227,7 +220,6 @@ body{margin:0;background:var(--bench)}
       <div class="cvlab-ro cvlab-ro-hi"><span class="cvlab-ro-k">Scale</span><span class="cvlab-ro-v" id="cvlab-ro-scale">0.00 N</span></div>
       <div class="cvlab-ro cvlab-ro-peak"><span class="cvlab-ro-k">Peak held</span><span class="cvlab-ro-v" id="cvlab-ro-peak">&mdash;</span></div>
     </div>
-    <button class="cvlab-themebtn" id="cvlab-theme" type="button" aria-label="Switch to dark mode"></button>
   </header>
 
   <div class="cvlab-bench">
@@ -1076,25 +1068,10 @@ body{margin:0;background:var(--bench)}
     document.fonts.ready.then(function(){ dirty = true; drawScene(); drawTrace(); drawGraphs(); });
   }
 
-  /* ------------------------------------------------ light / dark toggle */
-  var themeBtn = $("cvlab-theme");
-  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  /* ------------------------------------------------ light / dark mode */
   var inFrame = window.parent !== window;
-  function paintToggle(){
-    var d = isDarkNow();
-    themeBtn.innerHTML = d ? SUN : MOON;
-    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
-  }
-  function repaint(){ readPalette(); paintToggle(); dirty = true; drawScene(); drawTrace(); drawGraphs(); }
+  function repaint(){ readPalette(); dirty = true; drawScene(); drawTrace(); drawGraphs(); }
   function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); repaint(); }
-  themeBtn.addEventListener("click", function(){
-    var next = isDarkNow() ? "light" : "dark";
-    applyTheme(next);
-    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
-    /* shown in a frame (a lab's questions page): tell that page, so it switches too */
-    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
-  });
   /* the page around this sim switched its light / dark mode: follow it (not saved) */
   window.addEventListener("message", function(e){
     if (!inFrame || e.source !== window.parent) return;
@@ -1106,7 +1083,6 @@ body{margin:0;background:var(--bench)}
     var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")) repaint(); };
     if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
   }
-  paintToggle();
 
   buildTray();
   renderTable();

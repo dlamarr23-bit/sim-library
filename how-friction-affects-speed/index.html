@@ -8,10 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
-  // apply a light/dark choice before the page paints: the page showing this sim in a frame can name one (?theme=light or dark, so both sides match), else the saved one
+  // apply a light/dark choice before the page paints: the textbook names a mode with ?theme=, otherwise the device's setting decides
   var t0 = null;
   try{ t0 = new URLSearchParams(location.search).get('theme'); }catch(e){}
-  if (t0 !== 'light' && t0 !== 'dark'){ try{ t0 = localStorage.getItem('frictionLabTheme'); }catch(e){} }
   if (t0 === 'light' || t0 === 'dark') document.documentElement.setAttribute('data-theme', t0);
 </script>
 <style>
@@ -122,15 +121,6 @@
     font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-secondary);
     background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;white-space:nowrap;
   }
-  .theme-toggle{
-    display:inline-flex;align-items:center;gap:7px;
-    background:var(--surface-2);border:1px solid var(--border);border-radius:999px;
-    padding:8px 14px 8px 12px;cursor:pointer;
-    font:inherit;font-size:13px;font-weight:800;color:var(--text-primary);white-space:nowrap;
-  }
-  .theme-toggle:hover{border-color:var(--btn)}
-  .theme-toggle:focus-visible{outline:2px solid var(--btn);outline-offset:2px}
-  .theme-toggle .icon{font-size:15px;line-height:1}
 
   /* ---------- cards ---------- */
   .card{
@@ -366,10 +356,6 @@
   </div>
   <div class="header-right">
     <div class="tag"><span id="tagMass">Car 60 g</span> &nbsp;|&nbsp; 3 trials per surface</div>
-    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
-      <span class="icon" aria-hidden="true">🌙</span>
-      <span class="label">Dark mode</span>
-    </button>
   </div>
 </header>
 
@@ -1510,40 +1496,25 @@ function renderLegend(active){
 /* ============================================================
    LIGHT / DARK MODE
    ============================================================ */
-const themeToggle = document.getElementById('themeToggle');
-const THEME_KEY = 'frictionLabTheme';
 const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 function effectiveTheme(){
   const attr = document.documentElement.getAttribute('data-theme');
   if (attr === 'light' || attr === 'dark') return attr;
   return mq && mq.matches ? 'dark' : 'light';
 }
-function updateToggleUI(theme){
-  const dark = theme === 'dark';
-  themeToggle.querySelector('.icon').textContent = dark ? '☀️' : '🌙';
-  themeToggle.querySelector('.label').textContent = dark ? 'Light mode' : 'Dark mode';
-  themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-}
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme', theme);
-  updateToggleUI(theme); draw(); renderChart();
+  draw(); renderChart();
 }
 const inFrame = window.parent !== window;
-themeToggle.addEventListener('click', () => {
-  const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-  try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
-  // shown in a frame (the lab's questions page): tell that page, so it switches too
-  if (inFrame) try{ window.parent.postMessage({ simTheme: next }, '*'); }catch(e){}
-});
-// the page around this sim switched its light/dark mode: follow it (not saved, so the sim on its own keeps its own choice)
+// the page around this sim switched its light/dark mode: follow it
 window.addEventListener('message', (e) => {
   if (!inFrame || e.source !== window.parent) return;
   const t = e.data && e.data.simTheme;
   if ((t === 'light' || t === 'dark') && t !== effectiveTheme()) applyTheme(t);
 });
 if (mq){
-  const onSystemChange = () => { updateToggleUI(effectiveTheme()); draw(); renderChart(); };
+  const onSystemChange = () => { draw(); renderChart(); };
   if (mq.addEventListener) mq.addEventListener('change', onSystemChange);
   else if (mq.addListener) mq.addListener(onSystemChange);
 }
@@ -1554,7 +1525,6 @@ if (mq){
 if (window.ResizeObserver) new ResizeObserver(() => { setupCanvas(); draw(); }).observe(cv);
 else window.addEventListener('resize', () => { setupCanvas(); draw(); });
 setupCanvas();
-updateToggleUI(effectiveTheme());
 updateFacts(); syncPicker(); renderTable(); renderChart(); carToTop(false); readyClock(); updatePips(-1);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => draw());
 </script>

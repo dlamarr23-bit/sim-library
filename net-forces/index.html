@@ -65,15 +65,6 @@ body{margin:0;background:var(--plane);color:var(--ink);font-weight:700;
 header.top{margin-bottom:14px}
 header.top h1{font-size:clamp(24px,2.6vw,32px);margin:0;letter-spacing:-.01em;font-weight:800}
 header.top p{margin:4px 0 0;color:var(--ink-2);font-size:16px;max-width:76ch}
-/* light / dark toggle: a pill at the right end of the header */
-.theme-toggle{float:right;margin:4px 0 6px 14px;display:inline-flex;align-items:center;gap:7px;
-  background:var(--paper);border:1px solid var(--border);border-radius:999px;padding:8px 14px 8px 11px;
-  cursor:pointer;font:inherit;font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap}
-.theme-toggle:hover{border-color:var(--accent)}
-.theme-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.theme-toggle .icon{display:flex}
-.theme-toggle svg{width:17px;height:17px}
-@media (max-width:640px){.theme-toggle{padding:8px}.theme-toggle .label{display:none}}
 
 .card{background:var(--paper);border:1px solid var(--border);border-radius:16px;
   padding:14px;margin-bottom:16px}
@@ -229,12 +220,11 @@ input[type=range]:disabled{opacity:.4;cursor:not-allowed}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
 <script>
-/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-   (?theme=light or dark, so both sides match), else the one saved on this computer */
+/* apply a light / dark choice before the page paints: the textbook names a mode with ?theme=,
+   otherwise the device's setting decides */
 (function(){
   var t = null;
   try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
-  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
   if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
 })();
 </script>
@@ -243,10 +233,6 @@ input[type=range]:disabled{opacity:.4;cursor:not-allowed}
 <div class="wrap">
 
   <header class="top">
-    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
-      <span class="icon" aria-hidden="true"></span>
-      <span class="label">Dark mode</span>
-    </button>
     <h1>Net Force Lab — Forces and Motion</h1>
     <p>Push on a stack of objects with an applied force, add friction, and watch the net force decide what happens to the speed. Load the platform, predict what will move, then check the gauge.</p>
   </header>
@@ -860,42 +846,20 @@ function fullReset(){
   render();
 }
 
-/* ---------------- light / dark toggle ---------------- */
-/* every color here comes from CSS tokens, so switching only needs the data-theme attribute and the button */
-const themeBtn = el("themeToggle");
-const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-const SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+/* ---------------- light / dark mode ---------------- */
+/* every color here comes from CSS tokens, so switching only needs the data-theme attribute */
 const inFrame = window.parent !== window;
 function isDarkNow(){
   const a = document.documentElement.getAttribute("data-theme");
   return a === "dark" || (!a && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
 }
-function paintToggle(){
-  const d = isDarkNow();
-  themeBtn.querySelector(".icon").innerHTML = d ? SUN : MOON;
-  themeBtn.querySelector(".label").textContent = d ? "Light mode" : "Dark mode";
-  themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
-}
-function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); paintToggle(); }
-themeBtn.addEventListener("click", () => {
-  const next = isDarkNow() ? "light" : "dark";
-  applyTheme(next);
-  try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
-  /* shown in a frame (the textbook's Sims page): tell that page, so it switches too */
-  if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
-});
-/* the page around this sim switched its light / dark mode: follow it (not saved) */
+function applyTheme(th){ document.documentElement.setAttribute("data-theme", th); }
+/* the page around this sim switched its light / dark mode: follow it */
 window.addEventListener("message", (e) => {
   if (!inFrame || e.source !== window.parent) return;
   const th = e.data && e.data.simTheme;
   if ((th === "light" || th === "dark") && th !== (isDarkNow() ? "dark" : "light")) applyTheme(th);
 });
-if (window.matchMedia){
-  const mq = window.matchMedia("(prefers-color-scheme: dark)");
-  const onSys = () => { if (!document.documentElement.getAttribute("data-theme")) paintToggle(); };
-  if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
-}
-paintToggle();
 
 /* ---------------- boot ---------------- */
 buildTrays();

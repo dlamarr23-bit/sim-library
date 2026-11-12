@@ -83,17 +83,12 @@ h1,h2,h3,p{margin:0}
 header.top{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:12px}
 header.top>div:first-child{flex:1 1 320px;min-width:0}
 header.top .spacer{display:none}
-header.top .themebtn{order:2}
 header.top .readouts{order:3;flex:1 1 100%}
 @media (min-width:1300px){header.top .readouts{order:1;flex:0 1 auto}}
 header.top .eyebrow{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
 header.top h1{font-size:clamp(26px,3vw,36px);font-weight:800;line-height:1.1;letter-spacing:-.01em}
 header.top p{margin-top:4px;color:var(--ink-2);font-size:clamp(15px,1.2vw,17px);font-weight:600}
 .spacer{flex:1 1 auto}
-.themebtn{flex:none;width:46px;height:46px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);
-  color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow)}
-.themebtn:hover{border-color:var(--accent)}
-.themebtn svg{width:21px;height:21px}
 
 .readouts{display:flex;flex-wrap:wrap;gap:9px}
 .ro{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:7px 14px;min-width:104px;box-shadow:var(--shadow);flex:1 1 auto}
@@ -226,12 +221,11 @@ tbody tr.is-new td{background:var(--accent-soft)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <script>
-/* apply a light / dark choice before the page paints: the page showing this sim in a frame can name one
-   (?theme=light or dark, so both sides match), else the one saved on this computer */
+/* apply a light / dark choice before the page paints: the textbook names a mode with ?theme=light or dark,
+   otherwise the device's setting decides */
 (function(){
   var t = null;
   try { t = new URLSearchParams(location.search).get("theme"); } catch (e) {}
-  if (t !== "light" && t !== "dark") { try { t = localStorage.getItem("motionlab-theme"); } catch (e) {} }
   if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
 })();
 </script>
@@ -246,7 +240,6 @@ tbody tr.is-new td{background:var(--accent-soft)}
       <p>Heat it, squeeze it, or pump in more molecules. Watch the pressure and the phase diagram change.</p>
     </div>
     <div class="spacer"></div>
-    <button class="themebtn" id="themeBtn" type="button" aria-label="Switch to dark mode"></button>
     <div class="readouts">
       <div class="ro"><span class="ro-k">Substance</span><span class="ro-v" id="ro-sub">Oxygen</span></div>
       <div class="ro ro-t"><span class="ro-k">Temperature</span><span class="ro-v" id="ro-t">45 K</span></div>
@@ -1574,23 +1567,9 @@ tbody tr.is-new td{background:var(--accent-soft)}
   if(window.ResizeObserver) new ResizeObserver(function(){ drawGraph(); }).observe(graphC.parentNode);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ drawGraph(); });
 
-  /* ------------------------------------------------ light / dark toggle */
-  var themeBtn = $("themeBtn");
-  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>';
-  var SUN  = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  /* ------------------------------------------------ light / dark mode */
   var inFrame = window.parent !== window;
-  function paintToggle(){
-    var d = isDarkNow();
-    themeBtn.innerHTML = d ? SUN : MOON;
-    themeBtn.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
-  }
-  function applyTheme(t){ document.documentElement.setAttribute("data-theme", t); readTheme(); paintToggle(); drawGraph(); }
-  themeBtn.addEventListener("click", function(){
-    var next = isDarkNow() ? "light" : "dark";
-    applyTheme(next);
-    try { localStorage.setItem("motionlab-theme", next); } catch (e) {}
-    if (inFrame) try { window.parent.postMessage({ simTheme: next }, "*"); } catch (e) {}
-  });
+  function applyTheme(t){ document.documentElement.setAttribute("data-theme", t); readTheme(); drawGraph(); }
   window.addEventListener("message", function(e){
     if (!inFrame || e.source !== window.parent) return;
     var t = e.data && e.data.simTheme;
@@ -1598,12 +1577,12 @@ tbody tr.is-new td{background:var(--accent-soft)}
   });
   if (window.matchMedia){
     var mq = window.matchMedia("(prefers-color-scheme: dark)");
-    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")){ readTheme(); paintToggle(); drawGraph(); } };
+    var onSys = function(){ if (!document.documentElement.getAttribute("data-theme")){ readTheme(); drawGraph(); } };
     if (mq.addEventListener) mq.addEventListener("change", onSys); else if (mq.addListener) mq.addListener(onSys);
   }
 
   /* ------------------------------------------------ boot */
-  readTheme(); paintToggle(); setPaused(false);
+  readTheme(); setPaused(false);
   buildLattice(); buildSubs(); buildQuick(); seedParticles(); renderKey(); refresh();
   requestAnimationFrame(frame);
 

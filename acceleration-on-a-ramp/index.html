@@ -156,25 +156,6 @@
     align-items:flex-end;
     gap:8px;
   }
-  .theme-toggle{
-    display:inline-flex;
-    align-items:center;
-    gap:7px;
-    background:var(--surface-2);
-    border:1px solid var(--border);
-    border-radius:999px;
-    padding:8px 14px 8px 12px;
-    cursor:pointer;
-    font-family:'Poppins',sans-serif;
-    font-weight:700;
-    font-size:12.5px;
-    color:var(--ink);
-    transition:.12s;
-    white-space:nowrap;
-  }
-  .theme-toggle:hover{border-color:var(--teal);}
-  .theme-toggle:focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
-  .theme-toggle .icon{font-size:14px; line-height:1;}
 
   .layout{
     display:grid;
@@ -600,11 +581,10 @@
   }
 </style>
 <script>
-  // apply a light/dark choice before the page paints: the page showing this sim in a frame can name one (?theme=light or dark, so both sides match), else the saved one
+  // apply a light/dark choice before the page paints: the textbook names a mode with ?theme=, otherwise the device's setting decides
   (function(){
     var t = null;
     try{ t = new URLSearchParams(location.search).get('theme'); }catch(e){}
-    if(t !== 'light' && t !== 'dark'){ try{ t = localStorage.getItem('rampLabTheme'); }catch(e){} }
     if(t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
@@ -620,10 +600,6 @@
     </div>
     <div class="header-right">
       <div class="apparatus-tag">RAMP LENGTH = 100 cm &nbsp;|&nbsp; g = 9.80 m/s&sup2;</div>
-      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
-        <span class="icon" aria-hidden="true">🌙</span>
-        <span class="label">Dark mode</span>
-      </button>
     </div>
   </header>
 
@@ -1531,8 +1507,6 @@
   resizeCanvas();
 
   // ---------- light / dark mode ----------
-  var themeToggle = document.getElementById('themeToggle');
-  var THEME_KEY = 'rampLabTheme';
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
   function systemPrefersDark(){ return !!(mq && mq.matches); }
@@ -1541,52 +1515,22 @@
     if(attr === 'light' || attr === 'dark') return attr;
     return systemPrefersDark() ? 'dark' : 'light';
   }
-  function updateToggleUI(theme){
-    if(!themeToggle) return;
-    var icon = themeToggle.querySelector('.icon');
-    var label = themeToggle.querySelector('.label');
-    if(theme === 'dark'){
-      icon.textContent = '☀️';
-      label.textContent = 'Light mode';
-      themeToggle.setAttribute('aria-label','Switch to light mode');
-    } else {
-      icon.textContent = '🌙';
-      label.textContent = 'Dark mode';
-      themeToggle.setAttribute('aria-label','Switch to dark mode');
-    }
-  }
-  function setTheme(theme, persist){
+  function setTheme(theme){
     document.documentElement.setAttribute('data-theme', theme);
-    updateToggleUI(theme);
-    if(persist){
-      try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
-    }
     draw();
   }
 
-  // the script in the head already applied ?theme= or the saved choice
-  updateToggleUI(effectiveTheme());
-
   var inFrame = window.parent !== window;
-  if(themeToggle){
-    themeToggle.addEventListener('click', function(){
-      var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
-      setTheme(next, true);
-      // shown in a frame (the textbook's Sims page): tell that page, so it switches too
-      if(inFrame) try{ window.parent.postMessage({ simTheme: next }, '*'); }catch(e){}
-    });
-  }
-  // the page around this sim switched its light/dark mode: follow it (not saved, so the sim on its own keeps its own choice)
+  // the page around this sim switched its light/dark mode: follow it
   window.addEventListener('message', function(e){
     if(!inFrame || e.source !== window.parent) return;
     var t = e.data && e.data.simTheme;
-    if((t === 'light' || t === 'dark') && t !== effectiveTheme()) setTheme(t, false);
+    if((t === 'light' || t === 'dark') && t !== effectiveTheme()) setTheme(t);
   });
 
   if(mq){
     var mqHandler = function(){
       if(!document.documentElement.getAttribute('data-theme')){
-        updateToggleUI(effectiveTheme());
         draw();
       }
     };
