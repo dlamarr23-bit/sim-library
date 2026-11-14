@@ -1573,8 +1573,8 @@ function drawTrain(){
 function drawRiderView(w,h){
   const hw=CAR_LEN*0.32, A=posAt(cart.s-hw), B=posAt(cart.s+hw);
   const th=Math.atan2(B.y-A.y, B.x-A.x), Fx=Math.cos(th), Fy=Math.sin(th), Ux=-Fy, Uy=Fx;
-  const ex=(A.x+B.x)/2+Ux*2.5-Fx*0.2, ey=(A.y+B.y)/2+Uy*2.5-Fy*0.2;     // the rider's eye
-  const f=w*0.5, cx=w/2, cy=h*0.46, NEAR=0.7;
+  const ex=(A.x+B.x)/2+Ux*2.0+Fx*0.4, ey=(A.y+B.y)/2+Uy*2.0+Fy*0.4;     // the rider's eye
+  const f=w*0.5, cx=w/2, cy=h*0.42, NEAR=0.7;
   const pa=(x,y)=>(x-ex)*Fx+(y-ey)*Fy, pb=(x,y)=>(x-ex)*Ux+(y-ey)*Uy;
   // sky and ground: the horizon tips with the rider, and swaps over when the rider is upside down
   const up=Fx>0;                                   // is the sky on the top side of the horizon?
@@ -1625,43 +1625,66 @@ function drawRiderView(w,h){
     ctx.fillStyle=t[6]?PAL.forestNear:PAL.forestNear2;
     ctx.beginPath(); ctx.moveTo(t[3],t[4]); ctx.lineTo(t[1]+t[5],t[2]); ctx.lineTo(t[1]-t[5],t[2]); ctx.closePath(); ctx.fill();
   }
-  // the track ahead, far end first: supports, ties, chain or brake fins, then the two rails
-  const P=track.P, GAUGE=0.8, STEP=4;
-  const i0=Math.max(0, Math.floor((cart.s-3)/DS)), i1=Math.min(P.length-1, i0+Math.round(170/DS));
+  // a point in the world -> the screen (null when it is behind the rider)
+  const pr=(x,y,z)=>{ const a=pa(x,y); return a>NEAR ? [cx+f*z/a, cy-f*pb(x,y)/a, a] : null; };
+  const quad=(q,fill)=>{ if(q.some(p=>!p)) return; ctx.fillStyle=fill; ctx.beginPath(); ctx.moveTo(q[0][0],q[0][1]); for(let k=1;k<q.length;k++) ctx.lineTo(q[k][0],q[k][1]); ctx.closePath(); ctx.fill(); };
+  const stick=(p,q,wm,col)=>{ if(!p||!q) return; ctx.strokeStyle=col; ctx.lineWidth=Math.min(Math.max(1,wm*f/Math.min(p[2],q[2])),h*0.2); ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(q[0],q[1]); ctx.stroke(); };
+  ctx.lineCap='butt'; ctx.lineJoin='round';
+  // the end station, far end first: a striped buffer at the end of the track, then bay by bay a roof
+  // overhead, a platform on each side and a pair of posts
+  { const last=nodes[nodes.length-1], sy=last.y, roof=sy+5.2, x0=last.x+1, x1=last.x+BRAKE_LEN-1, xe=last.x+BRAKE_LEN+0.6, BAYS=6;
+    for(let k=0;k<4;k++) quad([pr(xe,sy+0.2+k*0.6,-1.7),pr(xe,sy+0.2+k*0.6,1.7),pr(xe,sy+0.8+k*0.6,1.7),pr(xe,sy+0.8+k*0.6,-1.7)], k%2?'#f4f4f4':'#c0392b');
+    for(let k=BAYS-1;k>=0;k--){
+      const xa=x0+(x1-x0)*k/BAYS, xb=x0+(x1-x0)*(k+1)/BAYS, alt=k%2;
+      quad([pr(xa,roof,-3.6),pr(xa,roof,3.6),pr(xb,roof,3.6),pr(xb,roof,-3.6)], alt?'#6b3b22':'#5a301b');
+      for(const sd of [-1,1]){
+        quad([pr(xa,sy-0.4,sd*1.5),pr(xa,sy-0.4,sd*3.6),pr(xb,sy-0.4,sd*3.6),pr(xb,sy-0.4,sd*1.5)], alt?'#7a4a2a':'#693d22');
+        stick(pr(xb,sy-0.4,sd*3.2), pr(xb,roof,sd*3.2), 0.4, '#4e2d17');
+        if(k===0) stick(pr(xa,sy-0.4,sd*3.2), pr(xa,roof,sd*3.2), 0.4, '#4e2d17');
+      }
+    }
+  }
+  // the track ahead, far end first. Ties, chain links and handrail posts are fixed to the track (not to
+  // the screen), so they slide toward the rider as the train moves.
+  const P=track.P, TH=track.TH, GAUGE=0.8, STEP=4;
+  const i0=Math.max(0, Math.floor((cart.s-3)/DS/STEP)*STEP), i1=Math.min(P.length-1, i0+Math.round(170/DS));
   const pts=[];
   for(let i=i0;i<=i1;i+=STEP){ const p=P[i], a=pa(p.x,p.y); pts.push(a>NEAR ? [a, cy-f*pb(p.x,p.y)/a, i] : null); }
-  ctx.lineCap='butt';
+  const railTop=i=>{ const p=P[i]; return [p.x-Math.sin(TH[i])*1.15, p.y+Math.cos(TH[i])*1.15]; };
   for(let q=pts.length-1;q>=0;q--){
     const c=pts[q]; if(!c) continue;
-    const sc=f/c[0], i=c[2], p=P[i];
-    if(i%Math.round(6/DS)<STEP && p.y>1 && !track.loopRanges.some(L=>i*DS>L.s0+1 && i*DS<L.s1-1)){      // a support column down to the ground
-      const a0=pa(p.x,0);
-      if(a0>NEAR){ ctx.strokeStyle=PAL.support; ctx.lineWidth=Math.max(1,0.45*sc); ctx.beginPath(); ctx.moveTo(cx,c[1]); ctx.lineTo(cx,cy-f*pb(p.x,0)/a0); ctx.stroke(); }
+    const sc=f/c[0], i=c[2], wi=i/STEP, onLift=i*DS<=track.liftS;
+    if(wi%2===0){ ctx.strokeStyle='#7a5a3c'; ctx.lineWidth=Math.min(Math.max(1,0.34*sc),h*0.2); ctx.beginPath(); ctx.moveTo(cx-GAUGE*1.3*sc,c[1]); ctx.lineTo(cx+GAUGE*1.3*sc,c[1]); ctx.stroke(); }   // tie
+    if(onLift && wi%4===0){                    // catwalk handrail along the lift: a post on each side, joined to the next
+      const t=railTop(i), j=Math.min(i+4*STEP, P.length-1), t2=railTop(j);
+      for(const sd of [-1,1]){
+        stick(pr(P[i].x,P[i].y,sd*1.7), pr(t[0],t[1],sd*1.7), 0.12, '#d9a81c');
+        if(j*DS<=track.liftS+2) stick(pr(t[0],t[1],sd*1.7), pr(t2[0],t2[1],sd*1.7), 0.1, '#d9a81c');
+      }
     }
-    if(q%2===0){ ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(1,0.3*sc); ctx.beginPath(); ctx.moveTo(cx-GAUGE*1.25*sc,c[1]); ctx.lineTo(cx+GAUGE*1.25*sc,c[1]); ctx.stroke(); }   // tie
     const d=pts[q+1];
     if(!d) continue;
-    const sd=f/d[0];
-    if(i*DS<=track.liftS){ ctx.strokeStyle=PAL.chain; ctx.lineWidth=Math.max(1,0.18*sc); ctx.setLineDash([Math.max(2,0.3*sc),Math.max(2,0.25*sc)]); ctx.beginPath(); ctx.moveTo(cx,c[1]); ctx.lineTo(cx,d[1]); ctx.stroke(); ctx.setLineDash([]); }
-    else if(i*DS>=track.brakeS && q%2){ ctx.strokeStyle='#c0392b'; ctx.lineWidth=Math.max(1,0.5*sc); ctx.beginPath(); ctx.moveTo(cx,c[1]); ctx.lineTo(cx,d[1]); ctx.stroke(); }
+    const sd2=f/d[0];
+    if(onLift){ ctx.strokeStyle=PAL.chain; ctx.lineWidth=Math.max(1,0.2*sc); ctx.beginPath(); ctx.moveTo(cx,c[1]); ctx.lineTo(cx,c[1]+(d[1]-c[1])*0.55); ctx.stroke(); }        // chain link
+    else if(i*DS>=track.brakeS && wi%2){ ctx.strokeStyle='#c0392b'; ctx.lineWidth=Math.max(1,0.5*sc); ctx.beginPath(); ctx.moveTo(cx,c[1]); ctx.lineTo(cx,c[1]+(d[1]-c[1])*0.6); ctx.stroke(); }
     for(const sgn of [-1,1]){
       ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(1.5,0.26*sc);
-      ctx.beginPath(); ctx.moveTo(cx+sgn*GAUGE*sc,c[1]); ctx.lineTo(cx+sgn*GAUGE*sd,d[1]); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+sgn*GAUGE*sc,c[1]); ctx.lineTo(cx+sgn*GAUGE*sd2,d[1]); ctx.stroke();
       ctx.strokeStyle=PAL.rail; ctx.lineWidth=Math.max(1,0.16*sc);
-      ctx.beginPath(); ctx.moveTo(cx+sgn*GAUGE*sc,c[1]); ctx.lineTo(cx+sgn*GAUGE*sd,d[1]); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+sgn*GAUGE*sc,c[1]); ctx.lineTo(cx+sgn*GAUGE*sd2,d[1]); ctx.stroke();
     }
   }
   // the nose of the car, the grab bar and the rider's hands
   const main=COLORS[design.main], lw=Math.max(2,3.2*u);
   ctx.lineJoin=ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(w*0.2,h+lw); ctx.bezierCurveTo(w*0.26,h*0.8, w*0.4,h*0.74, w*0.5,h*0.74); ctx.bezierCurveTo(w*0.6,h*0.74, w*0.74,h*0.8, w*0.8,h+lw); ctx.closePath();
+  ctx.beginPath(); ctx.moveTo(w*0.27,h+lw); ctx.bezierCurveTo(w*0.31,h*0.9, w*0.42,h*0.85, w*0.5,h*0.85); ctx.bezierCurveTo(w*0.58,h*0.85, w*0.69,h*0.9, w*0.73,h+lw); ctx.closePath();
   ctx.fillStyle=main; ctx.fill();
-  const shn=ctx.createLinearGradient(0,h*0.74,0,h); shn.addColorStop(0,'rgba(255,255,255,.3)'); shn.addColorStop(1,'rgba(0,0,0,.25)'); ctx.fillStyle=shn; ctx.fill();
+  const shn=ctx.createLinearGradient(0,h*0.85,0,h); shn.addColorStop(0,'rgba(255,255,255,.3)'); shn.addColorStop(1,'rgba(0,0,0,.25)'); ctx.fillStyle=shn; ctx.fill();
   ctx.strokeStyle=INK; ctx.lineWidth=lw; ctx.stroke();
   const scream = running && cart.released && Math.abs(cart.v)>12;
-  ctx.strokeStyle=INK; ctx.lineWidth=h*0.03; ctx.beginPath(); ctx.moveTo(w*0.36,h*0.93); ctx.lineTo(w*0.64,h*0.93); ctx.stroke();    // grab bar
+  ctx.strokeStyle=INK; ctx.lineWidth=h*0.03; ctx.beginPath(); ctx.moveTo(w*0.39,h*0.955); ctx.lineTo(w*0.61,h*0.955); ctx.stroke();    // grab bar
   for(const sgn of [-1,1]){
-    const X0=cx+sgn*w*0.13, hx=scream ? cx+sgn*w*0.19 : cx+sgn*w*0.07, hyy=scream ? h*0.6 : h*0.93;
+    const X0=cx+sgn*w*0.11, hx=scream ? cx+sgn*w*0.2 : cx+sgn*w*0.06, hyy=scream ? h*0.68 : h*0.955;
     ctx.strokeStyle=INK; ctx.lineWidth=h*0.058; ctx.beginPath(); ctx.moveTo(X0,h+lw); ctx.lineTo(hx,hyy); ctx.stroke();
     ctx.strokeStyle=DUMMY; ctx.lineWidth=h*0.058-2*lw; ctx.beginPath(); ctx.moveTo(X0,h+lw); ctx.lineTo(hx,hyy); ctx.stroke();
     ctx.fillStyle=DUMMY_DARK; ctx.strokeStyle=INK; ctx.lineWidth=lw; ctx.beginPath(); ctx.arc(hx,hyy,h*0.04,0,7); ctx.fill(); ctx.stroke();
