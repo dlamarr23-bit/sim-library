@@ -1464,10 +1464,27 @@ function drawStation(x0, x1, y, sign){
 function drawTrain(){
   const sp=CAR_LEN+CAR_GAP, hw=CAR_LEN*0.32;
   const scream = running && cart.released && Math.abs(cart.v)>12;
-  const T=[];
-  for(let c=0;c<cars;c++){
-    const sc=cart.s-c*sp, a=posAt(sc-hw), b=posAt(sc+hw);   // back and front wheels
-    T.push({x:(a.x+b.x)/2, y:(a.y+b.y)/2, th:Math.atan2(b.y-a.y, b.x-a.x)});
+  const carAt=sc=>{ const a=posAt(sc-hw), b=posAt(sc+hw);   // back and front wheels
+    return {s:sc, x:(a.x+b.x)/2, y:(a.y+b.y)/2, th:Math.atan2(b.y-a.y, b.x-a.x)}; };
+  const corner=(t,lx,up)=>{ const c=Math.cos(t.th), s=Math.sin(t.th); return [t.x+lx*c-up*s, t.y+lx*s+up*c]; };
+  /* The car bodies ride above the rails, so cars spaced evenly along the track would spread apart over
+     a hilltop and run into each other in a dip or a loop. Instead each car is slid along the track until
+     its body sits a small, fixed gap behind the car in front, measured at whichever body corner (bottom
+     or top) is closer. */
+  const LOW=0.8, HIGH=2.1, GAP_M=0.22;
+  const T=[carAt(cart.s)];
+  for(let c=1;c<cars;c++){
+    const A=T[c-1], rb=corner(A,-CAR_LEN/2,LOW), rt=corner(A,-CAR_LEN/2,HIGH);
+    let sc=A.s-sp, B=carAt(sc);
+    for(let it=0;it<8;it++){
+      const dx=Math.cos(B.th), dy=Math.sin(B.th), fb=corner(B,CAR_LEN/2,LOW), ft=corner(B,CAR_LEN/2,HIGH);
+      const sep=Math.min((rb[0]-fb[0])*dx+(rb[1]-fb[1])*dy, (rt[0]-ft[0])*dx+(rt[1]-ft[1])*dy);
+      const move=Math.max(-1.5,Math.min(1.5,sep-GAP_M));
+      if(Math.abs(move)<0.01) break;
+      sc=Math.min(Math.max(sc+move, A.s-2.2*sp), A.s-CAR_LEN*0.7);
+      B=carAt(sc);
+    }
+    T.push(B);
   }
   // couplers: a bar from the back of each car to the front of the next, so the train stays joined around hills and loops
   const hitch=(t,lx)=>{ const c=Math.cos(t.th), s=Math.sin(t.th), up=0.98; return [SX(t.x+lx*c-up*s), SY(t.y+lx*s+up*c)]; };
