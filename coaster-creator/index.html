@@ -1572,8 +1572,14 @@ function drawTrain(){
    line of sight (b) and how far to the side (z), and lands on screen at (cx + f*z/a, cy - f*b/a). */
 function drawRiderView(w,h){
   const hw=CAR_LEN*0.32, A=posAt(cart.s-hw), B=posAt(cart.s+hw);
-  const th=Math.atan2(B.y-A.y, B.x-A.x), Fx=Math.cos(th), Fy=Math.sin(th), Ux=-Fy, Uy=Fx;
-  const ex=(A.x+B.x)/2+Ux*2.0+Fx*0.4, ey=(A.y+B.y)/2+Uy*2.0+Fy*0.4;     // the rider's eye
+  const th0=Math.atan2(B.y-A.y, B.x-A.x), c0=Math.cos(th0), s0=Math.sin(th0);
+  const ex=(A.x+B.x)/2-s0*2.0+c0*0.4, ey=(A.y+B.y)/2+c0*2.0+s0*0.4;       // the rider's eye, in the front seat
+  // The rider looks at the track up to 14 m ahead, not straight out along the car. So over a hilltop the
+  // view tips down to follow the track (instead of showing only sky), and in a dip it tips up.
+  const AHEAD=Math.max(6, Math.min(14, 0.6/Math.max(Math.abs(sampleAt(cart.s+3).k),1e-6))), sa=cart.s+AHEAD,   // not as far ahead in a tight loop
+  tp=sampleAt(sa), over=Math.max(0, sa-track.len);
+  const tx=tp.x+over-Math.sin(tp.th)*1.0, ty=tp.y+Math.cos(tp.th)*1.0, tl=Math.hypot(tx-ex,ty-ey)||1;
+  const Fx=(tx-ex)/tl, Fy=(ty-ey)/tl, Ux=-Fy, Uy=Fx;
   const f=w*0.5, cx=w/2, cy=h*0.42, NEAR=0.7;
   const pa=(x,y)=>(x-ex)*Fx+(y-ey)*Fy, pb=(x,y)=>(x-ex)*Ux+(y-ey)*Uy;
   // sky and ground: the horizon tips with the rider, and swaps over when the rider is upside down
@@ -1651,15 +1657,17 @@ function drawRiderView(w,h){
   const pts=[];
   for(let i=i0;i<=i1;i+=STEP){ const p=P[i], a=pa(p.x,p.y); pts.push(a>NEAR ? [a, cy-f*pb(p.x,p.y)/a, i] : null); }
   const railTop=i=>{ const p=P[i]; return [p.x-Math.sin(TH[i])*1.15, p.y+Math.cos(TH[i])*1.15]; };
+  // handrails run up the lift and up every other steep climb (not inside loops), where the rider would otherwise see only sky
+  const railed=i=> i*DS<=track.liftS || (Math.sin(TH[i])>0.3 && Math.cos(TH[i])>0 && !track.loopRanges.some(L=>i*DS>=L.s0 && i*DS<=L.s1));
   for(let q=pts.length-1;q>=0;q--){
     const c=pts[q]; if(!c) continue;
     const sc=f/c[0], i=c[2], wi=i/STEP, onLift=i*DS<=track.liftS;
     if(wi%2===0){ ctx.strokeStyle='#7a5a3c'; ctx.lineWidth=Math.min(Math.max(1,0.34*sc),h*0.2); ctx.beginPath(); ctx.moveTo(cx-GAUGE*1.3*sc,c[1]); ctx.lineTo(cx+GAUGE*1.3*sc,c[1]); ctx.stroke(); }   // tie
-    if(onLift && wi%4===0){                    // catwalk handrail along the lift: a post on each side, joined to the next
+    if(wi%4===0 && railed(i)){                 // catwalk handrail: a post on each side, joined to the next
       const t=railTop(i), j=Math.min(i+4*STEP, P.length-1), t2=railTop(j);
       for(const sd of [-1,1]){
         stick(pr(P[i].x,P[i].y,sd*1.7), pr(t[0],t[1],sd*1.7), 0.12, '#d9a81c');
-        if(j*DS<=track.liftS+2) stick(pr(t[0],t[1],sd*1.7), pr(t2[0],t2[1],sd*1.7), 0.1, '#d9a81c');
+        if(railed(j)) stick(pr(t[0],t[1],sd*1.7), pr(t2[0],t2[1],sd*1.7), 0.1, '#d9a81c');
       }
     }
     const d=pts[q+1];
