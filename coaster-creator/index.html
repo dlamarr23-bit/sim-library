@@ -638,10 +638,54 @@ function loopPoints(x0,y0,h){
   return U.pts.map(p=>({x:x0+p.x*sc, y:y0+p.y*sc}));
 }
 
-/* Between a crest and a valley (both flat) the track is one smooth S-curve, like the original.
-   A plain S bends just as hard at the bottom, where the train is fastest, as at the top. EASE_P
-   leans the curve a little so the top turns sooner and the pull-out at the bottom is wider. */
-const EASE_P = 1.25;
+/* Between a crest and a valley (both flat) the track is one smooth S: it leaves the first node level,
+   turns to its steepest in the middle and comes level again at the second node. The turning is described
+   by the track's heading along its length, and the heading eases in and out (EASE), so the bend never
+   starts or stops suddenly and never becomes a sharp corner, however steep the hill. A plain "smoothstep"
+   S looks the same on gentle hills but folds into a corner on steep ones, which made the cars jerk.
+   When the hill is too steep for a plain S, the middle becomes a straight run. The turn at the valley is
+   given VALLEY_SHARE times the length of the turn at the crest: the train is fastest at the bottom, and a
+   shorter turn at the top keeps the hilltop a peak rather than a flat shoulder. */
+const STEEP_MAX = 88*Math.PI/180, VALLEY_SHARE = 2.5, EASE_B = 0.2, VALLEY_R = 6;
+// heading ease, 0 -> 1: the rate of turning ramps up over the first EASE_B, holds, then ramps down
+function EASE(u){
+  const b=EASE_B, k=1/(1-b);
+  if(u<=0) return 0; if(u>=1) return 1;
+  if(u<b) return k*u*u/(2*b);
+  if(u<1-b) return k*(u-b/2);
+  return 1-k*(1-u)*(1-u)/(2*b);
+}
+// average of cos and sin of the heading over one turn that ends at angle th
+function turnAvg(th){ let c=0, s2=0; const N=24; for(let q=0;q<N;q++){ const a=th*EASE((q+0.5)/N); c+=Math.cos(a); s2+=Math.sin(a); } return [c/N, s2/N]; }
+function easeS(out, x0, y0, H, Dy){
+  const h=Math.abs(Dy), sg=Dy<0?-1:1;
+  let th=STEEP_MAX, turns, L=0;
+  let [c,s2]=turnAvg(th);
+  if(s2/c >= h/H){                       // gentle enough for a plain S: find how steep its middle gets
+    let lo=0, hi=STEEP_MAX;
+    for(let q=0;q<28;q++){ th=(lo+hi)/2; [c,s2]=turnAvg(th); if(s2/c<h/H) lo=th; else hi=th; }
+    turns=H/c;
+  } else {
+    // steep: two turns joined by a straight run. The run is made only as steep as it needs to be for
+    // the valley turn to stay wide (about VALLEY_R metres), up to STEEP_MAX.
+    for(let deg=56; deg<=88; deg+=4){
+      th=deg*Math.PI/180; [c,s2]=turnAvg(th);
+      if(s2/c >= h/H) continue;                       // not steep enough to need a straight run
+      const ct=Math.cos(th), st=Math.sin(th);
+      turns=(H*st-h*ct)/(c*st-s2*ct); L=(H-turns*c)/ct;
+      if(turns*VALLEY_SHARE/(1+VALLEY_SHARE) >= VALLEY_R*th/(1-EASE_B)) break;
+    }
+  }
+  const lc=turns/(1+VALLEY_SHARE), lv=turns-lc;
+  const l1 = sg<0 ? lc : lv, l2 = turns-l1;        // going down the crest comes first, going up the valley does
+  const tot=l1+L+l2, N=Math.max(24, Math.ceil(tot/0.2)), ds=tot/N;
+  const head=q=> q<l1 ? sg*th*EASE(q/l1) : q<l1+L ? sg*th : sg*th*EASE((tot-q)/l2);
+  let x=x0, y=y0;
+  const pts=[{x,y}];
+  for(let k=0;k<N;k++){ const a=head((k+0.5)*ds); x+=Math.cos(a)*ds; y+=Math.sin(a)*ds; pts.push({x,y}); }
+  const ex=x0+H-x, ey=y0+Dy-y;                    // remove tiny integration drift
+  for(let k=0;k<N;k++){ const q=k/N; out.push({x:pts[k].x+ex*q, y:pts[k].y+ey*q}); }
+}
 function makeTrack(nodes){
   const CP=[];
   nodes.forEach((n,i)=>{
@@ -663,7 +707,7 @@ function makeTrack(nodes){
   };
   if(n>2){ d[0]=endSlope(del[0],del[1],h[0],h[1]); d[n-1]=endSlope(del[n-2],del[n-3],h[n-2],h[n-3]); }
   else { d[0]=d[n-1]=del[0]||0; }
-  d[n-1]=0;                                   // the end station is level
+  d[0]=0; d[n-1]=0;                           // the track leaves the start station level and reaches the end station level
 
   // dense raw path
   const raw=[], cpIdx=[], loops=[];
@@ -677,14 +721,7 @@ function makeTrack(nodes){
       continue;
     }
     const H=h[i], Dy=Y[i+1]-Y[i], di=d[i], dj=d[i+1];
-    if(di===0 && dj===0 && Math.abs(Dy)>0.05){
-      const K=Math.max(24, Math.ceil((H+Math.abs(Dy))/0.25));
-      for(let k=0;k<K;k++){
-        const t=k/K, e=Dy<0 ? 1-Math.pow(1-t,EASE_P) : Math.pow(t,EASE_P);   // going down the crest comes first, going up the valley does
-        raw.push({x:X[i]+H*t, y:Y[i]+Dy*e*e*(3-2*e)});
-      }
-      continue;
-    }
+    if(di===0 && dj===0 && Math.abs(Dy)>0.05){ easeS(raw, X[i], Y[i], H, Dy); continue; }
     const c2=3*Dy-H*(2*di+dj), c3=-2*Dy+H*(di+dj);
     const K=Math.max(20, Math.ceil(H/0.25));
     for(let k=0;k<K;k++){
@@ -762,7 +799,7 @@ function resetCart(){
   cart.gMax=1; cart.gMin=1; cart.gMaxX=0; cart.gMinX=0;
   runTime=0; done=null; maxS=cart.s; lastProgressT=0;
   history=[]; nextSample=0; thrillT=0; screams=0; clearTimeout(debriefTimer);
-  running=false; popups=popups.filter(p=>p.edit); cam.snap=true;
+  running=false; popups=popups.filter(p=>p.edit); cam.snap=true; carGaps=[];
   popState={scream:-9, air:-9, g:-9, lastS:cart.s};
   setRunBtn();
   refreshUI();
@@ -1369,6 +1406,7 @@ function drawScenery(w,h){
 /* The ride's track art is built once per track as paths in world metres, then stroked through a
    world-to-screen transform. Each frame is a handful of strokes, however long the track is. */
 let trackArt=null;
+let carGaps=[];        // eased spacing between each car and the one in front (drawing only)
 function buildTrackArt(){
   const P=track.P, TH=track.TH;
   const sup=new Path2D(), ties=new Path2D(), low=new Path2D(), rail=new Path2D(), chain=new Path2D(), fins=new Path2D();
@@ -1468,23 +1506,22 @@ function drawTrain(){
     return {s:sc, x:(a.x+b.x)/2, y:(a.y+b.y)/2, th:Math.atan2(b.y-a.y, b.x-a.x)}; };
   const corner=(t,lx,up)=>{ const c=Math.cos(t.th), s=Math.sin(t.th); return [t.x+lx*c-up*s, t.y+lx*s+up*c]; };
   /* The car bodies ride above the rails, so cars spaced evenly along the track would spread apart over
-     a hilltop and run into each other in a dip or a loop. Instead each car is slid along the track until
-     its body sits a small, fixed gap behind the car in front, measured at whichever body corner (bottom
-     or top) is closer. */
-  const LOW=0.8, HIGH=2.1, GAP_M=0.22;
+     a hilltop and run into each other in a dip or a loop. Instead each car is joined to the one in front
+     at a pivot (like a real train's coupling) part-way up the body: the car is slid along the track
+     until its front pivot meets the rear pivot of the car ahead. The spacing is then eased over a few
+     frames, so the cars can never snap from one place to another. */
+  const PIVOT=1.25, JOIN=CAR_LEN/2+CAR_GAP/2;
   const T=[carAt(cart.s)];
   for(let c=1;c<cars;c++){
-    const A=T[c-1], rb=corner(A,-CAR_LEN/2,LOW), rt=corner(A,-CAR_LEN/2,HIGH);
-    let sc=A.s-sp, B=carAt(sc);
-    for(let it=0;it<8;it++){
-      const dx=Math.cos(B.th), dy=Math.sin(B.th), fb=corner(B,CAR_LEN/2,LOW), ft=corner(B,CAR_LEN/2,HIGH);
-      const sep=Math.min((rb[0]-fb[0])*dx+(rb[1]-fb[1])*dy, (rt[0]-ft[0])*dx+(rt[1]-ft[1])*dy);
-      const move=Math.max(-1.5,Math.min(1.5,sep-GAP_M));
-      if(Math.abs(move)<0.01) break;
-      sc=Math.min(Math.max(sc+move, A.s-2.2*sp), A.s-CAR_LEN*0.7);
-      B=carAt(sc);
-    }
-    T.push(B);
+    const A=T[c-1], ra=corner(A,-JOIN,PIVOT);
+    const miss=sc=>{ const B=carAt(sc), fb=corner(B,JOIN,PIVOT); return (ra[0]-fb[0])*Math.cos(B.th)+(ra[1]-fb[1])*Math.sin(B.th); };   // > 0: this car is too far back
+    let lo=A.s-1.7*sp, hi=A.s-0.6*sp;
+    for(let it=0;it<18;it++){ const mid=(lo+hi)/2; if(miss(mid)>0) lo=mid; else hi=mid; }
+    const want=A.s-(lo+hi)/2;
+    let g=carGaps[c];
+    if(g===undefined) g=want; else g+=(want-g)*(1-Math.exp(-frameDt*16));
+    carGaps[c]=g;
+    T.push(carAt(A.s-g));
   }
   // couplers: a bar from the back of each car to the front of the next, so the train stays joined around hills and loops
   const hitch=(t,lx)=>{ const c=Math.cos(t.th), s=Math.sin(t.th), up=0.98; return [SX(t.x+lx*c-up*s), SY(t.y+lx*s+up*c)]; };
