@@ -1248,30 +1248,6 @@ function drawPopups(){
 }
 
 /* ---------- cart art (original designs) ---------- */
-function bodyPath(c, L, Hh, front){
-  // car-local: x from -L/2 (back) to +L/2 (front); up is negative y
-  c.beginPath();
-  c.moveTo(-L/2, -Hh*0.15);
-  c.lineTo(-L/2, -Hh*0.92);
-  c.quadraticCurveTo(-L/2, -Hh, -L/2+Hh*0.12, -Hh);
-  c.lineTo(-L*0.08, -Hh);
-  c.lineTo(L*0.02, -Hh*0.7);
-  c.lineTo(L*0.24, -Hh*0.7);
-  if(front){
-    c.lineTo(L*0.36, -Hh*1.08);
-    c.quadraticCurveTo(L*0.5, -Hh*1.0, L*0.62, -Hh*0.45);
-    c.quadraticCurveTo(L*0.64, -Hh*0.05, L*0.5, 0);
-  } else {
-    c.lineTo(L*0.34, -Hh*1.0);
-    c.lineTo(L/2-Hh*0.12, -Hh);
-    c.quadraticCurveTo(L/2, -Hh, L/2, -Hh*0.88);
-    c.lineTo(L/2, -Hh*0.15);
-    c.quadraticCurveTo(L/2, 0, L/2-Hh*0.15, 0);
-  }
-  c.lineTo(-L/2+Hh*0.15, 0);
-  c.quadraticCurveTo(-L/2, 0, -L/2, -Hh*0.15);
-  c.closePath();
-}
 function drawPattern(c, kind, color, L, Hh, seed){
   c.fillStyle=color; c.strokeStyle=color;
   if(kind==='stripes'){
@@ -1302,54 +1278,99 @@ function drawPattern(c, kind, color, L, Hh, seed){
       c.beginPath(); c.arc(px,py,Hh*0.11,0,7); c.fill();
     }
   } else if(kind==='zigzag'){
-    c.lineWidth=Hh*0.13; c.lineJoin='miter';
+    c.lineWidth=Hh*0.2; c.lineJoin='miter';
     c.beginPath(); c.moveTo(-L*0.55, -Hh*0.5);
     for(let i=0;i<8;i++) c.lineTo(-L*0.55+(i+1)*L*0.15, -Hh*(i%2?0.5:0.22));
     c.stroke();
   }
 }
-const HAIR=['#3b2416','#e3b23c','#9a3b1c','#1c1c1c','#6b4a2f','#c96f2c'];
-const SHIRT=['#3d6fd8','#e0412f','#3cae4a','#9b4fd1','#f39a1e','#23b5c2'];
+/* A car: a low sled with a rounded nose, a gray skirt over two chunky wheels, two high-backed seats and
+   two crash-test dummies. Car-local: x runs from -L/2 (back) to +L/2 (nose), up is negative y, and y = 0
+   is the rail. Every car has the same shape. */
+const DUMMY='#f27a1a', DUMMY_DARK='#b9520c', INK='#14181e';
+function sledPath(c, m){
+  // a tall, rounded tub: big round corners at the back, a rim along the top, and a blunt bullet nose
+  const yb=-0.56*m, yt=-2.0*m, xr=-2.1*m;
+  c.beginPath();
+  c.moveTo(xr+0.4*m, yb);
+  c.lineTo(1.3*m, yb);
+  c.bezierCurveTo(1.85*m, yb, 2.12*m, -0.74*m, 2.1*m, -1.08*m);        // round under the nose, up to its tip
+  c.bezierCurveTo(2.08*m, -1.5*m, 1.45*m, -1.9*m, 0.72*m, yt);         // the hood bulges back up to the rim
+  c.lineTo(xr+0.55*m, yt);
+  c.bezierCurveTo(xr+0.12*m, yt, xr, yt+0.2*m, xr, yt+0.6*m);          // big round shoulder at the back
+  c.lineTo(xr, yb-0.4*m);
+  c.quadraticCurveTo(xr, yb, xr+0.4*m, yb);
+  c.closePath();
+}
+// a jointed limb: dark outline, orange fill, a dark pin at each joint
+function limb(c, m, pts, w){
+  c.lineJoin='round'; c.lineCap='round';
+  const line=()=>{ c.beginPath(); c.moveTo(pts[0][0],pts[0][1]); for(let q=1;q<pts.length;q++) c.lineTo(pts[q][0],pts[q][1]); c.stroke(); };
+  c.strokeStyle=INK; c.lineWidth=w; line();
+  c.strokeStyle=DUMMY; c.lineWidth=w-Math.max(2,0.14*m); line();
+  c.fillStyle=INK; for(let q=0;q<pts.length-1;q++){ c.beginPath(); c.arc(pts[q][0],pts[q][1],w*0.2,0,7); c.fill(); }
+}
+function drawDummy(c, m, x, armsUp){
+  const lw=Math.max(1,0.075*m);
+  c.lineJoin='round'; c.lineCap='round';
+  // tall rounded seat back
+  c.fillStyle='#b5451a'; c.strokeStyle=INK; c.lineWidth=lw;
+  c.beginPath(); c.roundRect(x-0.74*m, -3.02*m, 0.36*m, 1.5*m, 0.16*m); c.fill(); c.stroke();
+  // torso, with a darker band at the waist and a chest plate
+  c.fillStyle=DUMMY;
+  c.beginPath(); c.roundRect(x-0.42*m, -2.86*m, 0.66*m, 1.3*m, 0.24*m); c.fill(); c.stroke();
+  c.fillStyle=DUMMY_DARK; c.fillRect(x-0.38*m, -2.2*m, 0.58*m, 0.14*m);
+  // arm: shoulder, elbow, hand (thrown up when the riders scream)
+  const sh=[x-0.06*m, -2.62*m];
+  const el=armsUp ? [x+0.3*m, -3.05*m] : [x+0.3*m, -2.2*m];
+  const hd=armsUp ? [x+0.42*m, -3.6*m] : [x+0.82*m, -2.32*m];
+  limb(c, m, [sh,el,hd], 0.34*m);
+  c.fillStyle=DUMMY_DARK; c.strokeStyle=INK; c.lineWidth=lw; c.beginPath(); c.arc(hd[0],hd[1],0.14*m,0,7); c.fill(); c.stroke();   // hand
+  // neck and head
+  c.fillStyle=DUMMY_DARK;
+  c.beginPath(); c.rect(x-0.22*m, -3.04*m, 0.24*m, 0.22*m); c.fill(); c.stroke();
+  const hx=x-0.08*m, hy=-3.4*m, hr=0.42*m;
+  c.fillStyle=DUMMY; c.beginPath(); c.arc(hx,hy,hr,0,7); c.fill(); c.stroke();
+  // the test marker on the head: a disc in yellow and black quarters
+  const mr=hr*0.62;
+  for(let q=0;q<4;q++){
+    c.fillStyle = q%2 ? INK : '#ffd21f';
+    c.beginPath(); c.moveTo(hx,hy); c.arc(hx,hy,mr,q*Math.PI/2,(q+1)*Math.PI/2); c.closePath(); c.fill();
+  }
+  c.strokeStyle=INK; c.lineWidth=lw*0.8; c.beginPath(); c.arc(hx,hy,mr,0,7); c.stroke();
+}
 function drawCarLocal(c, ppm, idx, front, opts){
-  const L=CAR_LEN*ppm, Hh=1.55*ppm, lift=0.72*ppm, wr=0.36*ppm;
+  const m=ppm, L=CAR_LEN*m, wr=0.4*m;
   const main=COLORS[design.main], detail=COLORS[design.detail];
-  const lw=Math.max(1,0.09*ppm);
-  // riders (behind the body)
-  for(let r=0;r<2;r++){
-    const rx=-L*0.3+r*L*0.36, ry=-lift-Hh*0.72;
-    const k=(idx*2+r)%6;
-    if(opts && opts.scream){
-      c.strokeStyle='#f0c19a'; c.lineWidth=0.16*ppm; c.lineCap='round';
-      c.beginPath(); c.moveTo(rx-0.15*ppm, ry-0.5*ppm); c.lineTo(rx-0.35*ppm, ry-1.15*ppm); c.moveTo(rx+0.15*ppm, ry-0.5*ppm); c.lineTo(rx+0.35*ppm, ry-1.15*ppm); c.stroke();
-    }
-    c.fillStyle=SHIRT[k]; c.beginPath(); c.roundRect(rx-0.28*ppm, ry-0.6*ppm, 0.56*ppm, 0.7*ppm, 0.18*ppm); c.fill();
-    c.fillStyle='#f0c19a'; c.beginPath(); c.arc(rx, ry-0.82*ppm, 0.3*ppm, 0, 7); c.fill();
-    c.fillStyle=HAIR[k]; c.beginPath(); c.arc(rx, ry-0.9*ppm, 0.31*ppm, Math.PI*1.05, Math.PI*1.95); c.fill();
-  }
-  // lap-bar posts
-  c.strokeStyle='#c0392b'; c.lineWidth=0.14*ppm; c.lineCap='round';
-  for(let r=0;r<2;r++){ const rx=-L*0.18+r*L*0.36; c.beginPath(); c.moveTo(rx, -lift-Hh*0.6); c.lineTo(rx+0.25*ppm, -lift-Hh*1.15); c.stroke(); }
-  // wheels
+  const lw=Math.max(1,0.1*m);
+  const armsUp=!!(opts && opts.scream);
+  // riders sit inside the tub, so they are drawn first and the body covers their legs
+  drawDummy(c, m, -1.18*m, armsUp);
+  drawDummy(c, m, 0.02*m, armsUp);
+  // wheels on short brackets, tucked under the skirt
   for(const wx of [-L*0.32, L*0.32]){
-    c.fillStyle='#2c3138'; c.beginPath(); c.arc(wx, -wr, wr, 0, 7); c.fill();
-    c.fillStyle='#9aa1ab'; c.beginPath(); c.arc(wx, -wr, wr*0.45, 0, 7); c.fill();
+    c.fillStyle='#4a515c'; c.fillRect(wx-0.2*m, -0.7*m, 0.4*m, 0.36*m);
+    c.fillStyle='#1d2126'; c.beginPath(); c.arc(wx, -wr, wr, 0, 7); c.fill();
+    c.fillStyle='#b4bac3'; c.beginPath(); c.arc(wx, -wr, wr*0.52, 0, 7); c.fill();
+    c.fillStyle='#1d2126'; c.beginPath(); c.arc(wx, -wr, wr*0.18, 0, 7); c.fill();
   }
-  // body
-  c.save(); c.translate(0,-lift);
-  bodyPath(c, L, Hh, front);
+  // body: main color, the pattern, a gray skirt along the bottom, a rim along the top, and a soft shine
+  sledPath(c, m);
   c.fillStyle=main; c.fill();
   c.save(); c.clip();
-  drawPattern(c, design.pattern, detail, L, Hh, idx);
-  const sh=c.createLinearGradient(0,-Hh,0,0); sh.addColorStop(0,'rgba(255,255,255,.28)'); sh.addColorStop(.5,'rgba(255,255,255,0)'); sh.addColorStop(1,'rgba(0,0,0,.18)');
-  c.fillStyle=sh; c.fillRect(-L,-Hh*1.2,2*L,Hh*1.3);
+  c.save(); c.translate(0,-0.86*m); drawPattern(c, design.pattern, detail, L, 1.0*m, idx); c.restore();
+  c.fillStyle='#9aa1ab'; c.fillRect(-L, -0.86*m, 2*L, 0.32*m);
+  c.fillStyle=INK; c.fillRect(-L, -0.89*m, 2*L, Math.max(1,0.06*m));
+  c.fillStyle='rgba(255,255,255,.28)'; c.fillRect(-L, -2.0*m, 2*L, 0.2*m);       // rim
+  c.fillStyle='rgba(0,0,0,.28)'; c.fillRect(-L, -1.8*m, 2*L, Math.max(1,0.05*m));
+  const sh=c.createLinearGradient(0,-2.0*m,0,-0.42*m); sh.addColorStop(0,'rgba(255,255,255,.22)'); sh.addColorStop(.5,'rgba(255,255,255,0)'); sh.addColorStop(1,'rgba(0,0,0,.2)');
+  c.fillStyle=sh; c.fillRect(-L,-2.2*m,2*L,2.2*m);
   c.restore();
-  bodyPath(c, L, Hh, front);
-  c.strokeStyle='#14181e'; c.lineWidth=lw*1.6; c.lineJoin='round'; c.stroke();
-  if(front){ // headlight
-    c.fillStyle='#fff8c8'; c.strokeStyle='#14181e'; c.lineWidth=lw;
-    c.beginPath(); c.arc(L*0.47, -Hh*0.55, Hh*0.12, 0, 7); c.fill(); c.stroke();
-  }
-  c.restore();
+  sledPath(c, m);
+  c.strokeStyle=INK; c.lineWidth=lw*1.6; c.lineJoin='round'; c.stroke();
+  // grab bar on the rim in front of each rider
+  c.strokeStyle=INK; c.lineWidth=0.16*m; c.lineCap='round';
+  if(!armsUp){ c.beginPath(); c.moveTo(-0.44*m,-2.1*m); c.lineTo(-0.3*m,-2.32*m); c.moveTo(0.76*m,-2.08*m); c.lineTo(0.88*m,-2.3*m); c.stroke(); }
 }
 
 /* ---------- scenic background (test step) ---------- */
