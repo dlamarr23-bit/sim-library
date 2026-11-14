@@ -172,7 +172,7 @@
 
   .bottom{
     background:var(--band);border-top:2px solid var(--band-line);
-    display:grid;grid-template-columns:minmax(300px,1.3fr) minmax(0,1.9fr) auto;gap:14px;align-items:center;padding:8px 14px;min-height:122px
+    display:grid;grid-template-columns:minmax(300px,1.15fr) minmax(0,2.05fr) auto;gap:14px;align-items:center;padding:8px 14px;min-height:122px
   }
   .guide{display:flex;align-items:center;gap:10px;min-width:0}
   .guide .avatar{flex:0 0 auto;width:58px;height:58px}
@@ -202,6 +202,10 @@
   .patterns button{width:64px;height:40px;min-height:40px;padding:0;border-radius:8px;overflow:hidden;border:2px solid rgba(0,0,0,.35)}
   .patterns button[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:2px}
   .patterns canvas{display:block;width:100%;height:100%}
+  .stepctl[data-for="3"]{flex-wrap:nowrap;gap:12px 14px}
+  .stepctl[data-for="3"] button{padding:10px 11px;white-space:nowrap}
+  .stepctl[data-for="3"] .row{flex-wrap:nowrap;gap:6px}
+  #fric{max-width:178px}
   .actions{display:flex;gap:10px;align-items:center;justify-content:flex-end}
   .nodeinfo{font-size:15px;font-weight:700;min-width:13ch}
 
@@ -237,6 +241,7 @@
 
   @media (max-width:1100px){
     .bottom{grid-template-columns:1fr}
+    .stepctl[data-for="3"],.stepctl[data-for="3"] .row{flex-wrap:wrap}
     .actions{justify-content:flex-start}
   }
   @media (max-width:760px){
@@ -390,6 +395,7 @@
         <div class="grp">
           <span class="glabel">View</span>
           <div class="row">
+            <button id="btnPov" type="button" aria-pressed="false">Rider view</button>
             <button id="btnCam" type="button" aria-pressed="false">Whole track</button>
             <button id="btnSlow" type="button" aria-pressed="false">Slow motion</button>
           </div>
@@ -456,7 +462,7 @@
           <span style="color:var(--ke);font-weight:800">green KE</span> is kinetic energy, and
           <span style="color:var(--th);font-weight:800">orange TE</span> is thermal energy made by friction and air.</li>
         <li><strong>Read the numbers.</strong> The equations at the top fill in with the train's mass, height and speed
-          as it moves. Press <strong>Whole track</strong> to see the full ride at once.</li>
+          as it moves. Press <strong>Rider view</strong> to ride in the front seat, or <strong>Whole track</strong> to see the full ride at once.</li>
         <li><strong>Debrief.</strong> After the ride, a graph shows how the energy changed over time. Red is PE, green is KE
           and orange is thermal energy. Drag the <strong>green circle</strong> along the bottom to read the energy, speed
           and height at any moment.</li>
@@ -586,7 +592,7 @@ let nodes = START_NODES.map(p=>({x:p[0], y:p[1], loop:0}));
 let selected = 1, dragging = -1, hover = null;
 let cars = 3, mu = 0.012;
 let design = {name:'The Screaming Eagle', pattern:'flames', main:2, detail:0};
-let running = false, slow = false, follow = true;
+let running = false, slow = false, follow = true, pov = false;
 let track = null;
 const cart = {s:0, v:0, thermal:0, gForce:1, dist:0, vmax:0, released:false, E0:0, vArrive:0, gMax:1, gMaxX:0, gMin:1, gMinX:0};
 let probing = false;
@@ -1560,6 +1566,119 @@ function drawTrain(){
   }
 }
 
+/* ---------- rider view: the ride as seen from the front seat ----------
+   The whole track lies in one upright plane, so the rider only ever tips up and down (never turns left
+   or right). Every point is described by how far ahead of the rider's eye it is (a), how far above the
+   line of sight (b) and how far to the side (z), and lands on screen at (cx + f*z/a, cy - f*b/a). */
+function drawRiderView(w,h){
+  const hw=CAR_LEN*0.32, A=posAt(cart.s-hw), B=posAt(cart.s+hw);
+  const th=Math.atan2(B.y-A.y, B.x-A.x), Fx=Math.cos(th), Fy=Math.sin(th), Ux=-Fy, Uy=Fx;
+  const ex=(A.x+B.x)/2+Ux*2.5-Fx*0.2, ey=(A.y+B.y)/2+Uy*2.5-Fy*0.2;     // the rider's eye
+  const f=w*0.5, cx=w/2, cy=h*0.46, NEAR=0.7;
+  const pa=(x,y)=>(x-ex)*Fx+(y-ey)*Fy, pb=(x,y)=>(x-ex)*Ux+(y-ey)*Uy;
+  // sky and ground: the horizon tips with the rider, and swaps over when the rider is upside down
+  const up=Fx>0;                                   // is the sky on the top side of the horizon?
+  let hy = Math.abs(Fx)<0.02 ? (Fy>0 ? (up?h+1:-1) : (up?-1:h+1)) : cy+f*Fy/Fx;
+  hy=Math.min(Math.max(hy,-1),h+1);
+  const sky=ctx.createLinearGradient(0,up?hy-h:hy+h,0,hy); sky.addColorStop(0,PAL.sky[0]); sky.addColorStop(1,PAL.sky[2]);
+  ctx.fillStyle=sky; if(up) ctx.fillRect(0,0,w,hy); else ctx.fillRect(0,hy,w,h-hy);
+  ctx.fillStyle=PAL.ground; if(up) ctx.fillRect(0,hy,w,h-hy); else ctx.fillRect(0,0,w,hy);
+  // clouds: fixed in the sky, so they sweep past as the rider tips up and over
+  ctx.fillStyle=PAL.cloud;
+  for(let k=0;k<9;k++){
+    const el=(8+hash(k+2)*50)*Math.PI/180, side=(hash(k+11)-0.5)*2.4;
+    const ca=Math.cos(el)*Fx+Math.sin(el)*Fy, cb=Math.cos(el)*Ux+Math.sin(el)*Uy;
+    if(ca<0.15) continue;
+    const X=cx+f*side/ca, Y=cy-f*cb/ca, r=(26+hash(k+5)*26)*u/ca;
+    if(Y<-200*u||Y>h+200*u) continue;
+    ctx.beginPath(); ctx.ellipse(X,Y,r*1.8,r*0.55,0,0,7); ctx.ellipse(X+r*0.9,Y-r*0.25,r,r*0.5,0,0,7); ctx.ellipse(X-r*0.8,Y+r*0.05,r*0.9,r*0.4,0,0,7); ctx.fill();
+  }
+  // mountains along the horizon
+  if(hy>-1 && hy<h+1){
+    const dir=up?-1:1;
+    ctx.fillStyle=PAL.mtn[1]; ctx.beginPath(); ctx.moveTo(0,hy);
+    for(let x=0;x<=w+8*u;x+=8*u){ const X=x/u; ctx.lineTo(x, hy+dir*(34+26*Math.sin(X/130)+18*Math.sin(X/47+1.3)+8*Math.sin(X/19+.4))*u); }
+    ctx.lineTo(w,hy); ctx.closePath(); ctx.fill();
+  }
+  // ground: bands across the ground every 8 m, so the ground rushes toward the rider
+  const yOn=(x,y)=>{ const a=pa(x,y); return a>NEAR ? cy-f*pb(x,y)/a : null; };
+  const g0=Math.floor((ex-260)/8);
+  let prevY=null;
+  ctx.fillStyle='rgba(0,0,0,.13)';
+  for(let k=g0;k<=g0+66;k++){
+    const y=yOn(k*8,0);
+    if(y!==null && prevY!==null && (k&1)){ const y0=Math.max(Math.min(y,prevY),-2), y1=Math.min(Math.max(y,prevY),h+2); if(y1>y0) ctx.fillRect(0,y0,w,y1-y0); }
+    prevY=y;
+  }
+  // trees on both sides, far ones first
+  const trees=[];
+  const t0=Math.floor((ex-200)/9);
+  for(let k=t0;k<=t0+46;k++){
+    for(const sd of [-1,1]){
+      const x=k*9+hash(k*3+sd)*5, z=sd*(7+hash(k*7+sd*2)*16), ht=6+hash(k+sd*5)*7;
+      const a=pa(x,0), a2=pa(x,ht);
+      if(a>NEAR && a2>NEAR) trees.push([a, cx+f*z/a, cy-f*pb(x,0)/a, cx+f*z/a2, cy-f*pb(x,ht)/a2, f*ht*0.21/a, (k+sd)&1]);
+    }
+  }
+  trees.sort((p,q)=>q[0]-p[0]);
+  for(const t of trees){
+    ctx.fillStyle=t[6]?PAL.forestNear:PAL.forestNear2;
+    ctx.beginPath(); ctx.moveTo(t[3],t[4]); ctx.lineTo(t[1]+t[5],t[2]); ctx.lineTo(t[1]-t[5],t[2]); ctx.closePath(); ctx.fill();
+  }
+  // the track ahead, far end first: supports, ties, chain or brake fins, then the two rails
+  const P=track.P, GAUGE=0.8, STEP=4;
+  const i0=Math.max(0, Math.floor((cart.s-3)/DS)), i1=Math.min(P.length-1, i0+Math.round(170/DS));
+  const pts=[];
+  for(let i=i0;i<=i1;i+=STEP){ const p=P[i], a=pa(p.x,p.y); pts.push(a>NEAR ? [a, cy-f*pb(p.x,p.y)/a, i] : null); }
+  ctx.lineCap='butt';
+  for(let q=pts.length-1;q>=0;q--){
+    const c=pts[q]; if(!c) continue;
+    const sc=f/c[0], i=c[2], p=P[i];
+    if(i%Math.round(6/DS)<STEP && p.y>1 && !track.loopRanges.some(L=>i*DS>L.s0+1 && i*DS<L.s1-1)){      // a support column down to the ground
+      const a0=pa(p.x,0);
+      if(a0>NEAR){ ctx.strokeStyle=PAL.support; ctx.lineWidth=Math.max(1,0.45*sc); ctx.beginPath(); ctx.moveTo(cx,c[1]); ctx.lineTo(cx,cy-f*pb(p.x,0)/a0); ctx.stroke(); }
+    }
+    if(q%2===0){ ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(1,0.3*sc); ctx.beginPath(); ctx.moveTo(cx-GAUGE*1.25*sc,c[1]); ctx.lineTo(cx+GAUGE*1.25*sc,c[1]); ctx.stroke(); }   // tie
+    const d=pts[q+1];
+    if(!d) continue;
+    const sd=f/d[0];
+    if(i*DS<=track.liftS){ ctx.strokeStyle=PAL.chain; ctx.lineWidth=Math.max(1,0.18*sc); ctx.setLineDash([Math.max(2,0.3*sc),Math.max(2,0.25*sc)]); ctx.beginPath(); ctx.moveTo(cx,c[1]); ctx.lineTo(cx,d[1]); ctx.stroke(); ctx.setLineDash([]); }
+    else if(i*DS>=track.brakeS && q%2){ ctx.strokeStyle='#c0392b'; ctx.lineWidth=Math.max(1,0.5*sc); ctx.beginPath(); ctx.moveTo(cx,c[1]); ctx.lineTo(cx,d[1]); ctx.stroke(); }
+    for(const sgn of [-1,1]){
+      ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(1.5,0.26*sc);
+      ctx.beginPath(); ctx.moveTo(cx+sgn*GAUGE*sc,c[1]); ctx.lineTo(cx+sgn*GAUGE*sd,d[1]); ctx.stroke();
+      ctx.strokeStyle=PAL.rail; ctx.lineWidth=Math.max(1,0.16*sc);
+      ctx.beginPath(); ctx.moveTo(cx+sgn*GAUGE*sc,c[1]); ctx.lineTo(cx+sgn*GAUGE*sd,d[1]); ctx.stroke();
+    }
+  }
+  // the nose of the car, the grab bar and the rider's hands
+  const main=COLORS[design.main], lw=Math.max(2,3.2*u);
+  ctx.lineJoin=ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(w*0.2,h+lw); ctx.bezierCurveTo(w*0.26,h*0.8, w*0.4,h*0.74, w*0.5,h*0.74); ctx.bezierCurveTo(w*0.6,h*0.74, w*0.74,h*0.8, w*0.8,h+lw); ctx.closePath();
+  ctx.fillStyle=main; ctx.fill();
+  const shn=ctx.createLinearGradient(0,h*0.74,0,h); shn.addColorStop(0,'rgba(255,255,255,.3)'); shn.addColorStop(1,'rgba(0,0,0,.25)'); ctx.fillStyle=shn; ctx.fill();
+  ctx.strokeStyle=INK; ctx.lineWidth=lw; ctx.stroke();
+  const scream = running && cart.released && Math.abs(cart.v)>12;
+  ctx.strokeStyle=INK; ctx.lineWidth=h*0.03; ctx.beginPath(); ctx.moveTo(w*0.36,h*0.93); ctx.lineTo(w*0.64,h*0.93); ctx.stroke();    // grab bar
+  for(const sgn of [-1,1]){
+    const X0=cx+sgn*w*0.13, hx=scream ? cx+sgn*w*0.19 : cx+sgn*w*0.07, hyy=scream ? h*0.6 : h*0.93;
+    ctx.strokeStyle=INK; ctx.lineWidth=h*0.058; ctx.beginPath(); ctx.moveTo(X0,h+lw); ctx.lineTo(hx,hyy); ctx.stroke();
+    ctx.strokeStyle=DUMMY; ctx.lineWidth=h*0.058-2*lw; ctx.beginPath(); ctx.moveTo(X0,h+lw); ctx.lineTo(hx,hyy); ctx.stroke();
+    ctx.fillStyle=DUMMY_DARK; ctx.strokeStyle=INK; ctx.lineWidth=lw; ctx.beginPath(); ctx.arc(hx,hyy,h*0.04,0,7); ctx.fill(); ctx.stroke();
+  }
+}
+// in the rider view the comic words sit in the sky instead of at a spot on the track
+function drawRiderPopups(w,h){
+  const now=performance.now();
+  popups=popups.filter(p=>now-p.t0<p.life);
+  popups.forEach((p,k)=>{
+    const t=(now-p.t0)/p.life;
+    const sc=t<0.12 ? 0.6+0.4*(t/0.12)+0.12*Math.sin(t/0.12*Math.PI) : 1;
+    const a=t>0.7 ? 1-(t-0.7)/0.3 : 1;
+    comicText(p.text, w*(0.3+0.4*hash(p.t0)), h*0.3+k*38*u-24*u*t, 34*u, p.color, a, sc);
+  });
+}
+
 function drawMinimap(){
   const w=cv.width, mw=230*u, mh=mw*H_WORLD/W_WORLD*0.8, x0=w-mw-12*u, y0=12*u;
   ctx.fillStyle='rgba(20,24,30,.55)'; ctx.beginPath(); ctx.roundRect(x0,y0,mw,mh,8*u); ctx.fill();
@@ -1574,6 +1693,7 @@ function drawMinimap(){
 
 function drawTest(){
   const w=cv.width, h=cv.height;
+  if(pov){ drawRiderView(w,h); drawRiderPopups(w,h); drawMinimap(); drawSplash(); return; }
   if(follow){
     // The camera rides with the middle of the train and looks a little ahead. It eases by the clock,
     // not by the frame, so it is just as steady on a slow computer as on a fast one.
@@ -2158,7 +2278,8 @@ $('btnReset').onclick=()=>{
   else { resetCart(); STEP_GUIDE[3](); }
 };
 $('btnSlow').onclick=e=>{ slow=!slow; e.currentTarget.setAttribute('aria-pressed',String(slow)); };
-$('btnCam').onclick=e=>{ follow=!follow; e.currentTarget.setAttribute('aria-pressed',String(!follow)); };
+$('btnCam').onclick=e=>{ follow=!follow; e.currentTarget.setAttribute('aria-pressed',String(!follow)); if(!follow){ pov=false; $('btnPov').setAttribute('aria-pressed','false'); } cam.snap=true; };
+$('btnPov').onclick=e=>{ pov=!pov; e.currentTarget.setAttribute('aria-pressed',String(pov)); if(pov){ follow=true; $('btnCam').setAttribute('aria-pressed','false'); } cam.snap=true; };
 $('fric').onchange=e=>{ mu=+e.target.value; resetCart(); STEP_GUIDE[3](); };
 $('cars').oninput=e=>{ cars=+e.target.value; $('carsOut').textContent=cars+(cars===1?' car':' cars'); $('massInfo').textContent=mass()+' kg'; resetCart(); save(); refreshUI(); };
 $('cname').oninput=e=>{ design.name=e.target.value; save(); };
