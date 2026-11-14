@@ -128,7 +128,6 @@
   .scroller{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
   canvas#cv{display:block;width:100%;min-width:660px;height:auto;aspect-ratio:200/86;touch-action:none;outline:none;margin:0 auto}
   canvas#cv:focus-visible{outline:3px solid var(--accent-2);outline-offset:-3px}
-  canvas#cv.edit{cursor:crosshair}
   .ebar{
     position:absolute;left:50%;top:2.2%;transform:translateX(-50%);width:48%;
     display:none;height:clamp(30px,2.6vw,42px);border:2px solid #3a3f47;border-radius:6px;overflow:hidden;
@@ -173,13 +172,13 @@
 
   .bottom{
     background:var(--band);border-top:2px solid var(--band-line);
-    display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(0,2fr) auto;gap:14px;align-items:center;padding:8px 14px
+    display:grid;grid-template-columns:minmax(300px,1.3fr) minmax(0,1.9fr) auto;gap:14px;align-items:center;padding:8px 14px;min-height:122px
   }
   .guide{display:flex;align-items:center;gap:10px;min-width:0}
   .guide .avatar{flex:0 0 auto;width:58px;height:58px}
   .bubble{
     position:relative;flex:1;min-width:0;background:var(--field);border:2px solid var(--eq-box-line);border-radius:14px;
-    padding:9px 13px;font-size:15px;font-weight:600;line-height:1.4;min-height:58px;max-height:118px;overflow-y:auto;display:flex;flex-direction:column;justify-content:flex-start
+    padding:9px 13px;font-size:15px;font-weight:600;line-height:1.4;height:104px;overflow-y:auto;display:flex;flex-direction:column;justify-content:flex-start
   }
   .bubble::before{content:"";position:absolute;left:-11px;top:50%;margin-top:-9px;border:9px solid transparent;border-right-color:var(--eq-box-line);border-left:0}
   .bubble::after{content:"";position:absolute;left:-7px;top:50%;margin-top:-7px;border:7px solid transparent;border-right-color:var(--field);border-left:0}
@@ -364,20 +363,6 @@
           <span class="nodeinfo" id="nodeInfo">&ndash;</span>
         </div>
         <div class="grp">
-          <span class="glabel">Build from this node</span>
-          <div class="row">
-            <button id="btnHill" type="button">Add hill</button>
-            <button id="btnLoop" type="button">Add loop</button>
-            <select id="loopSize" aria-label="Loop size">
-              <option value="1">Small loop</option>
-              <option value="2" selected>Medium loop</option>
-              <option value="3">Large loop</option>
-              <option value="4">Giant loop</option>
-            </select>
-            <button id="btnDel" type="button">Delete</button>
-          </div>
-        </div>
-        <div class="grp">
           <span class="glabel">Track</span>
           <div class="row">
             <select id="preset" aria-label="Load a design">
@@ -463,7 +448,7 @@
           the PE and KE equations at the top.</li>
         <li><strong>Track Design.</strong> The first hill is the <strong>chain lift</strong>. It puts energy into your coaster.
           Click any black node to see its buttons: <strong>build hill</strong>, <strong>build loop</strong>, or
-          <strong>delete</strong>. For a hill, move your mouse to a white line on the right and click. For a loop, move your mouse up or down to size it and click. Nodes sit on the white lines; drag one up or down to change its height.
+          <strong>delete</strong>. For a hill, move your mouse to the right and click where you want it. For a loop, move your mouse away from the node to make it bigger and click. You see the new track before you click. Nodes sit on the white lines. Drag one up or down to change its height, or sideways to move it to another line. To add a node between two others, click the track there. To change a loop's size, drag the round handle on top of it.
           Keep building until your track reaches <strong>COASTER END</strong>.</li>
         <li><strong>Coaster Test.</strong> Press <strong>Play</strong>. The chain pulls the train up the first hill, then
           lets it go. The train must reach the end station slowly enough for the brakes to stop it.
@@ -551,7 +536,7 @@ const START_BAND = 7, END_BAND = 193;   // striped COASTER START / COASTER END b
 const END_REACH = 186;                  // last node must reach this x for the track to be complete
 const G = 9.81;
 const MASS_PER_CAR = 500;
-const CAR_LEN = 4.2, CAR_GAP = 0.5;
+const CAR_LEN = 4.2, CAR_GAP = 0.3;
 const DRAG_K = 0.5 * 1.2 * 0.7 * 1.3;   // ½·air density·drag coefficient·frontal area (same for any number of cars)
 const V_LIFT = 5.0;                     // chain lift speed, m/s
 const SUBSTEPS = 14;
@@ -568,7 +553,8 @@ const snapX = x => Math.round(x/GRID)*GRID;
 const LOOP_A = 0.8;                     // loop curvature profile: 1 - A*cos(2*pi*u); 1 would be a pure teardrop
 const DS = 0.2;                         // track resolution, metres
 const HIT_PX = 20, NODE_PX = 9;
-const FOLLOW_VIEW_H = 38;               // metres of height visible in follow-cam
+const followH = () => 18 + Math.max(0,cars-3)*1.6;   // metres of height visible in follow-cam: close in, a little wider for long trains
+const DRAG_PX = 5;                      // a press must move this far before it becomes a drag (so a click never nudges a node)
 
 const COLORS = ['#e0412f','#f39a1e','#f5d431','#3cae4a','#3d6fd8','#9b4fd1','#9aa3ad','#23b5c2','#f0b48a'];
 const COLOR_NAMES = ['red','orange','yellow','green','blue','purple','gray','teal','peach'];
@@ -609,7 +595,8 @@ let popups = [];
 let history = [], nextSample = 0, thrillT = 0, screams = 0, lastRun = null, debriefT = 0, debriefTimer = 0;
 const SAMPLE_DT = 0.05;                 // seconds of ride time between energy samples for the Debrief graph
 let popState = {scream:-9, air:-9, g:-9, lastS:0};
-let cam = {x:100, y:30};
+let cam = {x:100, y:30, lead:0, snap:true};
+let frameDt = 0;
 const mass = () => cars*MASS_PER_CAR;
 
 /* -------- per-viewer save (convenience only) -------- */
@@ -651,32 +638,11 @@ function loopPoints(x0,y0,h){
   return U.pts.map(p=>({x:x0+p.x*sc, y:y0+p.y*sc}));
 }
 
-/* Between a crest and a valley (both flat) a cubic would bend hardest right at the bottom, where
-   the train is fastest. Real drops are built instead from a tighter arc over the crest, a straight
-   section, and a wider arc for the pull-out. This draws that shape (CREST_TO_VALLEY sets the ratio
-   of the two radii). Steeper than 45 degrees on average, the straight part is vertical. */
-const CREST_TO_VALLEY = 1.6;
-function biarc(out, x0, y0, H, Dy){
-  const h=Math.abs(Dy), sg=Dy<0?-1:1;
-  let th, Rsum, L;
-  if(h<=H){ th=2*Math.atan(h/H); Rsum=H/Math.sin(th); L=0; }
-  else { th=Math.PI/2; Rsum=H; L=h-H; }
-  const r=CREST_TO_VALLEY, Rc=Rsum/(1+r), Rv=Rsum*r/(1+r);
-  const R1 = sg<0 ? Rc : Rv, R2 = sg<0 ? Rv : Rc;   // going down: crest arc first; going up: valley arc first
-  const l1=R1*th, l2=R2*th, tot=l1+L+l2;
-  const N=Math.max(20, Math.ceil(tot/0.25)), ds=tot/N;
-  const head=s=> s<l1 ? sg*th*(s/l1) : s<l1+L ? sg*th : sg*th*(1-(s-l1-L)/l2);
-  let x=x0, y=y0;
-  const pts=[{x,y}];
-  for(let k=0;k<N;k++){
-    const a=head((k+0.5)*ds);
-    x+=Math.cos(a)*ds; y+=Math.sin(a)*ds; pts.push({x,y});
-  }
-  const ex=x0+H-x, ey=y0+Dy-y;                    // remove tiny integration drift
-  for(let k=0;k<N;k++){ const f=k/N; out.push({x:pts[k].x+ex*f, y:pts[k].y+ey*f}); }
-}
-
-function buildTrack(){
+/* Between a crest and a valley (both flat) the track is one smooth S-curve, like the original.
+   A plain S bends just as hard at the bottom, where the train is fastest, as at the top. EASE_P
+   leans the curve a little so the top turns sooner and the pull-out at the bottom is wider. */
+const EASE_P = 1.25;
+function makeTrack(nodes){
   const CP=[];
   nodes.forEach((n,i)=>{
     CP.push({x:n.x, y:n.y, flat:!!n.loop, node:i, loopOut:!!n.loop});
@@ -711,7 +677,14 @@ function buildTrack(){
       continue;
     }
     const H=h[i], Dy=Y[i+1]-Y[i], di=d[i], dj=d[i+1];
-    if(di===0 && dj===0 && Math.abs(Dy)>0.05){ biarc(raw, X[i], Y[i], H, Dy); continue; }
+    if(di===0 && dj===0 && Math.abs(Dy)>0.05){
+      const K=Math.max(24, Math.ceil((H+Math.abs(Dy))/0.25));
+      for(let k=0;k<K;k++){
+        const t=k/K, e=Dy<0 ? 1-Math.pow(1-t,EASE_P) : Math.pow(t,EASE_P);   // going down the crest comes first, going up the valley does
+        raw.push({x:X[i]+H*t, y:Y[i]+Dy*e*e*(3-2*e)});
+      }
+      continue;
+    }
     const c2=3*Dy-H*(2*di+dj), c3=-2*Dy+H*(di+dj);
     const K=Math.max(20, Math.ceil(H/0.25));
     for(let k=0;k<K;k++){
@@ -762,8 +735,9 @@ function buildTrack(){
   const sOfRaw=i=>rs[Math.min(i,rs.length-1)];
   const nodeS=nodes.map((nd,i)=>{ const c=CP.findIndex(p=>p.node===i); return sOfRaw(cpIdx[c]); });
   const loopRanges=loops.map(L=>({s0:sOfRaw(L.rawA), s1:sOfRaw(L.rawB), node:L.node}));
-  track={P, TH, K, len:(M-1)*DS, nodeS, loopRanges, liftS:nodeS[1], brakeS:nodeS[nodes.length-1]};
+  return {P, TH, K, len:(M-1)*DS, nodeS, loopRanges, liftS:nodeS[1], brakeS:nodeS[nodes.length-1]};
 }
+function buildTrack(){ track=makeTrack(nodes); trackArt=null; }
 
 function sampleAt(sv){
   sv=Math.min(Math.max(sv,0),track.len);
@@ -772,6 +746,8 @@ function sampleAt(sv){
   const th=track.TH[i]+(track.TH[i+1]-track.TH[i])*f;
   return {x:a.x+(b.x-a.x)*f, y:a.y+(b.y-a.y)*f, th, ux:Math.cos(th), uy:Math.sin(th), k:track.K[i]+(track.K[i+1]-track.K[i])*f};
 }
+// a point on the track, or on the level station floor behind its start
+function posAt(s){ if(s>=0) return sampleAt(s); const p=track.P[0]; return {x:p.x+s, y:p.y}; }
 const inLoop = s => track.loopRanges.find(L=>s>=L.s0 && s<=L.s1);
 const trackComplete = () => nodes[nodes.length-1].x >= END_REACH;
 
@@ -786,7 +762,7 @@ function resetCart(){
   cart.gMax=1; cart.gMin=1; cart.gMaxX=0; cart.gMinX=0;
   runTime=0; done=null; maxS=cart.s; lastProgressT=0;
   history=[]; nextSample=0; thrillT=0; screams=0; clearTimeout(debriefTimer);
-  running=false; popups=popups.filter(p=>p.edit);
+  running=false; popups=popups.filter(p=>p.edit); cam.snap=true;
   popState={scream:-9, air:-9, g:-9, lastS:cart.s};
   setRunBtn();
   refreshUI();
@@ -939,14 +915,7 @@ function refreshUI(){
     eqV.textContent=Math.abs(cart.v).toFixed(1)+' m/s';
     eqPE.textContent='= '+fmtJ(PE); eqKE.textContent='= '+fmtJ(KE);
   }
-  const Emax=m*G*nodes[1].y+0.5*m*V_LIFT*V_LIFT;     // what the chain lift will put in
-  const tot=Math.max(PE+KE+TH,Emax,1);
-  for(const [id,v] of [['segPE',PE],['segKE',KE],['segTH',TH]]){
-    const el=$(id), pc=100*v/tot;
-    el.style.width=pc.toFixed(2)+'%';
-    el.style.paddingLeft = pc<4 ? '0' : '';
-    el.style.color = pc<7 ? 'transparent' : '';
-  }
+  refreshBar();
   $('vPE').textContent=fmtJ(PE); $('vKE').textContent=fmtJ(KE); $('vTH').textContent=fmtJ(TH);
   $('vTOT').textContent=cart.released?fmtJ(cart.E0):'–';
   $('rHeight').textContent=Math.max(p.y,0).toFixed(1)+' m';
@@ -960,20 +929,26 @@ function refreshUI(){
   $('rH0').textContent=nodes[1].y.toFixed(1)+' m';
 }
 
+const segEls=[$('segPE'),$('segKE'),$('segTH')];
+function refreshBar(){
+  const m=mass(), p=sampleAt(cart.s);
+  const PE=m*G*Math.max(p.y,0), KE=0.5*m*cart.v*cart.v, TH=cart.thermal;
+  const Emax=m*G*nodes[1].y+0.5*m*V_LIFT*V_LIFT;     // what the chain lift will put in
+  const tot=Math.max(PE+KE+TH,Emax,1), vals=[PE,KE,TH];
+  for(let q=0;q<3;q++){
+    const el=segEls[q], pc=100*vals[q]/tot;
+    el.style.width=pc.toFixed(2)+'%';
+    el.style.paddingLeft = pc<4 ? '0' : '';
+    el.style.color = pc<7 ? 'transparent' : '';
+  }
+}
 function refreshNodeUI(){
   const nd=nodes[selected], i=selected;
   let label;
   if(i===0) label='Station (start)';
   else if(i===1) label='Lift hill top · '+nd.y.toFixed(1)+' m';
   else label='Node '+(i+1)+' · '+nd.y.toFixed(1)+' m'+(nd.loop?' · '+nd.loop.toFixed(1)+' m loop':'');
-  $('nodeInfo').textContent=label;
-  const canLoop = i>=1;
-  $('btnLoop').disabled=!canLoop;
-  $('btnLoop').textContent=nd.loop?'Remove loop':'Add loop';
-  $('loopSize').disabled=!canLoop;
-  if(nd.loop){ let k=1; for(let q=1;q<LOOP_H.length;q++) if(Math.abs(LOOP_H[q]-nd.loop)<Math.abs(LOOP_H[k]-nd.loop)) k=q; $('loopSize').value=String(k); }
-  $('btnDel').disabled = i<=1 || nodes.length<=3;
-  $('btnHill').disabled = i===0;
+  if($('nodeInfo').textContent!==label) $('nodeInfo').textContent=label;
   refreshUI();
 }
 
@@ -1006,7 +981,8 @@ function setStep(n){
   $('scorePanel').hidden = n!==5;
   document.querySelector('.eq:not(.eqtotal)').hidden = n===5;
   $('eqTotal').hidden = n!==5;
-  cv.classList.toggle('edit', n===2);
+  cv.classList.toggle('edit', n===2); cv.style.cursor='';
+  mode=null; press=null; dragging=-1; hoverNode=-1; trackDirty=false; resizing=-1; hoverLoop=-1; addSpot=null;
   cv.setAttribute('aria-label', [
     'Preview of your coaster carts.',
     'Preview of your coaster train.',
@@ -1015,7 +991,7 @@ function setStep(n){
     'Energy graph of your last ride. Drag the green circle, or use the left and right arrow keys, to read the energy at any moment.',
     'Final score.'][n]);
   popups=[];
-  if(n===3){ resetCart(); const p=sampleAt(cart.s); cam.x=p.x; cam.y=p.y; }
+  if(n===3) resetCart();
   if(n===4) debriefGuide();
   else if(n===5) showScore();
   else STEP_GUIDE[n]();
@@ -1354,7 +1330,9 @@ function drawScenery(w,h){
     ctx.beginPath(); ctx.ellipse(x,y,r*1.8,r*0.55,0,0,7); ctx.ellipse(x+r*0.9,y-r*0.25,r,r*0.5,0,0,7); ctx.ellipse(x-r*0.8,y+r*0.05,r*0.9,r*0.4,0,0,7); ctx.fill();
   }
   // mountains
-  const base=Math.min(h*0.62, gY-40*u) + (gY-h)*0.25;
+  // the ground line (or the bottom edge when the camera is high up); far layers sink more slowly than near ones as the camera climbs
+  const gl=Math.min(gY,h), deep=Math.max(0,gY-h);
+  const base=gl-h*0.16+deep*0.05;
   const mo=off*0.3;
   const mg=ctx.createLinearGradient(0,base-260*u,0,base);
   mg.addColorStop(0,PAL.mtn[0]); mg.addColorStop(.45,PAL.mtn[0]); mg.addColorStop(1,PAL.mtn[1]);
@@ -1366,76 +1344,82 @@ function drawScenery(w,h){
   ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
   // forests: two parallax rows of simple fir trees, with mist
   const forest=(par, spacing, hMin, hVar, col, col2, yBase)=>{
-    const fo=off*par;
+    if(yBase-(hMin+hVar)*u>h) return;            // the whole row is below the picture
+    const fo=off*par, A=new Path2D(), B=new Path2D();   // one fill per color instead of one per tree
     for(let k=Math.floor(fo/spacing)-2;k<=Math.floor((fo+w)/spacing)+2;k++){
       const x=k*spacing-fo+hash(k*1.7+par)*spacing*0.6, th=(hMin+hash(k+par*10)*hVar)*u, tw=th*0.42;
-      ctx.fillStyle=hash(k+5)>0.5?col:col2;
-      ctx.beginPath(); ctx.moveTo(x,yBase-th); ctx.lineTo(x+tw/2,yBase); ctx.lineTo(x-tw/2,yBase); ctx.closePath(); ctx.fill();
+      const t=(col2!==col && hash(k+5)<=0.5) ? B : A;
+      t.moveTo(x,yBase-th); t.lineTo(x+tw/2,yBase); t.lineTo(x-tw/2,yBase); t.closePath();
     }
+    ctx.fillStyle=col; ctx.fill(A);
+    if(col2!==col){ ctx.fillStyle=col2; ctx.fill(B); }
   };
-  const fy1=base+18*u+(gY-base)*0.25, fy2=base+60*u+(gY-base)*0.55;
+  const fy1=gl-h*0.09+deep*0.10, fy2=gl-h*0.02+deep*0.18;
   forest(0.5, 15*u, 50, 40, PAL.forestFar, PAL.forestFar, fy1);
-  ctx.fillStyle=PAL.forestFar; ctx.fillRect(0,fy1-2,w,h);
+  if(fy1<h){ ctx.fillStyle=PAL.forestFar; ctx.fillRect(0,fy1-2,w,h); }
   let fg=ctx.createLinearGradient(0,fy1-90*u,0,fy1+20*u); fg.addColorStop(0,PAL.fog+'0)'); fg.addColorStop(1,PAL.fog+'.55)');
   ctx.fillStyle=fg; ctx.fillRect(0,fy1-90*u,w,h);
   forest(0.75, 19*u, 70, 55, PAL.forestNear, PAL.forestNear2, fy2);
-  ctx.fillStyle=PAL.forestNear; ctx.fillRect(0,fy2-1,w,h);
+  if(fy2<h){ ctx.fillStyle=PAL.forestNear; ctx.fillRect(0,fy2-1,w,h); }
   fg=ctx.createLinearGradient(0,fy2-100*u,0,fy2+30*u); fg.addColorStop(0,PAL.fog+'0)'); fg.addColorStop(1,PAL.fog+'.35)');
   ctx.fillStyle=fg; ctx.fillRect(0,fy2-100*u,w,h);
   if(gY<h){ ctx.fillStyle=PAL.ground; ctx.fillRect(0,gY,w,h-gY); }
 }
 
-function drawRealTrack(){
-  const P=track.P, ppm=V.ppm, w=cv.width, hgt=cv.height;
-  const vis=(x,y)=>{ const X=SX(x), Y=SY(y); return X>-200*u && X<w+200*u && Y>-200*u && Y<hgt+200*u; };
-  // supports
+/* The ride's track art is built once per track as paths in world metres, then stroked through a
+   world-to-screen transform. Each frame is a handful of strokes, however long the track is. */
+let trackArt=null;
+function buildTrackArt(){
+  const P=track.P, TH=track.TH;
+  const sup=new Path2D(), ties=new Path2D(), low=new Path2D(), rail=new Path2D(), chain=new Path2D(), fins=new Path2D();
   const sStep=Math.round(6/DS);
-  ctx.lineWidth=Math.max(1,0.08*ppm);
   for(let i=0;i<P.length;i+=sStep){
-    const p=P[i]; if(p.y<1 || !vis(p.x,p.y)) continue;
+    const p=P[i]; if(p.y<1) continue;
     if(track.loopRanges.some(L=>i*DS>L.s0+1 && i*DS<L.s1-1)) continue;
-    const X=SX(p.x), w2=Math.max(2,0.45*ppm);
-    ctx.fillStyle=PAL.support; ctx.strokeStyle=PAL.supportEdge;
-    ctx.beginPath(); ctx.rect(X-w2/2, SY(p.y)+0.2*ppm, w2, SY(0)-SY(p.y)); ctx.fill(); ctx.stroke();
+    sup.rect(p.x-0.225, 0, 0.45, p.y-0.2);
   }
   for(const L of track.loopRanges){   // one column holds up each loop
     const a=sampleAt(L.s0), top=sampleAt((L.s0+L.s1)/2);
-    const X=SX(top.x), w2=Math.max(3,0.6*ppm);
-    ctx.fillStyle=PAL.support; ctx.strokeStyle=PAL.supportEdge;
-    ctx.beginPath(); ctx.rect(X-w2/2, SY(top.y), w2, SY(0)-SY(top.y)); ctx.fill(); ctx.stroke();
-    if(a.y>1){ const XA=SX(a.x+loopD(nodes[L.node].loop)/2); ctx.beginPath(); ctx.rect(XA-w2/2, SY(a.y)+0.2*ppm, w2, SY(0)-SY(a.y)); ctx.fill(); ctx.stroke(); }
+    sup.rect(top.x-0.3, 0, 0.6, top.y);
+    if(a.y>1) sup.rect(a.x+loopD(nodes[L.node].loop)/2-0.3, 0, 0.6, a.y-0.2);
   }
-  // rail: pale band with darker edges, ties hanging underneath
-  const path=(off)=>{
-    ctx.beginPath();
-    for(let i=0;i<P.length;i+=2){
-      const th=track.TH[i], nx=-Math.sin(th)*off, ny=Math.cos(th)*off;
-      const X=SX(P[i].x+nx), Y=SY(P[i].y+ny);
-      if(i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y);
-    }
-  };
-  ctx.lineJoin=ctx.lineCap='round';
-  ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(1.5,0.22*ppm);
   const tStep=Math.round(1.4/DS);
   for(let i=0;i<P.length;i+=tStep){
-    const p=P[i]; if(!vis(p.x,p.y)) continue;
-    const th=track.TH[i], nx=-Math.sin(th), ny=Math.cos(th);
-    ctx.beginPath(); ctx.moveTo(SX(p.x-nx*0.2),SY(p.y-ny*0.2)); ctx.lineTo(SX(p.x-nx*0.95),SY(p.y-ny*0.95)); ctx.stroke();
+    const p=P[i], nx=-Math.sin(TH[i]), ny=Math.cos(TH[i]);
+    ties.moveTo(p.x-nx*0.2, p.y-ny*0.2); ties.lineTo(p.x-nx*0.95, p.y-ny*0.95);
   }
-  path(-0.95); ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(1,0.3*ppm); ctx.stroke();
-  path(0); ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(3,0.95*ppm); ctx.stroke();
-  path(0); ctx.strokeStyle=PAL.rail; ctx.lineWidth=Math.max(2,0.7*ppm); ctx.stroke();
-  // chain on the lift
-  ctx.strokeStyle=PAL.chain; ctx.lineWidth=Math.max(1,0.14*ppm); ctx.setLineDash([0.35*ppm,0.3*ppm]);
-  ctx.beginPath();
-  for(let i=0;i*DS<=track.liftS;i+=2){ const p=P[i]; if(i===0) ctx.moveTo(SX(p.x),SY(p.y)); else ctx.lineTo(SX(p.x),SY(p.y)); }
-  ctx.stroke(); ctx.setLineDash([]);
-  // brake fins along the brake run
-  ctx.fillStyle='#c0392b';
+  for(let i=0;i<P.length;i++){
+    const p=P[i], nx=-Math.sin(TH[i]), ny=Math.cos(TH[i]);
+    if(i===0){ rail.moveTo(p.x,p.y); low.moveTo(p.x-nx*0.95,p.y-ny*0.95); }
+    else { rail.lineTo(p.x,p.y); low.lineTo(p.x-nx*0.95,p.y-ny*0.95); }
+    if(i*DS<=track.liftS){ if(i===0) chain.moveTo(p.x,p.y); else chain.lineTo(p.x,p.y); }
+  }
   for(let x=0;x<BRAKE_LEN-1;x+=1.6){
     const b=sampleAt(track.brakeS+x+0.8);
-    ctx.fillRect(SX(b.x)-0.25*ppm, SY(b.y)+0.9*ppm, 0.5*ppm, 0.45*ppm);
+    fins.rect(b.x-0.25, b.y-1.35, 0.5, 0.45);
   }
+  trackArt={sup, ties, low, rail, chain, fins};
+}
+function drawRealTrack(){
+  if(!trackArt) buildTrackArt();
+  const A=trackArt, ppm=V.ppm, px=n=>n/ppm;
+  ctx.save();
+  ctx.setTransform(ppm,0,0,-ppm,-V.x0*ppm,V.y1*ppm);     // world metres -> screen
+  ctx.lineJoin=ctx.lineCap='round';
+  ctx.fillStyle=PAL.support; ctx.strokeStyle=PAL.supportEdge; ctx.lineWidth=Math.max(px(1),0.08);
+  ctx.fill(A.sup); ctx.stroke(A.sup);
+  // rail: pale band with darker edges, ties hanging underneath
+  ctx.strokeStyle=PAL.railEdge; ctx.lineWidth=Math.max(px(1.5),0.22); ctx.stroke(A.ties);
+  ctx.lineWidth=Math.max(px(1),0.3); ctx.stroke(A.low);
+  ctx.lineWidth=Math.max(px(3),0.95); ctx.stroke(A.rail);
+  ctx.strokeStyle=PAL.rail; ctx.lineWidth=Math.max(px(2),0.7); ctx.stroke(A.rail);
+  // chain on the lift
+  ctx.lineCap='butt';
+  ctx.strokeStyle=PAL.chain; ctx.lineWidth=Math.max(px(1),0.14); ctx.setLineDash([0.35,0.3]);
+  ctx.stroke(A.chain); ctx.setLineDash([]);
+  // brake fins along the brake run
+  ctx.fillStyle='#c0392b'; ctx.fill(A.fins);
+  ctx.restore();
 }
 
 /* wooden stations: the start (train waits here) and the end (brakes stop the train here) */
@@ -1478,14 +1462,24 @@ function drawStation(x0, x1, y, sign){
 }
 
 function drawTrain(){
-  const sp=CAR_LEN+CAR_GAP;
+  const sp=CAR_LEN+CAR_GAP, hw=CAR_LEN*0.32;
   const scream = running && cart.released && Math.abs(cart.v)>12;
+  const T=[];
+  for(let c=0;c<cars;c++){
+    const sc=cart.s-c*sp, a=posAt(sc-hw), b=posAt(sc+hw);   // back and front wheels
+    T.push({x:(a.x+b.x)/2, y:(a.y+b.y)/2, th:Math.atan2(b.y-a.y, b.x-a.x)});
+  }
+  // couplers: a bar from the back of each car to the front of the next, so the train stays joined around hills and loops
+  const hitch=(t,lx)=>{ const c=Math.cos(t.th), s=Math.sin(t.th), up=0.98; return [SX(t.x+lx*c-up*s), SY(t.y+lx*s+up*c)]; };
+  ctx.lineCap='round';
+  for(let c=0;c<cars-1;c++){
+    const A=hitch(T[c],-CAR_LEN/2+0.2), B=hitch(T[c+1],CAR_LEN/2-0.2);
+    ctx.strokeStyle='#14181e'; ctx.lineWidth=Math.max(3,0.36*V.ppm); ctx.beginPath(); ctx.moveTo(A[0],A[1]); ctx.lineTo(B[0],B[1]); ctx.stroke();
+    ctx.strokeStyle='#8d939e'; ctx.lineWidth=Math.max(1.5,0.16*V.ppm); ctx.beginPath(); ctx.moveTo(A[0],A[1]); ctx.lineTo(B[0],B[1]); ctx.stroke();
+  }
   for(let c=cars-1;c>=0;c--){
-    const sc=cart.s-c*sp;
-    let x,y,th;
-    if(sc>=0){ const p=sampleAt(sc); x=p.x; y=p.y; th=p.th; }
-    else { const p=sampleAt(0); x=p.x+sc; y=p.y; th=0; }   // still in the station
-    ctx.save(); ctx.translate(SX(x),SY(y)); ctx.rotate(-th);
+    const t=T[c];
+    ctx.save(); ctx.translate(SX(t.x),SY(t.y)); ctx.rotate(-t.th);
     drawCarLocal(ctx, V.ppm, c, c===0, {scream});
     ctx.restore();
   }
@@ -1506,13 +1500,18 @@ function drawMinimap(){
 function drawTest(){
   const w=cv.width, h=cv.height;
   if(follow){
-    const p=sampleAt(cart.s);
-    const ppm=h/FOLLOW_VIEW_H, vw=w/ppm;
-    const tx=p.x+vw*0.12, ty=p.y+2;           // lead a little in the direction of travel
-    cam.x+=(tx-cam.x)*0.12; cam.y+=(ty-cam.y)*0.12;
-    let x0=cam.x-vw/2, y1=cam.y+FOLLOW_VIEW_H/2;
+    // The camera rides with the middle of the train and looks a little ahead. It eases by the clock,
+    // not by the frame, so it is just as steady on a slow computer as on a fast one.
+    const vh=followH(), ppm=h/vh, vw=w/ppm;
+    const p=posAt(cart.s-(cars-1)*(CAR_LEN+CAR_GAP)/2);
+    const lead=Math.max(-1,Math.min(1,cart.v/18));
+    if(cam.snap) cam.lead=lead; else cam.lead+=(lead-cam.lead)*(1-Math.exp(-frameDt*1.5));
+    const tx=p.x+vw*0.14*cam.lead, ty=p.y+vh*0.06;
+    if(cam.snap){ cam.x=tx; cam.y=ty; cam.snap=false; }
+    else { const k=1-Math.exp(-frameDt*9); cam.x+=(tx-cam.x)*k; cam.y+=(ty-cam.y)*k; }
+    let x0=cam.x-vw/2, y1=cam.y+vh/2;
     x0=Math.min(Math.max(x0,-34), nodes[nodes.length-1].x+BRAKE_LEN+8-vw);
-    y1=Math.min(Math.max(y1, Y_BOT+4+FOLLOW_VIEW_H), Y_TOP+6);
+    y1=Math.min(Math.max(y1, Y_BOT+4+vh), Y_TOP+6);
     V={x0, y1, ppm};
   } else editorView();
   drawScenery(w,h);
@@ -1582,7 +1581,7 @@ function drawEditor(){
     ctx.font='800 '+(11*u)+'px Poppins,system-ui,sans-serif'; ctx.fillStyle=PAL.lbl; ctx.textAlign='left';
     ctx.fillText('BRAKES \u25B6', SX(e.x)+12*u, SY(e.y)+18*u); }
 
-  // ghost preview while building from a node
+  // preview while building from a node: a rubber-band line for a hill, an outline for a loop
   if(mode && hover){
     const i=selected, n=nodes[i];
     ctx.lineWidth=Math.max(3,7*u); ctx.lineCap='round';
@@ -1590,11 +1589,11 @@ function drawEditor(){
       const g=hillSpot(hover);
       if(g){
         ctx.strokeStyle=PAL.ghost;
-        ctx.beginPath(); ctx.moveTo(SX(exitX(i)),SY(n.y)); ctx.lineTo(SX(g.x),SY(g.y));
-        if(i<nodes.length-1) ctx.lineTo(SX(nodes[i+1].x),SY(nodes[i+1].y));
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(SX(exitX(i)),SY(n.y)); ctx.lineTo(SX(g.x),SY(g.y)); ctx.stroke();
         ctx.fillStyle=PAL.ghost; ctx.beginPath(); ctx.arc(SX(g.x),SY(g.y),NODE_PX*u,0,7); ctx.fill();
-        ctx.strokeStyle='#e9ef4a'; ctx.lineWidth=Math.max(2,3*u); ctx.beginPath(); ctx.arc(SX(g.x),SY(g.y),24*u,0,7); ctx.stroke();
+        ctx.font='800 '+(12*u)+'px Poppins,system-ui,sans-serif'; ctx.fillStyle=PAL.lbl; ctx.textAlign='center';
+        ctx.fillText(g.y.toFixed(1)+'m', SX(g.x), SY(g.y)-(NODE_PX+9)*u);
+        ctx.textAlign='left';
       }
     } else {
       const g=loopSpot(hover), lp=loopPoints(n.x,n.y,g.h);
@@ -1605,39 +1604,52 @@ function drawEditor(){
       ctx.textAlign='left';
     }
   }
-  // ghost preview of the next piece of track
-  if(hover && dragging<0 && !mode){
-    const g=ghostFor(hover);
-    if(g){
-      ctx.strokeStyle=PAL.ghost; ctx.lineWidth=Math.max(3,7*u);
-      ctx.beginPath(); ctx.moveTo(SX(g.a.x),SY(g.a.y)); ctx.lineTo(SX(g.x),SY(g.y));
-      if(g.b) ctx.lineTo(SX(g.b.x),SY(g.b.y));
-      ctx.stroke();
-      ctx.fillStyle=PAL.ghost; ctx.beginPath(); ctx.arc(SX(g.x),SY(g.y),NODE_PX*u,0,7); ctx.fill();
-    }
-  }
 
   // nodes + height labels
   ctx.font='800 '+(12*u)+'px Poppins,system-ui,sans-serif'; ctx.textAlign='center';
   nodes.forEach((n,i)=>{
     const X=SX(n.x), Y=SY(n.y);
     if(i===selected){
-      if(i>0){
-        ctx.strokeStyle=PAL.lbl; ctx.fillStyle=PAL.lbl; ctx.globalAlpha=.55; ctx.lineWidth=Math.max(1,1.6*u);
-        const a=26*u;
-        ctx.beginPath(); ctx.moveTo(X-a,Y); ctx.lineTo(X+a,Y); ctx.moveTo(X,Y-a); ctx.lineTo(X,Y+a); ctx.stroke();
+      if(i>0 && !mode && (menuOpen || dragging===i)){
+        const side=i>=2;     // the lift hill only moves up and down; later nodes also slide sideways to another white line
+        ctx.strokeStyle='#ffffff'; ctx.fillStyle='#ffffff'; ctx.globalAlpha=.85; ctx.lineWidth=Math.max(1.5,2.4*u);
+        const a=46*u;
+        ctx.beginPath(); if(side){ ctx.moveTo(X-a,Y); ctx.lineTo(X+a,Y); } ctx.moveTo(X,Y-a); ctx.lineTo(X,Y+a); ctx.stroke();
         const tri=(x,y,dx,dy)=>{ ctx.beginPath(); ctx.moveTo(x+dx*6*u,y+dy*6*u); ctx.lineTo(x-dy*4*u,y+dx*4*u); ctx.lineTo(x+dy*4*u,y-dx*4*u); ctx.closePath(); ctx.fill(); };
-        tri(X+a,Y,1,0); tri(X-a,Y,-1,0); tri(X,Y-a,0,-1); tri(X,Y+a,0,1);
+        if(side){ tri(X+a,Y,1,0); tri(X-a,Y,-1,0); } tri(X,Y-a,0,-1); tri(X,Y+a,0,1);
         ctx.globalAlpha=1;
       }
       ctx.strokeStyle=PAL.sel; ctx.lineWidth=Math.max(2,3*u);
       ctx.beginPath(); ctx.arc(X,Y,(NODE_PX+5)*u,0,7); ctx.stroke();
     }
     nodeBall(X,Y,NODE_PX*u,i===0);
+    if(i===hoverNode && i!==selected && !mode && dragging<0){ ctx.strokeStyle='#ffffff'; ctx.lineWidth=Math.max(2,2.5*u); ctx.beginPath(); ctx.arc(X,Y,(NODE_PX+4)*u,0,7); ctx.stroke(); }
     ctx.fillStyle=PAL.lbl;
     ctx.fillText(n.y.toFixed(1)+'m', X, Y-(NODE_PX+9)*u);
   });
   ctx.textAlign='left';
+  // a handle on top of every loop (drag it to resize the loop)
+  if(!mode) nodes.forEach((n,i)=>{
+    if(!n.loop) return;
+    const hd=loopHandle(i), X=SX(hd.x), Y=SY(hd.y), hot=i===hoverLoop||i===resizing, r=(hot?9:7)*u;
+    ctx.fillStyle=hot?PAL.sel:'#ffffff'; ctx.strokeStyle='#20252c'; ctx.lineWidth=Math.max(1.5,2*u);
+    ctx.beginPath(); ctx.arc(X,Y,r,0,7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#20252c'; ctx.beginPath();
+    ctx.moveTo(X,Y-r*0.72); ctx.lineTo(X+r*0.5,Y-r*0.12); ctx.lineTo(X-r*0.5,Y-r*0.12); ctx.closePath();
+    ctx.moveTo(X,Y+r*0.72); ctx.lineTo(X+r*0.5,Y+r*0.12); ctx.lineTo(X-r*0.5,Y+r*0.12); ctx.closePath(); ctx.fill();
+    if(hot){
+      ctx.font='800 '+(13*u)+'px Poppins,system-ui,sans-serif'; ctx.fillStyle=PAL.lbl; ctx.textAlign='center';
+      ctx.fillText('Loop \u00b7 '+n.loop.toFixed(1)+' m tall', X, Y-r-8*u); ctx.textAlign='left';
+    }
+  });
+  // pointing at the track between two nodes: a click adds a node here
+  if(addSpot && !mode && !press){
+    const X=SX(addSpot.x), Y=SY(addSpot.y), r=NODE_PX*u;
+    ctx.fillStyle=PAL.sel; ctx.strokeStyle='#20252c'; ctx.lineWidth=Math.max(1.5,2*u);
+    ctx.beginPath(); ctx.arc(X,Y,r,0,7); ctx.fill(); ctx.stroke();
+    ctx.lineWidth=Math.max(2,2.6*u); ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(X-r*0.5,Y); ctx.lineTo(X+r*0.5,Y); ctx.moveTo(X,Y-r*0.5); ctx.lineTo(X,Y+r*0.5); ctx.stroke();
+  }
   drawNodeMenu();
   drawPopups();
 }
@@ -1712,6 +1724,12 @@ function drawPreview(viewH){
   ctx.beginPath(); ctx.rect(-10,ty,w+20,0.45*ppm); ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.rect(-10,ty+1.1*ppm,w+20,0.3*ppm); ctx.fill(); ctx.stroke();
   const sp=(CAR_LEN+CAR_GAP)*ppm, total=cars*sp;
+  if(cars>1){   // couplers
+    const x0=w/2-total/2+sp/2, x1=w/2+total/2-sp/2, yy=ty-0.98*ppm;
+    ctx.lineCap='round';
+    ctx.strokeStyle='#14181e'; ctx.lineWidth=Math.max(3,0.36*ppm); ctx.beginPath(); ctx.moveTo(x0,yy); ctx.lineTo(x1,yy); ctx.stroke();
+    ctx.strokeStyle='#8d939e'; ctx.lineWidth=Math.max(1.5,0.16*ppm); ctx.beginPath(); ctx.moveTo(x0,yy); ctx.lineTo(x1,yy); ctx.stroke();
+  }
   for(let c=0;c<cars;c++){
     const X=w/2+total/2-sp/2-c*sp;
     ctx.save(); ctx.translate(X,ty); drawCarLocal(ctx, ppm, c, c===0, null); ctx.restore();
@@ -1740,21 +1758,26 @@ function draw(){
 }
 
 /* ============================ loop ============================ */
-let last=0;
+let last=0, uiClock=0;
 function frame(ts){
   if(!last) last=ts;
   let dt=(ts-last)/1000; last=ts;
-  dt=Math.min(dt,1/30);
+  advance(Math.min(dt,1/20));
+  draw();
+  requestAnimationFrame(frame);
+}
+function advance(dt){
+  frameDt=dt;
+  if(step===2 && trackDirty){ trackDirty=false; track=makeTrack(nodes); trackArt=null; refreshNodeUI(); }   // a node is being dragged: one rebuild per frame
   if(running && step===3 && !(splashState && splashState.kind==='launch')){   // hold the train while LAUNCH! shows
     step_(dt*(slow?0.35:1));
     if(justReleased){ justReleased=false;
       if(!done) say('','<b>Here we go!</b>','The chain let go. From here on, no new energy is added. Watch PE turn into KE and back.'); }
     checkPops();
-    refreshUI();
+    uiClock+=dt;
+    if(uiClock>=0.1 || !running){ uiClock=0; refreshUI(); } else refreshBar();   // the bar moves every frame; the numbers change 10 times a second so they can be read
     if(!running) setRunBtn();
   }
-  draw();
-  requestAnimationFrame(frame);
 }
 
 /* ============================ track editing ============================ */
@@ -1793,37 +1816,18 @@ function setLoop(i,h){
   }
   trackChanged(); editPop('LOOP!', i);
 }
-// where would a click at p add a node? (on the nearest free white line)
-function ghostFor(p){
-  if(p.y<-1 || p.y>Y_MAX+3) return null;
-  const x=snapX(p.x), y=Math.min(Math.max(p.y,0),Y_MAX);
-  if(x<GRID || x>END_BAND-3 || nodes.some(n=>n.x===x)) return null;
-  const lastI=nodes.length-1;
-  if(x>nodes[lastI].x){
-    const lo = nodes[lastI].loop ? exitX(lastI)+LOOP_CLEAR : nodes[lastI].x+MIN_GAP;
-    return x>=lo ? {mode:'append', x, y, a:{x:exitX(lastI), y:nodes[lastI].y}} : null;
-  }
-  for(let i=1;i<lastI;i++){
-    if(x>nodes[i].x && x<nodes[i+1].x){
-      const lo = nodes[i].loop ? exitX(i)+LOOP_CLEAR : nodes[i].x+MIN_GAP;
-      if(x>=lo && x<=nodes[i+1].x-MIN_GAP) return {mode:'insert', at:i+1, x, y, a:{x:exitX(i),y:nodes[i].y}, b:{x:nodes[i+1].x,y:nodes[i+1].y}};
-      return null;
-    }
-  }
-  return null;
-}
 function hillWord(i){
   if(i<1) return null;
   const d=nodes[i].y-nodes[i-1].y;
   return d>0.5?'UP HILL!':d<-0.5?'DOWN HILL!':'FLAT!';
 }
-function editPop(text, i){ if(!text) return; popups=popups.filter(p=>!p.edit); addPop(text, {x:nodes[i].x+9, y:nodes[i].y+6}, null, true); }
+function editPop(text, i){ if(!text) return; popups=popups.filter(p=>!p.edit); addPop(text, {x:nodes[i].x+17, y:nodes[i].y+5}, null, true); }
 
 /* ---------- node menu: click a node to get Hill / Loop / Remove buttons beside it ---------- */
-let dragMoved=false, lastWord=null, downOnSelected=false;
-let menuOpen=true, mode=null;            // mode: null | 'hill' | 'loop'
+let lastWord=null, press=null, hoverNode=-1, trackDirty=false, resizing=-1, hoverLoop=-1, addSpot=null;
+let menuOpen=false, mode=null;            // mode: null | 'hill' | 'loop'
 function menuItems(){
-  if(step!==2 || !menuOpen || mode) return [];
+  if(step!==2 || !menuOpen || mode || dragging>=0 || resizing>=0) return [];
   const i=selected, n=nodes[i];
   if(i===0) return [];
   const X=SX(n.x), Y=SY(n.y), o=32*u, items=[];
@@ -1846,7 +1850,7 @@ function startMode(m){
   }
   mode=m; hover=null;
   if(m==='hill') say('','<b>Build a hill.</b>','Move your mouse to a white line on the right, then click again to add a hill. Press <b>Esc</b> to cancel.');
-  else say('','<b>Build a loop.</b>','Move your mouse up or down to make the loop bigger or smaller, then click again to add it. Press <b>Esc</b> to cancel.');
+  else say('','<b>Build a loop.</b>','Move your mouse away from the node to make the loop bigger, or back toward it to make it smaller. Click again to add it. Press <b>Esc</b> to cancel.');
 }
 function endMode(){ mode=null; trackGuide(); }
 // where a new hill from the selected node would go
@@ -1855,13 +1859,44 @@ function hillSpot(p){
   const lo=Math.ceil((nodes[i].loop ? exitX(i)+LOOP_CLEAR : nodes[i].x+MIN_GAP)/GRID)*GRID;
   const hi=Math.floor((i<nodes.length-1 ? nodes[i+1].x-MIN_GAP : END_BAND-3)/GRID)*GRID;
   if(hi<lo) return null;
-  return {x:Math.min(Math.max(snapX(p.x),lo),hi), y:Math.min(Math.max(p.y,0),Y_MAX), at:i+1};
+  return {x:Math.min(Math.max(snapX(p.x),lo),hi), y:Math.round(Math.min(Math.max(p.y,0),Y_MAX)*10)/10, at:i+1};
 }
-// loop height follows the mouse smoothly (up = bigger), limited to what fits
+// loop height follows the mouse smoothly (farther from the node = bigger), limited to what fits
 function loopSpot(p){
   const i=selected, n=nodes[i];
-  const h=Math.min(Math.max(p.y-n.y, LOOP_MIN), loopMax(i));
+  const d=Math.hypot(Math.max(p.x-n.x,0), p.y-n.y);       // how far the mouse is from the node
+  const h=Math.min(Math.max(d+5, LOOP_MIN), loopMax(i));
   return {h:Math.round(h*2)/2};
+}
+// every loop has a handle at its top: drag it up or down to change the loop's size
+function loopHandle(i){ const n=nodes[i]; return {x:n.x+loopD(n.loop)/2, y:n.y+n.loop}; }
+function loopHandleAt(p){
+  const r=HIT_PX/p.k;
+  for(let i=1;i<nodes.length;i++) if(nodes[i].loop){ const h=loopHandle(i); if(Math.hypot(h.x-p.x,h.y-p.y)<r) return i; }
+  return -1;
+}
+// height of the track at x, on the stretch between node i (after its loop) and node i+1
+function trackYBetween(i,x){
+  const L=track.loopRanges.find(r=>r.node===i);
+  const k0=Math.ceil((L?L.s1:track.nodeS[i])/DS), k1=Math.min(Math.floor(track.nodeS[i+1]/DS), track.P.length-1);
+  for(let k=k0;k<=k1;k++) if(track.P[k].x>=x) return track.P[k].y;
+  return null;
+}
+// pointing at the track between two nodes: where would a click add a node? (on the nearest free white line, on the track)
+function insertSpot(p){
+  if(nodes.length>=16) return null;
+  for(let i=1;i<nodes.length-1;i++){
+    const from=exitX(i), to=nodes[i+1].x;
+    if(p.x<=from || p.x>=to) continue;
+    const yHere=trackYBetween(i,p.x);
+    if(yHere===null || Math.abs(p.y-yHere)*p.k>16) return null;      // not on the track
+    const lo=Math.ceil((nodes[i].loop ? from+LOOP_CLEAR : nodes[i].x+MIN_GAP)/GRID)*GRID, hi=Math.floor((to-MIN_GAP)/GRID)*GRID;
+    if(hi<lo) return null;                                            // no free white line between these two nodes
+    const x=Math.min(Math.max(snapX(p.x),lo),hi), y=trackYBetween(i,x);
+    if(y===null || Math.abs(x-p.x)>GRID) return null;
+    return {at:i+1, x, y:Math.round(Math.max(y,0)*10)/10};
+  }
+  return null;
 }
 function addNodeAt(at,x,y){
   if(nodes.length>=16){ say('bad','<b>That’s a lot of track!</b>','Delete a node before adding another.'); return false; }
@@ -1872,68 +1907,112 @@ let dbDrag=false;
 cv.addEventListener('pointerdown',ev=>{ if(step!==4) return; cv.focus(); dbDrag=true; try{cv.setPointerCapture(ev.pointerId);}catch(e){} debriefAt(ev.clientX); ev.preventDefault(); });
 cv.addEventListener('pointermove',ev=>{ if(step===4 && dbDrag) debriefAt(ev.clientX); });
 cv.addEventListener('pointerup',()=>{ dbDrag=false; });
+const NODE_TIP=()=>say('','<b>This is a track node.</b>','Click it to show its buttons: build hill, build loop, delete. Click it again to hide them. Drag it to move it.');
+const STATION_TIP=()=>say('','<b>This is the station.</b>','The train starts here. Click the top of the lift hill or another node to build from it.');
+function nodeAt(p){
+  let best=-1, bd=HIT_PX/p.k;
+  nodes.forEach((n,i)=>{ const d=Math.hypot(n.x-p.x,n.y-p.y); if(d<bd){ bd=d; best=i; } });
+  return best;
+}
+function setCursor(ev){
+  let c='';
+  if(dragging>=0) c='grabbing';
+  else if(resizing>=0) c='ns-resize';
+  else if(mode) c='crosshair';
+  else if(menuHit(ev)) c='pointer';
+  else if(hoverNode>0) c='grab';
+  else if(hoverNode===0) c='pointer';
+  else if(hoverLoop>=0) c='ns-resize';
+  else if(addSpot) c='copy';
+  if(cv.style.cursor!==c) cv.style.cursor=c;
+}
 cv.addEventListener('pointerdown',ev=>{
   if(step!==2) return;
-  cv.focus();
-  const p=toWorld(ev);
+  cv.focus(); ev.preventDefault();
+  const p=toWorld(ev); hover=p;
   const it=menuHit(ev);
   if(it){
     if(it.id==='hill') startMode('hill');
     else if(it.id==='loop'){ if(nodes[selected].loop){ nodes[selected].loop=0; trackChanged(); trackGuide(); } else startMode('loop'); }
     else if(it.id==='remove') deleteNode();
-    ev.preventDefault(); return;
+    setCursor(ev); return;
   }
-  if(mode && (p.x<nodes[selected].x-3 || (mode==='loop' && selected<nodes.length-1 && p.x>nodes[selected+1].x+3))){ endMode(); ev.preventDefault(); return; }   // clicking away cancels
-  if(mode==='hill'){
-    const g=hillSpot(p);
-    if(g && addNodeAt(g.at,g.x,g.y)) endMode();
-    ev.preventDefault(); return;
+  if(mode){
+    if(p.x<nodes[selected].x-3 || (mode==='loop' && selected<nodes.length-1 && p.x>nodes[selected+1].x+3)){ endMode(); }   // clicking away cancels
+    else if(mode==='hill'){
+      const g=hillSpot(p);
+      if(g && addNodeAt(g.at,g.x,g.y)){ menuOpen=false; endMode(); }
+    } else {
+      const wasLast = selected===nodes.length-1;
+      setLoop(selected, loopSpot(p).h);
+      if(wasLast){ selected=nodes.length-1; refreshNodeUI(); }   // carry on from the node after the loop
+      menuOpen=false; endMode();
+    }
+    hoverNode=nodeAt(p); setCursor(ev); return;
   }
-  if(mode==='loop'){
-    setLoop(selected, loopSpot(p).h); endMode();
-    ev.preventDefault(); return;
-  }
-  const hitM=HIT_PX/p.k;
-  let best=-1, bd=hitM;
-  nodes.forEach((n,i)=>{ const d=Math.hypot(n.x-p.x,n.y-p.y); if(d<bd){bd=d;best=i;} });
-  if(best>=0){
-    downOnSelected = best===selected;
-    if(!downOnSelected) menuOpen=true;
-    selected=best; dragging=best>0?best:-1; dragMoved=false; lastWord=null;
+  const best=nodeAt(p), lh=best<0 ? loopHandleAt(p) : -1;
+  if(lh>=0){
+    // the handle on top of a loop: drag it to resize the loop
+    press={i:lh, resize:true, dy:nodes[lh].y+nodes[lh].loop-p.y};
+    resizing=lh; hoverLoop=lh; addSpot=null;
+    if(lh!==selected){ selected=lh; menuOpen=false; refreshNodeUI(); }
     try{ cv.setPointerCapture(ev.pointerId); }catch(e){}
-    refreshNodeUI();
-    if(best===0) say('','<b>This is the station.</b>','The train starts here. Click the top of the lift hill or another node to build from it.');
-    else if(!downOnSelected) say('','<b>This is a track node.</b>','Drag it to move it. Use the buttons beside it to build a hill, build a loop, or delete it. Click it again to hide them.');
+    setCursor(ev);
+  } else if(best>=0){
+    // a press on a node: it becomes a drag only after the pointer has moved a little, and the node keeps its place under the pointer
+    press={i:best, cx:ev.clientX, cy:ev.clientY, dx:nodes[best].x-p.x, dy:nodes[best].y-p.y, was:best===selected, far:ev.pointerType==='touch'?DRAG_PX*2:DRAG_PX};
+    if(best!==selected){ selected=best; menuOpen=false; refreshNodeUI(); }
+    lastWord=null;
+    try{ cv.setPointerCapture(ev.pointerId); }catch(e){}
   } else {
-    const g=ghostFor(p);
-    if(g && addNodeAt(g.mode==='append'?nodes.length:g.at, g.x, g.y)) trackGuide();
+    const sp=insertSpot(p);
+    if(sp){ if(addNodeAt(sp.at,sp.x,sp.y)){ menuOpen=false; addSpot=null; hoverNode=sp.at; trackGuide(); setCursor(ev); } }   // a click on the track adds a node there
+    else if(menuOpen){ menuOpen=false; trackGuide(); }
   }
-  ev.preventDefault();
 });
 cv.addEventListener('pointermove',ev=>{
   if(step!==2) return;
-  const p=toWorld(ev);
-  cv.style.cursor = menuHit(ev) ? 'pointer' : '';
-  if(dragging<0){ hover=p; return; }
-  clampNode(dragging,nodes[dragging].x,p.y); dragMoved=true;   // nodes slide up and down their white line
-  trackChanged();
-  const wd=hillWord(dragging);
-  if(wd && wd!==lastWord){ lastWord=wd; editPop(wd, dragging); }
-  ev.preventDefault();
-});
-cv.addEventListener('pointerleave',()=>{ hover=null; });
-const endDrag=()=>{
-  if(dragging>=0 && step===2){
-    if(dragMoved) trackGuide();
-    else if(downOnSelected) menuOpen=!menuOpen;   // clicking the selected node again hides / shows its menu
+  const p=toWorld(ev); hover=p;
+  if(press && press.resize){
+    const i=press.i, nd=nodes[i];
+    nd.loop=Math.round(Math.min(Math.max(p.y+press.dy-nd.y, LOOP_MIN), Math.max(loopMax(i), LOOP_MIN))*2)/2;
+    trackDirty=true; ev.preventDefault(); setCursor(ev); return;
   }
-  dragging=-1; downOnSelected=false;
+  if(press && dragging<0 && press.i>0 && Math.hypot(ev.clientX-press.cx, ev.clientY-press.cy)>press.far) dragging=press.i;
+  if(dragging>=0){
+    const i=dragging;
+    clampNode(i, i>=2 ? p.x+press.dx : nodes[i].x, p.y+press.dy);
+    nodes[i].y=Math.round(nodes[i].y*10)/10;
+    trackDirty=true;                       // the track is rebuilt once, on the next frame
+    const wd=hillWord(i);
+    if(wd && wd!==lastWord){ lastWord=wd; editPop(wd, i); }
+    ev.preventDefault();
+  } else if(!mode && !press){
+    const onMenu=!!menuHit(ev), hn=nodeAt(p), hl=hn<0 && !onMenu ? loopHandleAt(p) : -1;
+    if(hn!==hoverNode){ hoverNode=hn; if(hn>0) NODE_TIP(); else if(hn===0) STATION_TIP(); }
+    if(hl!==hoverLoop){ hoverLoop=hl; if(hl>=0) say('','<b>Loop size.</b>','Drag this handle up or down to make the loop bigger or smaller.'); }
+    const sp = hn<0 && hl<0 && !onMenu ? insertSpot(p) : null;
+    if(sp && !addSpot) say('','<b>Add a node here.</b>','Click the track to add a node on the nearest white line. Then drag it to shape a hill.');
+    addSpot=sp;
+  }
+  setCursor(ev);
+});
+cv.addEventListener('pointerleave',()=>{ hover=null; addSpot=null; if(!press){ hoverNode=-1; hoverLoop=-1; } });
+const endDrag=()=>{
+  if(press && step===2){
+    if(press.resize){ resizing=-1; trackDirty=false; trackChanged(); editPop('LOOP!', press.i); trackGuide(); }
+    else if(dragging>=0){ dragging=-1; trackDirty=false; trackChanged(); trackGuide(); }
+    else if(press.i===0) STATION_TIP();
+    else menuOpen = press.was ? !menuOpen : true;      // click a node to show its buttons, click it again to hide them
+  }
+  press=null; dragging=-1; resizing=-1;
+  if(step===2) cv.style.cursor = hoverNode>0 ? 'grab' : hoverLoop>=0 ? 'ns-resize' : '';
 };
 cv.addEventListener('pointerup',endDrag);
 cv.addEventListener('pointercancel',endDrag);
 cv.addEventListener('lostpointercapture',endDrag);
 
-// keyboard / button versions: no mouse needed
+// keyboard versions: no mouse needed
 function addHillAuto(){
   const i=selected;
   if(i===0) return;
@@ -1954,7 +2033,7 @@ function toggleLoop(){
   const i=selected, n=nodes[i];
   if(i<1) return;
   if(n.loop){ n.loop=0; trackChanged(); return; }
-  const h=fitLoop(i, LOOP_H[+$('loopSize').value]);
+  const h=fitLoop(i, LOOP_H[2]);
   if(h) setLoop(i,h);
 }
 function deleteNode(){
@@ -1962,15 +2041,6 @@ function deleteNode(){
   if(i<=1 || nodes.length<=3) return;
   nodes.splice(i,1); selected=Math.min(i,nodes.length-1); trackChanged(); trackGuide();
 }
-$('btnHill').onclick=addHillAuto;
-$('btnLoop').onclick=toggleLoop;
-$('loopSize').onchange=e=>{
-  const n=nodes[selected];
-  if(!n.loop) return;
-  const h=fitLoop(selected, LOOP_H[+e.target.value]);
-  if(h){ n.loop=h; trackChanged(); editPop('LOOP!', selected); }
-};
-$('btnDel').onclick=deleteNode;
 $('preset').onchange=e=>{
   const p=PRESETS[e.target.value];
   if(p){ nodes=p.map(a=>({x:a[0],y:a[1],loop:a[2]||0})); selected=1; trackChanged(); trackGuide(); }
@@ -2009,7 +2079,7 @@ function toggleRun(){
 }
 btnRun.onclick=toggleRun;
 $('btnReset').onclick=()=>{
-  if(step===2){ nodes=START_NODES.map(p=>({x:p[0],y:p[1],loop:0})); selected=1; menuOpen=true; mode=null; trackChanged(); trackGuide(); }
+  if(step===2){ nodes=START_NODES.map(p=>({x:p[0],y:p[1],loop:0})); selected=1; menuOpen=false; mode=null; trackChanged(); trackGuide(); }
   else { resetCart(); STEP_GUIDE[3](); }
 };
 $('btnSlow').onclick=e=>{ slow=!slow; e.currentTarget.setAttribute('aria-pressed',String(slow)); };
@@ -2074,7 +2144,7 @@ requestAnimationFrame(frame);
 window.__sim={
   cart, mass, resetCart, sampleAt,
   get track(){return track;}, get nodes(){return nodes;}, get done(){return done;}, get step(){return step;},
-  setStep, toggleRun,
+  setStep, toggleRun, draw, advance, get cam(){return cam;}, get V(){return V;}, get mode(){return mode;}, get selected(){return selected;},
   // deterministic headless run: returns outcome + energy-conservation error after the lift
   probe(nodeList,nCars,friction){
     probing=true;
