@@ -1294,7 +1294,7 @@ function drawPattern(c, kind, color, L, Hh, seed){
 /* A car: a low sled with a rounded nose, a gray skirt over two chunky wheels, two high-backed seats and
    two crash-test dummies. Car-local: x runs from -L/2 (back) to +L/2 (nose), up is negative y, and y = 0
    is the rail. Every car has the same shape. */
-const DUMMY='#f27a1a', DUMMY_DARK='#b9520c', INK='#14181e';
+const DUMMY='#f5a126', DUMMY_DARK='#ca741b', INK='#14181e';
 function sledPath(c, m){
   c.beginPath();
   c.moveTo(-2.1*m,-1.42*m);
@@ -1307,42 +1307,111 @@ function sledPath(c, m){
   c.quadraticCurveTo(2.2*m,-0.28*m,1.87*m,-0.27*m);
   c.lineTo(-1.78*m,-0.27*m); c.closePath();
 }
-// a jointed limb: dark outline, orange fill, a dark pin at each joint
-function limb(c, m, pts, w){
-  c.lineJoin='round'; c.lineCap='round';
-  const line=()=>{ c.beginPath(); c.moveTo(pts[0][0],pts[0][1]); for(let q=1;q<pts.length;q++) c.lineTo(pts[q][0],pts[q][1]); c.stroke(); };
-  c.strokeStyle=INK; c.lineWidth=w; line();
-  c.strokeStyle=DUMMY; c.lineWidth=w-Math.max(2,0.14*m); line();
-  c.fillStyle=INK; for(let q=0;q<pts.length-1;q++){ c.beginPath(); c.arc(pts[q][0],pts[q][1],w*0.2,0,7); c.fill(); }
+// Vector artwork stays sharp in the design preview and at the ride camera's zoom.
+// Coordinates follow a seated adult dummy, facing the car's nose (positive x).
+function dummyMarker(c,x,y,r){
+  for(let q=0;q<4;q++){
+    c.fillStyle=q%2 ? '#303536' : '#f9df38';
+    c.beginPath();c.moveTo(x,y);c.arc(x,y,r,q*Math.PI/2,(q+1)*Math.PI/2);c.closePath();c.fill();
+  }
+  c.strokeStyle='#c28b27';c.lineWidth=0.7;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.stroke();
+}
+function dummyJoint(c,x,y,r){
+  const metal=c.createRadialGradient(x-r*0.3,y-r*0.35,r*0.1,x,y,r);
+  metal.addColorStop(0,'#b9b9a9');metal.addColorStop(0.48,'#606963');metal.addColorStop(1,'#353d3b');
+  c.fillStyle=metal;c.strokeStyle='#a56c24';c.lineWidth=1.2;
+  c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();c.stroke();
+  c.strokeStyle='#c6c4aa';c.lineWidth=0.8;c.beginPath();c.arc(x,y,r*0.7,0,Math.PI*2);c.stroke();
+  for(let q=0;q<3;q++){
+    const a=q*Math.PI*2/3-0.5;
+    c.fillStyle='#d2c9a6';c.beginPath();c.arc(x+Math.cos(a)*r*0.51,y+Math.sin(a)*r*0.51,0.8,0,Math.PI*2);c.fill();
+  }
+  c.fillStyle='#333e3a';c.beginPath();c.arc(x,y,r*0.24,0,Math.PI*2);c.fill();
+}
+function dummySegment(c,a,b,wa,wb,far){
+  const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);
+  c.save();c.translate(a[0],a[1]);c.rotate(Math.atan2(dy,dx));
+  const paint=c.createLinearGradient(0,-wa/2,0,wa/2);
+  paint.addColorStop(0,far?'#e9a13a':'#ffca60');paint.addColorStop(0.4,far?'#e99a29':DUMMY);paint.addColorStop(1,'#d77a19');
+  c.fillStyle=paint;c.strokeStyle='#d48a2c';c.lineWidth=0.75;
+  c.beginPath();c.moveTo(0,-wa/2);c.bezierCurveTo(len*0.3,-wa*0.55,len*0.8,-wb/2,len,-wb/2);
+  c.quadraticCurveTo(len+wb*0.35,0,len,wb/2);c.bezierCurveTo(len*0.65,wb/2,len*0.2,wa*0.55,0,wa/2);
+  c.quadraticCurveTo(-wa*0.35,0,0,-wa/2);c.closePath();c.fill();c.stroke();c.restore();
+}
+function dummyHand(c,elbow,wrist,far){
+  c.save();c.translate(wrist[0],wrist[1]);c.rotate(Math.atan2(wrist[1]-elbow[1],wrist[0]-elbow[0]));
+  c.fillStyle=far?'#e9a13a':'#f7ac35';c.strokeStyle='#ce8529';c.lineWidth=0.65;
+  c.beginPath();c.moveTo(-1,-3);c.quadraticCurveTo(4,-5,9,-3);c.lineTo(11,2);c.quadraticCurveTo(6,5,-1,3);c.closePath();c.fill();c.stroke();
+  // Four separate fingers and a splayed thumb, rather than a round mitten.
+  c.lineCap='round';
+  const fingers=[[7,-2.5,19,-5],[9,-0.5,22,-1.5],[9,1.5,21,2.5],[7,3,17,6],[2,-2,8,-9]];
+  for(const [x0,y0,x1,y1] of fingers){
+    c.beginPath();c.moveTo(x0,y0);c.lineTo((x0+x1)/2,y0);c.lineTo(x1,y1);
+    c.strokeStyle='#ce8529';c.lineWidth=2.5;c.stroke();c.strokeStyle=far?'#eeb047':'#ffc051';c.lineWidth=1.5;c.stroke();
+  }
+  c.restore();
+}
+function dummyArm(c,shoulder,elbow,wrist,far){
+  dummySegment(c,shoulder,elbow,11,8,far);
+  c.fillStyle='#b88231';c.beginPath();c.arc(elbow[0],elbow[1],3.2,0,Math.PI*2);c.fill();
+  dummySegment(c,elbow,wrist,8,4.5,far);
+  c.strokeStyle='#6d7160';c.lineWidth=1.4;
+  const a=Math.atan2(wrist[1]-elbow[1],wrist[0]-elbow[0]);
+  c.beginPath();c.moveTo(wrist[0]+Math.sin(a)*2.5,wrist[1]-Math.cos(a)*2.5);c.lineTo(wrist[0]-Math.sin(a)*2.5,wrist[1]+Math.cos(a)*2.5);c.stroke();
+  dummyHand(c,elbow,wrist,far);
 }
 function drawDummy(c, m, x, armsUp){
   const lw=Math.max(1,0.075*m);
+  c.save();
   c.lineJoin='round'; c.lineCap='round';
-  // tall rounded seat back
+  // The seat stays behind the complete seated figure; the car body masks its legs.
   c.fillStyle='#b5451a'; c.strokeStyle=INK; c.lineWidth=lw;
   c.beginPath(); c.roundRect(x-0.74*m, -3.02*m, 0.36*m, 1.5*m, 0.16*m); c.fill(); c.stroke();
-  // torso, with a darker band at the waist and a chest plate
-  c.fillStyle=DUMMY;
-  c.beginPath(); c.roundRect(x-0.42*m, -2.86*m, 0.66*m, 1.3*m, 0.24*m); c.fill(); c.stroke();
-  c.fillStyle=DUMMY_DARK; c.fillRect(x-0.38*m, -2.2*m, 0.58*m, 0.14*m);
-  // arm: shoulder, elbow, hand (thrown up when the riders scream)
-  const sh=[x-0.06*m, -2.62*m];
-  const el=armsUp ? [x+0.3*m, -3.05*m] : [x+0.3*m, -1.95*m];
-  const hd=armsUp ? [x+0.42*m, -3.6*m] : [x+0.82*m, -1.85*m];
-  limb(c, m, [sh,el,hd], 0.34*m);
-  c.fillStyle=DUMMY_DARK; c.strokeStyle=INK; c.lineWidth=lw; c.beginPath(); c.arc(hd[0],hd[1],0.14*m,0,7); c.fill(); c.stroke();   // hand
-  // neck and head
-  c.fillStyle=DUMMY_DARK;
-  c.beginPath(); c.rect(x-0.22*m, -3.04*m, 0.24*m, 0.22*m); c.fill(); c.stroke();
-  const hx=x-0.08*m, hy=-3.4*m, hr=0.42*m;
-  c.fillStyle=DUMMY; c.beginPath(); c.arc(hx,hy,hr,0,7); c.fill(); c.stroke();
-  // the test marker on the head: a disc in yellow and black quarters
-  const mr=hr*0.42;
-  for(let q=0;q<4;q++){
-    c.fillStyle = q%2 ? INK : '#ffd21f';
-    c.beginPath(); c.moveTo(hx,hy); c.arc(hx,hy,mr,q*Math.PI/2,(q+1)*Math.PI/2); c.closePath(); c.fill();
-  }
-  c.strokeStyle=INK; c.lineWidth=lw*0.8; c.beginPath(); c.arc(hx,hy,mr,0,7); c.stroke();
+  c.translate(x-75*0.016*m,-3.8*m);c.scale(0.016*m,0.016*m);
+  const shell=c.createLinearGradient(30,0,88,0);
+  shell.addColorStop(0,'#df861e');shell.addColorStop(0.38,DUMMY);shell.addColorStop(0.76,'#ffbd4a');shell.addColorStop(1,'#e88b22');
+  const panel=()=>{c.fillStyle=shell;c.strokeStyle='#d1892d';c.lineWidth=0.85;c.fill();c.stroke();};
+  // Far limbs remain visible beside the near limbs, as in a side-view test dummy.
+  dummySegment(c,[77,146],[125,151],19,14,true);
+  dummySegment(c,[125,154],[144,213],12,7,true);
+  c.fillStyle='#eaa03a';c.beginPath();c.moveTo(140,211);c.lineTo(147,212);c.lineTo(151,219);c.lineTo(175,227);c.quadraticCurveTo(181,232,173,233);c.lineTo(143,228);c.closePath();c.fill();
+  dummyArm(c,[49,64],armsUp?[72,35]:[78,88],armsUp?[79,-7]:[114,86],true);
+  // Exposed ribbed steel neck beneath the molded head.
+  c.fillStyle='#444c46';c.beginPath();c.moveTo(40,25);c.lineTo(53,26);c.lineTo(52,49);c.lineTo(38,49);c.closePath();c.fill();
+  c.strokeStyle='#a5a48c';c.lineWidth=1.2;
+  for(let y=29;y<47;y+=3){c.beginPath();c.moveTo(40,y);c.lineTo(52,y+1);c.stroke();}
+  // Sloped shoulders, chest, and tapered abdomen, with a separate flexible waist.
+  c.beginPath();c.moveTo(40,44);c.bezierCurveTo(53,41,65,52,66,65);
+  c.bezierCurveTo(68,78,82,87,82,101);c.lineTo(77,116);
+  c.quadraticCurveTo(65,122,54,114);c.bezierCurveTo(48,102,44,89,39,80);
+  c.bezierCurveTo(30,65,29,52,40,44);c.closePath();panel();
+  c.strokeStyle='#ffcd69';c.lineWidth=1.5;c.beginPath();c.moveTo(55,50);c.quadraticCurveTo(65,58,64,70);c.stroke();
+  c.strokeStyle='#da8b29';c.lineWidth=1;c.beginPath();c.moveTo(65,80);c.quadraticCurveTo(72,88,77,89);c.moveTo(56,103);c.lineTo(63,112);c.stroke();
+  c.fillStyle='#3e4440';c.beginPath();c.moveTo(55,115);c.quadraticCurveTo(67,121,78,116);c.lineTo(81,128);c.quadraticCurveTo(68,133,57,126);c.closePath();c.fill();
+  c.strokeStyle='#757669';c.lineWidth=0.9;
+  for(let y=119;y<128;y+=3){c.beginPath();c.moveTo(57,y);c.quadraticCurveTo(69,y+5,79,y+1);c.stroke();}
+  c.beginPath();c.moveTo(58,128);c.quadraticCurveTo(68,134,81,129);c.lineTo(85,145);c.quadraticCurveTo(82,156,70,157);c.lineTo(56,148);c.closePath();panel();
+  // Bent thigh, knee pin, shin and a long molded foot.
+  dummySegment(c,[78,157],[127,157],24,17,false);
+  dummySegment(c,[128,159],[148,217],14,8,false);
+  c.fillStyle='#c48729';c.beginPath();c.arc(128,159,3,0,Math.PI*2);c.fill();
+  c.fillStyle='#fbc04f';c.beginPath();c.arc(127,158,1,0,Math.PI*2);c.fill();
+  c.beginPath();c.moveTo(144,213);c.lineTo(152,214);c.lineTo(153,222);
+  c.quadraticCurveTo(163,228,179,231);c.quadraticCurveTo(184,235,177,238);
+  c.lineTo(147,234);c.quadraticCurveTo(142,233,143,228);c.closePath();panel();
+  c.strokeStyle='#cb872b';c.lineWidth=1;c.beginPath();c.moveTo(146,231);c.quadraticCurveTo(162,236,180,235);c.stroke();
+  dummyMarker(c,78,157,8.6);
+  // Human-profile head: rounded skull, brow, nose, lips and chin (no cartoon eye).
+  c.beginPath();c.moveTo(32,23);c.bezierCurveTo(30,9,38,1,49,1);
+  c.bezierCurveTo(60,0,67,8,65,17);c.lineTo(64,20);c.lineTo(69,24);
+  c.quadraticCurveTo(71,26,66,27);c.lineTo(67,30);c.lineTo(65,32);
+  c.quadraticCurveTo(67,37,61,38);c.lineTo(53,36);c.lineTo(51,27);c.lineTo(33,25);c.closePath();panel();
+  c.strokeStyle='#cf882c';c.lineWidth=0.8;c.beginPath();c.moveTo(34,24);c.lineTo(62,24);c.moveTo(62,20);c.lineTo(65,20);c.moveTo(63,31);c.lineTo(66,31);c.stroke();
+  dummyMarker(c,48,12,7.3);
+  // Near arm: its metal shoulder disc is a prominent feature of the reference.
+  dummyArm(c,[43,64],armsUp?[58,30]:[61,106],armsUp?[64,-13]:[104,109],false);
+  dummyJoint(c,43,64,9.5);
+  c.restore();
 }
 function drawCarLocal(c, ppm, idx, front, opts){
   const m=ppm, L=CAR_LEN*m;
