@@ -125,6 +125,32 @@
   .eq .res{font-size:clamp(14px,1.05vw,16px);line-height:44px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 
   .stage{position:relative;background:var(--floor)}
+  .fullscreen-toggle{position:absolute;right:14px;bottom:14px;z-index:3;display:inline-flex;align-items:center;gap:7px;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);font-size:14px;padding:8px 12px}
+  .fullscreen-toggle[hidden]{display:none}
+  .fullscreen-toggle svg{width:19px;height:19px;flex:0 0 auto}
+  html.coaster-fullscreen{overflow:hidden}
+  .app.is-fullscreen{position:fixed;inset:0;z-index:9999;width:100%;height:100vh;height:100dvh;margin:0;
+    border:0;border-radius:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:var(--floor)}
+  .app.is-fullscreen .crumbs,.app.is-fullscreen #btnBack,.app.is-fullscreen #btnNext{display:none}
+  .app.is-fullscreen .toolbar{display:flex;justify-content:center;padding:6px 10px}
+  .app.is-fullscreen .eq{padding:3px 12px;gap:4px 14px}
+  .app.is-fullscreen .stage{min-height:0}
+  .app.is-fullscreen .scroller{height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .app.is-fullscreen canvas#cv{min-width:0;flex:0 1 auto;height:100%;aspect-ratio:auto}
+  .app.is-fullscreen .bottom{grid-template-columns:minmax(0,1fr) auto;min-height:0;gap:10px;padding:8px 14px}
+  .app.is-fullscreen .guide{display:none}
+  .app.is-fullscreen .stepctl[data-for="3"],.app.is-fullscreen .stepctl[data-for="3"] .row{flex-wrap:wrap}
+  .app.is-fullscreen .stepctl[data-for="3"] button{font-size:14px;padding:6px 10px;min-height:40px}
+  .app.is-fullscreen #fric{font-size:14px;max-width:160px;min-height:40px}
+  .app.is-fullscreen .grp>label,.app.is-fullscreen .glabel{font-size:11px}
+  .app.is-fullscreen .actions .bevel{font-size:14px;min-height:44px;padding:8px 12px}
+  @media (max-width:600px){
+    .app.is-fullscreen .bottom{grid-template-columns:1fr;gap:6px;padding:6px 10px}
+    .app.is-fullscreen .actions{justify-content:flex-end}
+    .app.is-fullscreen .stepctl[data-for="3"]{gap:6px 10px}
+    .app.is-fullscreen .stepctl[data-for="3"] button{padding:6px 8px}
+  }
   .scroller{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
   canvas#cv{display:block;width:100%;min-width:660px;height:auto;aspect-ratio:200/86;touch-action:none;outline:none;margin:0 auto}
   canvas#cv:focus-visible{outline:3px solid var(--accent-2);outline-offset:-3px}
@@ -330,6 +356,10 @@
       <div class="ebar" id="ebar" role="img" aria-label="Energy bar: potential, kinetic and thermal energy">
         <span class="s-pe" id="segPE">PE</span><span class="s-ke" id="segKE">KE</span><span class="s-th" id="segTH">TE</span>
       </div>
+      <button id="btnFullscreen" class="fullscreen-toggle" type="button" aria-pressed="false" title="Expand the ride and controls to full screen" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path id="fullscreenIcon" d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="fullscreenTxt">Full screen</span>
+      </button>
     </div>
 
     <div class="bottom">
@@ -582,6 +612,7 @@ const PRESETS = {
 /* ============================ dom ============================ */
 const $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d');
+const appEl=document.querySelector('.app'), btnFullscreen=$('btnFullscreen');
 const guideEl = $('guide');
 const btnRun = $('btnRun'), btnBack = $('btnBack'), btnNext = $('btnNext');
 const crumbs = [...document.querySelectorAll('.crumbs button')];
@@ -1013,6 +1044,8 @@ function setStep(n){
   if(n>=4 && !lastRun){ say('bad','<b>Test your coaster first.</b>','The Debrief and Final Score appear after a test run.'); return; }
   running=false; clearTimeout(debriefTimer);
   step=n; maxStep=Math.max(maxStep,n);
+  btnFullscreen.hidden=n!==3;
+  if(n!==3 && appEl.classList.contains('is-fullscreen')) leaveFullscreen();
   updateCrumbs();
   document.querySelectorAll('.stepctl').forEach(el=>el.classList.toggle('on', +el.dataset.for===n));
   btnBack.disabled = n===0;
@@ -1195,17 +1228,21 @@ let u=1, ppm0=1;
 function fit(){
   const cssW=cv.clientWidth||1100;
   const dpr=Math.min(window.devicePixelRatio||1,2);
+  const fullscreen=appEl.classList.contains('is-fullscreen');
   cv.width=Math.round(cssW*dpr);
-  cv.height=Math.round(cssW*(H_WORLD/W_WORLD)*dpr);
-  ppm0=cv.width/W_WORLD;
+  cv.height=Math.max(1,Math.round((fullscreen ? cv.clientHeight : cssW*(H_WORLD/W_WORLD))*dpr));
+  ppm0=fullscreen ? Math.min(cv.width/W_WORLD,cv.height/H_WORLD) : cv.width/W_WORLD;
   u=dpr*Math.max(cssW/1100,0.62);
-  $('ebar').style.width=Math.round(Math.min(cssW*0.48,720))+'px';   // keep the bar clear of the minimap
+  const energyBar=$('ebar');
+  energyBar.style.width=Math.round(fullscreen ? Math.max(40,Math.min(cssW*0.48,720,cssW-230*u/dpr-36)) : Math.min(cssW*0.48,720))+'px';
+  energyBar.style.left=fullscreen ? '12px' : '';
+  energyBar.style.transform=fullscreen ? 'none' : '';
   if(typeof placeOverlay==='function') placeOverlay();
 }
 // view: world -> screen
 let V={x0:0, y1:Y_TOP, ppm:1};
 const SX=x=>(x-V.x0)*V.ppm, SY=y=>(V.y1-y)*V.ppm;
-function editorView(){ V={x0:0, y1:Y_TOP, ppm:ppm0}; }
+function editorView(){ V={x0:-(cv.width/ppm0-W_WORLD)/2, y1:Y_TOP+(cv.height/ppm0-H_WORLD)/2, ppm:ppm0}; }
 
 if(!CanvasRenderingContext2D.prototype.roundRect){
   CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
@@ -1815,7 +1852,7 @@ function drawTest(){
   if(follow){
     // The camera rides with the middle of the train and looks a little ahead. It eases by the clock,
     // not by the frame, so it is just as steady on a slow computer as on a fast one.
-    const vh=followH(), ppm=h/vh, vw=w/ppm;
+    const vh=Math.max(followH(),(cars*(CAR_LEN+CAR_GAP)+6)*h/w), ppm=h/vh, vw=w/ppm;
     const p=posAt(cart.s-(cars-1)*(CAR_LEN+CAR_GAP)/2);
     const lead=Math.max(-1,Math.min(1,cart.v/18));
     if(cam.snap) cam.lead=lead; else cam.lead+=(lead-cam.lead)*(1-Math.exp(-frameDt*1.5));
@@ -2381,6 +2418,51 @@ cv.addEventListener('keydown',ev=>{
 });
 
 /* ============================ controls ============================ */
+// Keep the scene and ride controls together in native full screen. Embedded
+// pages that cannot request native full screen still get an expanded view.
+let nativeFullscreen=false;
+function setFullscreen(active){
+  appEl.classList.toggle('is-fullscreen',active);
+  document.documentElement.classList.toggle('coaster-fullscreen',active);
+  btnFullscreen.setAttribute('aria-pressed',String(active));
+  $('fullscreenTxt').textContent=active ? 'Exit full screen' : 'Full screen';
+  btnFullscreen.title=active ? 'Exit full screen (Esc)' : 'Expand the ride and controls to full screen';
+  $('fullscreenIcon').setAttribute('d',active
+    ? 'M3 8h5V3m8 0v5h5M8 21v-5H3m18 0h-5v5'
+    : 'M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5');
+  requestAnimationFrame(()=>{sizeStage();fit();cam.snap=true;draw();});
+}
+async function leaveFullscreen(){
+  if(document.fullscreenElement===appEl){
+    try{await document.exitFullscreen();}catch(e){return;}
+  }
+  nativeFullscreen=false;
+  setFullscreen(false);
+}
+btnFullscreen.onclick=async()=>{
+  btnFullscreen.disabled=true;
+  try{
+    if(appEl.classList.contains('is-fullscreen')){await leaveFullscreen();return;}
+    setFullscreen(true);
+    if(appEl.requestFullscreen && document.fullscreenEnabled){
+      try{
+        await appEl.requestFullscreen();
+        nativeFullscreen=document.fullscreenElement===appEl;
+        setFullscreen(nativeFullscreen);
+      }catch(e){nativeFullscreen=false;/* Keep the expanded view if the browser declines. */}
+    }
+    if(step!==3) await leaveFullscreen();
+  }finally{btnFullscreen.disabled=false;}
+};
+document.addEventListener('fullscreenchange',()=>{
+  if(document.fullscreenElement===appEl){nativeFullscreen=true;setFullscreen(true);}
+  else if(nativeFullscreen){nativeFullscreen=false;setFullscreen(false);}
+});
+document.addEventListener('keydown',ev=>{
+  if(ev.key==='Escape' && appEl.classList.contains('is-fullscreen') && document.fullscreenElement!==appEl){
+    ev.preventDefault();leaveFullscreen();btnFullscreen.focus({preventScroll:true});
+  }
+});
 function toggleRun(){
   if(step!==3) return;
   if(running){ running=false; setRunBtn(); return; }
@@ -2429,8 +2511,11 @@ function buildPickers(){
 
 /* Keep the title and the whole game frame (step bar, equations, scene, controls) inside the window:
    cap the scene's width so its height leaves room for everything else in the frame. */
-const appEl=document.querySelector('.app');
 function sizeStage(){
+  if(appEl.classList.contains('is-fullscreen')){
+    cv.style.maxWidth='none';
+    return;
+  }
   const chrome=appEl.offsetHeight-cv.offsetHeight;
   const top=appEl.getBoundingClientRect().top+window.scrollY;   // title above the frame
   const avail=window.innerHeight-chrome-top-12;
