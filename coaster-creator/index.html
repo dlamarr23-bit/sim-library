@@ -172,10 +172,11 @@
 
   .bottom{
     background:var(--band);border-top:2px solid var(--band-line);
-    display:grid;grid-template-columns:minmax(300px,1.15fr) minmax(0,2.05fr) auto;gap:14px;align-items:center;padding:8px 14px;min-height:122px
+    display:grid;grid-template-columns:minmax(460px,1.35fr) minmax(0,1.85fr) auto;gap:14px;align-items:center;padding:8px 14px;min-height:122px
   }
   .guide{display:flex;align-items:center;gap:10px;min-width:0}
-  .guide .avatar{flex:0 0 auto;width:58px;height:58px}
+  .guide .avatar{flex:0 0 174px;width:174px;height:174px;object-fit:contain}
+  .guide .bubble{height:auto;min-height:144px;max-height:174px}
   .bubble{
     position:relative;flex:1;min-width:0;background:var(--field);border:2px solid var(--eq-box-line);border-radius:14px;
     padding:9px 13px;font-size:15px;font-weight:600;line-height:1.4;height:104px;overflow-y:auto;display:flex;flex-direction:column;justify-content:flex-start
@@ -239,6 +240,13 @@
   details.card li strong,details.card p strong{font-weight:800}
   kbd{font:700 13px/1 ui-monospace,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:3px 6px;background:var(--tile)}
 
+  @media (min-width:1101px) and (max-width:1400px){
+    .patterns{grid-template-columns:repeat(3,52px);gap:4px}
+    .patterns button{width:52px;height:36px;min-height:36px}
+    .swatches{grid-template-columns:repeat(3,28px);gap:4px}
+    .swatches button{width:28px;height:28px;min-height:28px}
+    .stepctl[data-for="0"]{gap:12px}
+  }
   @media (max-width:1100px){
     .bottom{grid-template-columns:1fr}
     .stepctl[data-for="3"],.stepctl[data-for="3"] .row{flex-wrap:wrap}
@@ -326,14 +334,7 @@
 
     <div class="bottom">
       <div class="guide">
-        <svg class="avatar" viewBox="0 0 64 64" aria-hidden="true">
-          <circle cx="32" cy="32" r="31" fill="#2f86c9"/>
-          <circle cx="32" cy="38" r="15" fill="#f2c9a0"/>
-          <path d="M14 32a18 18 0 0 1 36 0z" fill="#f5c400" stroke="#8a6d00" stroke-width="2"/>
-          <rect x="11" y="30" width="42" height="5" rx="2.5" fill="#f5c400" stroke="#8a6d00" stroke-width="2"/>
-          <circle cx="26.5" cy="40" r="2.2" fill="#1b2430"/><circle cx="37.5" cy="40" r="2.2" fill="#1b2430"/>
-          <path d="M26 46q6 5 12 0" stroke="#1b2430" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-        </svg>
+        <img class="avatar" src="guide-avatar.png" alt="Coaster guide wearing a navy Yankees hard hat" width="174" height="174">
         <div class="bubble" id="guide" role="status" aria-live="polite"></div>
       </div>
 
