@@ -562,7 +562,7 @@ const HIT_PX = 20, NODE_PX = 9;
 const followH = () => 18 + Math.max(0,cars-3)*1.6;   // metres of height visible in follow-cam: close in, a little wider for long trains
 const DRAG_PX = 5;                      // a press must move this far before it becomes a drag (so a click never nudges a node)
 
-const COLORS = ['#e0412f','#f39a1e','#f5d431','#3cae4a','#3d6fd8','#9b4fd1','#9aa3ad','#23b5c2','#f0b48a'];
+const COLORS = ['#e0412f','#ff7800','#ffd21f','#3cae4a','#3d6fd8','#9b4fd1','#9aa3ad','#23b5c2','#f0b48a'];
 const COLOR_NAMES = ['red','orange','yellow','green','blue','purple','gray','teal','peach'];
 const PATTERNS = ['plain','stripes','flames','stars','dots','zigzag'];
 const PATTERN_NAMES = ['Plain','Racing stripes','Flames','Stars','Polka dots','Lightning'];
@@ -591,7 +591,7 @@ const START_NODES = [[10,0],[30,50]];  // a new coaster: just the station and th
 let nodes = START_NODES.map(p=>({x:p[0], y:p[1], loop:0}));
 let selected = 1, dragging = -1, hover = null;
 let cars = 3, mu = 0.012;
-let design = {name:'The Screaming Eagle', pattern:'flames', main:2, detail:0};
+let design = {name:'The Screaming Eagle', pattern:'zigzag', main:1, detail:2};
 let running = false, slow = false, follow = true, pov = false;
 let track = null;
 const cart = {s:0, v:0, thermal:0, gForce:1, dist:0, vmax:0, released:false, E0:0, vArrive:0, gMax:1, gMaxX:0, gMin:1, gMinX:0};
@@ -1295,18 +1295,16 @@ function drawPattern(c, kind, color, L, Hh, seed){
    is the rail. Every car has the same shape. */
 const DUMMY='#f27a1a', DUMMY_DARK='#b9520c', INK='#14181e';
 function sledPath(c, m){
-  // a tall, rounded tub: big round corners at the back, a rim along the top, and a blunt bullet nose
-  const yb=-0.56*m, yt=-2.0*m, xr=-2.1*m;
   c.beginPath();
-  c.moveTo(xr+0.4*m, yb);
-  c.lineTo(1.3*m, yb);
-  c.bezierCurveTo(1.85*m, yb, 2.12*m, -0.74*m, 2.1*m, -1.08*m);        // round under the nose, up to its tip
-  c.bezierCurveTo(2.08*m, -1.5*m, 1.45*m, -1.9*m, 0.72*m, yt);         // the hood bulges back up to the rim
-  c.lineTo(xr+0.55*m, yt);
-  c.bezierCurveTo(xr+0.12*m, yt, xr, yt+0.2*m, xr, yt+0.6*m);          // big round shoulder at the back
-  c.lineTo(xr, yb-0.4*m);
-  c.quadraticCurveTo(xr, yb, xr+0.4*m, yb);
-  c.closePath();
+  c.moveTo(-2.1*m,-1.42*m);
+  c.quadraticCurveTo(-2.12*m,-1.57*m,-1.94*m,-1.58*m);
+  c.lineTo(-1.42*m,-1.58*m); c.lineTo(-1.12*m,-1.05*m);
+  c.lineTo(-0.73*m,-1.05*m); c.lineTo(-0.62*m,-1.58*m);
+  c.lineTo(0.08*m,-1.58*m); c.lineTo(0.4*m,-1.05*m);
+  c.lineTo(0.82*m,-1.05*m); c.lineTo(0.94*m,-1.52*m);
+  c.bezierCurveTo(1.5*m,-1.49*m,2.12*m,-1.02*m,2.17*m,-0.55*m);
+  c.quadraticCurveTo(2.2*m,-0.28*m,1.87*m,-0.27*m);
+  c.lineTo(-1.78*m,-0.27*m); c.closePath();
 }
 // a jointed limb: dark outline, orange fill, a dark pin at each joint
 function limb(c, m, pts, w){
@@ -1338,7 +1336,7 @@ function drawDummy(c, m, x, armsUp){
   const hx=x-0.08*m, hy=-3.4*m, hr=0.42*m;
   c.fillStyle=DUMMY; c.beginPath(); c.arc(hx,hy,hr,0,7); c.fill(); c.stroke();
   // the test marker on the head: a disc in yellow and black quarters
-  const mr=hr*0.62;
+  const mr=hr*0.42;
   for(let q=0;q<4;q++){
     c.fillStyle = q%2 ? INK : '#ffd21f';
     c.beginPath(); c.moveTo(hx,hy); c.arc(hx,hy,mr,q*Math.PI/2,(q+1)*Math.PI/2); c.closePath(); c.fill();
@@ -1346,37 +1344,53 @@ function drawDummy(c, m, x, armsUp){
   c.strokeStyle=INK; c.lineWidth=lw*0.8; c.beginPath(); c.arc(hx,hy,mr,0,7); c.stroke();
 }
 function drawCarLocal(c, ppm, idx, front, opts){
-  const m=ppm, L=CAR_LEN*m, wr=0.4*m;
+  const m=ppm, L=CAR_LEN*m;
   const main=COLORS[design.main], detail=COLORS[design.detail];
-  const lw=Math.max(1,0.1*m);
-  const armsUp=!!(opts && opts.scream);
-  // riders sit inside the tub, so they are drawn first and the body covers their legs
-  drawDummy(c, m, -1.18*m, armsUp);
-  drawDummy(c, m, 0.02*m, armsUp);
-  // wheels on short brackets, tucked under the skirt
-  for(const wx of [-L*0.32, L*0.32]){
-    c.fillStyle='#4a515c'; c.fillRect(wx-0.2*m, -0.7*m, 0.4*m, 0.36*m);
-    c.fillStyle='#1d2126'; c.beginPath(); c.arc(wx, -wr, wr, 0, 7); c.fill();
-    c.fillStyle='#b4bac3'; c.beginPath(); c.arc(wx, -wr, wr*0.52, 0, 7); c.fill();
-    c.fillStyle='#1d2126'; c.beginPath(); c.arc(wx, -wr, wr*0.18, 0, 7); c.fill();
+  const armsUp=!!(opts && opts.scream), lw=Math.max(1,0.055*m);
+  // Two staggered rows: the far riders remain visible above the near seats.
+  for(const far of [true,false]) for(const x of [-1.45,0.05]){
+    c.save(); c.translate((x+(far?0.1:0))*m,far?-0.62*m:0);
+    drawDummy(c,m*0.68,0,armsUp); c.restore();
   }
-  // body: main color, the pattern, a gray skirt along the bottom, a rim along the top, and a soft shine
-  sledPath(c, m);
-  c.fillStyle=main; c.fill();
+  sledPath(c,m); c.fillStyle=main; c.fill();
   c.save(); c.clip();
-  c.save(); c.translate(0,-0.86*m); drawPattern(c, design.pattern, detail, L, 1.0*m, idx); c.restore();
-  c.fillStyle='#9aa1ab'; c.fillRect(-L, -0.86*m, 2*L, 0.32*m);
-  c.fillStyle=INK; c.fillRect(-L, -0.89*m, 2*L, Math.max(1,0.06*m));
-  c.fillStyle='rgba(255,255,255,.28)'; c.fillRect(-L, -2.0*m, 2*L, 0.2*m);       // rim
-  c.fillStyle='rgba(0,0,0,.28)'; c.fillRect(-L, -1.8*m, 2*L, Math.max(1,0.05*m));
-  const sh=c.createLinearGradient(0,-2.0*m,0,-0.42*m); sh.addColorStop(0,'rgba(255,255,255,.22)'); sh.addColorStop(.5,'rgba(255,255,255,0)'); sh.addColorStop(1,'rgba(0,0,0,.2)');
-  c.fillStyle=sh; c.fillRect(-L,-2.2*m,2*L,2.2*m);
+  if(design.pattern==='zigzag'){
+    const lightning=()=>{c.beginPath();c.moveTo(-2.15*m,-0.94*m);
+      c.lineTo(-1.74*m,-1.22*m);c.lineTo(-1.39*m,-0.77*m);
+      c.lineTo(-1.16*m,-1.04*m);c.lineTo(-0.91*m,-0.94*m);
+      c.lineTo(-0.25*m,-1.24*m);c.lineTo(0.12*m,-0.78*m);
+      c.lineTo(0.41*m,-1.05*m);c.lineTo(0.91*m,-0.95*m);};
+    c.lineJoin='miter'; lightning(); c.strokeStyle=INK;c.lineWidth=0.34*m;c.stroke();
+    lightning();c.strokeStyle=detail;c.lineWidth=0.23*m;c.stroke();
+  }else{
+    c.save();c.translate(0,-0.35*m);drawPattern(c,design.pattern,detail,L,1.15*m,idx);c.restore();
+  }
+  c.fillStyle='rgba(0,0,0,.2)';c.fillRect(-L,-0.4*m,2*L,0.14*m);
+  c.strokeStyle='rgba(255,255,255,.5)';c.lineWidth=0.07*m;
+  c.beginPath();c.moveTo(1.01*m,-1.43*m);c.bezierCurveTo(1.46*m,-1.36*m,1.88*m,-1.04*m,2.02*m,-0.71*m);c.stroke();
   c.restore();
-  sledPath(c, m);
-  c.strokeStyle=INK; c.lineWidth=lw*1.6; c.lineJoin='round'; c.stroke();
-  // grab bar on the rim in front of each rider
-  c.strokeStyle=INK; c.lineWidth=0.16*m; c.lineCap='round';
-  if(!armsUp){ c.beginPath(); c.moveTo(-0.44*m,-2.1*m); c.lineTo(-0.3*m,-2.32*m); c.moveTo(0.76*m,-2.08*m); c.lineTo(0.88*m,-2.3*m); c.stroke(); }
+  sledPath(c,m);c.strokeStyle=INK;c.lineWidth=lw;c.lineJoin='round';c.stroke();
+  // Low orange bogies, each carrying three small steel wheels.
+  for(const wx of [-1.34,1.28]){
+    c.fillStyle='#45494d';c.fillRect((wx-0.24)*m,-0.4*m,0.48*m,0.25*m);
+    c.beginPath();c.roundRect((wx-0.46)*m,-0.28*m,0.92*m,0.37*m,0.16*m);
+    c.fillStyle=main;c.strokeStyle=INK;c.lineWidth=lw;c.fill();c.stroke();
+    for(const dx of [-0.25,0,0.25]){
+      c.beginPath();c.arc((wx+dx)*m,-0.075*m,0.105*m,0,Math.PI*2);
+      c.fillStyle='#c3a460';c.fill();c.strokeStyle='#555657';c.lineWidth=0.035*m;c.stroke();
+    }
+  }
+  // Seat edges and the small grab handles sit in front of the riders.
+  c.strokeStyle=detail;c.lineWidth=0.065*m;c.lineJoin='round';
+  for(const x of [-1.45,0.05]){
+    c.beginPath();c.moveTo((x-0.5)*m,-1.51*m);c.lineTo((x+0.03)*m,-1.51*m);
+    c.lineTo((x+0.32)*m,-1.02*m);c.lineTo((x+0.68)*m,-1.02*m);c.stroke();
+    if(!armsUp){c.strokeStyle='#616466';c.lineWidth=0.08*m;c.beginPath();
+      c.moveTo((x+0.55)*m,-1.02*m);c.lineTo((x+0.56)*m,-1.57*m);c.stroke();
+      c.fillStyle=main;c.strokeStyle=INK;c.lineWidth=lw;c.beginPath();
+      c.arc((x+0.56)*m,-1.57*m,0.095*m,0,Math.PI*2);c.fill();c.stroke();}
+    c.strokeStyle=detail;c.lineWidth=0.065*m;
+  }
 }
 
 /* ---------- scenic background (test step) ---------- */
@@ -1936,10 +1950,10 @@ function drawSplash(){
 
 /* ---------- cart design / length previews ---------- */
 function drawPreview(viewH){
-  const w=cv.width, h=cv.height, ppm=h/viewH;
+  const w=cv.width, h=cv.height, ppm=Math.min(h/viewH,w/(cars*(CAR_LEN+CAR_GAP)+2.2));
   ctx.fillStyle=PAL.previewBg; ctx.fillRect(0,0,w,h);
   for(let x=0;x<w;x+=10*ppm){ ctx.fillStyle=PAL.lavStripe; ctx.fillRect(x,0,3*u,h); }
-  const ty=h*0.62;
+  const ty=h*0.66;
   ctx.fillStyle=PAL.support; ctx.strokeStyle=PAL.supportEdge; ctx.lineWidth=Math.max(1,0.06*ppm);
   ctx.fillRect(w/2-0.5*ppm,ty,1*ppm,h); ctx.strokeRect(w/2-0.5*ppm,ty,1*ppm,h);
   for(let x=(w/2)%(4*ppm); x<w; x+=4*ppm){
@@ -1975,8 +1989,8 @@ function draw(){
   PAL = (window.__isDark&&window.__isDark()) ? PAL_DARK : PAL_LIGHT;
   ctx.setTransform(1,0,0,1,0,0);
   ctx.clearRect(0,0,cv.width,cv.height);
-  if(step===0) drawPreview(13);
-  else if(step===1) drawPreview(Math.max(13, cars*(CAR_LEN+CAR_GAP)*0.62));
+  if(step===0) drawPreview(7.4);
+  else if(step===1) drawPreview(Math.max(7.4, cars*(CAR_LEN+CAR_GAP)*0.62));
   else if(step===2) drawEditor();
   else if(step===3) drawTest();
   else if(step===4) drawDebrief();
