@@ -124,6 +124,7 @@ body{margin:0;background:var(--bench)}
 .cvlab canvas{display:block;width:100%}
 .cvlab-stage{display:grid;grid-template-columns:minmax(220px,.34fr) 1fr;gap:12px}
 #cvlab-scene,#cvlab-trace{height:clamp(340px,32vw,560px);border-radius:4px}
+#cvlab-scene{touch-action:none}
 @media (max-width:760px){
   .cvlab-stage{grid-template-columns:1fr}
   #cvlab-scene{height:clamp(280px,60vw,380px)}#cvlab-trace{height:clamp(220px,46vw,280px)}
@@ -162,6 +163,8 @@ body{margin:0;background:var(--bench)}
 .cvlab-row{display:flex;flex-wrap:wrap;gap:8px}
 
 .cvlab-heights{display:flex;gap:6px}
+.cvlab-height-control{display:flex;flex-direction:column;gap:6px;font-size:15px}
+.cvlab-height-control input{width:100%;accent-color:var(--blue);margin:0}
 .cvlab-hbtn{flex:1;cursor:pointer;background:var(--paper);border:1.5px solid var(--ink);border-radius:5px;
   padding:10px 2px;font-family:var(--font-m);font-size:16px;font-weight:800;color:var(--ink);
   transition:background .12s ease,color .12s ease}
@@ -248,7 +251,7 @@ body{margin:0;background:var(--bench)}
       <canvas id="cvlab-trace" role="img"
         aria-label="Graph of the ball's height above the floor against time, showing the drop, the impact, and the first bounce."></canvas>
     </div>
-    <p class="cvlab-hint">0 cm on the floor &middot; heights read to the bottom of the ball &middot; only the first bounce is measured</p>
+    <p class="cvlab-hint">Drag the ball up or down to choose its height, then press Drop the ball. 0 cm on the floor &middot; heights read to the bottom of the ball &middot; only the first bounce is measured</p>
     <div class="cvlab-bar">
       <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Drop the ball</button>
       <button class="cvlab-btn" id="cvlab-reset">Reset</button>
@@ -263,6 +266,10 @@ body{margin:0;background:var(--bench)}
     <section class="cvlab-panel">
       <h2>Drop height</h2>
       <div class="cvlab-heights" id="cvlab-heights"></div>
+      <label class="cvlab-height-control" for="cvlab-height">
+        <span>Drop height <strong id="cvlab-height-value">60 cm</strong></span>
+        <input type="range" id="cvlab-height" min="20" max="100" step="1" value="60">
+      </label>
       <p class="cvlab-note">The ball is released from rest, so it starts with no speed of its own. Everything it arrives with came from the height.</p>
       <div class="cvlab-opts">
         <label><input type="checkbox" id="cvlab-slow" checked>
@@ -311,7 +318,7 @@ body{margin:0;background:var(--bench)}
     <summary>How to use this simulation <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
     <div class="cvlab-notes-body">
       <ol>
-        <li>Pick a <strong>drop height</strong> in the Drop height panel. The ball always starts from rest at that height. That means it is not moving when you let go.</li>
+        <li>Drag the ball up or down, or pick a <strong>drop height</strong> with the buttons or slider in the Drop height panel. The ball always starts from rest at that height. That means it is not moving when you let go.</li>
         <li>Press <strong>Drop the ball</strong>. Watch it fall, hit the floor, and bounce back up.</li>
         <li>Watch for the top of the first bounce. It goes by fast. That is why <strong>Slow motion</strong> is on to start.</li>
         <li>Heights are measured to the <strong>bottom of the ball</strong>, like lining it up with a real meter stick. A piece of tape marks the top of each first bounce.</li>
@@ -397,6 +404,7 @@ body{margin:0;background:var(--bench)}
   var sctx = sceneC.getContext("2d"), tctx = traceC.getContext("2d"), gctx = graphC.getContext("2d");
   var elGo = $("cvlab-go"), elReset = $("cvlab-reset"), elStatus = $("cvlab-status");
   var elHeights = $("cvlab-heights"), elBody = $("cvlab-tbody");
+  var elHeight = $("cvlab-height"), elHeightValue = $("cvlab-height-value");
   var elClearTrials = $("cvlab-cleartrials"), elCopy = $("cvlab-copy"), elCopyNote = $("cvlab-copynote");
   var elSlow = $("cvlab-slow"), elFit = $("cvlab-fit"), elNoise = $("cvlab-noise"),
       elSpeedDep = $("cvlab-speeddep");
@@ -499,12 +507,18 @@ body{margin:0;background:var(--bench)}
     elHeights.addEventListener("click", function(e){
       var b = e.target.closest ? e.target.closest(".cvlab-hbtn") : null;
       if(!b || b.disabled) return;
-      drop = parseInt(b.getAttribute("data-h"),10);
-      resetRun("Ball held at <strong>" + drop + " cm</strong>, bottom edge on the mark.");
+      setDropHeight(Number(b.getAttribute("data-h")));
     });
   }
 
   /* ------------------------------------------------ run control */
+  function setDropHeight(cm){
+    if(stage === "falling") return;
+    var next = clamp(Math.round(cm), Number(elHeight.min), Number(elHeight.max));
+    if(next === drop && stage === "ready") return;
+    drop = next;
+    resetRun("Ball held at <strong>" + drop + " cm</strong>, bottom edge on the mark.");
+  }
   function resetRun(msg){
     stage = "ready"; t = 0; segs = []; peakShown = false; recorded = false;
     lastFrame = null; dirty = true;
@@ -547,6 +561,10 @@ body{margin:0;background:var(--bench)}
   /* ------------------------------------------------ readouts */
   function syncUI(){
     var busy = (stage === "falling");
+    elHeight.value = drop;
+    elHeightValue.textContent = drop + " cm";
+    elHeight.disabled = busy;
+    if(busy) sceneC.style.cursor = "default";
     roDrop.textContent = drop + " cm";
     roH.textContent = fmt(stage === "ready" ? drop : heightAt(t)) + " cm";
     roBounce.textContent = peakShown ? fmt(firstApex()) + " cm" : "\u2014";
@@ -978,6 +996,48 @@ body{margin:0;background:var(--bench)}
   }
 
   /* ------------------------------------------------ wiring */
+  var drag = null;
+  function scenePoint(e){
+    var r = sceneC.getBoundingClientRect();
+    geometry(Math.max(150, Math.round(r.width)), Math.max(150, Math.round(r.height)));
+    return { x:(e.clientX-r.left)*G.w/r.width, y:(e.clientY-r.top)*G.h/r.height };
+  }
+  function overBall(p){
+    var cm = stage === "ready" ? drop : heightAt(t);
+    var dx = p.x-G.ballX, dy = p.y-(Y(cm)-G.ballR);
+    var radius = Math.max(G.ballR+6, 14);
+    return dx*dx+dy*dy <= radius*radius;
+  }
+  sceneC.addEventListener("pointerdown", function(e){
+    if(stage === "falling" || drag || !e.isPrimary || e.button !== 0) return;
+    var p = scenePoint(e);
+    if(!overBall(p)) return;
+    // Preserve the pickup offset, even when lifting a ball from the floor after a run.
+    drag = { id:e.pointerId, y:p.y, height:stage === "ready" ? drop : heightAt(t) };
+    sceneC.setPointerCapture(e.pointerId);
+    sceneC.style.cursor = "grabbing";
+    e.preventDefault();
+  });
+  sceneC.addEventListener("pointermove", function(e){
+    var p = scenePoint(e);
+    if(drag){
+      if(e.pointerId !== drag.id || p.y === drag.y && stage === "done") return;
+      setDropHeight(drag.height+(drag.y-p.y)/G.k);
+    } else {
+      sceneC.style.cursor = stage !== "falling" && overBall(p) ? "grab" : "default";
+    }
+  });
+  function endDrag(e){
+    if(!drag || e.pointerId !== drag.id) return;
+    drag = null;
+    if(sceneC.hasPointerCapture(e.pointerId)) sceneC.releasePointerCapture(e.pointerId);
+    sceneC.style.cursor = "default";
+  }
+  sceneC.addEventListener("pointerup", endDrag);
+  sceneC.addEventListener("pointercancel", endDrag);
+  sceneC.addEventListener("lostpointercapture", endDrag);
+  sceneC.addEventListener("pointerleave", function(){ if(!drag) sceneC.style.cursor = "default"; });
+  elHeight.addEventListener("input", function(){ setDropHeight(Number(elHeight.value)); });
   elGo.addEventListener("click", release);
   elReset.addEventListener("click", function(){
     resetRun("Reset. The ball is back at <strong>" + drop + " cm</strong>.");
