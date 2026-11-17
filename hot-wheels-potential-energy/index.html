@@ -125,7 +125,7 @@ body{margin:0;background:var(--shell)}
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
   border-radius:0 0 14px 14px;padding:12px}
 .cvlab canvas{display:block;width:100%}
-#cvlab-scene{height:clamp(360px,36vw,486px);border-radius:10px}
+#cvlab-scene{height:clamp(360px,36vw,486px);border-radius:10px;touch-action:none}
 @media (max-width:820px){#cvlab-scene{height:clamp(280px,52vw,360px)}}
 .cvlab-hint{font-size:14px;color:var(--ink-2);margin-top:8px;font-weight:700}
 .cvlab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;padding-top:12px;
@@ -250,7 +250,7 @@ body{margin:0;background:var(--shell)}
   <div class="cvlab-bench">
     <canvas id="cvlab-scene" role="img"
       aria-label="A track clamped to a stand drops to the counter at point B, rises over a hill of tape rolls at point C, and comes back down to the counter at point D. The car waits at the release height, point A."></canvas>
-    <p class="cvlab-hint">Both ends of the hill are taped flat to the counter, so B and D are both 0&nbsp;cm. A is the release height and C is the top of the hill.</p>
+    <p class="cvlab-hint">Drag the car up or down the ramp, or use the release height slider. Then click Release the car. Both ends of the hill are taped flat to the counter, so B and D are both 0&nbsp;cm. A is the release height and C is the top of the hill.</p>
     <div class="cvlab-bar">
       <button class="cvlab-btn cvlab-btn-go" id="cvlab-go">Release the car</button>
       <button class="cvlab-btn cvlab-btn-sm" id="cvlab-reset">Put it back</button>
@@ -558,10 +558,22 @@ body{margin:0;background:var(--shell)}
     stage = "ready"; v = 0; maxX = 0; cleared = false; endReason = ""; spin = 0;
     buildTrack();
     s = sAtHeight(relCm);
+    elRel.value = relCm;
     lastFrame = null; dirty = true;
     elGo.textContent = "Release the car";
     refresh();
     if(msg) say(msg);
+  }
+  /* Slider and direct manipulation share one release position. */
+  function setReleaseHeight(cm){
+    if(stage === "running") return;
+    relCm = clamp(Math.round(cm), Number(elRel.min), Number(elRel.max));
+    elRel.value = relCm;
+    if(stage !== "ready") resetRun("Ready at the new release height.");
+    else {
+      s = sAtHeight(relCm);
+      renderEnergy(); renderReadouts(); dirty = true;
+    }
   }
   function launch(){
     if(stage === "running") return;
@@ -983,6 +995,50 @@ body{margin:0;background:var(--shell)}
   }
 
   /* ------------------------------------------------ wiring */
+  var drag = null;
+  function scenePoint(e){
+    var r = sceneC.getBoundingClientRect();
+    geometry(Math.max(240, Math.round(r.width)), Math.max(200, Math.round(r.height)));
+    return { x: (e.clientX-r.left)*V.w/r.width, y: (e.clientY-r.top)*V.h/r.height };
+  }
+  function overCar(p){
+    var pose = carPose(), c = C(), iw = c.len*V.k, ih = iw*c.pic.ar;
+    var dx = p.x-PX(pose.x), dy = p.y-PY(pose.y);
+    var x = dx*Math.cos(pose.ang) + dy*Math.sin(pose.ang);
+    var y = -dx*Math.sin(pose.ang) + dy*Math.cos(pose.ang) + 0.38*V.k;
+    var left = -((c.pic.f1+c.pic.f2)/2)*iw;
+    var pad = 8; // A little extra room for fingers and small screens.
+    return x >= left-pad && x <= left+iw+pad && y >= -ih-pad && y <= pad;
+  }
+  sceneC.addEventListener("pointerdown", function(e){
+    if(stage === "running" || drag || !e.isPrimary || e.button !== 0) return;
+    var p = scenePoint(e);
+    if(!overCar(p)) return;
+    // Keep the grabbed point under the pointer without a jump on pickup.
+    drag = { id:e.pointerId, y:p.y, height:relCm };
+    sceneC.setPointerCapture(e.pointerId);
+    sceneC.style.cursor = "grabbing";
+    e.preventDefault();
+  });
+  sceneC.addEventListener("pointermove", function(e){
+    var p = scenePoint(e);
+    if(drag){
+      if(e.pointerId !== drag.id) return;
+      setReleaseHeight(drag.height + (drag.y-p.y)/V.k);
+    } else {
+      sceneC.style.cursor = stage !== "running" && overCar(p) ? "grab" : "default";
+    }
+  });
+  function endDrag(e){
+    if(!drag || e.pointerId !== drag.id) return;
+    drag = null;
+    if(sceneC.hasPointerCapture(e.pointerId)) sceneC.releasePointerCapture(e.pointerId);
+    sceneC.style.cursor = "default";
+  }
+  sceneC.addEventListener("pointerup", endDrag);
+  sceneC.addEventListener("pointercancel", endDrag);
+  sceneC.addEventListener("lostpointercapture", endDrag);
+  sceneC.addEventListener("pointerleave", function(){ if(!drag) sceneC.style.cursor = "default"; });
   elGo.addEventListener("click", launch);
   elReset.addEventListener("click", function(){ resetRun("Back at the top, ready to go again."); });
   elTMinus.addEventListener("click", function(){
@@ -996,9 +1052,7 @@ body{margin:0;background:var(--shell)}
     resetRun("Hill is now <strong>" + hillCm() + " cm</strong>. Attempts cleared for the new hill.");
   });
   elRel.addEventListener("input", function(){
-    relCm = parseInt(elRel.value,10);
-    if(stage !== "ready") resetRun();
-    else { buildTrack(); refresh(); }
+    setReleaseHeight(Number(elRel.value));
   });
   elSpeed.addEventListener("change", function(){
     speedScale = parseFloat(elSpeed.value) || 0.35;
@@ -1056,14 +1110,13 @@ body{margin:0;background:var(--shell)}
   }
 
   buildCars();
-  buildTrack();
-  refresh();
+  resetRun();
   requestAnimationFrame(frame);
 
   if(window.__trkHook) window.__trkHook({
     CARS: CARS, setCar: function(i){ car = i; trials = []; resetRun(); },
     setRolls: function(r){ rolls = r; trials = []; resetRun(); },
-    setRelease: function(v2){ relCm = v2; resetRun(); },
+    setRelease: setReleaseHeight,
     launch: launch, state: function(){
       return { stage:stage, cleared:cleared, s:s, v:v, maxX:maxX, endReason:endReason,
                rolls:rolls, relCm:relCm, car:car, trials:trials };
