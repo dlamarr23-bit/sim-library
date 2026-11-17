@@ -1355,13 +1355,16 @@ function drawCarLocal(c, ppm, idx, front, opts){
   sledPath(c,m); c.fillStyle=main; c.fill();
   c.save(); c.clip();
   if(design.pattern==='zigzag'){
-    const lightning=()=>{c.beginPath();c.moveTo(-2.15*m,-0.94*m);
-      c.lineTo(-1.74*m,-1.22*m);c.lineTo(-1.39*m,-0.77*m);
-      c.lineTo(-1.16*m,-1.04*m);c.lineTo(-0.91*m,-0.94*m);
-      c.lineTo(-0.25*m,-1.24*m);c.lineTo(0.12*m,-0.78*m);
-      c.lineTo(0.41*m,-1.05*m);c.lineTo(0.91*m,-0.95*m);};
-    c.lineJoin='miter'; lightning(); c.strokeStyle=INK;c.lineWidth=0.34*m;c.stroke();
-    lightning();c.strokeStyle=detail;c.lineWidth=0.23*m;c.stroke();
+    // Uniform teeth continue beyond the silhouette so no rounded end floats on the body.
+    const lightning=()=>{c.beginPath();
+      for(let k=0;k<=8;k++){
+        const x=(-2.4+k*0.65)*m, y=(k%2?-0.72:-1.18)*m;
+        if(k===0)c.moveTo(x,y);else c.lineTo(x,y);
+      }
+    };
+    c.lineJoin='miter';c.lineCap='butt';
+    lightning();c.strokeStyle=INK;c.lineWidth=0.3*m;c.stroke();
+    lightning();c.strokeStyle=detail;c.lineWidth=0.2*m;c.stroke();
   }else{
     c.save();c.translate(0,-0.35*m);drawPattern(c,design.pattern,detail,L,1.15*m,idx);c.restore();
   }
