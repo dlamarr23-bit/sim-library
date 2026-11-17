@@ -367,9 +367,9 @@ readColors();
 /* ---------------- car geometry ---------------- */
 // local coords: x = meters back from front bumper, y = height above ground (m)
 const STYLES = {
-  subcompact:{ name:'Subcompact', mass:950, L:3.9, fw:.72, rw:3.2, wr:.30, hip:2.05, paint:{base:'#DF7863',light:'#FFB09A',shade:'#A94A3F',edge:'#743B36'} },
-  sedan:{ name:'Compact sedan', mass:1450, L:4.7, fw:.89, rw:3.91, wr:.36, hip:2.4, paint:{base:'#79ADE3',light:'#B2D9FC',shade:'#437EBB',edge:'#285785'} },
-  suv:{ name:'SUV', mass:2000, L:4.8, fw:.88, rw:3.95, wr:.38, hip:2.3, paint:{base:'#49A397',light:'#96D8C7',shade:'#28776F',edge:'#215A56'} }
+  subcompact:{ name:'Subcompact', mass:950, L:3.9, fw:.637, rw:3.246, wr:.334, hip:1.814, paint:{base:'#C87761',light:'#DC9983',shade:'#AD6051',edge:'#74483F'} },
+  sedan:{ name:'Compact sedan', mass:1450, L:4.7, fw:.893, rw:3.763, wr:.37, hip:2.186, paint:{base:'#72A7DE',light:'#9DCBF6',shade:'#4681BE',edge:'#285785'} },
+  suv:{ name:'SUV', mass:2000, L:4.8, fw:.907, rw:3.825, wr:.383, hip:2.232, paint:{base:'#6AB3B2',light:'#9BD4CC',shade:'#4A9394',edge:'#345D64'} }
 };
 const CAR2 = { L:.7, cz:1000, cell:2500 };
 const CELL = 2.0;      // safety-cell length used for % deformation (m)
@@ -512,7 +512,7 @@ function bodyMotion(t,contactT,severity=1){
   const age=t-contactT;
   if(contactT===null||age<0)return {pitch:0,heave:0};
   const strength=Math.min(1,Math.max(0,severity));
-  return {pitch:-.045*strength*Math.sin(age*24)*Math.exp(-age*5),
+  return {pitch:.025*strength*Math.sin(age*24)*Math.exp(-age*5),
     heave:-.025*strength*Math.sin(age*29)*Math.exp(-age*6)};
 }
 
@@ -602,40 +602,393 @@ function drawScene(){
   $('slowTag').hidden = !(r.crashed && T >= r.slowStart && T <= r.slowEnd + .05 && (playing || T>0));
 }
 
-/* Curved illustration paths, authored in a 1000-unit side elevation.
-   Paths are sampled once, then every point uses the simulation's crush mapping. */
+/* Side elevations traced from the user's reference illustrations. Coordinates are
+   normalized to each vehicle's real length; every path still deforms on impact. */
 const CAR_ART = {
-  sedan: {
-    body:'M 12 371 Q 0 365 7 350 L 8 304 Q 8 283 28 267 Q 69 218 238 198 Q 333 131 391 102 Q 451 65 572 76 Q 647 77 693 111 L 805 183 Q 878 188 959 202 Q 984 208 986 241 L 990 322 Q 1000 335 992 370 Q 970 384 910 385 L 910 354 C 910 247 754 247 754 354 L 752 385 L 268 385 L 267 354 C 267 247 111 247 111 354 L 110 385 Q 30 387 12 371 Z',
-    glass:'M 277 216 Q 340 149 416 112 Q 455 91 566 95 Q 634 95 675 123 L 705 149 Q 747 180 756 200 L 757 217 Z',
-    frontDoor:'M 283 220 Q 283 275 303 365 Q 305 376 326 376 L 544 376 L 550 221',
-    rearDoor:'M 550 222 L 544 376 L 660 376 Q 685 374 698 346 L 738 287 Q 758 263 757 220',
-    pillar:552, rearPillar:714, roof:94, belt:220, handles:[513,724],
-    headlight:'M 19 284 Q 39 252 59 246 L 129 241 Q 139 242 128 255 L 104 278 Q 72 290 19 284 Z',
-    taillight:'M 922 236 Q 941 230 984 234 L 989 279 Q 955 283 937 268 Z',
-    hood:'M 35 261 Q 114 221 237 208 L 272 215',
-    mirror:'M 288 217 Q 284 190 307 185 Q 337 180 339 201 Q 341 218 328 220 Z'
+  "subcompact": {
+    "body": "M 4.44 345.56 Q -4.44 365.56 27.78 370 L 71.11 372.22 L 71.11 344.44 C 71.11 207.78 255.56 207.78 255.56 344.44 L 256.67 370 L 737.78 370 L 737.78 344.44 C 737.78 206.67 927.78 206.67 927.78 344.44 L 927.78 361.11 Q 973.33 358.89 988.89 345.56 L 997.78 314.44 L 995.56 261.11 Q 980 246.67 975.56 232.22 L 975.56 183.33 Q 975.56 156.67 963.33 138.89 L 893.33 55.56 L 898.89 43.33 Q 745.56 14.44 601.11 16.67 Q 473.33 12.22 412.22 33.33 L 224.44 147.78 L 205.56 147.78 Q 107.78 161.11 35.56 198.89 Q 17.78 205.56 14.44 220 L 4.44 246.67 Q -1.11 252.22 0 263.33 L 0 298.89 L 8.89 313.33 Z",
+    "glass": "M 264.44 164.44 L 406.67 66.67 Q 432.22 45.56 472.22 43.33 Q 654.44 31.11 798.89 50 Q 812.22 52.22 818.89 70 L 826.67 140 Z",
+    "frontDoor": "M 280 165.56 Q 271.11 238.89 286.67 327.78 Q 291.11 348.89 310 350 L 561.11 350 L 570 151.11",
+    "rearDoor": "M 570 152.22 L 562.22 350 L 692.22 350 Q 708.89 347.78 721.11 325.56 L 768.89 251.11 Q 805.56 204.44 826.67 143.33",
+    "hood": "M 24.44 210 Q 88.89 178.89 187.78 171.11 Q 211.11 166.67 222.22 150",
+    "headlight": "M 16.67 222.22 Q 21.11 210 37.78 206.67 L 93.33 192.22 Q 103.33 191.11 98.89 198.89 L 68.89 234.44 Q 56.67 245.56 22.22 247.78 Q 10 245.56 16.67 222.22 Z",
+    "taillight": "M 938.89 152.22 L 966.67 154.44 Q 975.56 173.33 975.56 205.56 L 935.56 205.56 Z",
+    "mirror": "M 308.89 153.33 Q 310 135.56 328.89 127.78 Q 350 118.89 355.56 131.11 L 361.11 154.44 Q 336.67 163.33 310 164.44 Z",
+    "belt": 158.89,
+    "handles": [
+      {
+        "x": 520,
+        "y": 190,
+        "w": 61.11
+      },
+      {
+        "x": 764.44,
+        "y": 180,
+        "w": 61.11
+      }
+    ],
+    "pillars": [
+      "M 564.44 40 L 600 42.22 L 592.22 150 L 560 153.33 Z",
+      "M 755.56 47.78 L 764.44 48.89 L 763.33 143.33 L 754.44 144.44 Z"
+    ],
+    "seats": [
+      "M 534.44 154.44 L 534.44 101.11 Q 532.22 78.89 546.67 76.67 L 561.11 77.78 L 558.89 151.11 Z",
+      "M 764.44 142.22 Q 765.56 106.67 782.22 98.89 Q 800 94.44 817.78 102.22 L 825.56 138.89 Z"
+    ],
+    "layers": [
+      {
+        "path": "M 24.44 210 Q 132.22 164.44 244.44 156.67 L 277.78 175.56 Q 122.22 180 40 230 Z",
+        "fill": "light",
+        "width": 1.11
+      },
+      {
+        "path": "M 278.89 180 Q 642.22 161.11 938.89 140 L 936.67 164.44 Q 651.11 183.33 277.78 205.56 Z",
+        "fill": "rgba(255,224,204,.22)",
+        "width": 1.11
+      },
+      {
+        "path": "M 286.67 252.22 Q 475.56 225.56 711.11 228.89 Q 733.33 230 727.78 253.33 L 715.56 311.11 Q 481.11 311.11 290 334.44 Z",
+        "fill": "shade",
+        "width": 1.11
+      },
+      {
+        "path": "M 294.44 330 Q 491.11 303.33 653.33 304.44 Q 686.67 304.44 715.56 321.11 Q 530 314.44 297.78 344.44 Z",
+        "fill": "rgba(247,181,150,.35)",
+        "width": 1.11
+      },
+      {
+        "path": "M 922.22 297.78 Q 966.67 291.11 994.44 293.33 L 994.44 306.67 L 927.78 318.89 Z",
+        "fill": "rgba(255,205,175,.25)",
+        "width": 1.11
+      },
+      {
+        "path": "M 38.89 252.22 Q 65.56 223.33 96.67 223.33 Q 56.67 256.67 55.56 296.67 L 45.56 287.78 Z",
+        "fill": "rgba(248,187,156,.38)",
+        "width": 1.11
+      },
+      {
+        "path": "M 10 304.44 L 23.33 304.44 L 27.78 333.33 L 6.67 334.44 Z",
+        "fill": "#45505a",
+        "stroke": "#243341",
+        "width": 2.22
+      },
+      {
+        "path": "M 21.11 308.89 L 22.22 330",
+        "stroke": "#9aa5a9",
+        "width": 3.33
+      },
+      {
+        "path": "M 24.44 353.33 L 71.11 355.56 M 257.78 367.78 L 736.67 367.78 M 931.11 354.44 L 980 343.33",
+        "stroke": "#78473f",
+        "width": 3.33
+      },
+      {
+        "path": "M 856.67 34.44 L 898.89 43.33 L 883.33 64.44",
+        "fill": "base",
+        "stroke": "#24384c",
+        "width": 2.22
+      },
+      {
+        "path": "M 893.33 61.11 L 960 140 L 941.11 138.89 L 880 71.11 Z",
+        "fill": "#627685",
+        "stroke": "#203448",
+        "width": 2.22
+      },
+      {
+        "path": "M 902.22 78.89 L 945.56 134.44 L 933.33 135.56 L 894.44 85.56 Z",
+        "fill": "#b9dcea",
+        "width": 1.11
+      }
+    ],
+    "details": [
+      {
+        "path": "M 56.67 211.11 Q 68.89 207.78 62.22 223.33 Q 55.56 233.33 53.33 226.67 Z",
+        "fill": "#fff",
+        "width": 1.11
+      },
+      {
+        "path": "M 24.44 228.89 L 25.56 238.89",
+        "stroke": "#d9edf5",
+        "width": 5.56
+      }
+    ],
+    "roofRails": [],
+    "fuel": null
   },
-  subcompact: {
-    body:'M 10 373 Q 1 364 5 332 L 10 282 Q 16 258 54 239 Q 97 217 219 194 L 330 116 C 364 83 385 69 424 66 C 547 60 706 60 804 72 Q 836 76 854 103 L 953 223 L 963 235 Q 991 255 995 288 L 998 355 Q 1000 380 984 385 L 896 385 L 895 356 C 895 259 747 259 747 356 L 746 385 L 260 385 L 259 356 C 259 258 111 258 111 356 L 110 385 Q 26 389 10 373 Z',
-    glass:'M 268 211 L 365 130 C 390 101 397 92 430 89 C 550 83 704 85 780 95 Q 809 97 823 117 L 897 198 Q 904 214 886 215 Z',
-    frontDoor:'M 271 219 L 297 365 Q 299 376 315 376 L 624 376 Q 639 374 638 357 L 638 219',
-    pillar:638, roof:87, belt:219, handles:[600],
-    headlight:'M 25 287 Q 38 254 63 247 L 109 239 Q 121 241 112 263 L 97 286 Q 62 296 25 287 Z',
-    taillight:'M 935 190 L 960 227 Q 972 246 975 283 L 947 282 Q 933 244 935 190 Z',
-    hood:'M 38 250 Q 110 220 221 205 L 264 211',
-    mirror:'M 278 217 Q 275 189 298 185 Q 329 183 330 206 Q 331 219 318 221 Z'
+  "sedan": {
+    "body": "M 5.29 361.76 Q -3.53 355.29 2.35 345.29 L 6.47 327.06 L 0 321.18 L -0.59 292.35 Q -0.59 278.24 10.59 268.82 L 22.94 240 Q 80 184.71 221.18 174.71 L 394.71 77.65 Q 449.41 47.65 571.76 53.53 Q 689.41 50.59 744.12 78.82 L 870.59 153.53 L 952.94 165.29 Q 980.59 168.24 984.12 198.24 L 984.71 245.29 Q 983.53 263.53 990.59 278.24 L 996.47 292.94 L 995.29 365.29 Q 989.41 377.65 960 381.76 L 890.59 383.53 L 890.59 354.12 C 890.59 234.71 710.59 234.71 710.59 354.12 L 709.41 383.53 L 279.41 383.53 L 278.82 354.12 C 278.82 234.71 100 234.71 100 354.12 L 100 383.53 Q 22.94 382.94 5.29 361.76 Z",
+    "glass": "M 270.59 197.65 L 397.65 97.06 Q 447.06 72.35 525.29 69.41 Q 664.71 66.47 718.82 95.88 Q 771.18 125.88 782.94 158.24 Q 787.65 168.82 785.88 181.76 Z",
+    "frontDoor": "M 290 197.06 Q 279.41 252.94 288.82 321.18 L 292.35 346.47 Q 294.12 359.41 310.59 360 L 552.35 360 L 558.82 191.18",
+    "rearDoor": "M 558.82 191.18 L 552.94 360 L 661.76 360 Q 679.41 360 689.41 342.94 L 706.47 320 Q 724.12 260.59 750 237.65 Q 787.65 212.35 786.47 186.47",
+    "hood": "M 25.29 239.41 Q 80 208.24 206.47 197.65 Q 224.12 192.94 237.65 177.65",
+    "headlight": "M 17.06 270 L 28.24 241.76 Q 54.12 229.41 87.06 227.06 L 124.12 222.94 Q 134.12 222.94 126.47 232.94 L 105.88 260 Q 98.24 267.65 70 269.41 Z",
+    "taillight": "M 914.71 202.35 Q 927.06 192.94 972.35 193.53 L 981.18 200.59 L 983.53 245.88 L 961.18 245.88 Q 941.18 244.71 930.59 231.76 Z",
+    "mirror": "M 298.82 182.94 Q 292.94 164.71 304.71 156.47 Q 321.18 151.18 337.65 158.82 Q 350.59 166.47 347.65 190 Q 344.12 197.06 326.47 197.06 L 306.47 195.88 Z",
+    "belt": 191.76,
+    "handles": [
+      {
+        "x": 510.59,
+        "y": 224.12,
+        "w": 56.47
+      },
+      {
+        "x": 735.29,
+        "y": 215.88,
+        "w": 56.47
+      }
+    ],
+    "pillars": [
+      "M 559.41 69.41 L 587.06 70.59 L 580 186.47 L 552.94 188.24 Z",
+      "M 712.35 94.71 L 720 98.82 L 717.06 183.53 L 709.41 184.12 Z"
+    ],
+    "seats": [
+      "M 522.35 187.65 L 525.29 130.59 Q 525.29 107.06 538.82 106.47 Q 553.53 106.47 552.35 125.29 L 549.41 186.47 Z",
+      "M 732.35 182.94 Q 730.59 140.59 749.41 135.88 Q 764.12 134.71 774.71 150 L 784.71 179.41 Z"
+    ],
+    "layers": [
+      {
+        "path": "M 23.53 239.41 Q 105.29 185.88 222.35 181.18 L 258.24 180.59 Q 238.24 197.06 207.65 202.94 L 47.65 230 Z",
+        "fill": "light",
+        "width": 0.59
+      },
+      {
+        "path": "M 283.53 208.24 Q 626.47 185.88 981.76 179.41 L 982.94 200.59 Q 627.65 205.88 285.88 231.76 Z",
+        "fill": "rgba(215,239,255,.24)",
+        "width": 0.59
+      },
+      {
+        "path": "M 291.18 340.59 Q 298.24 320.59 347.06 318.82 L 704.12 288.82 L 744.12 320.59 L 692.35 352.94 L 308.24 355.88 Z",
+        "fill": "shade",
+        "width": 0.59
+      },
+      {
+        "path": "M 309.41 354.12 Q 478.82 333.53 692.35 337.06 L 678.24 352.94 L 315.88 358.24 Z",
+        "fill": "rgba(173,217,255,.38)",
+        "width": 0.59
+      },
+      {
+        "path": "M 898.82 334.12 L 967.65 327.06 Q 984.71 327.06 971.18 337.65 L 900.59 349.41 Z",
+        "fill": "rgba(180,222,255,.35)",
+        "width": 0.59
+      },
+      {
+        "path": "M 11.18 354.12 L 55.88 354.71 Q 80 354.12 87.06 336.47 L 92.94 327.06 Q 98.82 352.35 98.24 376.47 Q 24.71 376.47 11.18 365.29 Z",
+        "fill": "rgba(177,217,250,.32)",
+        "width": 0.59
+      },
+      {
+        "path": "M 17.06 322.35 L 44.12 321.18 Q 50.59 322.35 54.12 333.53 L 59.41 344.12 Q 58.82 349.41 49.41 350 L 17.65 348.24 Z",
+        "fill": "#263d50",
+        "stroke": "#102c46",
+        "width": 1.76
+      },
+      {
+        "path": "M 18.82 327.65 L 49.41 327.65 M 19.41 334.71 L 53.53 334.71 M 20 342.35 L 56.47 342.35",
+        "stroke": "#5c6e7c",
+        "width": 1.76
+      },
+      {
+        "path": "M 281.76 378.82 L 709.41 378.82 M 892.35 378.24 L 983.53 363.53",
+        "stroke": "#234f7d",
+        "width": 2.94
+      },
+      {
+        "path": "M 224.71 174.71 Q 235.29 169.41 246.47 172.94 L 238.82 178.82 Z",
+        "fill": "#182e42",
+        "stroke": "#102c45",
+        "width": 1.76
+      }
+    ],
+    "details": [
+      {
+        "path": "M 37.06 262.94 Q 44.12 242.94 67.06 235.88 Q 87.65 232.94 75.88 247.65 Q 68.24 258.24 53.53 265.29 Z",
+        "fill": "#fff",
+        "stroke": "#c6cfd5",
+        "width": 1.76
+      },
+      {
+        "path": "M 91.76 230 L 126.47 226.47 L 116.47 241.76 L 85.29 245.29 Z",
+        "fill": "#ffc46b",
+        "width": 0.59
+      }
+    ],
+    "roofRails": [],
+    "fuel": {
+      "x": 857.65,
+      "y": 219.41,
+      "r": 24.12
+    }
   },
-  suv: {
-    body:'M 8 377 Q 0 366 5 337 L 8 247 Q 8 222 31 216 L 243 202 L 348 96 Q 360 71 389 70 L 887 70 Q 914 73 920 95 L 969 206 Q 995 223 995 255 L 998 363 Q 997 382 976 385 L 901 385 L 901 353 C 901 247 745 247 745 353 L 744 385 L 263 385 L 262 353 C 262 247 104 247 104 353 L 103 385 Z',
-    glass:'M 282 213 L 374 108 Q 382 97 396 97 L 867 97 Q 884 96 888 114 L 927 198 Q 932 213 918 216 Z',
-    frontDoor:'M 285 222 L 297 365 Q 299 376 315 376 L 567 376 L 567 221',
-    rearDoor:'M 567 221 L 567 376 L 699 376 Q 715 373 721 352 L 757 286 L 759 221',
-    pillar:567, rearPillar:760, roof:98, belt:220, handles:[528,716],
-    headlight:'M 15 235 L 91 231 Q 100 232 100 245 L 100 278 L 13 278 Z',
-    taillight:'M 969 223 L 993 231 L 996 300 L 972 300 Z',
-    hood:'M 24 220 L 243 215 L 280 220',
-    mirror:'M 287 219 L 285 182 Q 289 170 308 174 L 329 178 Q 338 185 336 216 Q 332 229 315 227 Z'
+  "suv": {
+    "body": "M 0 331.01 L 0 290.61 Q 0 281.52 14.14 275.45 L 12.12 249.19 Q 14.14 234.04 30.3 226.97 Q 83.84 187.58 255.56 175.45 L 407.07 77.47 Q 442.42 60.3 481.82 59.29 L 887.88 64.34 Q 918.18 64.34 930.3 69.39 Q 938.38 73.43 921.21 81.52 L 911.11 84.55 L 966.67 164.34 Q 980.81 177.47 980.81 204.75 L 980.81 261.31 L 994.95 275.45 L 997.98 293.64 L 998.99 326.97 Q 993.94 357.27 976.77 362.32 L 886.87 375.45 L 886.87 350.2 C 886.87 221.92 708.08 221.92 708.08 350.2 L 708.08 374.44 L 283.84 374.44 L 282.83 350.2 C 282.83 220.91 91.92 220.91 91.92 350.2 L 91.92 375.45 L 48.48 372.42 Q 11.11 368.38 0 331.01 Z",
+    "glass": "M 303.03 184.55 L 414.14 89.6 Q 429.29 77.47 448.48 76.46 L 715.15 76.46 Q 727.27 77.47 734.34 92.63 L 762.63 172.42 Z M 780.81 84.55 L 858.59 88.59 Q 871.72 89.6 878.79 101.72 L 904.04 150.2 Q 912.12 162.32 896.97 164.34 L 823.23 166.36 Q 813.13 166.36 809.09 155.25 Z",
+    "frontDoor": "M 296.97 190.61 Q 288.89 248.18 302.02 332.02 Q 303.03 355.25 322.22 356.26 L 547.47 356.26 L 555.56 182.53",
+    "rearDoor": "M 555.56 182.53 L 547.47 356.26 L 667.68 356.26 Q 689.9 355.25 701.01 332.02 L 720.2 278.48 Q 774.75 228.99 767.68 175.45",
+    "hood": "M 30.3 225.96 Q 116.16 202.73 229.29 194.65 Q 245.45 191.62 256.57 177.47",
+    "headlight": "M 26.26 263.33 L 33.33 237.07 L 93.94 223.94 Q 108.08 222.93 102.02 235.05 L 86.87 257.27 Q 76.77 266.36 56.57 266.36 Z",
+    "taillight": "M 925.25 184.55 L 973.74 183.54 Q 980.81 185.56 980.81 201.72 L 980.81 238.08 L 962.63 238.08 Q 944.44 235.05 935.35 217.88 L 923.23 194.65 Q 920.2 186.57 925.25 184.55 Z",
+    "mirror": "M 325.25 178.48 Q 324.24 163.33 337.37 157.27 Q 352.53 151.21 362.63 158.28 L 365.66 180.51 L 331.31 184.55 Z",
+    "belt": 183.54,
+    "handles": [
+      {
+        "x": 513.13,
+        "y": 212.83,
+        "w": 54.55
+      },
+      {
+        "x": 726.26,
+        "y": 206.77,
+        "w": 54.55
+      }
+    ],
+    "pillars": [
+      "M 551.52 76.46 L 579.8 76.46 L 572.73 178.48 L 547.47 180.51 Z",
+      "M 701.01 77.47 L 724.24 78.48 L 762.63 172.42 L 735.35 172.42 L 714.14 100.71 L 701.01 83.54 Z"
+    ],
+    "seats": [
+      "M 525.25 177.47 L 526.26 127.98 Q 525.25 109.8 539.39 108.79 L 550.51 109.8 L 547.47 177.47 Z",
+      "M 709.09 173.43 Q 711.11 135.05 728.28 130 Q 745.45 130 758.59 152.22 L 762.63 171.41 Z"
+    ],
+    "layers": [
+      {
+        "path": "M 30.3 225.96 Q 121.21 186.57 258.59 181.52 L 295.96 195.66 Q 143.43 199.7 47.47 238.08 Z",
+        "fill": "light",
+        "width": 1.01
+      },
+      {
+        "path": "M 295.96 203.74 L 973.74 175.45 L 978.79 189.6 L 294.95 220.91 Z",
+        "fill": "rgba(214,247,235,.26)",
+        "width": 1.01
+      },
+      {
+        "path": "M 297.98 267.37 Q 484.85 250.2 690.91 247.17 Q 717.17 247.17 710.1 270.4 L 694.95 326.97 L 310.1 340.1 Z",
+        "fill": "shade",
+        "width": 1.01
+      },
+      {
+        "path": "M 312.12 328.99 Q 480.81 310.81 668.69 312.83 L 681.82 323.94 L 312.12 339.09 Z",
+        "fill": "rgba(194,239,224,.38)",
+        "width": 1.01
+      },
+      {
+        "path": "M 761.62 75.45 L 887.88 77.47 L 967.68 166.36 L 814.14 173.43 Q 802.02 173.43 793.94 158.28 Z",
+        "fill": "#354b5c",
+        "width": 1.01
+      },
+      {
+        "path": "M 897.98 79.49 L 915.15 84.55 L 967.68 165.35 L 945.45 165.35 Z",
+        "fill": "#283f51",
+        "width": 1.01
+      },
+      {
+        "path": "M 282.83 334.04 L 707.07 334.04 L 708.08 373.43 L 285.86 373.43 Z",
+        "fill": "#35434f",
+        "stroke": "#1a2b3c",
+        "width": 2.02
+      },
+      {
+        "path": "M 1.01 309.8 L 22.22 326.97 Q 28.28 340.1 42.42 342.12 L 90.91 341.11 L 91.92 375.45 L 47.47 371.41 Q 10.1 366.36 1.01 338.08 Z",
+        "fill": "#35434f",
+        "stroke": "#1a2b3c",
+        "width": 2.02
+      },
+      {
+        "path": "M 888.89 304.75 L 997.98 296.67 L 998.99 327.98 Q 992.93 350.2 975.76 358.28 L 888.89 374.44 Z",
+        "fill": "#35434f",
+        "stroke": "#1a2b3c",
+        "width": 2.02
+      },
+      {
+        "path": "M 305.05 338.08 L 691.92 338.08 M 893.94 311.82 L 992.93 303.74",
+        "stroke": "#71818b",
+        "width": 3.03
+      },
+      {
+        "path": "M 303.03 369.39 L 328.28 363.33 L 646.46 363.33 Q 661.62 364.34 669.7 371.41 Z",
+        "fill": "#667a89",
+        "stroke": "#1b2e40",
+        "width": 2.02
+      },
+      {
+        "path": "M 88.89 338.08 L 95.96 292.63 Q 102.02 263.33 124.24 252.22 Q 138.38 245.15 161.62 245.15 L 221.21 245.15 Q 252.53 246.16 267.68 272.42 L 283.84 338.08",
+        "stroke": "#293d4e",
+        "width": 14.14
+      },
+      {
+        "path": "M 710.1 338.08 L 717.17 289.6 Q 724.24 259.29 746.46 250.2 Q 761.62 245.15 782.83 245.15 L 826.26 245.15 Q 859.6 248.18 872.73 278.48 L 884.85 338.08",
+        "stroke": "#293d4e",
+        "width": 14.14
+      },
+      {
+        "path": "M 87.88 273.43 Q 106.06 225.96 149.49 224.95 L 224.24 225.96 Q 259.6 226.97 278.79 259.29",
+        "stroke": "rgba(187,237,219,.38)",
+        "width": 7.07
+      },
+      {
+        "path": "M 715.15 271.41 Q 729.29 225.96 771.72 224.95 L 832.32 226.97 Q 863.64 228.99 877.78 260.3",
+        "stroke": "rgba(187,237,219,.38)",
+        "width": 7.07
+      },
+      {
+        "path": "M 21.21 301.72 L 55.56 298.69 Q 63.64 298.69 60.61 310.81 L 55.56 330 L 35.35 331.01 Q 26.26 326.97 21.21 301.72 Z",
+        "fill": "#293c4b",
+        "stroke": "#172e43",
+        "width": 2.02
+      },
+      {
+        "path": "M 41.41 305.76 L 49.49 305.76 L 48.48 324.95 L 41.41 325.96 Z",
+        "fill": "#8a9ca4",
+        "width": 1.01
+      },
+      {
+        "path": "M 966.67 304.75 L 993.94 302.73 L 992.93 310.81 L 967.68 312.83 Z",
+        "fill": "#e14a43",
+        "stroke": "#1b3045",
+        "width": 2.02
+      },
+      {
+        "path": "M 888.89 65.35 L 930.3 69.39 Q 940.4 74.44 921.21 80.51 L 896.97 82.53 Z",
+        "fill": "light",
+        "stroke": "#172e43",
+        "width": 2.02
+      }
+    ],
+    "details": [
+      {
+        "path": "M 45.45 239.09 L 64.65 235.05 Q 80.81 233.03 72.73 251.21 Q 65.66 260.3 49.49 258.28 Z",
+        "fill": "#fff",
+        "stroke": "#c0cdd2",
+        "width": 2.02
+      },
+      {
+        "path": "M 83.84 226.97 L 101.01 224.95 L 90.91 241.11 L 78.79 244.14 Z",
+        "fill": "#ffc471",
+        "width": 1.01
+      }
+    ],
+    "roofRails": [
+      {
+        "path": "M 461.62 62.32 Q 484.85 45.15 513.13 45.15 Q 692.93 37.07 815.15 45.15 Q 846.46 47.17 871.72 63.33 L 851.52 62.32 Q 836.36 54.24 812.12 53.23 L 517.17 53.23 Q 496.97 54.24 485.86 63.33 Z",
+        "fill": "#3b4d5c",
+        "stroke": "#142c41",
+        "width": 2.02
+      },
+      {
+        "path": "M 513.13 46.16 Q 669.7 41.11 815.15 47.17",
+        "stroke": "#91a6b2",
+        "width": 3.03
+      },
+      {
+        "path": "M 516.16 52.22 L 515.15 60.3 M 711.11 50.2 L 713.13 60.3 M 812.12 53.23 L 815.15 62.32",
+        "stroke": "#263e50",
+        "width": 5.05
+      }
+    ],
+    "fuel": {
+      "x": 867.68,
+      "y": 212.83,
+      "r": 19.19
+    }
   }
 };
 const illustrationPaths = new Map();
@@ -664,122 +1017,100 @@ function illustrationPoints(data){
 function drawCar(ctx,o){
   const {st,Lz,crush,ref,dir,X,Y,ppm}=o;
   const kind=st===STYLES.suv?'suv':st===STYLES.subcompact?'subcompact':'sedan';
-  const art=CAR_ART[kind], scale=st.L/1000, outline='#112d49',paint=o.paint||st.paint;
-  const def=makeDeform(Lz,crush), wx=x=>ref+dir*def(x);
+  const art=CAR_ART[kind],scale=st.L/1000,outline='#172f47',paint=o.paint||st.paint;
+  const def=makeDeform(Lz,crush),wx=x=>ref+dir*def(x);
   const fold=Math.min(1,crush/Math.max(.18,Lz)),damageSpan=Math.max(Lz,st.fw*1.65);
   const motion=o.motion||{pitch:0,heave:0};
   const height=(x,y)=>{
     const u=Math.min(1,Math.max(0,x/damageSpan));
-    // Hood folds upward; low rocker panels retain a much smaller ripple.
     const buckle=crush>0&&x<damageSpan?fold*(.19*Math.sin(u*Math.PI)+.045*Math.sin(u*Math.PI*5))*Math.max(.12,(380-y)/180):0;
     return (430-y)*scale+buckle+motion.heave+(def(x)-st.L*.55)*motion.pitch;
   };
   const P=(x,y)=>[X(wx(x*scale)),Y(height(x*scale,y))];
   o.bodyHeight=(x,y)=>height(x,430-y/scale);
   const trace=data=>{
-    ctx.beginPath();let penDown=false;
+    ctx.beginPath();let pen=false;
     for(const point of illustrationPoints(data)){
-      if(!point){penDown=false;continue;}
-      if(penDown)ctx.lineTo(...P(...point));else ctx.moveTo(...P(...point));
-      penDown=true;
+      if(!point){pen=false;continue;}
+      if(pen)ctx.lineTo(...P(...point));else ctx.moveTo(...P(...point));pen=true;
     }
     if(data.trim().endsWith('Z'))ctx.closePath();
   };
   const path=(data,fill,stroke=outline,width=2)=>{
     trace(data);if(fill){ctx.fillStyle=fill;ctx.fill();}
-    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.65,width*scale*ppm);ctx.stroke();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.55,width*scale*ppm);ctx.stroke();}
   };
-  const gradient=(top,bottom,y0=80,y1=390)=>{
+  const gradient=(top,bottom,y0=55,y1=385)=>{
     const g=ctx.createLinearGradient(0,P(0,y0)[1],0,P(0,y1)[1]);g.addColorStop(0,top);g.addColorStop(1,bottom);return g;
   };
+  const color=value=>paint[value]||value;
+  const layers=list=>{for(const layer of list)path(layer.path,layer.fill?color(layer.fill):null,layer.stroke?color(layer.stroke):null,layer.width);};
+  const bounds=data=>{
+    const points=illustrationPoints(data).filter(Boolean);
+    return {left:Math.min(...points.map(p=>p[0])),right:Math.max(...points.map(p=>p[0])),top:Math.min(...points.map(p=>p[1])),bottom:Math.max(...points.map(p=>p[1]))};
+  };
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
-  ctx.save();ctx.globalAlpha=.2;ctx.fillStyle='#132c43';ctx.beginPath();
-  ctx.ellipse(X(ref+dir*(st.L+crush)/2),Y(.015),(st.L-crush)*ppm*.49,ppm*.045,0,0,Math.PI*2);ctx.fill();ctx.restore();
-  // Tires sit behind the actual cut-out wheel arches, not on top of a solid slab.
+  ctx.save();ctx.globalAlpha=.21;ctx.fillStyle='#243246';ctx.beginPath();
+  ctx.ellipse(X(ref+dir*(st.L+crush)/2),Y(.012),(st.L-crush)*ppm*.52,ppm*.045,0,0,Math.PI*2);ctx.fill();ctx.restore();
   drawCarWheels(ctx,o,wx);
-  path(art.body,gradient(paint.light,paint.base,75,370),outline,3.2);
+  layers(art.roofRails);
+  path(art.body,gradient(paint.light,paint.base),outline,3.2);
   ctx.save();trace(art.body);ctx.clip();
-  path(art.body,gradient('rgba(224,244,255,.13)','rgba(16,58,105,.10)'),null);
-  path('M 0 190 Q 490 225 1000 196 L 1000 253 Q 550 280 0 290 Z',gradient('rgba(255,255,255,.26)','rgba(255,255,255,0)'),null);
-  path('M 0 350 Q 240 359 318 340 L 1000 312 L 1000 398 L 0 398 Z',paint.shade,null);
-  path('M 306 365 Q 499 339 710 352 L 684 374 L 315 376 Z',paint.base,null);
-  path('M 304 366 Q 485 354 695 354 L 678 364 L 311 372 Z','rgba(255,255,255,.16)',null);
-  path('M 0 298 Q 60 290 122 285 L 211 202 L 0 275 Z','rgba(225,244,255,.22)',null);
-  path('M 12 374 L 115 374 M 264 381 L 742 381 M 902 377 L 993 366',null,'rgba(21,55,94,.8)',5);
-  // Sculpted wheel-arch highlights follow each vehicle's original axle positions.
-  for(const ax of [st.fw,st.rw]){
-    const x=ax/scale,r=st.wr/scale+11,y=430-st.wr/scale;
-    path(`M ${x-r} ${y+8} C ${x-r-4} ${y-r*1.35} ${x+r+4} ${y-r*1.35} ${x+r} ${y+8}`,null,kind==='suv'?'#344555':paint.shade,kind==='suv'?17:8);
-    path(`M ${x-r-6} ${y-15} C ${x-r} ${y-r*1.42} ${x+r} ${y-r*1.42} ${x+r+6} ${y-15}`,null,'rgba(190,224,255,.32)',3);
+  layers(art.layers);
+  if(kind!=='suv')for(const axle of [st.fw,st.rw]){
+    const x=axle/scale,r=st.wr/scale+9,y=430-st.wr/scale;
+    path(`M ${x-r} ${y+4} C ${x-r-3} ${y-r*1.36} ${x+r+3} ${y-r*1.36} ${x+r} ${y+4}`,null,paint.shade,11);
+    path(`M ${x-r-7} ${y-12} C ${x-r-3} ${y-r*1.46} ${x+r+3} ${y-r*1.46} ${x+r+7} ${y-12}`,null,'rgba(235,249,255,.2)',3);
   }
   ctx.restore();
-  // Window opening and its black rubber surround.
-  path(art.glass,gradient('#add7ed','#d6eff7',70,225),outline,7);
-  path(art.glass,null,'#5b758d',2);
+  // Each opening follows the reference, including the SUV's separate cargo glazing.
+  path(art.glass,gradient('#b2d9ec','#d8eff6',55,210),outline,6.5);
+  path(art.glass,null,'#5e7484',1.8);
   ctx.save();trace(art.glass);ctx.clip();
-  path('M 700 224 Q 698 173 722 172 Q 742 172 742 223 Z','#526b80',null);
-  path('M 730 225 Q 735 184 751 185 Q 772 185 780 225 Z','#708b9e',null);
-  // Reflections are behind the driver, keeping its face and joints legible.
-  path('M 411 75 L 440 75 L 306 225 L 280 225 Z','rgba(255,255,255,.24)',null);
-  path('M 648 83 L 676 86 L 560 225 L 528 225 Z','rgba(255,255,255,.28)',null);
-  path('M 717 100 L 738 112 L 637 222 L 613 222 Z','rgba(255,255,255,.15)',null);
+  art.seats.forEach((seat,i)=>path(seat,i?'#728a9b':'#526675','#394e60',1.4));
+  path('M 424 35 L 452 35 L 319 218 L 284 218 Z','rgba(255,255,255,.32)',null);
+  path('M 642 37 L 680 43 L 558 210 L 520 211 Z','rgba(255,255,255,.34)',null);
+  path('M 704 51 L 729 60 L 619 207 L 594 210 Z','rgba(255,255,255,.19)',null);
+  path('M 831 51 L 856 61 L 760 204 L 738 206 Z','rgba(255,255,255,.15)',null);
   if(o.dummy)drawDummy(ctx,o,wx);
+  for(const pillar of art.pillars){path(pillar,gradient('#405768','#2d4354',50,205),'#213649',1.5);}
   ctx.restore();
-  path(art.glass,null,outline,3);
-  // B/C pillars are clipped to the curved glazing to avoid protruding into the roof.
-  ctx.save();trace(art.glass);ctx.clip();
-  path(`M ${art.pillar-7} 60 L ${art.pillar+10} 60 L ${art.pillar+3} 225 L ${art.pillar-14} 225 Z`,'#29445d',null);
-  path(`M ${art.pillar-5} 70 L ${art.pillar-3} 222`,null,'#5b7d99',3);
-  if(art.rearPillar)path(`M ${art.rearPillar-4} 75 L ${art.rearPillar+3} 75 L ${art.rearPillar+4} 225 L ${art.rearPillar-3} 225 Z`,'#29445d',null);
-  ctx.restore();
-  path(art.frontDoor,null,outline,1.7);
-  if(art.rearDoor)path(art.rearDoor,null,outline,1.7);
-  path(art.hood,null,paint.edge,2);
-  path(`M 277 ${art.belt+5} Q 520 ${art.belt+9} 918 ${art.belt-1}`,null,'rgba(214,239,255,.55)',3);
-  // Each handle is placed inside its door, independently of the window pillar.
-  for(const d of art.handles){
-    path(`M ${d-19} 249 Q ${d} 236 ${d+15} 248`,paint.shade,null);
-    path(`M ${d-24} 249 L ${d+21} 247 Q ${d+28} 248 ${d+26} 255 Q ${d+25} 259 ${d+20} 259 L ${d-24} 262 Q ${d-31} 259 ${d-28} 253 Z`,gradient(paint.light,paint.base,248,262),outline,1.8);
+  path(art.glass,null,outline,2.1);
+  path(art.frontDoor,null,'#283d4e',1.5);path(art.rearDoor,null,'#283d4e',1.5);
+  path(art.hood,null,paint.edge,1.7);
+  for(const handle of art.handles){
+    const {x,y,w}=handle,h=w*.16;
+    path(`M ${x-w*.32} ${y-h*.4} Q ${x} ${y-h*1.7} ${x+w*.3} ${y-h*.6}`,paint.shade,null);
+    path(`M ${x-w*.45} ${y-h*.15} L ${x+w*.43} ${y-h*.5} Q ${x+w*.56} ${y-h*.1} ${x+w*.43} ${y+h*.45} L ${x-w*.44} ${y+h*.65} Q ${x-w*.57} ${y+h*.4} ${x-w*.45} ${y-h*.15} Z`,gradient(paint.light,paint.base,y-h,y+h),outline,1.6);
+    path(`M ${x-w*.35} ${y} L ${x+w*.35} ${y-h*.2}`,null,'rgba(250,255,255,.28)',1.2);
   }
-  const fx=kind==='subcompact'?906:868;
-  path(`M ${fx-15} 230 C ${fx-39} 230 ${fx-39} 273 ${fx-15} 273 C ${fx+13} 273 ${fx+13} 230 ${fx-15} 230 Z`,null,paint.edge,1.8);
-  path(art.headlight,'#eef5f5',outline,2.3);
-  ctx.save();trace(art.headlight);ctx.clip();
-  path('M 93 225 L 137 231 L 134 292 L 73 292 Z','#ffbb55',null);
-  path('M 16 256 Q 55 241 82 250 Q 95 264 55 282 L 32 280 Z','#fff', '#c2cdd6',2);
-  path('M 10 246 L 137 237',null,'#ffe7b1',5);ctx.restore();
-  path(art.taillight,'#df4947',outline,2.2);
+  if(art.fuel){const {x,y,r}=art.fuel;path(`M ${x-r} ${y} C ${x-r} ${y-r*1.33} ${x+r} ${y-r*1.33} ${x+r} ${y} C ${x+r} ${y+r*1.33} ${x-r} ${y+r*1.33} ${x-r} ${y} Z`,null,paint.edge,1.5);}
+  path(art.headlight,kind==='subcompact'?'#95a7b2':'#eef3f2',outline,2.2);
+  ctx.save();trace(art.headlight);ctx.clip();layers(art.details);ctx.restore();
+  path(art.taillight,gradient('#ff5b50','#cc3435',175,285),outline,2.2);
+  const tail=bounds(art.taillight);
   ctx.save();trace(art.taillight);ctx.clip();
-  path('M 915 237 L 1000 234 L 1000 247 L 920 249 Z','#ff7164',null);
-  path('M 927 272 L 1000 272 L 1000 287 L 936 287 Z','#edf4f5',null);ctx.restore();
-  path('M 15 329 L 57 329 Q 66 329 69 340 L 73 355 Q 73 362 65 362 L 14 362 Z','#263e52',outline,1.5);
-  path('M 20 338 L 64 338 M 21 347 L 68 347',null,'#627789',2);
-  path('M 16 317 L 45 316',null,'rgba(217,240,255,.65)',3);
-  path(art.mirror,gradient(paint.light,paint.base,178,224),outline,2.5);
-  ctx.save();trace(art.mirror);ctx.clip();path('M 270 207 L 343 207 L 343 223 L 270 223 Z',paint.shade,null);ctx.restore();
+  const lensTop=tail.top+(tail.bottom-tail.top)*.72;
+  path(`M ${tail.left-5} ${tail.top+3} L ${tail.right+5} ${tail.top+3} L ${tail.right+5} ${tail.top+11} L ${tail.left-5} ${tail.top+11} Z`,'rgba(255,152,126,.35)',null);
+  if(kind!=='subcompact')path(`M ${tail.left-5} ${lensTop} L ${tail.right+5} ${lensTop} L ${tail.right+5} ${tail.bottom+5} L ${tail.left-5} ${tail.bottom+5} Z`,'#ebeeec','#87939b',1.2);
+  ctx.restore();
+  path(art.mirror,gradient(paint.light,paint.base,150,210),outline,2.3);
+  const mirror=bounds(art.mirror),split=mirror.top+(mirror.bottom-mirror.top)*.68;
+  ctx.save();trace(art.mirror);ctx.clip();
+  path(`M ${mirror.left-2} ${split} L ${mirror.right+2} ${split-2} L ${mirror.right+2} ${mirror.bottom+3} L ${mirror.left-2} ${mirror.bottom+3} Z`,'#344c5d',null);ctx.restore();
   if(crush>.035){
-    ctx.save();trace(art.body);ctx.clip();
-    const end=damageSpan/scale;
+    ctx.save();trace(art.body);ctx.clip();const end=damageSpan/scale;
     for(let k=0;k<3;k++){
       const x=end*(.25+k*.22),depth=fold*(14+k*4);
       path(`M ${x-22} 273 L ${x+depth} 296 L ${x-depth*.4} 323 L ${x+8} 347`,null,paint.edge,1.3+fold);
       path(`M ${x-18} 271 L ${x+depth+4} 295 L ${x-depth*.4+4} 322`,null,'rgba(255,255,255,.48)',1.3);
     }
-    path(`M 15 315 L ${end*.28} 322 L ${end*.46} 311 L ${end*.66} 329`,null,'#24323c',2.5*fold);
     ctx.restore();
-    // Laminated glazing cracks only once intrusion reaches the passenger cell.
-    if(crush>Lz+.08){
-      ctx.save();trace(art.glass);ctx.clip();
-      path('M 321 183 L 354 162 L 377 174 M 354 162 L 349 132 M 354 162 L 380 143 L 395 139 M 354 162 L 338 197 L 347 211',null,'rgba(247,253,255,.9)',1.3);ctx.restore();
-    }
-  }
-  if(kind==='suv'){
-    path('M 400 70 L 400 55 L 851 55 L 860 70',null,'#263a4c',9);
-    path('M 416 54 L 837 54',null,'#728b9d',2);
-    path('M 330 392 L 699 392',null,'#334b60',9);
+    if(crush>Lz+.08){ctx.save();trace(art.glass);ctx.clip();path('M 321 183 L 354 162 L 377 174 M 354 162 L 349 132 M 354 162 L 380 143 M 354 162 L 338 197',null,'rgba(247,253,255,.9)',1.3);ctx.restore();}
   }
   ctx.restore();
 }
+
 
 function drawCarWheels(ctx,o,wx){
   const {st,X,Y,ppm}=o;
@@ -787,19 +1118,29 @@ function drawCarWheels(ctx,o,wx){
     const radius=st.wr*ppm;
     const front=x===st.fw,shift=front?Math.max(0,o.crush+st.wr*.9-makeDeform(o.Lz,o.crush)(x)):0;
     ctx.save();ctx.translate(X(wx(x)+o.dir*shift),Y(st.wr));
+    // A recessed wheel well keeps the background from showing around the tire.
+    ctx.save();ctx.beginPath();ctx.rect(-radius*1.3,-radius*1.3,radius*2.6,radius*(st===STYLES.sedan?1.70:1.59));ctx.clip();
+    ctx.beginPath();ctx.arc(0,0,radius*1.25,0,Math.PI*2);ctx.fillStyle='#172b3d';ctx.fill();ctx.restore();
     if(front&&o.crush>.4){ctx.rotate(o.dir*Math.min(.16,(o.crush-.4)*.15));ctx.scale(1,1-Math.min(.09,o.crush*.045));}
     const circle=(r,fill,stroke,width=1)=>{ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}};
     const tire=ctx.createRadialGradient(-radius*.2,-radius*.3,radius*.5,0,0,radius);
     tire.addColorStop(0,'#50565e');tire.addColorStop(.72,'#363e49');tire.addColorStop(1,'#172532');
     circle(radius,tire,'#14283b',Math.max(1,ppm*.012));
+    if(st===STYLES.suv){
+      ctx.save();ctx.rotate(-o.dir*o.dist/st.wr);
+      for(let k=0;k<38;k++){ctx.save();ctx.rotate(k*Math.PI*2/38);ctx.fillStyle=k%2?'#263646':'#384653';ctx.fillRect(-radius*.035,-radius*1.015,radius*.07,radius*.055);ctx.restore();}
+      ctx.restore();
+    }
     circle(radius*.91,'#3e454f','#5b636e',radius*.027);
     circle(radius*.71,'#acb9c5','#172c40',radius*.055);
     circle(radius*.62,'#253b50','#dbe3e8',radius*.03);
     ctx.rotate(-o.dir*o.dist/st.wr);
-    for(let k=0;k<5;k++){
-      ctx.save();ctx.rotate(k*Math.PI*2/5);
-      ctx.beginPath();ctx.moveTo(-radius*.13,-radius*.08);ctx.lineTo(-radius*.16,-radius*.64);ctx.lineTo(radius*.14,-radius*.66);ctx.lineTo(radius*.07,-radius*.28);ctx.lineTo(radius*.22,-radius*.15);ctx.closePath();
-      ctx.fillStyle='#d3dbe0';ctx.fill();ctx.strokeStyle='#738390';ctx.lineWidth=radius*.022;ctx.stroke();
+    const spokes=st===STYLES.sedan?5:6;
+    for(let k=0;k<spokes;k++){
+      ctx.save();ctx.rotate(k*Math.PI*2/spokes);
+      ctx.beginPath();ctx.moveTo(-radius*.13,-radius*.08);ctx.lineTo(-radius*.16,-radius*.62);ctx.quadraticCurveTo(0,-radius*.69,radius*.15,-radius*.63);ctx.lineTo(radius*.09,-radius*.23);ctx.lineTo(radius*.21,-radius*.13);ctx.closePath();
+      const spoke=ctx.createLinearGradient(-radius*.15,0,radius*.16,0);spoke.addColorStop(0,'#e5e7e6');spoke.addColorStop(1,'#b7c0c7');
+      ctx.fillStyle=spoke;ctx.fill();ctx.strokeStyle='#738390';ctx.lineWidth=radius*.018;ctx.stroke();
       ctx.beginPath();ctx.moveTo(-radius*.13,-radius*.6);ctx.lineTo(-radius*.1,-radius*.17);ctx.strokeStyle='#f8faf9';ctx.lineWidth=radius*.027;ctx.stroke();
       ctx.beginPath();ctx.arc(0,-radius*.25,radius*.047,0,7);ctx.fillStyle='#364c60';ctx.fill();ctx.strokeStyle='#f3f5f6';ctx.lineWidth=radius*.025;ctx.stroke();
       ctx.restore();
@@ -812,8 +1153,8 @@ function drawCarWheels(ctx,o,wx){
 function drawDummy(ctx,o,wx){
   const {st,X,Y,ppm,fr,cfg}=o;
   const s=Math.max(-.05,fr.sd);
-  const hipX=st.hip-(st===STYLES.sedan?.13:0)-(cfg.belt?0:s*.48), hipY=st===STYLES.suv?.63:st===STYLES.subcompact?.38:.62;
-  const ang=-.19+Math.asin(Math.max(-.3,Math.min(.94,s*(cfg.belt?1:.6)/.48)));
+  const hipX=st.hip-(cfg.belt?0:s*.48), hipY=st===STYLES.suv?.80:st===STYLES.subcompact?.66:.79;
+  const ang=-.46+Math.asin(Math.max(-.3,Math.min(.94,s*(cfg.belt?1:.6)/.48)));
   const P=(x,y)=>[X(wx(x)),Y(o.bodyHeight?o.bodyHeight(x,y):y)];
   // Drawing coordinates are meters, facing left. Local transforms articulate the
   // mannequin; their points still pass through the existing safety-cell mapping.
@@ -834,42 +1175,47 @@ function drawDummy(ctx,o,wx){
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
   // Contoured upholstery and head restraint.
   poly([[hipX+.07,hipY-.12],[hipX+.24,hipY-.1],[hipX+.36,hipY+.52],[hipX+.33,hipY+.65],[hipX+.21,hipY+.65],[hipX+.14,hipY+.5]],'#4b5d6e','#1b3145');
-  poly([[hipX+.21,hipY+.48],[hipX+.23,hipY+.77],[hipX+.28,hipY+.82],[hipX+.36,hipY+.81],[hipX+.4,hipY+.75],[hipX+.38,hipY+.5]],'#566a7c','#1b3145');
-  line([[hipX+.26,hipY+.54],[hipX+.28,hipY+.76],[hipX+.32,hipY+.78]],'#8396a4',.01);
+  poly([[hipX+.21,hipY+.43],[hipX+.22,hipY+.64],[hipX+.24,hipY+.70],[hipX+.28,hipY+.72],[hipX+.34,hipY+.71],[hipX+.38,hipY+.67],[hipX+.38,hipY+.45]],'#566a7c','#1b3145');
+  line([[hipX+.25,hipY+.48],[hipX+.26,hipY+.65],[hipX+.29,hipY+.68]],'#8396a4',.008);
   // Molded torso, broad chest, narrower waist and a separate shaded flank.
   shape([[-.09,-.03],[-.15,.1],[-.17,.31],[-.13,.48],[-.07,.55],[.055,.56],[.13,.45],[.14,.24],[.1,.01]],'#e9af2f');
   shape([[.05,.54],[.13,.45],[.14,.24],[.1,.01],[.04,.01],[.055,.29]],'#c78a1e',null);
   shape([[-.13,.13],[-.15,.32],[-.11,.46],[-.065,.5],[-.08,.36],[-.085,.12]],'#ffda66',null);
   line([body(.015,.02),body(.045,.24),body(.025,.48)],'#9d6b1c',.005);
-  // Accordion neck: alternating metal rings, like the supplied mannequin.
+  const headAngle=ang+.46+Math.max(-.1,Math.min(.24,(fr.uD-fr.u)*.018)), neckBase=body(0,.62), base=[neckBase[0]-.11,neckBase[1]];
+  // The flexible neck stays connected between the shoulder and the upright head.
+  const neckBottom=[sh[0]-.045,sh[1]+.018],neckTop=[base[0]+.058,base[1]+.045];
   for(let k=0;k<6;k++){
-    const y=.55+k*.018;
-    shape([[-.055,y],[.055,y],[.055,y+.017],[-.055,y+.017]],k%2?'#a9afb0':'#30383c','#2a343b',.004);
-    line([body(-.035,y+.012),body(.035,y+.012)],'#dce0db',.004);
+    const a=k/6,b=(k+1)/6;
+    const x0=neckBottom[0]+(neckTop[0]-neckBottom[0])*a,y0=neckBottom[1]+(neckTop[1]-neckBottom[1])*a;
+    const x1=neckBottom[0]+(neckTop[0]-neckBottom[0])*b,y1=neckBottom[1]+(neckTop[1]-neckBottom[1])*b;
+    poly([[x0-.05,y0],[x0+.05,y0],[x1+.05,y1],[x1-.05,y1]],k%2?'#737d80':'#333e44','#27353e',.003);
+    line([[x1-.035,y1],[x1+.035,y1]],'#aab3b3',.003);
   }
   // Anatomical head profile, sampled from a curved path instead of a circle.
-  const headAngle=ang+Math.max(-.1,Math.min(.24,(fr.uD-fr.u)*.018)), base=body(0,.62);
   const head=(x,y)=>[base[0]+x*Math.cos(headAngle)-y*Math.sin(headAngle),base[1]+x*Math.sin(headAngle)+y*Math.cos(headAngle)];
-  const headPath=data=>illustrationPoints(data).map(([x,y])=>head((x-60)*.00265,(130-y)*.00265));
-  poly(headPath('M 56 8 C 19 7 14 25 15 43 L 13 57 L 2 74 Q 0 79 13 80 L 16 88 L 14 95 L 21 112 Q 26 122 38 116 L 61 104 L 65 88 L 93 86 Q 104 54 97 31 Q 89 9 56 8 Z'),'#eab334','#73531f',.007);
+  const headScale=st===STYLES.subcompact?.00208:.0023;
+  const H=(x,y)=>head((x-60)*headScale,(130-y)*headScale);
+  const headPath=data=>illustrationPoints(data).map(([x,y])=>H(x,y));
+  poly(headPath('M 62 8 C 34 5 17 20 18 46 L 16 60 L 6 77 Q 4 82 17 83 L 18 91 L 17 100 L 25 115 Q 30 122 44 117 L 58 106 L 67 105 L 84 104 Q 103 82 101 53 Q 104 17 78 10 Z'),'#eab334','#73531f',.007);
   poly(headPath('M 63 11 Q 93 14 97 34 L 94 81 L 65 85 L 64 60 Z'),'#ca8b20',null);
   poly(headPath('M 19 31 Q 30 8 59 12 Q 77 12 89 24 L 60 23 L 30 26 Z'),'#ffdc6b',null);
   poly(headPath('M 17 45 L 30 40 L 33 51 L 23 56 L 18 64 Z'),'#ce901f',null);
-  // Small molded facial details keep the mannequin's profile anatomical.
-  line([head(-.12,.218),head(-.102,.222),head(-.089,.211)],'#9c6b20',.006);
-  const eye=head(-.111,.204);disc(...eye,.006,'#3d3525','#3d3525');
-  line([head(-.128,.151),head(-.115,.148)],'#9c6b20',.004);
-  line([head(-.116,.105),head(-.099,.108),head(-.083,.103)],'#6e501f',.005);
-  line([head(-.101,.074),head(-.085,.063),head(-.057,.066)],'#c68a24',.004);
-  line([head(-.005,.28),head(.012,.2),head(.014,.1)],'#8e631f',.004);
-  const mark=head(.018,.213);target(...mark,.055);
+  // Molded face and the black/yellow quartered temple marker.
+  line([H(18,53),H(25,50),H(32,55)],'#9c6b20',.004);
+  const eye=H(23,61);disc(...eye,.0045,'#3d3525','#3d3525');
+  line([H(12,80),H(22,81)],'#9c6b20',.0035);
+  line([H(18,96),H(27,94),H(34,97)],'#6e501f',.004);
+  line([H(25,110),H(34,113),H(44,110)],'#c68a24',.003);
+  const mark=H(73,50);target(...mark,st===STYLES.subcompact?.047:.053);
   // Steering column and rim. Both hands wrap over it.
-  const wheel=[hipX-.62,hipY+.48];
+  const reach=st===STYLES.subcompact?.39:st===STYLES.suv?.42:.47;
+  const wheel=[hipX-reach,hipY+.42];
   line([[wheel[0]-.15,wheel[1]-.18],wheel],'#344451',.035);
-  const rim=[];for(let i=0;i<=48;i++){const a=i*Math.PI/24;rim.push([wheel[0]+Math.cos(a)*.04-Math.sin(a)*.06,wheel[1]+Math.sin(a)*.15]);}
-  line(rim,'#1e303f',.026);line([[wheel[0]-.035,wheel[1]+.1],[wheel[0]+.035,wheel[1]-.1]],'#778796',.007);
+  const rim=[];for(let i=0;i<=48;i++){const a=i*Math.PI/24;rim.push([wheel[0]+Math.cos(a)*.022-Math.sin(a)*.045,wheel[1]+Math.sin(a)*.10]);}
+  line(rim,'#1e303f',.023);line([[wheel[0]-.025,wheel[1]+.065],[wheel[0]+.025,wheel[1]-.065]],'#778796',.006);
   const hand=[Math.min(wheel[0]+.03,sh[0]-.17),wheel[1]+.035];
-  const elbow=[(sh[0]+hand[0])/2+.005,Math.min(sh[1],hand[1])-.1];
+  const elbow=[(sh[0]+hand[0])/2+.005,Math.min(sh[1],hand[1])-.055];
   const limb=(a,b,w0,w1)=>{
     const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy),nx=-dy/len,ny=dx/len;
     const at=(p,w)=>[p[0]+nx*w,p[1]+ny*w];
