@@ -110,13 +110,15 @@ body{margin:0;background:var(--bench)}
 .cvlab-eyebrow{display:block;font-family:var(--font-m);font-size:13px;letter-spacing:.18em;font-weight:700;
   text-transform:uppercase;color:var(--tape);margin-bottom:4px}
 .cvlab-head h1{font-size:clamp(24px,2.8vw,36px);text-transform:uppercase;letter-spacing:.04em;line-height:1.05}
-.cvlab-readouts{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
-.cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:5px;padding:6px 12px;min-width:120px}
-.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:12px;letter-spacing:.14em;font-weight:700;
-  text-transform:uppercase;color:var(--ro-k)}
-.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:clamp(22px,2.3vw,36px);font-weight:800;line-height:1.15;
+.cvlab-readouts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch;
+  flex:0 1 840px;width:100%;min-width:0;max-width:100%}
+.cvlab-ro{background:var(--ro-bg);border:1px solid var(--ro-line);border-radius:5px;padding:8px 10px;min-width:0}
+.cvlab-ro-k{display:block;font-family:var(--font-m);font-size:clamp(10px,.9vw,12px);letter-spacing:.08em;font-weight:700;
+  text-transform:uppercase;color:var(--ro-k);white-space:nowrap}
+.cvlab-ro-v{display:block;font-family:var(--font-m);font-size:clamp(20px,2.3vw,32px);font-weight:800;line-height:1.15;
   color:var(--ro-v);font-variant-numeric:tabular-nums;white-space:nowrap}
 .cvlab-ro-hi .cvlab-ro-v{color:var(--tape)}
+@media (max-width:600px){.cvlab-readouts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* ---------- bench: apparatus + height-time trace ---------------------- */
 .cvlab-bench{background:var(--paper);border:1px solid var(--rule);border-top:0;
