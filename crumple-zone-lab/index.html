@@ -223,6 +223,7 @@ details[open] summary .chev{transform:rotate(-135deg)}
           <input type="range" id="cellRig" min="500" max="5000" step="100" value="2000"><input class="num" id="cellRig_n" type="number" min="500" max="5000" step="100" value="2000"></div>
         <hr class="hr">
         <label class="check"><input type="checkbox" id="belt" checked> Seat belt present</label>
+        <p class="desc" style="font-size:12px;color:var(--muted)">Animation rule: an unbelted dummy can break through the windshield at an impact speed of 60 mph (26.8 m/s) or above.</p>
         <div class="row sub" id="beltRow"><label for="beltK">Seat belt stiffness <span class="unit">(kN/m)</span></label>
           <input type="range" id="beltK" min="5" max="200" step="5" value="80"><input class="num" id="beltK_n" type="number" min="5" max="200" step="5" value="80"></div>
         <label class="check"><input type="checkbox" id="bag" checked> Airbag present</label>
@@ -239,10 +240,11 @@ details[open] summary .chev{transform:rotate(-135deg)}
           <button id="modeTwo" aria-pressed="false">Two cars head-on</button>
         </div>
         <div class="row"><label for="v1">Car 1 speed <span class="unit">(m/s)</span></label>
-          <input type="range" id="v1" min="0" max="35" step="1" value="16"><input class="num" id="v1_n" type="number" min="0" max="35" step="1" value="16"></div>
+          <input type="range" id="v1" min="0" max="45" step="0.1" value="16"><input class="num" id="v1_n" type="number" min="0" max="45" step="0.1" value="16"></div>
+        <div class="tools" role="group" aria-label="Car 1 speed presets"><span class="unit">Speed presets</span><button type="button" class="btn" data-speed="13.4">30 mph</button><button type="button" class="btn" data-speed="26.8">60 mph</button><button type="button" class="btn" data-speed="40.2">90 mph</button></div>
         <div id="car2Rows" hidden style="display:grid;gap:10px">
           <div class="row"><label for="v2">Car 2 speed <span class="unit">(m/s)</span></label>
-            <input type="range" id="v2" min="0" max="35" step="1" value="16"><input class="num" id="v2_n" type="number" min="0" max="35" step="1" value="16"></div>
+            <input type="range" id="v2" min="0" max="45" step="0.1" value="16"><input class="num" id="v2_n" type="number" min="0" max="45" step="0.1" value="16"></div>
           <div class="row"><label for="m2">Car 2 mass <span class="unit">(kg)</span></label>
             <input type="range" id="m2" min="800" max="3000" step="50" value="1450"><input class="num" id="m2_n" type="number" min="800" max="3000" step="50" value="1450"></div>
         </div>
@@ -369,12 +371,13 @@ readColors();
 const STYLES = {
   subcompact:{ name:'Subcompact', mass:950, L:3.9, fw:.637, rw:3.246, wr:.334, hip:1.814, paint:{base:'#C87761',light:'#DC9983',shade:'#AD6051',edge:'#74483F'} },
   sedan:{ name:'Compact sedan', mass:1450, L:4.7, fw:.893, rw:3.763, wr:.37, hip:2.186, paint:{base:'#72A7DE',light:'#9DCBF6',shade:'#4681BE',edge:'#285785'} },
-  suv:{ name:'SUV', mass:2000, L:4.8, fw:.907, rw:3.825, wr:.383, hip:2.232, paint:{base:'#6AB3B2',light:'#9BD4CC',shade:'#4A9394',edge:'#345D64'} }
+  suv:{ name:'SUV', mass:2000, L:4.8, fw:.847, rw:3.883, wr:.443, hip:2.28, paint:{base:'#6AB3B2',light:'#9BD4CC',shade:'#4A9394',edge:'#345D64'} }
 };
 const CAR2 = { L:.7, cz:1000, cell:2500 };
 const CELL = 2.0;      // safety-cell length used for % deformation (m)
 const MD = 75;         // dummy mass (kg)
 const S_BAG = .18, S_WHEEL = .45;
+const EJECTION_SPEED = 26.8; // Explicit animation threshold, not a calibrated injury boundary.
 
 /* crush mapping: rear stays put, front region compresses */
 function makeDeform(Lcz, crush){
@@ -413,7 +416,7 @@ function simulate(c){
   let maxCarDec=0, maxDumDec=0, maxFd=0, maxS=0, peakST=0, hitWheel=false, hitBag=false, wheelSpeed=0, beltMax=0;
   let accA1=0, accAD=0, accFd=0, accF=0, n=0;
   const frames=[], parts=[]; const rnd = mulberry(7 + Math.round(c.v1*13 + c.czLen));
-  let step=0, stopT=null;
+  let step=0, stopT=null, ejection=null;
   const tLimit = 9;
   while (t < tLimit){
     const front1 = p1 + c1, front2 = two ? p2 - c2 : 0;
@@ -421,7 +424,12 @@ function simulate(c){
     const touching = front1 - front2 <= 1e-9;
     let F = 0;
     if (touching && closing > 1e-9){
-      if (contactT===null){ contactT=t; impactSpeed=-w1; impactClosing=closing; impactX=front1; bagFire = c.bag && closing > 4; }
+      if (contactT===null){
+        contactT=t; impactSpeed=-w1; impactClosing=closing; impactX=front1; bagFire = c.bag && closing > 4;
+        const severity=Math.min(1,closing/40),drift=two?(w1*m1+w2*m2)/(m1+m2):0;
+        for(let k=0;k<Math.round(12+severity*42);k++)parts.push({t:t+rnd()*.05,x:front1+.03,y:.3+rnd()*.7,vx:drift+(rnd()-.32)*(3+severity*8),vy:1+rnd()*(2+severity*5),s:.025+rnd()*.065,col:rnd()<.6?'glass':'car1'});
+        if(impactSpeed>20)for(let k=0;k<3;k++)parts.push({t:t+.035+k*.012,x:front1+.12,y:.65+k*.08,vx:drift+1+rnd()*3,vy:3+rnd()*4,s:.28+k*.07,col:'car1',panel:true});
+      }
       const Y1 = y1(c1), Y2 = two ? y2(c2) : Infinity;
       F = Math.min(Y1, Y2);
       const dc = closing*dt;
@@ -438,8 +446,15 @@ function simulate(c){
     let infl = 0;
     if (bagFire && t >= contactT + .015){ infl = Math.min(1, (t - contactT - .015)/.02)*Math.exp(-Math.max(0,t-contactT-.12)/.22);
       if (sd > S_BAG && infl > .5){ Fd += c.bagR*infl; hitBag = true; } }
-    if (sd > S_WHEEL){ if(!hitWheel){ hitWheel=true; wheelSpeed=vs; } Fd += 4000*(sd-S_WHEEL) + 30*Math.max(0,vs); }
-    if (sd < 0){ Fd += 600*sd + 10*Math.min(0,vs); }
+    if(!ejection&&!c.belt&&contactT!==null&&impactSpeed>=EJECTION_SPEED&&sd>.34&&vs>4){
+      const hipY=st===STYLES.suv?.85:st===STYLES.subcompact?.66:.79;
+      ejection={t,x:p1+makeDeform(Lz,c1)(st.L*.36),y:hipY+.72,vx:-Math.min(13,Math.max(8,uD*.48)),vy:3.4+Math.min(1.4,impactSpeed/32)};
+      for(let k=0;k<44;k++)parts.push({t,x:ejection.x-.15,y:ejection.y+.1+(rnd()-.5)*.3,vx:ejection.vx*(.2+rnd()*.55),vy:1+rnd()*5,s:.025+rnd()*.06,col:'glass'});
+    }
+    if(!ejection){
+      if (sd > S_WHEEL){ if(!hitWheel){ hitWheel=true; wheelSpeed=vs; } Fd += 4000*(sd-S_WHEEL) + 30*Math.max(0,vs); }
+      if (sd < 0){ Fd += 600*sd + 10*Math.min(0,vs); }
+    }else Fd=0;
     // car 1 forces (world x, + = right). Car 1 faces left (−x).
     let f1 = F*1000 - Fd*1000;
     if (c.cas && contactT===null && t >= .4 && w1 < 0) f1 += 8*m1;
@@ -460,7 +475,7 @@ function simulate(c){
     const aF = -a1;                     // car forward accel
     const aD = -Fd*1000/MD;             // dummy forward accel
     uD += aD*dt; sd += (uD - (-w1))*dt;
-    if (sd > maxS){ maxS = sd; peakST = t; }
+    if (!ejection&&sd > maxS){ maxS = sd; peakST = t; }
     accA1+=aF; accAD+=aD; accFd+=Fd; accF+=F; n++;
     if (step % REC === 0){
       const fa=accA1/n, fd=accAD/n, ff=accFd/n, fF=accF/n;
@@ -470,6 +485,7 @@ function simulate(c){
     }
     step++; t += dt;
     const settled = Math.abs(w1)<1e-3 && Math.abs(w2)<1e-3;
+    if(ejection&&t>ejection.t+2&&settled)break;
     if (crashEndT!==null && t > Math.max(crashEndT, peakST) + .3 && Math.abs(uD + w1) < .05 && settled) break;
     if (contactT===null && Math.abs(w1)<1e-6 && (!two || Math.abs(w2)<1e-6)){ if (stopT===null) stopT=t; if (t > stopT+.5) break; }
   }
@@ -484,7 +500,7 @@ function simulate(c){
   const tEnd = frames[frames.length-1].t;
   const crashed = contactT!==null;
   const slowStart = crashed ? contactT - .03 : Infinity;
-  const slowEnd = crashed ? Math.max(crashEndT ?? contactT, peakST) + .12 : -1;
+  const slowEnd = ejection ? ejection.t+.85 : crashed ? Math.max(crashEndT ?? contactT, peakST) + .12 : -1;
   // results
   const czDef = Math.min(c1, Lz), cellDef = Math.max(0, c1 - Lz);
   const finalU = crashed ? frames.find(f => f.t >= (crashEndT ?? contactT)) : null;
@@ -493,13 +509,13 @@ function simulate(c){
   const g = maxDumDec/9.81, cellPct = cellDef/CELL*100;
   let surv = 1/(1+Math.exp((g-60)/7));
   if (cellPct > 12) surv *= Math.max(0, 1 - (cellPct-12)/30);
-  const headStrike = contactT!==null && !hitBag && !hitWheel && maxS*1.6 > S_WHEEL;
+  const headStrike = !ejection && contactT!==null && !hitBag && !hitWheel && maxS*1.6 > S_WHEEL;
   if (headStrike) surv *= .55;
   if (!crashed) surv = 1;
   return { cfg:{...c}, st, two, frames, parts, dtRec: dt*REC, tEnd, crashed, contactT, crashEndT, peakST, slowStart, slowEnd,
-    impactSpeed, impactClosing, impactX, p1_0, p2_0, Lz, m1, m2,
+    impactSpeed, impactClosing, impactX, p1_0, p2_0, Lz, m1, m2, ejection,
     czDef, cellDef, cellPct, czPct: Lz>0 ? czDef/Lz*100 : 0, maxS, maxCarDec, maxDumDec, maxFd, Fmin, dv,
-    hitWheel, hitBag, headStrike, wheelSpeed, bagFire, surv: Math.round(surv*100), car2Def: c2 };
+    hitWheel, hitBag, headStrike, wheelSpeed, bagFire, surv: ejection?null:Math.round(surv*100), car2Def: c2 };
 }
 
 function frameAt(t){
@@ -512,8 +528,21 @@ function bodyMotion(t,contactT,severity=1){
   const age=t-contactT;
   if(contactT===null||age<0)return {pitch:0,heave:0};
   const strength=Math.min(1,Math.max(0,severity));
-  return {pitch:.025*strength*Math.sin(age*24)*Math.exp(-age*5),
-    heave:-.025*strength*Math.sin(age*29)*Math.exp(-age*6)};
+  return {pitch:.045*strength*Math.sin(age*24)*Math.exp(-age*5),
+    heave:-.045*strength*Math.sin(age*29)*Math.exp(-age*6)};
+}
+
+// Cinematic flight after cabin exit. The restraint data stops at this event.
+function ejectionPose(r,t){
+  const e=r.ejection;if(!e||t<e.t)return null;
+  const age=t-e.t,g=11.5,ground=.45;
+  const flight=(e.vy+Math.sqrt(e.vy*e.vy+2*g*(e.y-ground)))/g;
+  const air=Math.min(age,flight),after=Math.max(0,age-flight);
+  const x=e.x+e.vx*air+e.vx*.19*(1-Math.exp(-after*4))/4;
+  const y=age<flight?e.y+e.vy*age-g*age*age/2:ground+Math.max(0,.95*after-6*after*after);
+  const hitAngle=-Math.PI/2-flight*4.6,restAngle=-Math.PI/2+Math.round((hitAngle+Math.PI/2)/(2*Math.PI))*2*Math.PI;
+  const angle=age<flight?-Math.PI/2-age*4.6:restAngle+(hitAngle-restAngle)*Math.exp(-after*12)-Math.sin(after*13)*.12*Math.exp(-after*7);
+  return {x,y,angle,age,landAge:after,landed:age>=flight};
 }
 
 /* ---------------- canvas helpers ---------------- */
@@ -532,8 +561,15 @@ function drawScene(){
   const ctx = sctx, fr = frameAt(T), r = run, st = r.st;
   // Frame both vehicles in head-on mode, including the opposing car's rear.
   // A fixed single-car scale preserves the size difference between body styles.
-  const span = r.two ? fr.p1+st.L-(fr.p2-STYLES.sedan.L)+1.2 : STYLES.suv.L+2.05;
-  const ppm = Math.min(H/(r.two?3.9:3.4), W/span), groundY = H*.78;
+  const ej=ejectionPose(r,fr.t),age=r.crashed?fr.t-r.contactT:-1;
+  const zoom=ej?Math.min(1,ej.age/.18):0,blend=zoom*zoom*(3-2*zoom);
+  const baseSpan=r.two?fr.p1+st.L-(fr.p2-STYLES.sedan.L)+1.2:STYLES.suv.L+2.05;
+  const flightLeft=ej?Math.min(-1.7,ej.x-1.1,r.two?fr.p2-STYLES.sedan.L:0):0;
+  const flightRight=ej?Math.max(fr.p1+st.L+.5,ej.x+1.1):0;
+  const span=ej?baseSpan+(Math.max(baseSpan,flightRight-flightLeft+1)-baseSpan)*blend:baseSpan;
+  const shake=age>=0&&age<.3?Math.min(1,r.impactSpeed/40)*5*dpr*Math.exp(-age*13):0;
+  const shakeX=Math.sin(age*121)*shake;
+  const ppm = Math.min(H/((r.two?3.9:3.4)+blend*1.5), W/span), groundY = H*.78+Math.sin(age*97)*shake*.5;
   const anchorScreen = Math.min(W*.22, ppm + 10*dpr);
   const front1 = fr.p1 + fr.c1;
   let anchor;
@@ -541,13 +577,15 @@ function drawScene(){
   else anchor = r.impactX!=null ? Math.max(front1 - .5, r.impactX) : front1 - .5;
   if (!r.crashed && !r.two) anchor = Math.max(front1 - .5, 0);
   const center = r.two ? (fr.p1+st.L+fr.p2-STYLES.sedan.L)/2 : 0;
-  const X = wx => r.two ? W/2+(wx-center)*ppm : anchorScreen + (wx - anchor)*ppm;
+  const normalCenter=r.two?center:anchor+(W/2-anchorScreen)/ppm;
+  const cameraCenter=ej?normalCenter+((flightLeft+flightRight)/2-normalCenter)*blend:normalCenter;
+  const X = wx => W/2+(wx-cameraCenter)*ppm+shakeX;
   const Y = h => groundY - h*ppm;
 
   // lab wall with measurement grid
   ctx.fillStyle = C.labwall; ctx.fillRect(0,0,W,H);
   ctx.strokeStyle = C.grid; ctx.lineWidth = Math.max(1,dpr);
-  const leftW = anchor - anchorScreen/ppm, rightW = leftW + W/ppm;
+  const leftW = cameraCenter-W/(2*ppm), rightW = leftW + W/ppm;
   for (let gx = Math.floor(leftW/.5)*.5; gx <= rightW; gx += .5){ const sx=X(gx); ctx.beginPath(); ctx.moveTo(sx,0); ctx.lineTo(sx,groundY); ctx.stroke(); }
   for (let gy=.5; gy*ppm < groundY; gy+=.5){ ctx.beginPath(); ctx.moveTo(0,Y(gy)); ctx.lineTo(W,Y(gy)); ctx.stroke(); }
   ctx.fillStyle = C.muted; ctx.font = `700 ${11*dpr}px Poppins, system-ui, sans-serif`; ctx.textBaseline='top';
@@ -573,20 +611,29 @@ function drawScene(){
     const lean=age<0?0:Math.min(.32,r.impactClosing/32*.34)*Math.max(0,Math.sin(age*18))*Math.exp(-age*4);
     drawCar(ctx, {st:STYLES.sedan, Lz:CAR2.L, crush:fr.c2, ref:fr.p2, dir:-1, paint:{base:'#DAAD61',light:'#FFE0A0',shade:'#A77A36',edge:'#715526'}, X, Y, ppm, dist:fr.p2 - r.p2_0, dummy:true, fr:{...fr,sd:lean,u:fr.w2,uD:fr.w2+lean*10,infl:0}, cfg:{belt:true,bag:false}, motion:bodyMotion(fr.t,r.contactT,(r.impactClosing-r.impactSpeed)/24)});
   }
-  drawCar(ctx, {st, Lz:r.Lz, crush:fr.c1, ref:fr.p1, dir:1, X, Y, ppm, dist:fr.p1 - r.p1_0, dummy:true, fr, cfg:r.cfg, motion});
+  drawCar(ctx, {st, Lz:r.Lz, crush:fr.c1, ref:fr.p1, dir:1, X, Y, ppm, dist:fr.p1 - r.p1_0, dummy:true, hideOccupant:!!ej, impactSpeed:r.impactSpeed, fr, cfg:r.cfg, motion});
   // Short-lived impact dust comes from the damaged nose and settles with gravity.
   if(r.crashed&&fr.t>=r.contactT){
     const age=fr.t-r.contactT, strength=Math.min(1,r.impactClosing/25);
-    if(age<.8&&strength>0){
+    if(age<1.1&&strength>0){
       ctx.save();
-      for(let k=0;k<9;k++){
-        const a=Math.max(0,age-k*.012),rad=(.025+a*(.22+k*.018))*ppm;
-        ctx.globalAlpha=Math.max(0,(1-age/.8))*.095*strength;
-        ctx.fillStyle=C.muted;ctx.beginPath();
+      for(let k=0;k<16;k++){
+        const a=Math.max(0,age-k*.01),rad=(.03+a*(.28+k*.021))*ppm;
+        ctx.globalAlpha=Math.max(0,(1-age/1.1))*.12*strength;
+        const dust=ctx.createRadialGradient(X(front1),Y(.5),0,X(front1),Y(.5),Math.max(1,rad*2));dust.addColorStop(0,C.muted);dust.addColorStop(1,'rgba(130,140,145,0)');
+        ctx.fillStyle=dust;ctx.beginPath();
         ctx.ellipse(X(front1+.04+Math.sin(k*7)*a*.5),Y(.25+k*.055+a*.4),rad*1.5,rad,0,0,Math.PI*2);ctx.fill();
       }
       ctx.restore();
     }
+  }
+  if(age>=0&&age<.12&&r.impactSpeed>18){
+    ctx.save();ctx.translate(X(front1+.04),Y(.5));ctx.globalAlpha=(1-age/.12)*.8;
+    for(let k=0;k<11;k++){
+      const a=k*2.39,len=(.08+age*(3+k*.25))*ppm;
+      ctx.strokeStyle=k%2?'#ffe6a4':'#e5ad55';ctx.lineWidth=Math.max(1,ppm*.008);
+      ctx.beginPath();ctx.moveTo(Math.cos(a)*len*.35,Math.sin(a)*len*.35);ctx.lineTo(Math.cos(a)*len,Math.sin(a)*len);ctx.stroke();
+    }ctx.restore();
   }
   // debris
   for (const p of r.parts){
@@ -597,8 +644,16 @@ function drawScene(){
     const py=dt<tl?p.y+p.vy*dt-4.9*dt*dt:Math.max(p.s*.15,bounceV*after-4.9*after*after);
     ctx.fillStyle=p.col==='car1'?st.paint.base:p.col==='car2'?'#DAAD61':p.col==='glass'?'#b9dfec':C.concrete;
     ctx.save(); ctx.translate(X(px),Y(py)); ctx.rotate(p.vx*Math.min(dt,tl+.1)*3);
-    ctx.beginPath();ctx.moveTo(-p.s*ppm*.6,-p.s*ppm*.4);ctx.lineTo(p.s*ppm*.6,0);ctx.lineTo(-p.s*ppm*.15,p.s*ppm*.45);ctx.closePath();ctx.fill();ctx.restore();
+    ctx.beginPath();ctx.moveTo(-p.s*ppm*.6,-p.s*ppm*.4);ctx.lineTo(p.s*ppm*.6,p.panel?-p.s*ppm*.18:0);ctx.lineTo(p.s*ppm*.32,p.s*ppm*.4);ctx.lineTo(-p.s*ppm*.4,p.s*ppm*.2);ctx.closePath();ctx.fill();
+    if(p.panel){ctx.strokeStyle='#29435a';ctx.lineWidth=Math.max(1,ppm*.007);ctx.stroke();ctx.strokeStyle='rgba(240,251,255,.5)';ctx.beginPath();ctx.moveTo(-p.s*ppm*.4,-p.s*ppm*.2);ctx.lineTo(p.s*ppm*.4,-p.s*ppm*.1);ctx.stroke();}ctx.restore();
   }
+  if(ej){
+    ctx.save();ctx.fillStyle='#28323e';ctx.globalAlpha=.13;ctx.beginPath();ctx.ellipse(X(ej.x),Y(.01),ppm*.62,ppm*.035,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    if(ej.landed&&ej.landAge<.5){ctx.save();ctx.globalAlpha=(1-ej.landAge/.5)*.18;ctx.fillStyle=C.muted;ctx.beginPath();ctx.ellipse(X(ej.x),Y(.08),(.2+ej.landAge*1.2)*ppm,(.05+ej.landAge*.12)*ppm,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+    if(!ej.landed){const previous=ejectionPose(r,Math.max(r.ejection.t,fr.t-.055));ctx.save();ctx.strokeStyle='rgba(235,194,73,.35)';ctx.lineWidth=Math.max(1,ppm*.035);ctx.beginPath();ctx.moveTo(X(previous.x),Y(previous.y));ctx.lineTo(X(ej.x),Y(ej.y));ctx.stroke();ctx.restore();}
+    drawFlyingDummy(ctx,ej,X,Y,ppm);
+  }
+  $('slowTag').textContent=ej?'Dummy ejected · slow motion':'Slow-mo replay';
   $('slowTag').hidden = !(r.crashed && T >= r.slowStart && T <= r.slowEnd + .05 && (playing || T>0));
 }
 
@@ -820,177 +875,207 @@ const CAR_ART = {
     }
   },
   "suv": {
-    "body": "M 0 331.01 L 0 290.61 Q 0 281.52 14.14 275.45 L 12.12 249.19 Q 14.14 234.04 30.3 226.97 Q 83.84 187.58 255.56 175.45 L 407.07 77.47 Q 442.42 60.3 481.82 59.29 L 887.88 64.34 Q 918.18 64.34 930.3 69.39 Q 938.38 73.43 921.21 81.52 L 911.11 84.55 L 966.67 164.34 Q 980.81 177.47 980.81 204.75 L 980.81 261.31 L 994.95 275.45 L 997.98 293.64 L 998.99 326.97 Q 993.94 357.27 976.77 362.32 L 886.87 375.45 L 886.87 350.2 C 886.87 221.92 708.08 221.92 708.08 350.2 L 708.08 374.44 L 283.84 374.44 L 282.83 350.2 C 282.83 220.91 91.92 220.91 91.92 350.2 L 91.92 375.45 L 48.48 372.42 Q 11.11 368.38 0 331.01 Z",
-    "glass": "M 303.03 184.55 L 414.14 89.6 Q 429.29 77.47 448.48 76.46 L 715.15 76.46 Q 727.27 77.47 734.34 92.63 L 762.63 172.42 Z M 780.81 84.55 L 858.59 88.59 Q 871.72 89.6 878.79 101.72 L 904.04 150.2 Q 912.12 162.32 896.97 164.34 L 823.23 166.36 Q 813.13 166.36 809.09 155.25 Z",
-    "frontDoor": "M 296.97 190.61 Q 288.89 248.18 302.02 332.02 Q 303.03 355.25 322.22 356.26 L 547.47 356.26 L 555.56 182.53",
-    "rearDoor": "M 555.56 182.53 L 547.47 356.26 L 667.68 356.26 Q 689.9 355.25 701.01 332.02 L 720.2 278.48 Q 774.75 228.99 767.68 175.45",
-    "hood": "M 30.3 225.96 Q 116.16 202.73 229.29 194.65 Q 245.45 191.62 256.57 177.47",
-    "headlight": "M 26.26 263.33 L 33.33 237.07 L 93.94 223.94 Q 108.08 222.93 102.02 235.05 L 86.87 257.27 Q 76.77 266.36 56.57 266.36 Z",
-    "taillight": "M 925.25 184.55 L 973.74 183.54 Q 980.81 185.56 980.81 201.72 L 980.81 238.08 L 962.63 238.08 Q 944.44 235.05 935.35 217.88 L 923.23 194.65 Q 920.2 186.57 925.25 184.55 Z",
-    "mirror": "M 325.25 178.48 Q 324.24 163.33 337.37 157.27 Q 352.53 151.21 362.63 158.28 L 365.66 180.51 L 331.31 184.55 Z",
-    "belt": 183.54,
+    "body": "M 2.93 330.44 Q 1.46 347.28 53.44 355.33 L 85.65 358.99 L 85.65 337.76 C 85.65 192.08 289.17 192.08 289.17 337.76 L 289.17 365.58 L 700.59 365.58 L 700.59 337.76 C 700.59 192.08 912.88 192.08 912.88 337.76 L 912.88 356.79 L 969.99 347.28 Q 991.22 338.49 995.61 315.8 L 1000 280.66 L 990.48 246.98 L 987.55 206.72 L 985.36 192.08 L 973.65 145.23 L 939.24 69.82 L 953.88 55.92 Q 961.93 52.25 921.67 50.79 L 912.15 51.52 Q 869.69 44.93 762.08 50.06 L 547.58 50.06 Q 468.52 44.93 422.4 63.97 L 278.18 152.55 L 258.42 151.82 Q 134.7 160.6 65.15 174.51 Q 26.35 185.49 9.52 200.86 L 6.59 218.43 L 5.86 264.55 Q 0.73 273.34 0 287.98 L 3.66 309.94 Z",
+    "glass": "M 323.57 164.26 L 423.87 86.66 Q 446.56 68.36 479.5 66.16 L 716.69 66.9 Q 729.14 67.63 735.72 77.14 L 760.61 155.48 Z M 769.4 80.07 Q 765.01 76.41 777.45 76.41 L 853.59 80.81 Q 874.82 85.2 878.48 102.04 L 881.41 124.73 Q 884.33 137.17 872.62 143.03 L 806 159.14 Q 789.17 162.06 781.84 148.16 Z",
+    "frontDoor": "M 316.98 166.46 Q 311.86 225.02 319.91 305.55 L 322.84 319.46 Q 326.5 332.64 344.07 332.64 L 550.51 331.9 L 556.37 164.99",
+    "rearDoor": "M 556.37 164.99 L 550.51 331.9 L 688.14 331.9 Q 700.59 320.19 707.17 298.96 L 733.53 246.98 Q 748.9 229.41 772.33 225.75 L 761.35 158.4",
+    "hood": "M 16.84 197.94 Q 117.13 176.71 232.8 175.97 Q 256.95 170.85 268.67 156.94",
+    "headlight": "M 12.45 202.33 L 91.51 197.94 Q 110.54 198.67 101.02 211.11 L 86.38 228.68 L 8.78 233.07 Z",
+    "taillight": "M 945.1 168.65 L 969.99 160.6 Q 984.63 161.33 986.09 175.24 L 986.82 204.52 L 949.49 207.45 L 939.97 180.37 Q 936.31 173.05 945.1 168.65 Z",
+    "mirror": "M 352.86 162.8 L 352.86 150.35 Q 354.32 135.71 368.96 134.25 Q 386.53 131.32 388.73 145.23 L 389.46 161.33 Q 377.01 170.12 355.05 169.39 Z",
+    "belt": 165.72,
     "handles": [
       {
-        "x": 513.13,
-        "y": 212.83,
-        "w": 54.55
+        "x": 515.37,
+        "y": 193.54,
+        "w": 51.98
       },
       {
-        "x": 726.26,
-        "y": 206.77,
-        "w": 54.55
+        "x": 724.74,
+        "y": 187.69,
+        "w": 52.71
       }
     ],
     "pillars": [
-      "M 551.52 76.46 L 579.8 76.46 L 572.73 178.48 L 547.47 180.51 Z",
-      "M 701.01 77.47 L 724.24 78.48 L 762.63 172.42 L 735.35 172.42 L 714.14 100.71 L 701.01 83.54 Z"
+      "M 547.58 66.16 L 579.06 66.9 L 573.94 160.6 L 549.78 162.8 Z",
+      "M 701.32 67.63 L 708.64 68.36 L 708.64 157.67 L 701.32 158.4 Z",
+      "M 735.72 69.82 L 755.49 72.75 L 770.86 158.4 L 760.61 159.14 Z"
     ],
     "seats": [
-      "M 525.25 177.47 L 526.26 127.98 Q 525.25 109.8 539.39 108.79 L 550.51 109.8 L 547.47 177.47 Z",
-      "M 709.09 173.43 Q 711.11 135.05 728.28 130 Q 745.45 130 758.59 152.22 L 762.63 171.41 Z"
+      "M 525.62 161.33 L 526.35 115.94 Q 526.35 97.64 539.53 97.64 L 549.78 100.57 L 549.78 161.33 Z",
+      "M 718.89 157.67 Q 718.16 121.8 736.46 116.68 L 752.56 132.78 L 759.88 154.74 Z"
     ],
     "layers": [
       {
-        "path": "M 30.3 225.96 Q 121.21 186.57 258.59 181.52 L 295.96 195.66 Q 143.43 199.7 47.47 238.08 Z",
+        "path": "M 10.98 200.13 Q 108.35 165.72 278.18 155.48 L 303.07 170.12 Q 160.32 177.44 23.43 210.38 Z",
         "fill": "light",
-        "width": 1.01
+        "width": 0.73
       },
       {
-        "path": "M 295.96 203.74 L 973.74 175.45 L 978.79 189.6 L 294.95 220.91 Z",
-        "fill": "rgba(214,247,235,.26)",
-        "width": 1.01
+        "path": "M 321.38 184.03 Q 644.95 166.46 974.38 142.3 L 983.89 158.4 Q 674.23 186.22 322.11 203.06 Z",
+        "fill": "rgba(224,255,240,.21)",
+        "width": 0.73
       },
       {
-        "path": "M 297.98 267.37 Q 484.85 250.2 690.91 247.17 Q 717.17 247.17 710.1 270.4 L 694.95 326.97 L 310.1 340.1 Z",
+        "path": "M 324.3 256.5 Q 364.57 233.07 451.68 227.95 L 647.14 227.95 Q 678.62 229.41 680.09 269.68 L 685.21 293.84 L 327.96 306.28 Z",
         "fill": "shade",
-        "width": 1.01
+        "width": 0.73
       },
       {
-        "path": "M 312.12 328.99 Q 480.81 310.81 668.69 312.83 L 681.82 323.94 L 312.12 339.09 Z",
-        "fill": "rgba(194,239,224,.38)",
-        "width": 1.01
+        "path": "M 333.09 305.55 Q 500.73 287.98 629.58 293.1 Q 665.45 294.57 677.16 305.55 L 335.29 314.33 Z",
+        "fill": "rgba(182,234,218,.40)",
+        "width": 0.73
       },
       {
-        "path": "M 761.62 75.45 L 887.88 77.47 L 967.68 166.36 L 814.14 173.43 Q 802.02 173.43 793.94 158.28 Z",
-        "fill": "#354b5c",
-        "width": 1.01
+        "path": "M 912.88 258.7 L 986.82 233.81 L 989.02 246.25 L 938.51 260.89 Z",
+        "fill": "rgba(182,234,218,.30)",
+        "width": 0.73
       },
       {
-        "path": "M 897.98 79.49 L 915.15 84.55 L 967.68 165.35 L 945.45 165.35 Z",
-        "fill": "#283f51",
-        "width": 1.01
+        "path": "M 743.78 69.82 L 858.71 71.29 Q 879.94 73.48 887.99 93.25 L 892.39 132.05 Q 893.85 145.96 874.82 152.55 L 806 170.12 L 770.86 167.92 Z",
+        "fill": "#3d5261",
+        "width": 0.73
       },
       {
-        "path": "M 282.83 334.04 L 707.07 334.04 L 708.08 373.43 L 285.86 373.43 Z",
-        "fill": "#35434f",
-        "stroke": "#1a2b3c",
-        "width": 2.02
+        "path": "M 290.63 332.64 L 700.59 332.64 L 699.85 363.38 L 289.9 365.58 Z",
+        "fill": "#34414c",
+        "stroke": "#172e42",
+        "width": 2.2
       },
       {
-        "path": "M 1.01 309.8 L 22.22 326.97 Q 28.28 340.1 42.42 342.12 L 90.91 341.11 L 91.92 375.45 L 47.47 371.41 Q 10.1 366.36 1.01 338.08 Z",
-        "fill": "#35434f",
-        "stroke": "#1a2b3c",
-        "width": 2.02
+        "path": "M 2.93 310.67 L 30.75 323.85 L 84.92 326.05 L 85.65 358.99 L 53.44 355.33 Q 14.64 350.94 3.66 335.56 Z",
+        "fill": "#34414c",
+        "stroke": "#172e42",
+        "width": 2.2
       },
       {
-        "path": "M 888.89 304.75 L 997.98 296.67 L 998.99 327.98 Q 992.93 350.2 975.76 358.28 L 888.89 374.44 Z",
-        "fill": "#35434f",
-        "stroke": "#1a2b3c",
-        "width": 2.02
+        "path": "M 913.62 315.8 L 975.84 301.89 L 997.8 287.98 L 995.61 315.8 Q 990.48 337.76 969.99 345.08 L 913.62 355.33 Z",
+        "fill": "#34414c",
+        "stroke": "#172e42",
+        "width": 2.2
       },
       {
-        "path": "M 305.05 338.08 L 691.92 338.08 M 893.94 311.82 L 992.93 303.74",
-        "stroke": "#71818b",
-        "width": 3.03
+        "path": "M 297.22 358.99 L 317.72 350.2 L 674.96 348.74 L 693.27 358.26 Z",
+        "fill": "#687c8a",
+        "stroke": "#1e3449",
+        "width": 2.2
       },
       {
-        "path": "M 303.03 369.39 L 328.28 363.33 L 646.46 363.33 Q 661.62 364.34 669.7 371.41 Z",
-        "fill": "#667a89",
-        "stroke": "#1b2e40",
-        "width": 2.02
+        "path": "M 306 350.2 L 672.77 345.81 M 918.01 319.46 L 976.57 307.01",
+        "stroke": "#8396a0",
+        "width": 2.2
       },
       {
-        "path": "M 88.89 338.08 L 95.96 292.63 Q 102.02 263.33 124.24 252.22 Q 138.38 245.15 161.62 245.15 L 221.21 245.15 Q 252.53 246.16 267.68 272.42 L 283.84 338.08",
-        "stroke": "#293d4e",
-        "width": 14.14
+        "path": "M 81.99 313.6 L 93.7 269.68 Q 101.76 230.88 124.45 226.49 Q 172.04 216.97 233.53 228.68 Q 253.29 234.54 267.2 271.87 L 286.97 313.6",
+        "stroke": "#2d3d4c",
+        "width": 16.84
       },
       {
-        "path": "M 710.1 338.08 L 717.17 289.6 Q 724.24 259.29 746.46 250.2 Q 761.62 245.15 782.83 245.15 L 826.26 245.15 Q 859.6 248.18 872.73 278.48 L 884.85 338.08",
-        "stroke": "#293d4e",
-        "width": 14.14
+        "path": "M 705.71 313.6 L 717.42 266.75 Q 726.21 233.07 748.17 227.95 Q 800.88 216.97 862.37 230.15 Q 886.53 238.93 898.98 273.34 L 910.69 313.6",
+        "stroke": "#2d3d4c",
+        "width": 16.84
       },
       {
-        "path": "M 87.88 273.43 Q 106.06 225.96 149.49 224.95 L 224.24 225.96 Q 259.6 226.97 278.79 259.29",
-        "stroke": "rgba(187,237,219,.38)",
-        "width": 7.07
+        "path": "M 88.58 274.07 Q 102.49 218.43 130.31 216.97 Q 189.6 209.65 232.8 219.17 Q 257.69 224.29 273.06 271.87",
+        "stroke": "rgba(209,247,230,.32)",
+        "width": 4.39
       },
       {
-        "path": "M 715.15 271.41 Q 729.29 225.96 771.72 224.95 L 832.32 226.97 Q 863.64 228.99 877.78 260.3",
-        "stroke": "rgba(187,237,219,.38)",
-        "width": 7.07
+        "path": "M 713.76 273.34 Q 727.67 219.9 755.49 217.7 Q 816.25 209.65 860.18 221.36 Q 884.33 230.88 898.98 271.14",
+        "stroke": "rgba(209,247,230,.32)",
+        "width": 4.39
       },
       {
-        "path": "M 21.21 301.72 L 55.56 298.69 Q 63.64 298.69 60.61 310.81 L 55.56 330 L 35.35 331.01 Q 26.26 326.97 21.21 301.72 Z",
-        "fill": "#293c4b",
-        "stroke": "#172e43",
-        "width": 2.02
+        "path": "M 9.52 234.54 L 45.39 232.34 L 41 269.68 L 6.59 277.73 Z",
+        "fill": "#1d3547",
+        "stroke": "#14293c",
+        "width": 2.2
       },
       {
-        "path": "M 41.41 305.76 L 49.49 305.76 L 48.48 324.95 L 41.41 325.96 Z",
-        "fill": "#8a9ca4",
-        "width": 1.01
+        "path": "M 8.05 241.86 L 44.66 238.93 M 7.32 251.38 L 43.92 249.18 M 6.59 261.63 L 41.73 258.7 M 5.86 271.14 L 40.26 268.21",
+        "stroke": "#8298a5",
+        "width": 3.66
       },
       {
-        "path": "M 966.67 304.75 L 993.94 302.73 L 992.93 310.81 L 967.68 312.83 Z",
-        "fill": "#e14a43",
-        "stroke": "#1b3045",
-        "width": 2.02
+        "path": "M 8.78 210.38 L 24.89 203.06 L 30.75 210.38 L 27.82 222.09 L 8.78 222.83 Z",
+        "fill": "#677f91",
+        "stroke": "#182f46",
+        "width": 1.46
       },
       {
-        "path": "M 888.89 65.35 L 930.3 69.39 Q 940.4 74.44 921.21 80.51 L 896.97 82.53 Z",
+        "path": "M 21.96 301.89 L 47.58 302.62 L 51.98 318.73 L 35.14 318.73 Q 28.55 318.73 21.96 301.89 Z",
+        "fill": "#2a3d4d",
+        "stroke": "#102b42",
+        "width": 2.2
+      },
+      {
+        "path": "M 36.6 304.82 L 43.19 305.55 L 44.66 314.33 L 38.07 315.07 Z",
+        "fill": "#9bb0b9",
+        "width": 0.73
+      },
+      {
+        "path": "M 984.63 296.03 L 995.61 293.1 L 994.14 298.96 L 986.09 301.89 Z",
+        "fill": "#e84d44",
+        "stroke": "#20374c",
+        "width": 1.46
+      },
+      {
+        "path": "M 914.35 51.52 L 951.68 55.92 Q 961.93 59.58 949.49 63.97 L 931.92 68.36 Z",
         "fill": "light",
-        "stroke": "#172e43",
-        "width": 2.02
+        "stroke": "#152e44",
+        "width": 2.2
       }
     ],
     "details": [
       {
-        "path": "M 45.45 239.09 L 64.65 235.05 Q 80.81 233.03 72.73 251.21 Q 65.66 260.3 49.49 258.28 Z",
-        "fill": "#fff",
-        "stroke": "#c0cdd2",
-        "width": 2.02
+        "path": "M 32.21 203.06 L 88.58 203.06 L 84.19 211.11 L 44.66 212.58 L 40.26 222.83 L 22.69 224.29 Z",
+        "fill": "#e1e7e8",
+        "stroke": "#9aaab6",
+        "width": 1.46
       },
       {
-        "path": "M 83.84 226.97 L 101.01 224.95 L 90.91 241.11 L 78.79 244.14 Z",
-        "fill": "#ffc471",
-        "width": 1.01
+        "path": "M 35.87 205.99 L 78.33 205.99 M 33.67 212.58 L 68.81 212.58",
+        "stroke": "#a3b4bd",
+        "width": 2.2
+      },
+      {
+        "path": "M 84.19 200.86 L 100.29 200.86 L 89.31 217.7 L 78.33 220.63 Z",
+        "fill": "#ffc26d",
+        "width": 0.73
+      },
+      {
+        "path": "M 47.58 203.79 L 46.85 208.18 M 54.17 203.79 L 53.44 208.18 M 61.49 203.79 L 60.76 208.18",
+        "stroke": "#fff",
+        "width": 2.2
       }
     ],
     "roofRails": [
       {
-        "path": "M 461.62 62.32 Q 484.85 45.15 513.13 45.15 Q 692.93 37.07 815.15 45.15 Q 846.46 47.17 871.72 63.33 L 851.52 62.32 Q 836.36 54.24 812.12 53.23 L 517.17 53.23 Q 496.97 54.24 485.86 63.33 Z",
-        "fill": "#3b4d5c",
-        "stroke": "#142c41",
-        "width": 2.02
+        "path": "M 480.97 52.25 Q 500.73 33.95 530.01 33.22 L 838.95 33.22 Q 871.89 34.69 899.71 50.06 L 874.82 50.06 Q 857.98 42.01 836.02 41.27 L 535.87 41.27 Q 518.3 42.74 509.52 52.25 Z",
+        "fill": "#354b5e",
+        "stroke": "#142b40",
+        "width": 2.2
       },
       {
-        "path": "M 513.13 46.16 Q 669.7 41.11 815.15 47.17",
-        "stroke": "#91a6b2",
-        "width": 3.03
+        "path": "M 528.55 34.69 L 836.75 34.69",
+        "stroke": "#91a8b5",
+        "width": 2.93
       },
       {
-        "path": "M 516.16 52.22 L 515.15 60.3 M 711.11 50.2 L 713.13 60.3 M 812.12 53.23 L 815.15 62.32",
-        "stroke": "#263e50",
-        "width": 5.05
+        "path": "M 546.85 39.08 L 545.39 47.86 M 732.06 39.81 L 734.26 47.86 M 837.48 41.27 L 839.68 49.33",
+        "stroke": "#20394d",
+        "width": 4.39
       }
     ],
     "fuel": {
-      "x": 867.68,
-      "y": 212.83,
-      "r": 19.19
+      "x": 848.46,
+      "y": 186.22,
+      "r": 21.23,
+      "rect": true
     }
   }
 };
+
 const illustrationPaths = new Map();
 function illustrationPoints(data){
   if (illustrationPaths.has(data)) return illustrationPaths.get(data);
@@ -1020,10 +1105,11 @@ function drawCar(ctx,o){
   const art=CAR_ART[kind],scale=st.L/1000,outline='#172f47',paint=o.paint||st.paint;
   const def=makeDeform(Lz,crush),wx=x=>ref+dir*def(x);
   const fold=Math.min(1,crush/Math.max(.18,Lz)),damageSpan=Math.max(Lz,st.fw*1.65);
+  const drama=Math.min(1,(o.impactSpeed||0)/40);
   const motion=o.motion||{pitch:0,heave:0};
   const height=(x,y)=>{
     const u=Math.min(1,Math.max(0,x/damageSpan));
-    const buckle=crush>0&&x<damageSpan?fold*(.19*Math.sin(u*Math.PI)+.045*Math.sin(u*Math.PI*5))*Math.max(.12,(380-y)/180):0;
+    const buckle=crush>0&&x<damageSpan?fold*((.19+drama*.19)*Math.sin(u*Math.PI)+.045*Math.sin(u*Math.PI*5))*Math.max(.12,(380-y)/180):0;
     return (430-y)*scale+buckle+motion.heave+(def(x)-st.L*.55)*motion.pitch;
   };
   const P=(x,y)=>[X(wx(x*scale)),Y(height(x*scale,y))];
@@ -1072,6 +1158,10 @@ function drawCar(ctx,o){
   path('M 642 37 L 680 43 L 558 210 L 520 211 Z','rgba(255,255,255,.34)',null);
   path('M 704 51 L 729 60 L 619 207 L 594 210 Z','rgba(255,255,255,.19)',null);
   path('M 831 51 L 856 61 L 760 204 L 738 206 Z','rgba(255,255,255,.15)',null);
+  if(o.hideOccupant){
+    path('M 296 175 L 329 128 L 358 143 L 381 112 L 404 142 L 392 179 L 349 204 Z','rgba(36,57,74,.30)',null);
+    path('M 349 162 L 309 137 M 349 162 L 376 112 M 349 162 L 407 171 M 349 162 L 328 205 M 349 162 L 376 192 M 349 162 L 320 171',null,'#edfaff',2);
+  }
   if(o.dummy)drawDummy(ctx,o,wx);
   for(const pillar of art.pillars){path(pillar,gradient('#405768','#2d4354',50,205),'#213649',1.5);}
   ctx.restore();
@@ -1084,7 +1174,7 @@ function drawCar(ctx,o){
     path(`M ${x-w*.45} ${y-h*.15} L ${x+w*.43} ${y-h*.5} Q ${x+w*.56} ${y-h*.1} ${x+w*.43} ${y+h*.45} L ${x-w*.44} ${y+h*.65} Q ${x-w*.57} ${y+h*.4} ${x-w*.45} ${y-h*.15} Z`,gradient(paint.light,paint.base,y-h,y+h),outline,1.6);
     path(`M ${x-w*.35} ${y} L ${x+w*.35} ${y-h*.2}`,null,'rgba(250,255,255,.28)',1.2);
   }
-  if(art.fuel){const {x,y,r}=art.fuel;path(`M ${x-r} ${y} C ${x-r} ${y-r*1.33} ${x+r} ${y-r*1.33} ${x+r} ${y} C ${x+r} ${y+r*1.33} ${x-r} ${y+r*1.33} ${x-r} ${y} Z`,null,paint.edge,1.5);}
+  if(art.fuel){const {x,y,r,rect}=art.fuel;path(rect?`M ${x-r} ${y-r*.7} Q ${x-r} ${y-r} ${x-r*.7} ${y-r} L ${x+r*.7} ${y-r} Q ${x+r} ${y-r} ${x+r} ${y-r*.7} L ${x+r} ${y+r*.7} Q ${x+r} ${y+r} ${x+r*.7} ${y+r} L ${x-r*.7} ${y+r} Q ${x-r} ${y+r} ${x-r} ${y+r*.7} Z`:`M ${x-r} ${y} C ${x-r} ${y-r*1.33} ${x+r} ${y-r*1.33} ${x+r} ${y} C ${x+r} ${y+r*1.33} ${x-r} ${y+r*1.33} ${x-r} ${y} Z`,null,paint.edge,1.5);}
   path(art.headlight,kind==='subcompact'?'#95a7b2':'#eef3f2',outline,2.2);
   ctx.save();trace(art.headlight);ctx.clip();layers(art.details);ctx.restore();
   path(art.taillight,gradient('#ff5b50','#cc3435',175,285),outline,2.2);
@@ -1106,7 +1196,7 @@ function drawCar(ctx,o){
       path(`M ${x-18} 271 L ${x+depth+4} 295 L ${x-depth*.4+4} 322`,null,'rgba(255,255,255,.48)',1.3);
     }
     ctx.restore();
-    if(crush>Lz+.08){ctx.save();trace(art.glass);ctx.clip();path('M 321 183 L 354 162 L 377 174 M 354 162 L 349 132 M 354 162 L 380 143 M 354 162 L 338 197',null,'rgba(247,253,255,.9)',1.3);ctx.restore();}
+    if(crush>Lz+.08||(drama>.65&&crush>.24)){ctx.save();trace(art.glass);ctx.clip();path('M 321 183 L 354 162 L 377 174 M 354 162 L 349 132 M 354 162 L 380 143 M 354 162 L 338 197',null,'rgba(247,253,255,.9)',1.3);ctx.restore();}
   }
   ctx.restore();
 }
@@ -1135,7 +1225,7 @@ function drawCarWheels(ctx,o,wx){
     circle(radius*.71,'#acb9c5','#172c40',radius*.055);
     circle(radius*.62,'#253b50','#dbe3e8',radius*.03);
     ctx.rotate(-o.dir*o.dist/st.wr);
-    const spokes=st===STYLES.sedan?5:6;
+    const spokes=st===STYLES.subcompact?6:5;
     for(let k=0;k<spokes;k++){
       ctx.save();ctx.rotate(k*Math.PI*2/spokes);
       ctx.beginPath();ctx.moveTo(-radius*.13,-radius*.08);ctx.lineTo(-radius*.16,-radius*.62);ctx.quadraticCurveTo(0,-radius*.69,radius*.15,-radius*.63);ctx.lineTo(radius*.09,-radius*.23);ctx.lineTo(radius*.21,-radius*.13);ctx.closePath();
@@ -1153,7 +1243,7 @@ function drawCarWheels(ctx,o,wx){
 function drawDummy(ctx,o,wx){
   const {st,X,Y,ppm,fr,cfg}=o;
   const s=Math.max(-.05,fr.sd);
-  const hipX=st.hip-(cfg.belt?0:s*.48), hipY=st===STYLES.suv?.80:st===STYLES.subcompact?.66:.79;
+  const hipX=st.hip-(cfg.belt?0:s*.48), hipY=st===STYLES.suv?.85:st===STYLES.subcompact?.66:.79;
   const ang=-.46+Math.asin(Math.max(-.3,Math.min(.94,s*(cfg.belt?1:.6)/.48)));
   const P=(x,y)=>[X(wx(x)),Y(o.bodyHeight?o.bodyHeight(x,y):y)];
   // Drawing coordinates are meters, facing left. Local transforms articulate the
@@ -1177,6 +1267,7 @@ function drawDummy(ctx,o,wx){
   poly([[hipX+.07,hipY-.12],[hipX+.24,hipY-.1],[hipX+.36,hipY+.52],[hipX+.33,hipY+.65],[hipX+.21,hipY+.65],[hipX+.14,hipY+.5]],'#4b5d6e','#1b3145');
   poly([[hipX+.21,hipY+.43],[hipX+.22,hipY+.64],[hipX+.24,hipY+.70],[hipX+.28,hipY+.72],[hipX+.34,hipY+.71],[hipX+.38,hipY+.67],[hipX+.38,hipY+.45]],'#566a7c','#1b3145');
   line([[hipX+.25,hipY+.48],[hipX+.26,hipY+.65],[hipX+.29,hipY+.68]],'#8396a4',.008);
+  if(!o.hideOccupant){
   // Molded torso, broad chest, narrower waist and a separate shaded flank.
   shape([[-.09,-.03],[-.15,.1],[-.17,.31],[-.13,.48],[-.07,.55],[.055,.56],[.13,.45],[.14,.24],[.1,.01]],'#e9af2f');
   shape([[.05,.54],[.13,.45],[.14,.24],[.1,.01],[.04,.01],[.055,.29]],'#c78a1e',null);
@@ -1208,12 +1299,14 @@ function drawDummy(ctx,o,wx){
   line([H(18,96),H(27,94),H(34,97)],'#6e501f',.004);
   line([H(25,110),H(34,113),H(44,110)],'#c68a24',.003);
   const mark=H(73,50);target(...mark,st===STYLES.subcompact?.047:.053);
+  }
   // Steering column and rim. Both hands wrap over it.
   const reach=st===STYLES.subcompact?.39:st===STYLES.suv?.42:.47;
   const wheel=[hipX-reach,hipY+.42];
   line([[wheel[0]-.15,wheel[1]-.18],wheel],'#344451',.035);
   const rim=[];for(let i=0;i<=48;i++){const a=i*Math.PI/24;rim.push([wheel[0]+Math.cos(a)*.022-Math.sin(a)*.045,wheel[1]+Math.sin(a)*.10]);}
   line(rim,'#1e303f',.023);line([[wheel[0]-.025,wheel[1]+.065],[wheel[0]+.025,wheel[1]-.065]],'#778796',.006);
+  if(!o.hideOccupant){
   const hand=[Math.min(wheel[0]+.03,sh[0]-.17),wheel[1]+.035];
   const elbow=[(sh[0]+hand[0])/2+.005,Math.min(sh[1],hand[1])-.055];
   const limb=(a,b,w0,w1)=>{
@@ -1236,11 +1329,43 @@ function drawDummy(ctx,o,wx){
     line([[hipX+.28,hipY+.56],[sh[0]-.08,sh[1]-.055],[hipX-.09,hipY+.03]],'#1c2d3c',.038);
     line([[hipX+.28,hipY+.56],[sh[0]-.08,sh[1]-.055],[hipX-.09,hipY+.03]],'#536371',.023);
   }
+  }
   if(cfg.bag&&fr.infl>0){
     const radius=.25*fr.infl,cx=wheel[0]+.14,cy=wheel[1]+.1;
     ctx.beginPath();ctx.ellipse(...P(cx,cy),Math.min(radius,Math.max(.04,sh[0]-.05-cx))*ppm,radius*ppm*1.05,0,0,7);
     ctx.fillStyle='#f3f5ef';ctx.fill();ctx.strokeStyle='#9aaeba';ctx.lineWidth=Math.max(1,ppm*.007);ctx.stroke();
   }
+  ctx.restore();
+}
+
+function drawFlyingDummy(ctx,pose,X,Y,ppm){
+  ctx.save();ctx.translate(X(pose.x),Y(pose.y));ctx.rotate(pose.angle);ctx.scale(ppm,ppm);
+  ctx.lineJoin='round';ctx.lineCap='round';
+  const joint=(x,y,r=.045)=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle='#77848a';ctx.fill();ctx.strokeStyle='#293e4b';ctx.lineWidth=.009;ctx.stroke();ctx.beginPath();ctx.arc(x,y,r*.35,0,7);ctx.fillStyle='#c3c9c6';ctx.fill();};
+  const limb=(a,b,width)=>{
+    ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.lineWidth=width+.018;ctx.strokeStyle='#76521b';ctx.stroke();
+    const g=ctx.createLinearGradient(a[0],a[1],b[0]+.1,b[1]);g.addColorStop(0,'#ffd365');g.addColorStop(1,'#d99420');
+    ctx.lineWidth=width;ctx.strokeStyle=g;ctx.stroke();
+    ctx.lineWidth=width*.22;ctx.strokeStyle='rgba(255,230,129,.6)';ctx.stroke();
+  };
+  const flail=Math.sin(pose.age*15)*.08;
+  const hip=[0,.05],chest=[0,-.35];
+  limb([-.05,.04],[-.18,.36+flail],.12);limb([-.18,.36+flail],[-.08,.66],.09);
+  limb([.06,.04],[.26,.30-flail],.12);limb([.26,.30-flail],[.37,.56],.09);
+  limb(chest,hip,.23);limb([-.08,-.36],[-.30,-.15-flail],.085);limb([-.30,-.15-flail],[-.48,-.34],.07);
+  limb([.08,-.36],[.29,-.49+flail],.085);limb([.29,-.49+flail],[.46,-.32],.07);
+  for(const p of [[0,.04],[-.18,.36+flail],[.26,.30-flail],[-.09,-.35],[.09,-.35],[-.30,-.15-flail],[.29,-.49+flail]])joint(...p);
+  ctx.fillStyle='#353f44';ctx.strokeStyle='#1c303f';ctx.lineWidth=.008;
+  for(let k=0;k<5;k++){ctx.beginPath();ctx.roundRect(-.045,-.43-k*.017,.09,.015,.006);ctx.fill();ctx.stroke();}
+  ctx.beginPath();
+  const head='M 62 8 C 34 5 17 20 18 46 L 16 60 L 6 77 Q 4 82 17 83 L 18 91 L 17 100 L 25 115 Q 30 122 44 117 L 58 106 L 67 105 L 84 104 Q 103 82 101 53 Q 104 17 78 10 Z';
+  illustrationPoints(head).forEach(([x,y],i)=>{const px=(x-60)*.0023,py=-.76+y*.0023;i?ctx.lineTo(px,py):ctx.moveTo(px,py)});ctx.closePath();
+  const yellow=ctx.createLinearGradient(-.12,-.7,.12,-.5);yellow.addColorStop(0,'#ffe07b');yellow.addColorStop(1,'#e8a828');ctx.fillStyle=yellow;ctx.fill();ctx.strokeStyle='#79531b';ctx.lineWidth=.008;ctx.stroke();
+  ctx.beginPath();ctx.arc(.03,-.645,.052,0,7);ctx.fillStyle='#ffd25b';ctx.fill();ctx.strokeStyle='#263846';ctx.lineWidth=.006;ctx.stroke();
+  ctx.fillStyle='#202d37';for(const angle of [0,Math.PI]){ctx.beginPath();ctx.moveTo(.03,-.645);ctx.arc(.03,-.645,.049,angle,angle+Math.PI/2);ctx.closePath();ctx.fill();}
+  ctx.beginPath();ctx.arc(-.08,-.62,.006,0,7);ctx.fill();
+  for(const p of [[-.08,.70],[.39,.59]]){ctx.beginPath();ctx.roundRect(p[0]-.045,p[1]-.025,.15,.06,.025);ctx.fillStyle='#53554b';ctx.fill();}
+  for(const p of [[-.49,-.35],[.48,-.31]]){ctx.beginPath();ctx.ellipse(p[0],p[1],.05,.034,0,0,7);ctx.fillStyle='#f2b531';ctx.fill();ctx.strokeStyle='#79531b';ctx.lineWidth=.007;ctx.stroke();}
   ctx.restore();
 }
 
@@ -1279,7 +1404,7 @@ function updateReadouts(){
 function rowsForData(){
   const r=run, out=[];
   if (!r.crashed) return out;
-  const t0 = Math.max(0, r.contactT - .01), t1 = r.slowEnd;
+  const t0 = Math.max(0, r.contactT - .01), t1 = Math.min(r.slowEnd,r.ejection?.t??Infinity);
   for (let t=t0; t<=t1+1e-9; t+=.005){ out.push(frameAt(t)); }
   return out;
 }
@@ -1319,13 +1444,14 @@ function buildSummary(){
     const ev = [];
     if (r.czPct >= 99.5) ev.push('The crumple zone was fully crushed.');
     if (r.cellDef > .005) ev.push(`The safety cell was crushed by ${r.cellPct.toFixed(0)}%.`); else ev.push('The safety cell stayed in one piece.');
-    if (r.hitBag) ev.push('The dummy was caught by the airbag.');
+    if(r.ejection)ev.push('The unbelted dummy broke through the windshield. The 60 mph ejection animation rule was met. Cabin force data ends at ejection.');
+    if (r.hitBag&&!r.ejection) ev.push('The dummy was caught by the airbag.');
     else if (r.cfg.bag && !r.bagFire) ev.push('The crash was too gentle for the airbag to fire.');
     if (r.headStrike) ev.push("The dummy's head swung forward and hit the steering wheel.");
     if (r.hitWheel) ev.push(`The dummy hit the steering wheel at ${r.wheelSpeed.toFixed(1)} m/s.`);
     else if (r.cfg.belt && !r.headStrike) ev.push('The seat belt kept the dummy off the steering wheel.');
     if (r.two && r.car2Def > 0) ev.push(`Car 2 crushed ${(r.car2Def*100).toFixed(0)} cm.`);
-    h += `<div class="verdict"><div class="meter" style="color:${survColor(r.surv)}">${r.surv}%</div><div><div class="lbl">Likelihood of survival</div>${outcomeText(r.surv)}</div></div>
+    h += `${r.ejection?'<div class="verdict"><div class="meter" style="color:var(--bad)">↗</div><div><div class="lbl">Dummy ejected</div>Unbelted · impact at or above 60 mph. Illustrated flight; no survival estimate.</div></div>':`<div class="verdict"><div class="meter" style="color:${survColor(r.surv)}">${r.surv}%</div><div><div class="lbl">Likelihood of survival</div>${outcomeText(r.surv)}</div></div>`}
     <dl class="kv" style="margin:10px 0 0">
       <dt>Impact speed (car 1)</dt><dd>${r.impactSpeed.toFixed(1)} m/s</dd>
       <dt>Crumple zone deformation</dt><dd>${r.czDef.toFixed(2)} m (${r.czPct.toFixed(0)}%)</dd>
@@ -1342,7 +1468,7 @@ function buildSummary(){
     h += `<div style="margin-top:14px"><div class="eyebrow" style="margin-bottom:6px">Trial log</div><div class="tblwrap"><table class="trials"><thead><tr>
       <th>#</th><th>Car</th><th>Crash</th><th>Speed<small>m/s</small></th><th>CZ<small>cm / kN</small></th><th>Belt</th><th>Bag</th><th>Dummy<small>max g</small></th><th>Survival</th></tr></thead><tbody>`;
     trials.slice().reverse().forEach(t => {
-      h += `<tr><td>${t.n}</td><td style="text-align:left">${t.car}</td><td style="text-align:left">${t.mode}</td><td>${t.v}</td><td>${t.cz}</td><td>${t.belt}</td><td>${t.bag}</td><td>${t.g}</td><td style="color:${survColor(t.s)}">${t.s}%</td></tr>`;
+      h += `<tr><td>${t.n}</td><td style="text-align:left">${t.car}</td><td style="text-align:left">${t.mode}</td><td>${t.v}</td><td>${t.cz}</td><td>${t.belt}</td><td>${t.bag}</td><td>${t.g}</td><td style="color:${survColor(t.s)}">${t.s===null?'Ejected':t.s+'%'}</td></tr>`;
     });
     h += '</tbody></table></div></div>';
   }
@@ -1364,7 +1490,7 @@ function drawGraph(){
   const lg = $('legend');
   if (!run || !played || !run.crashed){ ctx.fillStyle=C.muted; ctx.font=`600 ${14*dpr}px Poppins, system-ui, sans-serif`; ctx.textAlign='center'; ctx.fillText(run && played ? 'No crash to graph.' : 'Run a crash to see the graph.', W/2, H/2); ctx.textAlign='left'; lg.innerHTML=''; return; }
   const r = run, sel = $('yaxis').value;
-  const t0 = r.contactT - .01, t1 = r.slowEnd;
+  const t0 = r.contactT - .01, t1 = Math.min(r.slowEnd,r.ejection?.t??Infinity);
   const fr = r.frames.filter(f => f.t >= t0 && f.t <= t1);
   const f0 = frameAt(r.contactT);
   const series = [];
@@ -1400,6 +1526,9 @@ $('yaxis').addEventListener('change', drawGraph);
 
 /* ---------------- UI wiring ---------------- */
 const sliders = ['czLen','czRig','cellRig','beltK','bagR','v1','v2','m2'];
+document.querySelectorAll('[data-speed]').forEach(button=>button.addEventListener('click',()=>{
+  const speed=+button.dataset.speed;cfg.v1=speed;$('v1').value=speed;$('v1_n').value=speed;changed();
+}));
 sliders.forEach(id => {
   const r = $(id), n = $(id+'_n');
   r.addEventListener('input', () => { n.value = r.value; cfg[id] = +r.value; changed(); });
