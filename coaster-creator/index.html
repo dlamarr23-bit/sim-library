@@ -1326,8 +1326,8 @@ function drawDummy(c, m, x, armsUp){
   c.fillStyle=DUMMY_DARK; c.fillRect(x-0.38*m, -2.2*m, 0.58*m, 0.14*m);
   // arm: shoulder, elbow, hand (thrown up when the riders scream)
   const sh=[x-0.06*m, -2.62*m];
-  const el=armsUp ? [x+0.3*m, -3.05*m] : [x+0.3*m, -2.2*m];
-  const hd=armsUp ? [x+0.42*m, -3.6*m] : [x+0.82*m, -2.32*m];
+  const el=armsUp ? [x+0.3*m, -3.05*m] : [x+0.3*m, -1.95*m];
+  const hd=armsUp ? [x+0.42*m, -3.6*m] : [x+0.82*m, -1.85*m];
   limb(c, m, [sh,el,hd], 0.34*m);
   c.fillStyle=DUMMY_DARK; c.strokeStyle=INK; c.lineWidth=lw; c.beginPath(); c.arc(hd[0],hd[1],0.14*m,0,7); c.fill(); c.stroke();   // hand
   // neck and head
@@ -1347,9 +1347,9 @@ function drawCarLocal(c, ppm, idx, front, opts){
   const m=ppm, L=CAR_LEN*m;
   const main=COLORS[design.main], detail=COLORS[design.detail];
   const armsUp=!!(opts && opts.scream), lw=Math.max(1,0.055*m);
-  // Two staggered rows: the far riders remain visible above the near seats.
-  for(const far of [true,false]) for(const x of [-1.45,0.05]){
-    c.save(); c.translate((x+(far?0.1:0))*m,far?-0.62*m:0);
+  // Two riders, one in each seat, at the same height as in the reference.
+  for(const x of [-1.45,0.05]){
+    c.save(); c.translate(x*m,-0.3*m);
     drawDummy(c,m*0.68,0,armsUp); c.restore();
   }
   sledPath(c,m); c.fillStyle=main; c.fill();
