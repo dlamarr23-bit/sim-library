@@ -367,9 +367,9 @@ readColors();
 /* ---------------- car geometry ---------------- */
 // local coords: x = meters back from front bumper, y = height above ground (m)
 const STYLES = {
-  subcompact:{ name:'Subcompact', mass:950, L:3.9, fw:.72, rw:3.2, wr:.29, hip:2.05 },
-  sedan:{ name:'Compact sedan', mass:1450, L:4.7, fw:.85, rw:3.85, wr:.32, hip:2.4 },
-  suv:{ name:'SUV', mass:2000, L:4.8, fw:.88, rw:3.95, wr:.37, hip:2.3 }
+  subcompact:{ name:'Subcompact', mass:950, L:3.9, fw:.72, rw:3.2, wr:.30, hip:2.05, paint:{base:'#DF7863',light:'#FFB09A',shade:'#A94A3F',edge:'#743B36'} },
+  sedan:{ name:'Compact sedan', mass:1450, L:4.7, fw:.89, rw:3.91, wr:.36, hip:2.4, paint:{base:'#79ADE3',light:'#B2D9FC',shade:'#437EBB',edge:'#285785'} },
+  suv:{ name:'SUV', mass:2000, L:4.8, fw:.88, rw:3.95, wr:.38, hip:2.3, paint:{base:'#49A397',light:'#96D8C7',shade:'#28776F',edge:'#215A56'} }
 };
 const CAR2 = { L:.7, cz:1000, cell:2500 };
 const CELL = 2.0;      // safety-cell length used for % deformation (m)
@@ -436,7 +436,7 @@ function simulate(c){
     let Fd = 0;
     if (c.belt && sd > .02){ const fb = Math.max(0, c.beltK*(sd-.02)*(vs<0?.35:1) + 1.5*vs); Fd += fb; beltMax=Math.max(beltMax,fb); }
     let infl = 0;
-    if (bagFire && t >= contactT + .015){ infl = Math.min(1, (t - contactT - .015)/.02);
+    if (bagFire && t >= contactT + .015){ infl = Math.min(1, (t - contactT - .015)/.02)*Math.exp(-Math.max(0,t-contactT-.12)/.22);
       if (sd > S_BAG && infl > .5){ Fd += c.bagR*infl; hitBag = true; } }
     if (sd > S_WHEEL){ if(!hitWheel){ hitWheel=true; wheelSpeed=vs; } Fd += 4000*(sd-S_WHEEL) + 30*Math.max(0,vs); }
     if (sd < 0){ Fd += 600*sd + 10*Math.min(0,vs); }
@@ -473,6 +473,14 @@ function simulate(c){
     if (crashEndT!==null && t > Math.max(crashEndT, peakST) + .3 && Math.abs(uD + w1) < .05 && settled) break;
     if (contactT===null && Math.abs(w1)<1e-6 && (!two || Math.abs(w2)<1e-6)){ if (stopT===null) stopT=t; if (t > stopT+.5) break; }
   }
+  // Keep the settled wreck on screen long enough for suspension and debris to settle.
+  const last = frames[frames.length-1];
+  if(contactT!==null&&Math.abs(last.u)<.05&&Math.abs(last.w2)<.05&&Math.abs(last.uD)<.1){
+    const settleEnd=Math.max(last.t,contactT+1.25);
+    for(let tt=last.t+dt*REC;tt<=settleEnd;tt+=dt*REC){
+      frames.push({...last,t:tt,infl:last.infl*Math.exp(-(tt-last.t)/.22)});
+    }
+  }
   const tEnd = frames[frames.length-1].t;
   const crashed = contactT!==null;
   const slowStart = crashed ? contactT - .03 : Infinity;
@@ -499,6 +507,15 @@ function frameAt(t){
   return fr[i];
 }
 
+// A small, damped suspension response; permanent crush remains in makeDeform.
+function bodyMotion(t,contactT,severity=1){
+  const age=t-contactT;
+  if(contactT===null||age<0)return {pitch:0,heave:0};
+  const strength=Math.min(1,Math.max(0,severity));
+  return {pitch:-.045*strength*Math.sin(age*24)*Math.exp(-age*5),
+    heave:-.025*strength*Math.sin(age*29)*Math.exp(-age*6)};
+}
+
 /* ---------------- canvas helpers ---------------- */
 function fitCanvas(cv){
   const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio||1);
@@ -513,14 +530,18 @@ function drawScene(){
   if (!run) return;
   const { w:W, h:H, dpr } = fitCanvas(scene);
   const ctx = sctx, fr = frameAt(T), r = run, st = r.st;
-  const ppm = Math.min(H/440, W/1150)*170, groundY = Math.min(H*.83, H/2 + 200*ppm/170);
+  // Frame both vehicles in head-on mode, including the opposing car's rear.
+  // A fixed single-car scale preserves the size difference between body styles.
+  const span = r.two ? fr.p1+st.L-(fr.p2-STYLES.sedan.L)+1.2 : STYLES.suv.L+2.05;
+  const ppm = Math.min(H/(r.two?3.9:3.4), W/span), groundY = H*.78;
   const anchorScreen = Math.min(W*.22, ppm + 10*dpr);
   const front1 = fr.p1 + fr.c1;
   let anchor;
   if (r.crashed && T >= r.contactT) anchor = front1;
   else anchor = r.impactX!=null ? Math.max(front1 - .5, r.impactX) : front1 - .5;
   if (!r.crashed && !r.two) anchor = Math.max(front1 - .5, 0);
-  const X = wx => anchorScreen + (wx - anchor)*ppm;
+  const center = r.two ? (fr.p1+st.L+fr.p2-STYLES.sedan.L)/2 : 0;
+  const X = wx => r.two ? W/2+(wx-center)*ppm : anchorScreen + (wx - anchor)*ppm;
   const Y = h => groundY - h*ppm;
 
   // lab wall with measurement grid
@@ -545,15 +566,38 @@ function drawScene(){
     ctx.restore();
     ctx.fillStyle=C['accent-ink']; ctx.globalAlpha=.25; ctx.fillRect(bx1-.12*ppm,by,.12*ppm,groundY-by); ctx.globalAlpha=1;
   }
-  if (r.two) drawCar(ctx, {st:STYLES.sedan, Lz:CAR2.L, crush:fr.c2, ref:fr.p2, dir:-1, color:C.car2, X, Y, ppm, dist:fr.p2 - r.p2_0, dummy:false});
-  drawCar(ctx, {st, Lz:r.Lz, crush:fr.c1, ref:fr.p1, dir:1, color:C.car1, X, Y, ppm, dist:fr.p1 - r.p1_0, dummy:true, fr, cfg:r.cfg});
+  const motion=bodyMotion(fr.t,r.contactT,r.impactSpeed/24);
+  if (r.two){
+    // The opposing driver is illustrative; measurements remain for car 1's dummy.
+    const age=r.contactT===null?-1:fr.t-r.contactT;
+    const lean=age<0?0:Math.min(.32,r.impactClosing/32*.34)*Math.max(0,Math.sin(age*18))*Math.exp(-age*4);
+    drawCar(ctx, {st:STYLES.sedan, Lz:CAR2.L, crush:fr.c2, ref:fr.p2, dir:-1, paint:{base:'#DAAD61',light:'#FFE0A0',shade:'#A77A36',edge:'#715526'}, X, Y, ppm, dist:fr.p2 - r.p2_0, dummy:true, fr:{...fr,sd:lean,u:fr.w2,uD:fr.w2+lean*10,infl:0}, cfg:{belt:true,bag:false}, motion:bodyMotion(fr.t,r.contactT,(r.impactClosing-r.impactSpeed)/24)});
+  }
+  drawCar(ctx, {st, Lz:r.Lz, crush:fr.c1, ref:fr.p1, dir:1, X, Y, ppm, dist:fr.p1 - r.p1_0, dummy:true, fr, cfg:r.cfg, motion});
+  // Short-lived impact dust comes from the damaged nose and settles with gravity.
+  if(r.crashed&&fr.t>=r.contactT){
+    const age=fr.t-r.contactT, strength=Math.min(1,r.impactClosing/25);
+    if(age<.8&&strength>0){
+      ctx.save();
+      for(let k=0;k<9;k++){
+        const a=Math.max(0,age-k*.012),rad=(.025+a*(.22+k*.018))*ppm;
+        ctx.globalAlpha=Math.max(0,(1-age/.8))*.095*strength;
+        ctx.fillStyle=C.muted;ctx.beginPath();
+        ctx.ellipse(X(front1+.04+Math.sin(k*7)*a*.5),Y(.25+k*.055+a*.4),rad*1.5,rad,0,0,Math.PI*2);ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
   // debris
   for (const p of r.parts){
     if (p.t > fr.t) continue;
-    const dt = fr.t - p.t, tl = (p.vy + Math.sqrt(p.vy*p.vy + 2*9.8*p.y))/9.8, tt = Math.min(dt, tl);
-    const px = p.x + p.vx*tt, py = Math.max(0, p.y + p.vy*tt - 4.9*tt*tt);
-    ctx.fillStyle = C[p.col]; ctx.save(); ctx.translate(X(px),Y(py)); ctx.rotate(p.vx*tt*3);
-    ctx.fillRect(-p.s*ppm/2,-p.s*ppm/3,p.s*ppm,p.s*ppm*.66); ctx.restore();
+    const dt = fr.t - p.t, tl = (p.vy + Math.sqrt(p.vy*p.vy + 2*9.8*p.y))/9.8;
+    const after=Math.max(0,dt-tl),bounceV=(9.8*tl-p.vy)*.22;
+    const px=p.x+p.vx*Math.min(dt,tl)+p.vx*.16*(1-Math.exp(-after*5));
+    const py=dt<tl?p.y+p.vy*dt-4.9*dt*dt:Math.max(p.s*.15,bounceV*after-4.9*after*after);
+    ctx.fillStyle=p.col==='car1'?st.paint.base:p.col==='car2'?'#DAAD61':p.col==='glass'?'#b9dfec':C.concrete;
+    ctx.save(); ctx.translate(X(px),Y(py)); ctx.rotate(p.vx*Math.min(dt,tl+.1)*3);
+    ctx.beginPath();ctx.moveTo(-p.s*ppm*.6,-p.s*ppm*.4);ctx.lineTo(p.s*ppm*.6,0);ctx.lineTo(-p.s*ppm*.15,p.s*ppm*.45);ctx.closePath();ctx.fill();ctx.restore();
   }
   $('slowTag').hidden = !(r.crashed && T >= r.slowStart && T <= r.slowEnd + .05 && (playing || T>0));
 }
@@ -562,10 +606,10 @@ function drawScene(){
    Paths are sampled once, then every point uses the simulation's crush mapping. */
 const CAR_ART = {
   sedan: {
-    body:'M 12 371 Q 0 365 7 350 L 8 304 Q 8 283 28 267 Q 69 218 238 198 Q 333 131 391 102 Q 451 65 572 76 Q 647 77 693 111 L 805 183 Q 878 188 959 202 Q 984 208 986 241 L 990 322 Q 1000 335 992 370 Q 970 384 898 385 L 895 362 C 895 260 743 260 743 362 L 742 385 L 258 385 L 257 362 C 257 261 105 261 105 362 L 104 385 Q 30 387 12 371 Z',
-    glass:'M 277 216 Q 340 149 416 112 Q 455 91 566 95 Q 634 95 675 123 L 765 194 Q 778 207 777 217 Z',
+    body:'M 12 371 Q 0 365 7 350 L 8 304 Q 8 283 28 267 Q 69 218 238 198 Q 333 131 391 102 Q 451 65 572 76 Q 647 77 693 111 L 805 183 Q 878 188 959 202 Q 984 208 986 241 L 990 322 Q 1000 335 992 370 Q 970 384 910 385 L 910 354 C 910 247 754 247 754 354 L 752 385 L 268 385 L 267 354 C 267 247 111 247 111 354 L 110 385 Q 30 387 12 371 Z',
+    glass:'M 277 216 Q 340 149 416 112 Q 455 91 566 95 Q 634 95 675 123 L 705 149 Q 747 180 756 200 L 757 217 Z',
     frontDoor:'M 283 220 Q 283 275 303 365 Q 305 376 326 376 L 544 376 L 550 221',
-    rearDoor:'M 550 222 L 544 376 L 673 376 Q 696 374 710 348 L 754 287 Q 773 263 777 220',
+    rearDoor:'M 550 222 L 544 376 L 660 376 Q 685 374 698 346 L 738 287 Q 758 263 757 220',
     pillar:552, rearPillar:714, roof:94, belt:220, handles:[513,724],
     headlight:'M 19 284 Q 39 252 59 246 L 129 241 Q 139 242 128 255 L 104 278 Q 72 290 19 284 Z',
     taillight:'M 922 236 Q 941 230 984 234 L 989 279 Q 955 283 937 268 Z',
@@ -573,21 +617,21 @@ const CAR_ART = {
     mirror:'M 288 217 Q 284 190 307 185 Q 337 180 339 201 Q 341 218 328 220 Z'
   },
   subcompact: {
-    body:'M 10 373 Q 1 364 5 332 L 10 282 Q 16 258 54 239 Q 97 217 219 194 L 330 86 C 364 53 385 39 424 36 C 547 30 706 30 804 42 Q 836 46 854 73 L 953 223 L 963 235 Q 991 255 995 288 L 998 355 Q 1000 380 984 385 L 896 385 L 895 356 C 895 259 747 259 747 356 L 746 385 L 260 385 L 259 356 C 259 258 111 258 111 356 L 110 385 Q 26 389 10 373 Z',
-    glass:'M 268 211 L 365 100 C 390 71 397 62 430 59 C 550 53 704 55 780 65 Q 809 67 823 87 L 897 198 Q 904 214 886 215 Z',
+    body:'M 10 373 Q 1 364 5 332 L 10 282 Q 16 258 54 239 Q 97 217 219 194 L 330 116 C 364 83 385 69 424 66 C 547 60 706 60 804 72 Q 836 76 854 103 L 953 223 L 963 235 Q 991 255 995 288 L 998 355 Q 1000 380 984 385 L 896 385 L 895 356 C 895 259 747 259 747 356 L 746 385 L 260 385 L 259 356 C 259 258 111 258 111 356 L 110 385 Q 26 389 10 373 Z',
+    glass:'M 268 211 L 365 130 C 390 101 397 92 430 89 C 550 83 704 85 780 95 Q 809 97 823 117 L 897 198 Q 904 214 886 215 Z',
     frontDoor:'M 271 219 L 297 365 Q 299 376 315 376 L 624 376 Q 639 374 638 357 L 638 219',
-    pillar:638, roof:57, belt:219, handles:[600],
+    pillar:638, roof:87, belt:219, handles:[600],
     headlight:'M 25 287 Q 38 254 63 247 L 109 239 Q 121 241 112 263 L 97 286 Q 62 296 25 287 Z',
     taillight:'M 935 190 L 960 227 Q 972 246 975 283 L 947 282 Q 933 244 935 190 Z',
     hood:'M 38 250 Q 110 220 221 205 L 264 211',
     mirror:'M 278 217 Q 275 189 298 185 Q 329 183 330 206 Q 331 219 318 221 Z'
   },
   suv: {
-    body:'M 8 377 Q 0 366 5 337 L 8 247 Q 8 222 31 216 L 243 202 L 348 62 Q 360 37 389 36 L 887 36 Q 914 39 920 61 L 969 206 Q 995 223 995 255 L 998 363 Q 997 382 976 385 L 901 385 L 901 353 C 901 247 745 247 745 353 L 744 385 L 263 385 L 262 353 C 262 247 104 247 104 353 L 103 385 Z',
-    glass:'M 282 213 L 374 74 Q 382 63 396 63 L 867 63 Q 884 62 888 80 L 927 198 Q 932 213 918 216 Z',
+    body:'M 8 377 Q 0 366 5 337 L 8 247 Q 8 222 31 216 L 243 202 L 348 96 Q 360 71 389 70 L 887 70 Q 914 73 920 95 L 969 206 Q 995 223 995 255 L 998 363 Q 997 382 976 385 L 901 385 L 901 353 C 901 247 745 247 745 353 L 744 385 L 263 385 L 262 353 C 262 247 104 247 104 353 L 103 385 Z',
+    glass:'M 282 213 L 374 108 Q 382 97 396 97 L 867 97 Q 884 96 888 114 L 927 198 Q 932 213 918 216 Z',
     frontDoor:'M 285 222 L 297 365 Q 299 376 315 376 L 567 376 L 567 221',
     rearDoor:'M 567 221 L 567 376 L 699 376 Q 715 373 721 352 L 757 286 L 759 221',
-    pillar:567, rearPillar:760, roof:64, belt:220, handles:[528,716],
+    pillar:567, rearPillar:760, roof:98, belt:220, handles:[528,716],
     headlight:'M 15 235 L 91 231 Q 100 232 100 245 L 100 278 L 13 278 Z',
     taillight:'M 969 223 L 993 231 L 996 300 L 972 300 Z',
     hood:'M 24 220 L 243 215 L 280 220',
@@ -620,10 +664,18 @@ function illustrationPoints(data){
 function drawCar(ctx,o){
   const {st,Lz,crush,ref,dir,X,Y,ppm}=o;
   const kind=st===STYLES.suv?'suv':st===STYLES.subcompact?'subcompact':'sedan';
-  const art=CAR_ART[kind], scale=st.L/1000, outline='#132f4c';
+  const art=CAR_ART[kind], scale=st.L/1000, outline='#112d49',paint=o.paint||st.paint;
   const def=makeDeform(Lz,crush), wx=x=>ref+dir*def(x);
-  const wig=x=>x<Lz&&crush>0?Math.sin(x*38)*.045*Math.min(1,crush/Math.max(.01,Lz)):0;
-  const P=(x,y)=>[X(wx(x*scale)),Y((430-y)*scale+wig(x*scale))];
+  const fold=Math.min(1,crush/Math.max(.18,Lz)),damageSpan=Math.max(Lz,st.fw*1.65);
+  const motion=o.motion||{pitch:0,heave:0};
+  const height=(x,y)=>{
+    const u=Math.min(1,Math.max(0,x/damageSpan));
+    // Hood folds upward; low rocker panels retain a much smaller ripple.
+    const buckle=crush>0&&x<damageSpan?fold*(.19*Math.sin(u*Math.PI)+.045*Math.sin(u*Math.PI*5))*Math.max(.12,(380-y)/180):0;
+    return (430-y)*scale+buckle+motion.heave+(def(x)-st.L*.55)*motion.pitch;
+  };
+  const P=(x,y)=>[X(wx(x*scale)),Y(height(x*scale,y))];
+  o.bodyHeight=(x,y)=>height(x,430-y/scale);
   const trace=data=>{
     ctx.beginPath();let penDown=false;
     for(const point of illustrationPoints(data)){
@@ -641,25 +693,29 @@ function drawCar(ctx,o){
     const g=ctx.createLinearGradient(0,P(0,y0)[1],0,P(0,y1)[1]);g.addColorStop(0,top);g.addColorStop(1,bottom);return g;
   };
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.save();ctx.globalAlpha=.2;ctx.fillStyle='#132c43';ctx.beginPath();
+  ctx.ellipse(X(ref+dir*(st.L+crush)/2),Y(.015),(st.L-crush)*ppm*.49,ppm*.045,0,0,Math.PI*2);ctx.fill();ctx.restore();
   // Tires sit behind the actual cut-out wheel arches, not on top of a solid slab.
   drawCarWheels(ctx,o,wx);
-  path(art.body,o.color,outline,3.2);
+  path(art.body,gradient(paint.light,paint.base,75,370),outline,3.2);
   ctx.save();trace(art.body);ctx.clip();
   path(art.body,gradient('rgba(224,244,255,.13)','rgba(16,58,105,.10)'),null);
   path('M 0 190 Q 490 225 1000 196 L 1000 253 Q 550 280 0 290 Z',gradient('rgba(255,255,255,.26)','rgba(255,255,255,0)'),null);
-  path('M 0 350 Q 240 359 318 340 L 1000 312 L 1000 398 L 0 398 Z','rgba(12,53,104,.23)',null);
-  path('M 306 365 Q 499 339 710 352 L 684 374 L 315 376 Z','rgba(175,216,255,.32)',null);
+  path('M 0 350 Q 240 359 318 340 L 1000 312 L 1000 398 L 0 398 Z',paint.shade,null);
+  path('M 306 365 Q 499 339 710 352 L 684 374 L 315 376 Z',paint.base,null);
+  path('M 304 366 Q 485 354 695 354 L 678 364 L 311 372 Z','rgba(255,255,255,.16)',null);
   path('M 0 298 Q 60 290 122 285 L 211 202 L 0 275 Z','rgba(225,244,255,.22)',null);
   path('M 12 374 L 115 374 M 264 381 L 742 381 M 902 377 L 993 366',null,'rgba(21,55,94,.8)',5);
   // Sculpted wheel-arch highlights follow each vehicle's original axle positions.
   for(const ax of [st.fw,st.rw]){
     const x=ax/scale,r=st.wr/scale+11,y=430-st.wr/scale;
-    path(`M ${x-r} ${y+8} C ${x-r-4} ${y-r*1.35} ${x+r+4} ${y-r*1.35} ${x+r} ${y+8}`,null,kind==='suv'?'#344555':'rgba(25,68,115,.65)',kind==='suv'?17:8);
+    path(`M ${x-r} ${y+8} C ${x-r-4} ${y-r*1.35} ${x+r+4} ${y-r*1.35} ${x+r} ${y+8}`,null,kind==='suv'?'#344555':paint.shade,kind==='suv'?17:8);
     path(`M ${x-r-6} ${y-15} C ${x-r} ${y-r*1.42} ${x+r} ${y-r*1.42} ${x+r+6} ${y-15}`,null,'rgba(190,224,255,.32)',3);
   }
   ctx.restore();
   // Window opening and its black rubber surround.
-  path(art.glass,gradient('#a8d4ed','#d7eef6',70,225),outline,4.5);
+  path(art.glass,gradient('#add7ed','#d6eff7',70,225),outline,7);
+  path(art.glass,null,'#5b758d',2);
   ctx.save();trace(art.glass);ctx.clip();
   path('M 700 224 Q 698 173 722 172 Q 742 172 742 223 Z','#526b80',null);
   path('M 730 225 Q 735 184 751 185 Q 772 185 780 225 Z','#708b9e',null);
@@ -678,15 +734,15 @@ function drawCar(ctx,o){
   ctx.restore();
   path(art.frontDoor,null,outline,1.7);
   if(art.rearDoor)path(art.rearDoor,null,outline,1.7);
-  path(art.hood,null,'#315b83',2);
+  path(art.hood,null,paint.edge,2);
   path(`M 277 ${art.belt+5} Q 520 ${art.belt+9} 918 ${art.belt-1}`,null,'rgba(214,239,255,.55)',3);
   // Each handle is placed inside its door, independently of the window pillar.
   for(const d of art.handles){
-    path(`M ${d-19} 249 Q ${d} 236 ${d+15} 248`,'#376897',null);
-    path(`M ${d-24} 249 L ${d+21} 247 Q ${d+28} 248 ${d+26} 255 Q ${d+25} 259 ${d+20} 259 L ${d-24} 262 Q ${d-31} 259 ${d-28} 253 Z`,gradient('#afdaff','#608fbe',248,262),outline,1.8);
+    path(`M ${d-19} 249 Q ${d} 236 ${d+15} 248`,paint.shade,null);
+    path(`M ${d-24} 249 L ${d+21} 247 Q ${d+28} 248 ${d+26} 255 Q ${d+25} 259 ${d+20} 259 L ${d-24} 262 Q ${d-31} 259 ${d-28} 253 Z`,gradient(paint.light,paint.base,248,262),outline,1.8);
   }
   const fx=kind==='subcompact'?906:868;
-  path(`M ${fx-15} 258 C ${fx-35} 258 ${fx-35} 292 ${fx-15} 292 C ${fx+9} 292 ${fx+9} 258 ${fx-15} 258 Z`,null,'#315b83',1.8);
+  path(`M ${fx-15} 230 C ${fx-39} 230 ${fx-39} 273 ${fx-15} 273 C ${fx+13} 273 ${fx+13} 230 ${fx-15} 230 Z`,null,paint.edge,1.8);
   path(art.headlight,'#eef5f5',outline,2.3);
   ctx.save();trace(art.headlight);ctx.clip();
   path('M 93 225 L 137 231 L 134 292 L 73 292 Z','#ffbb55',null);
@@ -699,11 +755,27 @@ function drawCar(ctx,o){
   path('M 15 329 L 57 329 Q 66 329 69 340 L 73 355 Q 73 362 65 362 L 14 362 Z','#263e52',outline,1.5);
   path('M 20 338 L 64 338 M 21 347 L 68 347',null,'#627789',2);
   path('M 16 317 L 45 316',null,'rgba(217,240,255,.65)',3);
-  path(art.mirror,gradient('#a7d5fc','#4c80b4',178,224),outline,2.5);
-  ctx.save();trace(art.mirror);ctx.clip();path('M 270 207 L 343 207 L 343 223 L 270 223 Z','#4474a2',null);ctx.restore();
+  path(art.mirror,gradient(paint.light,paint.base,178,224),outline,2.5);
+  ctx.save();trace(art.mirror);ctx.clip();path('M 270 207 L 343 207 L 343 223 L 270 223 Z',paint.shade,null);ctx.restore();
+  if(crush>.035){
+    ctx.save();trace(art.body);ctx.clip();
+    const end=damageSpan/scale;
+    for(let k=0;k<3;k++){
+      const x=end*(.25+k*.22),depth=fold*(14+k*4);
+      path(`M ${x-22} 273 L ${x+depth} 296 L ${x-depth*.4} 323 L ${x+8} 347`,null,paint.edge,1.3+fold);
+      path(`M ${x-18} 271 L ${x+depth+4} 295 L ${x-depth*.4+4} 322`,null,'rgba(255,255,255,.48)',1.3);
+    }
+    path(`M 15 315 L ${end*.28} 322 L ${end*.46} 311 L ${end*.66} 329`,null,'#24323c',2.5*fold);
+    ctx.restore();
+    // Laminated glazing cracks only once intrusion reaches the passenger cell.
+    if(crush>Lz+.08){
+      ctx.save();trace(art.glass);ctx.clip();
+      path('M 321 183 L 354 162 L 377 174 M 354 162 L 349 132 M 354 162 L 380 143 L 395 139 M 354 162 L 338 197 L 347 211',null,'rgba(247,253,255,.9)',1.3);ctx.restore();
+    }
+  }
   if(kind==='suv'){
-    path('M 400 36 L 400 21 L 851 21 L 860 36',null,'#263a4c',9);
-    path('M 416 20 L 837 20',null,'#728b9d',2);
+    path('M 400 70 L 400 55 L 851 55 L 860 70',null,'#263a4c',9);
+    path('M 416 54 L 837 54',null,'#728b9d',2);
     path('M 330 392 L 699 392',null,'#334b60',9);
   }
   ctx.restore();
@@ -713,13 +785,17 @@ function drawCarWheels(ctx,o,wx){
   const {st,X,Y,ppm}=o;
   for(const x of [st.fw,st.rw]){
     const radius=st.wr*ppm;
-    ctx.save();ctx.translate(X(wx(x)),Y(st.wr));
+    const front=x===st.fw,shift=front?Math.max(0,o.crush+st.wr*.9-makeDeform(o.Lz,o.crush)(x)):0;
+    ctx.save();ctx.translate(X(wx(x)+o.dir*shift),Y(st.wr));
+    if(front&&o.crush>.4){ctx.rotate(o.dir*Math.min(.16,(o.crush-.4)*.15));ctx.scale(1,1-Math.min(.09,o.crush*.045));}
     const circle=(r,fill,stroke,width=1)=>{ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}};
-    circle(radius,'#26303c','#14283b',Math.max(1,ppm*.012));
-    circle(radius*.91,'#3e4854','#505d69',radius*.035);
+    const tire=ctx.createRadialGradient(-radius*.2,-radius*.3,radius*.5,0,0,radius);
+    tire.addColorStop(0,'#50565e');tire.addColorStop(.72,'#363e49');tire.addColorStop(1,'#172532');
+    circle(radius,tire,'#14283b',Math.max(1,ppm*.012));
+    circle(radius*.91,'#3e454f','#5b636e',radius*.027);
     circle(radius*.71,'#acb9c5','#172c40',radius*.055);
     circle(radius*.62,'#253b50','#dbe3e8',radius*.03);
-    ctx.rotate(-o.dist/st.wr);
+    ctx.rotate(-o.dir*o.dist/st.wr);
     for(let k=0;k<5;k++){
       ctx.save();ctx.rotate(k*Math.PI*2/5);
       ctx.beginPath();ctx.moveTo(-radius*.13,-radius*.08);ctx.lineTo(-radius*.16,-radius*.64);ctx.lineTo(radius*.14,-radius*.66);ctx.lineTo(radius*.07,-radius*.28);ctx.lineTo(radius*.22,-radius*.15);ctx.closePath();
@@ -735,9 +811,10 @@ function drawCarWheels(ctx,o,wx){
 
 function drawDummy(ctx,o,wx){
   const {st,X,Y,ppm,fr,cfg}=o;
-  const hipX=st.hip-(st===STYLES.sedan?.13:0), hipY=st===STYLES.suv?.76:st===STYLES.subcompact?.54:.58;
-  const s=Math.max(-.05,fr.sd),ang=-.19+Math.asin(Math.max(-.3,Math.min(.98,s/.42)));
-  const P=(x,y)=>[X(wx(x)),Y(y)];
+  const s=Math.max(-.05,fr.sd);
+  const hipX=st.hip-(st===STYLES.sedan?.13:0)-(cfg.belt?0:s*.48), hipY=st===STYLES.suv?.63:st===STYLES.subcompact?.38:.62;
+  const ang=-.19+Math.asin(Math.max(-.3,Math.min(.94,s*(cfg.belt?1:.6)/.48)));
+  const P=(x,y)=>[X(wx(x)),Y(o.bodyHeight?o.bodyHeight(x,y):y)];
   // Drawing coordinates are meters, facing left. Local transforms articulate the
   // mannequin; their points still pass through the existing safety-cell mapping.
   const poly=(points,fill,stroke='#7c571c',width=.008)=>{
@@ -771,17 +848,21 @@ function drawDummy(ctx,o,wx){
     line([body(-.035,y+.012),body(.035,y+.012)],'#dce0db',.004);
   }
   // Anatomical head profile, sampled from a curved path instead of a circle.
-  const headAngle=ang*1.12, base=body(0,.62);
+  const headAngle=ang+Math.max(-.1,Math.min(.24,(fr.uD-fr.u)*.018)), base=body(0,.62);
   const head=(x,y)=>[base[0]+x*Math.cos(headAngle)-y*Math.sin(headAngle),base[1]+x*Math.sin(headAngle)+y*Math.cos(headAngle)];
-  const headPath=data=>illustrationPoints(data).map(([x,y])=>head((x-60)*.0024,(130-y)*.0024));
+  const headPath=data=>illustrationPoints(data).map(([x,y])=>head((x-60)*.00265,(130-y)*.00265));
   poly(headPath('M 56 8 C 19 7 14 25 15 43 L 13 57 L 2 74 Q 0 79 13 80 L 16 88 L 14 95 L 21 112 Q 26 122 38 116 L 61 104 L 65 88 L 93 86 Q 104 54 97 31 Q 89 9 56 8 Z'),'#eab334','#73531f',.007);
   poly(headPath('M 63 11 Q 93 14 97 34 L 94 81 L 65 85 L 64 60 Z'),'#ca8b20',null);
   poly(headPath('M 19 31 Q 30 8 59 12 Q 77 12 89 24 L 60 23 L 30 26 Z'),'#ffdc6b',null);
   poly(headPath('M 17 45 L 30 40 L 33 51 L 23 56 L 18 64 Z'),'#ce901f',null);
-  line([head(-.107,.112),head(-.086,.113)],'#513e28',.008);
-  const eye=head(-.094,.177);disc(...eye,.008,'#3d3525','#3d3525');
+  // Small molded facial details keep the mannequin's profile anatomical.
+  line([head(-.12,.218),head(-.102,.222),head(-.089,.211)],'#9c6b20',.006);
+  const eye=head(-.111,.204);disc(...eye,.006,'#3d3525','#3d3525');
+  line([head(-.128,.151),head(-.115,.148)],'#9c6b20',.004);
+  line([head(-.116,.105),head(-.099,.108),head(-.083,.103)],'#6e501f',.005);
+  line([head(-.101,.074),head(-.085,.063),head(-.057,.066)],'#c68a24',.004);
   line([head(-.005,.28),head(.012,.2),head(.014,.1)],'#8e631f',.004);
-  const mark=head(.015,.196);target(...mark,.044);
+  const mark=head(.018,.213);target(...mark,.055);
   // Steering column and rim. Both hands wrap over it.
   const wheel=[hipX-.62,hipY+.48];
   line([[wheel[0]-.15,wheel[1]-.18],wheel],'#344451',.035);
@@ -796,9 +877,12 @@ function drawDummy(ctx,o,wx){
     poly([at(a,w0*.75),at(b,w1*.7),at(b,w1*.25),at(a,w0*.3)],'#ffdb65',null);
     poly([at(a,-w0*.45),at(b,-w1*.4),at(b,-w1),at(a,-w0)],'#cd9021',null);
   };
-  limb(sh,elbow,.061,.043);limb(elbow,hand,.041,.027);
-  disc(...sh,.057,'#747a76','#674f25');disc(...sh,.043,'#d2ae53');target(...sh,.03);
-  disc(...elbow,.027,'#8a762f');disc(...elbow,.013,'#3d474b');
+  limb(sh,elbow,.066,.045);limb(elbow,hand,.045,.029);
+  disc(...sh,.058,'#7d898d','#374750');disc(...sh,.041,'#a9afb0','#44555e');
+  disc(...sh,.025,'#65757e','#35464e');disc(...sh,.009,'#b7bec0','#3f4c54');
+  disc(...elbow,.027,'#8b9696','#3c4c53');disc(...elbow,.013,'#3d474b');
+  disc(hand[0]+.045,hand[1]-.01,.031,'#7d898d','#39464e');
+  disc(hand[0]+.045,hand[1]-.01,.014,'#495a63','#b8bfbd');
   line([[hand[0]+.007,hand[1]-.023],[hand[0]+.012,hand[1]+.025]],'#252f36',.024);
   poly([[hand[0]+.008,hand[1]-.026],[hand[0]-.04,hand[1]-.02],[hand[0]-.07,hand[1]+.018],[hand[0]-.08,hand[1]+.05],[hand[0]-.053,hand[1]+.062],[hand[0]-.014,hand[1]+.04],[hand[0]+.014,hand[1]+.022]],'#f0b938');
   for(let k=0;k<3;k++)line([[hand[0]-.065,hand[1]+.04-k*.014],[hand[0]-.034,hand[1]+.02-k*.014]],'#ab7923',.004);
@@ -833,8 +917,8 @@ function drawOverview(){
     ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(a,y,b-a,h,3*dpr) : ctx.rect(a,y,b-a,h); ctx.fill();
     ctx.fillStyle='#1b1e22'; ctx.beginPath(); ctx.arc(a+(b-a)*.2,H*.72,h*.32,0,7); ctx.arc(a+(b-a)*.8,H*.72,h*.32,0,7); ctx.fill();
   };
-  if (r.two) mini(fr.p2 - fr.c2, STYLES.sedan.L - fr.c2, -1, C.car2);
-  mini(fr.p1 + fr.c1, r.st.L - fr.c1, 1, C.car1);
+  if (r.two) mini(fr.p2 - fr.c2, STYLES.sedan.L - fr.c2, -1, '#DAAD61');
+  mini(fr.p1 + fr.c1, r.st.L - fr.c1, 1, r.st.paint.base);
 }
 
 /* ---------------- readouts ---------------- */
@@ -938,11 +1022,11 @@ function drawGraph(){
   const fr = r.frames.filter(f => f.t >= t0 && f.t <= t1);
   const f0 = frameAt(r.contactT);
   const series = [];
-  if (sel==='disp'){ series.push({name:'Car', col:C.car1, v:fr.map(f=> -(f.p1 - f0.p1))}); series.push({name:'Dummy', col:C.series2, v:fr.map(f=> -(f.p1 - f0.p1) + (f.sd - f0.sd))}); }
-  if (sel==='vel'){ series.push({name:'Car', col:C.car1, v:fr.map(f=>f.u)}); series.push({name:'Dummy', col:C.series2, v:fr.map(f=>f.uD)}); }
-  if (sel==='dec'){ series.push({name:'Car', col:C.car1, v:fr.map(f=>-f.aF)}); series.push({name:'Dummy', col:C.series2, v:fr.map(f=>-f.aD)}); }
+  if (sel==='disp'){ series.push({name:'Car', col:r.st.paint.base, v:fr.map(f=> -(f.p1 - f0.p1))}); series.push({name:'Dummy', col:C.series2, v:fr.map(f=> -(f.p1 - f0.p1) + (f.sd - f0.sd))}); }
+  if (sel==='vel'){ series.push({name:'Car', col:r.st.paint.base, v:fr.map(f=>f.u)}); series.push({name:'Dummy', col:C.series2, v:fr.map(f=>f.uD)}); }
+  if (sel==='dec'){ series.push({name:'Car', col:r.st.paint.base, v:fr.map(f=>-f.aF)}); series.push({name:'Dummy', col:C.series2, v:fr.map(f=>-f.aD)}); }
   if (sel==='fd'){ series.push({name:'Dummy', col:C.series2, v:fr.map(f=>f.Fd)}); }
-  if (sel==='fc'){ series.push({name:'Car', col:C.car1, v:fr.map(f=>f.F)}); }
+  if (sel==='fc'){ series.push({name:'Car', col:r.st.paint.base, v:fr.map(f=>f.F)}); }
   lg.innerHTML = series.map(s=>`<span><span class="sw" style="background:${s.col}"></span>${s.name}</span>`).join('');
   let ymin = Math.min(0, ...series.flatMap(s=>s.v)), ymax = Math.max(...series.flatMap(s=>s.v));
   if (ymax - ymin < 1e-6) ymax = ymin + 1;
