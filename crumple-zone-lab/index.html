@@ -500,7 +500,7 @@ function simulate(c){
   const tEnd = frames[frames.length-1].t;
   const crashed = contactT!==null;
   const slowStart = crashed ? contactT - .03 : Infinity;
-  const slowEnd = ejection ? ejection.t+.85 : crashed ? Math.max(crashEndT ?? contactT, peakST) + .12 : -1;
+  const slowEnd = ejection ? ejectionClearTime(ejection) : crashed ? Math.max(crashEndT ?? contactT, peakST) + .12 : -1;
   // results
   const czDef = Math.min(c1, Lz), cellDef = Math.max(0, c1 - Lz);
   const finalU = crashed ? frames.find(f => f.t >= (crashEndT ?? contactT)) : null;
@@ -532,17 +532,56 @@ function bodyMotion(t,contactT,severity=1){
     heave:-.045*strength*Math.sin(age*29)*Math.exp(-age*6)};
 }
 
+function ejectionClearTime(e){return e.t+1.2/Math.abs(e.vx);}
+function playbackRate(r,t){return r.crashed&&t>=r.slowStart&&t<=r.slowEnd?1/15:1;}
+
+const DUMMY_HEAD_PATH='M 62 8 C 34 5 17 20 18 46 L 16 60 L 6 77 Q 4 82 17 83 L 18 91 L 17 100 L 25 115 Q 30 122 44 117 L 58 106 L 67 105 L 84 104 Q 103 82 101 53 Q 104 17 78 10 Z';
+function flyingDummyRig(age,settle=0){
+  const f=Math.sin(age*15)*.08*(1-settle);
+  const mix=(a,b)=>a.map((v,i)=>v+(b[i]-v)*settle);
+  const hip=[0,.05],chest=[0,-.35];
+  const lk=mix([-.18,.36+f],[-.035,.38]),rk=mix([.26,.30-f],[.08,.37]);
+  const lf=mix([-.08,.66],[-.02,.70]),rf=mix([.37,.56],[.07,.69]);
+  const le=mix([-.30,-.15-f],[-.10,-.12]),re=mix([.29,-.49+f],[.13,-.13]);
+  const lh=mix([-.49,-.35],[-.09,.10]),rh=mix([.48,-.31],[.12,.13]);
+  return {
+    limbs:[{a:[-.05,.04],b:lk,w:.12},{a:lk,b:lf,w:.09},{a:[.06,.04],b:rk,w:.12},{a:rk,b:rf,w:.09},
+      {a:chest,b:hip,w:.23},{a:[-.08,-.36],b:le,w:.085},{a:le,b:lh,w:.07},{a:[.08,-.36],b:re,w:.085},{a:re,b:rh,w:.07}],
+    joints:[hip,lk,rk,[-.09,-.35],[.09,-.35],le,re],hands:[lh,rh],shoes:[[lf[0],lf[1]+.04],[rf[0]+.02,rf[1]+.03]]
+  };
+}
+// Use the actual articulated outline as ground support, not a fixed hip height.
+function dummyGroundSupport(angle,rig){
+  const s=Math.sin(angle),c=Math.cos(angle);let bottom=-Infinity;
+  const point=(p,r=0)=>{bottom=Math.max(bottom,p[0]*s+p[1]*c+r);};
+  for(const limb of rig.limbs){point(limb.a,limb.w/2+.009);point(limb.b,limb.w/2+.009);}
+  rig.joints.forEach(p=>point(p,.05));
+  rig.hands.forEach(p=>point(p,Math.hypot(.05*s,.034*c)+.0035));
+  for(const p of rig.shoes)for(const dx of [-.045,.105])for(const dy of [-.025,.035])point([p[0]+dx,p[1]+dy]);
+  for(const [x,y] of illustrationPoints(DUMMY_HEAD_PATH))point([(x-60)*.0023,-.76+y*.0023],.004);
+  return bottom;
+}
+const ejectionLandings=new WeakMap();
+function ejectionFlightTime(e){
+  if(ejectionLandings.has(e))return ejectionLandings.get(e);
+  const gap=t=>e.y+e.vy*t-11.5*t*t/2-dummyGroundSupport(-Math.PI/2-t*4.6,flyingDummyRig(t));
+  let hi=.02;while(hi<3&&gap(hi)>0)hi+=.02;
+  let lo=Math.max(0,hi-.02);
+  for(let i=0;i<22;i++){const mid=(lo+hi)/2;if(gap(mid)>0)lo=mid;else hi=mid;}
+  const result=(lo+hi)/2;ejectionLandings.set(e,result);return result;
+}
 // Cinematic flight after cabin exit. The restraint data stops at this event.
 function ejectionPose(r,t){
   const e=r.ejection;if(!e||t<e.t)return null;
-  const age=t-e.t,g=11.5,ground=.45;
-  const flight=(e.vy+Math.sqrt(e.vy*e.vy+2*g*(e.y-ground)))/g;
-  const air=Math.min(age,flight),after=Math.max(0,age-flight);
-  const x=e.x+e.vx*air+e.vx*.19*(1-Math.exp(-after*4))/4;
-  const y=age<flight?e.y+e.vy*age-g*age*age/2:ground+Math.max(0,.95*after-6*after*after);
+  const age=t-e.t,flight=ejectionFlightTime(e),air=Math.min(age,flight),after=Math.max(0,age-flight);
+  const settled=after>=.6,settle=settled?1:1-Math.exp(-after*10);
   const hitAngle=-Math.PI/2-flight*4.6,restAngle=-Math.PI/2+Math.round((hitAngle+Math.PI/2)/(2*Math.PI))*2*Math.PI;
-  const angle=age<flight?-Math.PI/2-age*4.6:restAngle+(hitAngle-restAngle)*Math.exp(-after*12)-Math.sin(after*13)*.12*Math.exp(-after*7);
-  return {x,y,angle,age,landAge:after,landed:age>=flight};
+  const angle=age<flight?-Math.PI/2-age*4.6:settled?restAngle:restAngle+(hitAngle-restAngle)*Math.exp(-after*12)-Math.sin(after*13)*.12*Math.exp(-after*7);
+  const rig=flyingDummyRig(age,settle);
+  const x=e.x+e.vx*air+e.vx*.19*(1-Math.exp(-after*4))/4;
+  const support=dummyGroundSupport(angle,rig);
+  const y=age<flight?e.y+e.vy*age-11.5*age*age/2:support+Math.max(0,.55*after-4*after*after);
+  return {x,y,angle,age,landAge:after,landed:age>=flight,settled,rig};
 }
 
 /* ---------------- canvas helpers ---------------- */
@@ -590,10 +629,13 @@ function drawScene(){
   for (let gy=.5; gy*ppm < groundY; gy+=.5){ ctx.beginPath(); ctx.moveTo(0,Y(gy)); ctx.lineTo(W,Y(gy)); ctx.stroke(); }
   ctx.fillStyle = C.muted; ctx.font = `700 ${11*dpr}px Poppins, system-ui, sans-serif`; ctx.textBaseline='top';
   for (let gx = Math.ceil(leftW); gx <= rightW; gx += 1){ ctx.fillText(gx.toFixed(0)+' m', X(gx)+3*dpr, 4*dpr); }
-  // ground
-  ctx.fillStyle = C.asphalt; ctx.fillRect(0,groundY,W,H-groundY);
+  // The tire contact plane runs through the lane, below the road's far edge.
+  const roadTop=groundY-Math.max(.65*ppm,20*dpr);
+  const dividerY=groundY+Math.max(.55*ppm,18*dpr);
+  ctx.fillStyle = C.asphalt; ctx.fillRect(0,roadTop,W,H-roadTop);
   ctx.fillStyle = C['asphalt-line'];
-  for (let gx = Math.floor(leftW/2)*2; gx <= rightW; gx += 2){ ctx.fillRect(X(gx), groundY + (H-groundY)*.45, ppm*1, Math.max(2,(H-groundY)*.12)); }
+  ctx.save();ctx.globalAlpha=.5;ctx.fillRect(0,roadTop+4*dpr,W,Math.max(1,ppm*.018));ctx.restore();
+  for (let gx = Math.floor(leftW/2)*2; gx <= rightW; gx += 2){ ctx.fillRect(X(gx),dividerY,ppm,Math.max(2,ppm*.045)); }
 
   // barrier
   if (!r.two){
@@ -611,7 +653,8 @@ function drawScene(){
     const lean=age<0?0:Math.min(.32,r.impactClosing/32*.34)*Math.max(0,Math.sin(age*18))*Math.exp(-age*4);
     drawCar(ctx, {st:STYLES.sedan, Lz:CAR2.L, crush:fr.c2, ref:fr.p2, dir:-1, paint:{base:'#DAAD61',light:'#FFE0A0',shade:'#A77A36',edge:'#715526'}, X, Y, ppm, dist:fr.p2 - r.p2_0, dummy:true, fr:{...fr,sd:lean,u:fr.w2,uD:fr.w2+lean*10,infl:0}, cfg:{belt:true,bag:false}, motion:bodyMotion(fr.t,r.contactT,(r.impactClosing-r.impactSpeed)/24)});
   }
-  drawCar(ctx, {st, Lz:r.Lz, crush:fr.c1, ref:fr.p1, dir:1, X, Y, ppm, dist:fr.p1 - r.p1_0, dummy:true, hideOccupant:!!ej, impactSpeed:r.impactSpeed, fr, cfg:r.cfg, motion});
+  const primaryCar={st,Lz:r.Lz,crush:fr.c1,ref:fr.p1,dir:1,X,Y,ppm,dist:fr.p1-r.p1_0,dummy:true,hideOccupant:!!ej,impactSpeed:r.impactSpeed,fr,cfg:r.cfg,motion};
+  drawCar(ctx,primaryCar);
   // Short-lived impact dust comes from the damaged nose and settles with gravity.
   if(r.crashed&&fr.t>=r.contactT){
     const age=fr.t-r.contactT, strength=Math.min(1,r.impactClosing/25);
@@ -648,13 +691,16 @@ function drawScene(){
     if(p.panel){ctx.strokeStyle='#29435a';ctx.lineWidth=Math.max(1,ppm*.007);ctx.stroke();ctx.strokeStyle='rgba(240,251,255,.5)';ctx.beginPath();ctx.moveTo(-p.s*ppm*.4,-p.s*ppm*.2);ctx.lineTo(p.s*ppm*.4,-p.s*ppm*.1);ctx.stroke();}ctx.restore();
   }
   if(ej){
-    ctx.save();ctx.fillStyle='#28323e';ctx.globalAlpha=.13;ctx.beginPath();ctx.ellipse(X(ej.x),Y(.01),ppm*.62,ppm*.035,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.save();ctx.fillStyle='#28323e';ctx.globalAlpha=ej.landed?.23:.13;ctx.beginPath();ctx.ellipse(X(ej.x),Y(.01),ppm*.82,ppm*.035,0,0,Math.PI*2);ctx.fill();ctx.restore();
     if(ej.landed&&ej.landAge<.5){ctx.save();ctx.globalAlpha=(1-ej.landAge/.5)*.18;ctx.fillStyle=C.muted;ctx.beginPath();ctx.ellipse(X(ej.x),Y(.08),(.2+ej.landAge*1.2)*ppm,(.05+ej.landAge*.12)*ppm,0,0,Math.PI*2);ctx.fill();ctx.restore();}
     if(!ej.landed){const previous=ejectionPose(r,Math.max(r.ejection.t,fr.t-.055));ctx.save();ctx.strokeStyle='rgba(235,194,73,.35)';ctx.lineWidth=Math.max(1,ppm*.035);ctx.beginPath();ctx.moveTo(X(previous.x),Y(previous.y));ctx.lineTo(X(ej.x),Y(ej.y));ctx.stroke();ctx.restore();}
     drawFlyingDummy(ctx,ej,X,Y,ppm);
+    // Near-side bodywork, A-pillar and pillars occlude the departing occupant.
+    drawCar(ctx,{...primaryCar,foregroundOnly:true});
   }
-  $('slowTag').textContent=ej?'Dummy ejected · slow motion':'Slow-mo replay';
-  $('slowTag').hidden = !(r.crashed && T >= r.slowStart && T <= r.slowEnd + .05 && (playing || T>0));
+  const slow=playbackRate(r,T)<1;
+  $('slowTag').textContent=ej?(slow?'Dummy ejected · slow motion':'Dummy ejected · normal speed'):'Slow-mo replay';
+  $('slowTag').hidden = !(slow||(ej&&!ej.landed));
 }
 
 /* Side elevations traced from the user's reference illustrations. Coordinates are
@@ -1114,8 +1160,8 @@ function drawCar(ctx,o){
   };
   const P=(x,y)=>[X(wx(x*scale)),Y(height(x*scale,y))];
   o.bodyHeight=(x,y)=>height(x,430-y/scale);
-  const trace=data=>{
-    ctx.beginPath();let pen=false;
+  const trace=(data,append=false)=>{
+    if(!append)ctx.beginPath();let pen=false;
     for(const point of illustrationPoints(data)){
       if(!point){pen=false;continue;}
       if(pen)ctx.lineTo(...P(...point));else ctx.moveTo(...P(...point));pen=true;
@@ -1136,6 +1182,13 @@ function drawCar(ctx,o){
     return {left:Math.min(...points.map(p=>p[0])),right:Math.max(...points.map(p=>p[0])),top:Math.min(...points.map(p=>p[1])),bottom:Math.max(...points.map(p=>p[1]))};
   };
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+  if(o.foregroundOnly){
+    // Even-odd holes preserve the view through the glass while keeping the
+    // complete near-side frame opaque. Reuse the same deformed illustration.
+    trace(art.body);trace(art.glass,true);
+    art.pillars.forEach(pillar=>trace(pillar,true));
+    ctx.clip('evenodd');
+  }
   ctx.save();ctx.globalAlpha=.21;ctx.fillStyle='#243246';ctx.beginPath();
   ctx.ellipse(X(ref+dir*(st.L+crush)/2),Y(.012),(st.L-crush)*ppm*.52,ppm*.045,0,0,Math.PI*2);ctx.fill();ctx.restore();
   drawCarWheels(ctx,o,wx);
@@ -1348,24 +1401,19 @@ function drawFlyingDummy(ctx,pose,X,Y,ppm){
     ctx.lineWidth=width;ctx.strokeStyle=g;ctx.stroke();
     ctx.lineWidth=width*.22;ctx.strokeStyle='rgba(255,230,129,.6)';ctx.stroke();
   };
-  const flail=Math.sin(pose.age*15)*.08;
-  const hip=[0,.05],chest=[0,-.35];
-  limb([-.05,.04],[-.18,.36+flail],.12);limb([-.18,.36+flail],[-.08,.66],.09);
-  limb([.06,.04],[.26,.30-flail],.12);limb([.26,.30-flail],[.37,.56],.09);
-  limb(chest,hip,.23);limb([-.08,-.36],[-.30,-.15-flail],.085);limb([-.30,-.15-flail],[-.48,-.34],.07);
-  limb([.08,-.36],[.29,-.49+flail],.085);limb([.29,-.49+flail],[.46,-.32],.07);
-  for(const p of [[0,.04],[-.18,.36+flail],[.26,.30-flail],[-.09,-.35],[.09,-.35],[-.30,-.15-flail],[.29,-.49+flail]])joint(...p);
+  const rig=pose.rig||flyingDummyRig(pose.age);
+  for(const part of rig.limbs)limb(part.a,part.b,part.w);
+  for(const p of rig.joints)joint(...p);
   ctx.fillStyle='#353f44';ctx.strokeStyle='#1c303f';ctx.lineWidth=.008;
   for(let k=0;k<5;k++){ctx.beginPath();ctx.roundRect(-.045,-.43-k*.017,.09,.015,.006);ctx.fill();ctx.stroke();}
   ctx.beginPath();
-  const head='M 62 8 C 34 5 17 20 18 46 L 16 60 L 6 77 Q 4 82 17 83 L 18 91 L 17 100 L 25 115 Q 30 122 44 117 L 58 106 L 67 105 L 84 104 Q 103 82 101 53 Q 104 17 78 10 Z';
-  illustrationPoints(head).forEach(([x,y],i)=>{const px=(x-60)*.0023,py=-.76+y*.0023;i?ctx.lineTo(px,py):ctx.moveTo(px,py)});ctx.closePath();
+  illustrationPoints(DUMMY_HEAD_PATH).forEach(([x,y],i)=>{const px=(x-60)*.0023,py=-.76+y*.0023;i?ctx.lineTo(px,py):ctx.moveTo(px,py)});ctx.closePath();
   const yellow=ctx.createLinearGradient(-.12,-.7,.12,-.5);yellow.addColorStop(0,'#ffe07b');yellow.addColorStop(1,'#e8a828');ctx.fillStyle=yellow;ctx.fill();ctx.strokeStyle='#79531b';ctx.lineWidth=.008;ctx.stroke();
   ctx.beginPath();ctx.arc(.03,-.645,.052,0,7);ctx.fillStyle='#ffd25b';ctx.fill();ctx.strokeStyle='#263846';ctx.lineWidth=.006;ctx.stroke();
   ctx.fillStyle='#202d37';for(const angle of [0,Math.PI]){ctx.beginPath();ctx.moveTo(.03,-.645);ctx.arc(.03,-.645,.049,angle,angle+Math.PI/2);ctx.closePath();ctx.fill();}
   ctx.beginPath();ctx.arc(-.08,-.62,.006,0,7);ctx.fill();
-  for(const p of [[-.08,.70],[.39,.59]]){ctx.beginPath();ctx.roundRect(p[0]-.045,p[1]-.025,.15,.06,.025);ctx.fillStyle='#53554b';ctx.fill();}
-  for(const p of [[-.49,-.35],[.48,-.31]]){ctx.beginPath();ctx.ellipse(p[0],p[1],.05,.034,0,0,7);ctx.fillStyle='#f2b531';ctx.fill();ctx.strokeStyle='#79531b';ctx.lineWidth=.007;ctx.stroke();}
+  for(const p of rig.shoes){ctx.beginPath();ctx.roundRect(p[0]-.045,p[1]-.025,.15,.06,.025);ctx.fillStyle='#53554b';ctx.fill();}
+  for(const p of rig.hands){ctx.beginPath();ctx.ellipse(p[0],p[1],.05,.034,0,0,7);ctx.fillStyle='#f2b531';ctx.fill();ctx.strokeStyle='#79531b';ctx.lineWidth=.007;ctx.stroke();}
   ctx.restore();
 }
 
@@ -1601,7 +1649,7 @@ function finish(){
 function tick(ts){
   if (!playing) return;
   const real = lastTs ? Math.min(.05, (ts - lastTs)/1000) : 0; lastTs = ts;
-  const rate = (run.crashed && T >= run.slowStart && T <= run.slowEnd) ? 1/15 : 1;
+  const rate = playbackRate(run,T);
   T += real*rate;
   if (T >= run.tEnd){ finish(); return; }
   drawAll();
