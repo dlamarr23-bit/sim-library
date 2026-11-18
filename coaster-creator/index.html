@@ -629,6 +629,7 @@ let track = null;
 const cart = {s:0, v:0, thermal:0, gForce:1, dist:0, vmax:0, released:false, E0:0, vArrive:0, gMax:1, gMaxX:0, gMin:1, gMinX:0};
 let probing = false;
 let runTime = 0, done = null, maxS = 0, lastProgressT = 0, justReleased = false;
+let crashScene = null;                 // visual aftermath; ride measurements stop at the end of the rail
 let popups = [];
 let history = [], nextSample = 0, thrillT = 0, screams = 0, lastRun = null, debriefT = 0, debriefTimer = 0;
 const SAMPLE_DT = 0.05;                 // seconds of ride time between energy samples for the Debrief graph
@@ -832,6 +833,7 @@ function startS(){
   return Math.min((cars-1)*(CAR_LEN+CAR_GAP)+1, track.liftS*0.5);
 }
 function resetCart(){
+  crashScene=null; splashState=null;
   cart.s=startS(); cart.v=0; cart.thermal=0; cart.gForce=1;
   cart.dist=0; cart.vmax=0; cart.released=false; cart.E0=0; cart.vArrive=-1;
   cart.gMax=1; cart.gMin=1; cart.gMaxX=0; cart.gMinX=0;
@@ -844,6 +846,7 @@ function resetCart(){
 }
 
 function step_(dt){
+  if(crashScene) return;
   const m=mass();
   for(let i=0;i<SUBSTEPS;i++){
     const h=dt/SUBSTEPS;
@@ -886,7 +889,7 @@ function step_(dt){
     cart.vmax = Math.max(cart.vmax, Math.abs(cart.v));
     runTime += h;
     if(cart.s<=0){ cart.s=0; if(cart.v<0) cart.v=0; }
-    if(cart.s>=track.len){ cart.s=track.len; return finish('crash'); }   // still moving at the end of the brakes
+    if(cart.s>=track.len){ cart.s=track.len; return beginCrash(); }   // show the derailment before announcing the result
     if(cart.s>maxS+0.4){ maxS=cart.s; lastProgressT=runTime; }
   }
   if(cart.released && (runTime-lastProgressT > 5 || runTime > 90)) finish('stuck');
@@ -895,6 +898,55 @@ function step_(dt){
 function record(p){
   const m=mass();
   history.push({t:runTime, PE:m*G*Math.max(p.y,0), KE:0.5*m*cart.v*cart.v, TE:cart.thermal, h:Math.max(p.y,0), v:Math.abs(cart.v)});
+}
+
+/* A short, deterministic visual aftermath. These bodies never feed back into the ride's
+   energy samples or scores. Every car leaves the rails; both dummies leave each car. */
+function crashPose(body,t){
+  t=Math.max(0,t);
+  if(t<body.land){
+    return {x:body.x+body.vx*t, y:body.y+body.vy*t-0.5*G*t*t, th:body.th+body.spin*t};
+  }
+  const q=t-body.land, settle=Math.min(1,q/0.8), ease=settle*settle*(3-2*settle);
+  const angle=body.th+body.spin*body.land;
+  const turn=Math.atan2(Math.sin(body.restAngle-angle),Math.cos(body.restAngle-angle));
+  return {x:body.x+body.vx*body.land+body.vx*0.2*(1-Math.exp(-3*q))/3,
+    y:body.floor+(body.restY-body.floor)*ease+Math.sin(Math.PI*Math.min(1,q/0.45))*0.6,
+    th:angle+turn*ease};
+}
+function crashBody(body){
+  body.land=(body.vy+Math.sqrt(Math.max(0,body.vy*body.vy+2*G*(body.y-body.floor))))/G;
+  return body;
+}
+function beginCrash(){
+  if(probing) return finish('crash');
+  const poses=trainPoses(), speed=Math.max(8,Math.abs(cart.v));
+  const bodies=poses.map((p,i)=>crashBody({
+    x:p.x-Math.sin(p.th)*1.1, y:p.y+Math.cos(p.th)*1.1, th:p.th,
+    vx:speed*Math.cos(p.th), vy:Math.max(0,speed*Math.sin(p.th))+5+i*0.35,
+    spin:(i%2?-1:1)*(1.1+i*0.12), floor:2.2, restY:1.1, restAngle:0
+  }));
+  const riders=[];
+  bodies.forEach((body,i)=>{
+    [-1.45,0.05].forEach((seat,j)=>{
+      const delay=0.12+i*0.035+j*0.10, p=crashPose(body,delay), c=Math.cos(p.th), s=Math.sin(p.th);
+      riders.push(crashBody({car:i, seat:j, delay,
+        x:p.x+seat*c-0.6*s, y:p.y+seat*s+0.6*c, th:p.th,
+        vx:body.vx+(j?3:-3)+(i%3-1)*1.2,
+        vy:body.vy-G*delay+5.5+j*1.5,
+        spin:(j?1:-1)*(3.2+i*0.15), floor:1.5, restY:0.7, restAngle:j?Math.PI/2:-Math.PI/2
+      }));
+    });
+  });
+  crashScene={t:0, bodies, riders, startView:{...V},
+    duration:Math.max(3.2,...bodies.map(b=>b.land+0.9),...riders.map(b=>b.delay+b.land+0.9))};
+  popups=[]; splashState=null; clearTimeout(debriefTimer);
+  say('bad','<b>The train is flying off the track!</b>','The dummies are tumbling out. Watch where the extra kinetic energy takes them.');
+  setRunBtn();
+}
+function advanceCrash(dt){
+  crashScene.t=Math.min(crashScene.duration,crashScene.t+dt);
+  if(crashScene.t>=crashScene.duration) finish('crash');
 }
 function gNote(){
   // energy is the focus, so strong forces never end the ride; they get a note at the end instead
@@ -965,7 +1017,7 @@ function say(tone, title, sub){
 }
 function setRunBtn(){
   const icon=$('runIcon');
-  if(step===3) btnNext.disabled = !lastRun;
+  if(step===3) btnNext.disabled = !lastRun || !!(crashScene && !done);
   if(typeof updateCrumbs==='function' && crumbs) updateCrumbs();
   if(running){ $('runTxt').textContent='Pause'; icon.innerHTML='<rect x="4" y="3" width="4.5" height="14" rx="1" fill="currentColor"/><rect x="11.5" y="3" width="4.5" height="14" rx="1" fill="currentColor"/>'; }
   else { $('runTxt').textContent = done ? 'Again' : (track && cart.s>startS()+0.01 ? 'Resume' : 'Play'); icon.innerHTML='<path d="M5 3l12 7-12 7z" fill="currentColor"/>'; }
@@ -1040,6 +1092,7 @@ const STEP_GUIDE = [
   ()=>say('','<b>Ready to test it?</b>','If your coaster has too much energy, it will crash at the end. If it has too little energy, it will get stuck. Press <b>Play</b>!')
 ];
 function setStep(n){
+  if(n>=4 && crashScene && !done) return;
   if(n===3 && !trackComplete()){ say('bad','<b>The track isn’t finished.</b>','Add nodes until the track reaches <b>COASTER END</b>.'); return; }
   if(n>=4 && !lastRun){ say('bad','<b>Test your coaster first.</b>','The Debrief and Final Score appear after a test run.'); return; }
   running=false; clearTimeout(debriefTimer);
@@ -1078,7 +1131,7 @@ function setStep(n){
 function updateCrumbs(){
   crumbs.forEach((b,i)=>{
     if(i===step) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current');
-    b.disabled = (i>maxStep && !(i===maxStep+1 && i<3)) || (i===3 && !trackComplete()) || (i>=4 && !lastRun);
+    b.disabled = (i>maxStep && !(i===maxStep+1 && i<3)) || (i===3 && !trackComplete()) || (i>=4 && (!lastRun || !!(crashScene && !done)));
   });
 }
 crumbs.forEach((b,i)=>b.addEventListener('click',()=>setStep(i)));
@@ -1397,13 +1450,15 @@ function dummyArm(c,shoulder,elbow,wrist,far){
   c.beginPath();c.moveTo(wrist[0]+Math.sin(a)*2.5,wrist[1]-Math.cos(a)*2.5);c.lineTo(wrist[0]-Math.sin(a)*2.5,wrist[1]+Math.cos(a)*2.5);c.stroke();
   dummyHand(c,elbow,wrist,far);
 }
-function drawDummy(c, m, x, armsUp){
+function drawDummy(c, m, x, armsUp, detached){
   const lw=Math.max(1,0.075*m);
   c.save();
   c.lineJoin='round'; c.lineCap='round';
   // The seat stays behind the complete seated figure; the car body masks its legs.
-  c.fillStyle='#b5451a'; c.strokeStyle=INK; c.lineWidth=lw;
-  c.beginPath(); c.roundRect(x-0.74*m, -3.02*m, 0.36*m, 1.5*m, 0.16*m); c.fill(); c.stroke();
+  if(!detached){
+    c.fillStyle='#b5451a'; c.strokeStyle=INK; c.lineWidth=lw;
+    c.beginPath(); c.roundRect(x-0.74*m, -3.02*m, 0.36*m, 1.5*m, 0.16*m); c.fill(); c.stroke();
+  }
   c.translate(x-75*0.016*m,-3.8*m);c.scale(0.016*m,0.016*m);
   const shell=c.createLinearGradient(30,0,88,0);
   shell.addColorStop(0,'#df861e');shell.addColorStop(0.38,DUMMY);shell.addColorStop(0.76,'#ffbd4a');shell.addColorStop(1,'#e88b22');
@@ -1455,7 +1510,8 @@ function drawCarLocal(c, ppm, idx, front, opts){
   const main=COLORS[design.main], detail=COLORS[design.detail];
   const armsUp=!!(opts && opts.scream), lw=Math.max(1,0.055*m);
   // Two riders, one in each seat, at the same height as in the reference.
-  for(const x of [-1.45,0.05]){
+  for(const [seat,x] of [-1.45,0.05].entries()){
+    if(opts && opts.riders && !opts.riders[seat]) continue;
     c.save(); c.translate(x*m,-0.3*m);
     drawDummy(c,m*0.68,0,armsUp); c.restore();
   }
@@ -1650,9 +1706,8 @@ function drawStation(x0, x1, y, sign){
   }
 }
 
-function drawTrain(){
+function trainPoses(){
   const sp=CAR_LEN+CAR_GAP, hw=CAR_LEN*0.32;
-  const scream = running && cart.released && Math.abs(cart.v)>12;
   const carAt=sc=>{ const a=posAt(sc-hw), b=posAt(sc+hw);   // back and front wheels
     return {s:sc, x:(a.x+b.x)/2, y:(a.y+b.y)/2, th:Math.atan2(b.y-a.y, b.x-a.x)}; };
   const corner=(t,lx,up)=>{ const c=Math.cos(t.th), s=Math.sin(t.th); return [t.x+lx*c-up*s, t.y+lx*s+up*c]; };
@@ -1674,6 +1729,11 @@ function drawTrain(){
     carGaps[c]=g;
     T.push(carAt(A.s-g));
   }
+  return T;
+}
+function drawTrain(){
+  const T=trainPoses();
+  const scream = running && cart.released && Math.abs(cart.v)>12;
   // couplers: a bar from the back of each car to the front of the next, so the train stays joined around hills and loops
   const hitch=(t,lx)=>{ const c=Math.cos(t.th), s=Math.sin(t.th), up=0.98; return [SX(t.x+lx*c-up*s), SY(t.y+lx*s+up*c)]; };
   ctx.lineCap='round';
@@ -1687,6 +1747,36 @@ function drawTrain(){
     ctx.save(); ctx.translate(SX(t.x),SY(t.y)); ctx.rotate(-t.th);
     drawCarLocal(ctx, V.ppm, c, c===0, {scream});
     ctx.restore();
+  }
+}
+
+function crashView(w,h){
+  const scene=crashScene, points=scene.bodies.map(b=>crashPose(b,scene.t));
+  scene.riders.forEach(b=>{if(scene.t>=b.delay) points.push(crashPose(b,scene.t-b.delay));});
+  // Keep the end of the rail in view for takeoff, then follow the entire falling group.
+  if(scene.t<1.2) points.push(sampleAt(track.len));
+  const left=Math.min(...points.map(p=>p.x))-4, right=Math.max(...points.map(p=>p.x))+4;
+  const bottom=Math.min(...points.map(p=>p.y))-4, top=Math.max(...points.map(p=>p.y))+4;
+  const vh=Math.max(followH(),top-bottom,(right-left)*h/w);
+  const blend=Math.min(1,scene.t/0.35), k=blend*blend*(3-2*blend), start=scene.startView;
+  // Blend centres and scale in world space so switching from the rider camera stays smooth.
+  const startH=h/start.ppm, startX=start.x0+w/start.ppm/2, startY=start.y1-startH/2;
+  const viewH=startH+(vh-startH)*k, cx=startX+((left+right)/2-startX)*k, cy=startY+((bottom+top)/2-startY)*k;
+  V={x0:cx-w*viewH/h/2, y1:cy+viewH/2, ppm:h/viewH};
+}
+function drawCrash(){
+  const scene=crashScene, ppm=V.ppm;
+  for(let i=scene.bodies.length-1;i>=0;i--){
+    const p=crashPose(scene.bodies[i],scene.t);
+    const riders=scene.riders.filter(b=>b.car===i).map(b=>scene.t<b.delay);
+    ctx.save(); ctx.translate(SX(p.x),SY(p.y)); ctx.rotate(-p.th); ctx.translate(0,1.1*ppm);
+    drawCarLocal(ctx,ppm,i,i===0,{scream:true,riders}); ctx.restore();
+  }
+  for(const body of scene.riders){
+    if(scene.t<body.delay) continue;
+    const p=crashPose(body,scene.t-body.delay);
+    ctx.save(); ctx.translate(SX(p.x),SY(p.y)); ctx.rotate(-p.th); ctx.translate(0,1.4*ppm);
+    drawDummy(ctx,ppm*0.68,0,true,true); ctx.restore();
   }
 }
 
@@ -1841,15 +1931,16 @@ function drawMinimap(){
   ctx.strokeStyle='#ffffff'; ctx.lineWidth=Math.max(1,1.6*u); ctx.beginPath();
   for(let i=0;i<track.P.length;i+=4){ const p=track.P[i]; if(i===0) ctx.moveTo(MX(p.x),MY(p.y)); else ctx.lineTo(MX(p.x),MY(p.y)); }
   ctx.stroke();
-  const p=sampleAt(cart.s);
+  const p=crashScene ? crashPose(crashScene.bodies[0],crashScene.t) : sampleAt(cart.s);
   ctx.fillStyle='#ff5a3c'; ctx.beginPath(); ctx.arc(MX(p.x),MY(p.y),4.5*u,0,7); ctx.fill();
   ctx.strokeStyle='#fff'; ctx.lineWidth=Math.max(1,1.2*u); ctx.stroke();
 }
 
 function drawTest(){
   const w=cv.width, h=cv.height;
-  if(pov){ drawRiderView(w,h); drawRiderPopups(w,h); drawMinimap(); drawSplash(); return; }
-  if(follow){
+  if(pov && !crashScene){ drawRiderView(w,h); drawRiderPopups(w,h); drawMinimap(); drawSplash(); return; }
+  if(crashScene) crashView(w,h);
+  else if(follow){
     // The camera rides with the middle of the train and looks a little ahead. It eases by the clock,
     // not by the frame, so it is just as steady on a slow computer as on a fast one.
     const vh=Math.max(followH(),(cars*(CAR_LEN+CAR_GAP)+6)*h/w), ppm=h/vh, vw=w/ppm;
@@ -1869,7 +1960,7 @@ function drawTest(){
   drawStation(-30, nodes[0].x-1, 0, (design.name||'').trim().toUpperCase());
   drawStation(last.x+1, last.x+BRAKE_LEN-1, last.y, null);
   drawRealTrack();
-  drawTrain();
+  if(crashScene) drawCrash(); else drawTrain();
   drawPopups();
   if(follow) drawMinimap();
   drawSplash();
@@ -2120,10 +2211,11 @@ function advance(dt){
   frameDt=dt;
   if(step===2 && trackDirty){ trackDirty=false; track=makeTrack(nodes); trackArt=null; refreshNodeUI(); }   // a node is being dragged: one rebuild per frame
   if(running && step===3 && !(splashState && splashState.kind==='launch')){   // hold the train while LAUNCH! shows
-    step_(dt*(slow?0.35:1));
+    if(crashScene) advanceCrash(dt*(slow?0.35:1));
+    else step_(dt*(slow?0.35:1));
     if(justReleased){ justReleased=false;
       if(!done) say('','<b>Here we go!</b>','The chain let go. From here on, no new energy is added. Watch PE turn into KE and back.'); }
-    checkPops();
+    if(!crashScene) checkPops();
     uiClock+=dt;
     if(uiClock>=0.1 || !running){ uiClock=0; refreshUI(); } else refreshBar();   // the bar moves every frame; the numbers change 10 times a second so they can be read
     if(!running) setRunBtn();
@@ -2542,6 +2634,7 @@ requestAnimationFrame(frame);
 // hook for automated checking
 window.__sim={
   cart, mass, resetCart, sampleAt,
+  get crashScene(){return crashScene;},
   get track(){return track;}, get nodes(){return nodes;}, get done(){return done;}, get step(){return step;},
   setStep, toggleRun, draw, advance, get cam(){return cam;}, get V(){return V;}, get mode(){return mode;}, get selected(){return selected;},
   // deterministic headless run: returns outcome + energy-conservation error after the lift
